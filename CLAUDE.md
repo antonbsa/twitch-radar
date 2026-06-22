@@ -1,0 +1,1 @@
+/home/antonbsa/www/personal/twitch-game-notif/AGENTS.md
