@@ -107,4 +107,5 @@ Deliveries must be deduplicated so the user does not receive repeated notificati
 
 - [MVP architecture](specs/mvp/00.%20architecture.md)
 - [SDD implementation plan](specs/mvp/01.%20sdd-implementation-plan.md)
+- [MVP implementation tasks](specs/mvp/tasks/t-000-global.md)
 - [Project guidance](AGENTS.md)

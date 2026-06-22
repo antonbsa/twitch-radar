@@ -1,0 +1,63 @@
+# T-004: Preferences And Monitoring
+
+## Goal
+
+Allow users to select category notification preferences and ensure the required broadcasters are monitored.
+
+## Spec Work
+
+Define or confirm:
+
+- category search API contract.
+- per-channel preference contract.
+- global preference contract.
+- preference list response shape.
+- monitor eligibility rules.
+- monitored broadcaster lifecycle.
+- channel state seeding rules.
+- behavior when selected channel is already live in a matching category.
+
+## Implementation Scope
+
+- `GET /api/categories/search?q=...`.
+- `GET /api/preferences`.
+- `POST /api/preferences/channel`.
+- `DELETE /api/preferences/channel/:id`.
+- `POST /api/preferences/global`.
+- `DELETE /api/preferences/global/:id`.
+- UI for category search and selection.
+- UI for per-channel preferences.
+- UI for global preferences.
+- upsert `channel_category_preferences`.
+- upsert `global_category_preferences`.
+- maintain `monitored_channels`.
+- seed `channel_state` when monitoring starts.
+- enqueue or call EventSub subscription ensure logic for monitored broadcasters.
+
+## Acceptance Criteria
+
+- User can search Twitch categories.
+- User can save a category preference for a specific followed channel.
+- User can save a global category preference.
+- User can list saved preferences.
+- User can remove saved preferences.
+- Per-channel preference creates monitoring only for that broadcaster.
+- Global preference creates monitoring for followed broadcasters.
+- Removing the last preference requiring a broadcaster disables or makes it eligible for monitor cleanup.
+- Initial `channel_state` is seeded before future comparisons are expected.
+- Creating a preference for an already-live matching stream does not immediately notify unless the architecture spec is changed.
+- Preference creation is idempotent for the same user/channel/category or user/category pair.
+
+## Completion Validation
+
+- Category search works with mocked Twitch category responses.
+- Preference create/delete tests pass for channel and global preferences.
+- Monitoring setup tests verify `monitored_channels` changes.
+- State seeding tests verify current stream/channel data is written.
+- Manual UI check confirms preference creation/removal is usable on mobile.
+
+## Dependencies
+
+- T-001 App Foundation.
+- T-002 Twitch Auth And Followed-Channel Sync.
+- T-003 PWA Shell And Push.
