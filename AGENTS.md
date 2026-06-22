@@ -2,13 +2,13 @@
 
 ## Source Of Truth
 
-For future implementation work, treat [spec/mvp/00. architecture.md](spec/mvp/00.%20architecture.md) as the primary source of truth.
+For future implementation work, treat [specs/mvp/00. architecture.md](specs/mvp/00.%20architecture.md) as the primary source of truth.
 
 The POC files and docs exist to prove browser/Web Push behavior only. Do not extend the POC architecture unless the user explicitly asks for POC-related work.
 
 ## Product Target
 
-Build the MVP described in `spec/mvp/00. architecture.md`:
+Build the MVP described in `specs/mvp/00. architecture.md`:
 
 - Mobile-first PWA.
 - Twitch OAuth connection.
@@ -101,4 +101,4 @@ Follow the MVP phases from the architecture spec:
 4. State and matching.
 5. Notification delivery.
 
-When implementation details are unclear, update or extend `spec/mvp/00. architecture.md` before coding broad changes.
+When implementation details are unclear, update or extend `specs/mvp/00. architecture.md` before coding broad changes.

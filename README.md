@@ -37,7 +37,7 @@ Primary platform choices:
 - Cloudflare KV for short-lived cache
 - Cloudflare Secrets for Twitch credentials, VAPID keys, and encryption secrets
 
-The architecture is documented in [spec/mvp/00. architecture.md](spec/mvp/00.%20architecture.md).
+The architecture is documented in [specs/mvp/00. architecture.md](specs/mvp/00.%20architecture.md).
 
 ## Core Concepts
 
@@ -105,5 +105,6 @@ Deliveries must be deduplicated so the user does not receive repeated notificati
 
 ## Documentation
 
-- [MVP architecture](spec/mvp/00.%20architecture.md)
+- [MVP architecture](specs/mvp/00.%20architecture.md)
+- [SDD implementation plan](specs/mvp/01.%20sdd-implementation-plan.md)
 - [Project guidance](AGENTS.md)
