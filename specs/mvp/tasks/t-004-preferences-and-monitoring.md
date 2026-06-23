@@ -17,6 +17,11 @@ Define or confirm:
 - channel state seeding rules.
 - behavior when selected channel is already live in a matching category.
 
+Decision references:
+
+- [ADR 0007](../../../docs/decisions/0007-monitor-broadcasters-globally-across-users.md)
+- [ADR 0008](../../../docs/decisions/0008-send-category-notifications-only-for-future-matching-transitions.md)
+
 ## Implementation Scope
 
 - `GET /api/categories/search?q=...`.
@@ -45,7 +50,7 @@ Define or confirm:
 - Global preference creates monitoring for followed broadcasters.
 - Removing the last preference requiring a broadcaster disables or makes it eligible for monitor cleanup.
 - Initial `channel_state` is seeded before future comparisons are expected.
-- Creating a preference for an already-live matching stream does not immediately notify unless the architecture spec is changed.
+- Creating a preference for an already-live matching stream follows the accepted notification semantics ADR.
 - Preference creation is idempotent for the same user/channel/category or user/category pair.
 
 ## Completion Validation

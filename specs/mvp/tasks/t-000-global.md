@@ -8,6 +8,8 @@ Validate the full MVP as one connected system: Twitch account sync, category pre
 
 This is not an implementation task. It is the final acceptance checklist that validates all MVP task work together.
 
+Decision references are listed in [../../../docs/decisions](../../../docs/decisions).
+
 ## Acceptance Criteria
 
 - User can connect a Twitch account through OAuth.
@@ -27,7 +29,7 @@ This is not an implementation task. It is the final acceptance checklist that va
 - Offline category changes do not send notifications.
 - Stream offline events do not send category notifications.
 - Duplicate EventSub messages do not produce duplicate notifications.
-- Per-channel and global matches for the same event produce only one notification for a user.
+- Per-channel and global matches for the same event follow the accepted notification dedupe ADR.
 - PWA service worker receives push payloads and displays notifications.
 - Notification click opens or focuses the PWA.
 - Invalid push subscriptions are marked revoked or disabled.

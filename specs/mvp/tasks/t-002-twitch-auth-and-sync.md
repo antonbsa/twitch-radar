@@ -18,6 +18,8 @@ Define or confirm:
 - live/offline sorting rules.
 - reconnect behavior after token refresh failure.
 
+Decision reference: [ADR 0005](../../../docs/decisions/0005-sync-followed-channels-with-twitch-apis.md).
+
 ## Implementation Scope
 
 - `GET /api/auth/twitch/start`
@@ -30,8 +32,8 @@ Define or confirm:
 - Twitch user profile fetch.
 - encrypted token persistence.
 - token refresh helper.
-- `GET /helix/channels/followed` pagination.
-- `GET /helix/streams/followed` merge into live channel state.
+- followed-channel pagination.
+- followed-stream metadata merge into live channel state.
 - followed-channel list ordering:
   - live first
   - viewer count descending

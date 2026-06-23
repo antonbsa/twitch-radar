@@ -11,12 +11,17 @@ Define or confirm:
 - notification matching rules.
 - notification payload shape.
 - delivery dedupe key rules.
-- Web Push send behavior in Cloudflare Workers.
+- Web Push send behavior.
 - invalid push subscription cleanup.
 - EventSub reconciliation behavior.
 - token refresh/reconnect behavior.
 - retry and failure states.
 - operational logging expectations.
+
+Decision references:
+
+- [ADR 0007](../../../docs/decisions/0007-monitor-broadcasters-globally-across-users.md)
+- [ADR 0008](../../../docs/decisions/0008-send-category-notifications-only-for-future-matching-transitions.md)
 
 ## Implementation Scope
 
@@ -34,9 +39,9 @@ Define or confirm:
 
 ## Acceptance Criteria
 
-- `stream.online` in a desired category sends one notification per matching user.
-- `channel.update` switching into a desired category sends one notification per matching user.
-- Per-channel and global matches for the same user/event produce only one notification.
+- `stream.online` in a desired category follows accepted notification semantics.
+- `channel.update` switching into a desired category follows accepted notification semantics.
+- Per-channel and global matches for the same user/event follow accepted notification dedupe semantics.
 - Replayed queue messages or repeated webhooks do not send duplicate notifications.
 - `notification_deliveries` records every attempted send.
 - Successful sends are marked sent.

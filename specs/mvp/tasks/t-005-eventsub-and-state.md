@@ -16,6 +16,11 @@ Define or confirm:
 - state transition rules for each EventSub type.
 - relevant `channel_state_changes` rules.
 
+Decision references:
+
+- [ADR 0004](../../../docs/decisions/0004-use-twitch-eventsub-webhooks.md)
+- [ADR 0006](../../../docs/decisions/0006-store-current-channel-state-separately-from-history.md)
+
 ## Implementation Scope
 
 - EventSub subscription creation for:
@@ -28,7 +33,7 @@ Define or confirm:
 - Twitch signature verification against raw body.
 - callback verification challenge handling.
 - duplicate message detection.
-- enqueue verified messages to Cloudflare Queues.
+- enqueue verified messages for async processing.
 - queue consumer for EventSub messages.
 - process `stream.online`.
 - process `channel.update`.
