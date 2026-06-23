@@ -22,7 +22,7 @@ function createEnv(db: D1Database): Env {
 describe("Worker routing", () => {
   it("returns a successful health response", async () => {
     const env = createEnv(await createMigratedD1());
-    const response = await worker.fetch(new Request("http://localhost/api/health"), env);
+    const response = await worker.fetch(new Request("http://localhost/api/health"), env, createExecutionContext());
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
@@ -36,7 +36,7 @@ describe("Worker routing", () => {
 
   it("returns the standard JSON error shape", async () => {
     const env = createEnv(await createMigratedD1());
-    const response = await worker.fetch(new Request("http://localhost/api/missing"), env);
+    const response = await worker.fetch(new Request("http://localhost/api/missing"), env, createExecutionContext());
 
     expect(response.status).toBe(404);
     await expect(response.json()).resolves.toMatchObject({
@@ -47,3 +47,10 @@ describe("Worker routing", () => {
     });
   });
 });
+
+function createExecutionContext(): ExecutionContext {
+  return {
+    waitUntil() {},
+    passThroughOnException() {}
+  } as unknown as ExecutionContext;
+}

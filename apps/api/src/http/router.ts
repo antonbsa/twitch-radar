@@ -1,34 +1,33 @@
+import { Hono, type Context } from "hono";
+import { createDatabaseClient } from "../db/client";
 import { Database } from "../db/repositories";
 import { type Env, loadConfig } from "../env";
 import { ApiError, errorResponse, getRequestId, jsonResponse } from "./errors";
 
-type Handler = (request: Request) => Promise<Response>;
+type HonoEnv = {
+  Bindings: Env;
+};
 
-export function createRouter(env: Env): Handler {
-  return async (request: Request): Promise<Response> => {
-    const requestId = getRequestId(request);
+export function createApp(): Hono<HonoEnv> {
+  const app = new Hono<HonoEnv>();
 
-    try {
-      const url = new URL(request.url);
+  app.options("/*", () => new Response(null, { status: 204 }));
 
-      if (request.method === "OPTIONS") {
-        return new Response(null, { status: 204 });
-      }
+  app.get("/health", handleHealth);
+  app.get("/api/health", handleHealth);
 
-      if (request.method === "GET" && (url.pathname === "/health" || url.pathname === "/api/health")) {
-        return handleHealth(env);
-      }
+  app.notFound((c) => errorResponse(new ApiError(404, "not_found", "Route not found"), getRequestId(c.req.raw)));
 
-      throw new ApiError(404, "not_found", "Route not found");
-    } catch (error) {
-      return errorResponse(error, requestId);
-    }
-  };
+  app.onError((error, c) => errorResponse(error, getRequestId(c.req.raw)));
+
+  return app;
 }
 
-async function handleHealth(env: Env): Promise<Response> {
+async function handleHealth(c: Context<HonoEnv>): Promise<Response> {
+  const env = c.env;
   const config = loadConfig(env);
-  const db = new Database(env.DB);
+  const drizzleDb = createDatabaseClient(env.DB);
+  const db = new Database(drizzleDb);
   const d1Probe = await env.DB.prepare("SELECT 1 AS ok").first<{ ok: number }>();
 
   if (d1Probe?.ok !== 1) {

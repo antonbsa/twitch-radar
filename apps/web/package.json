@@ -1,0 +1,12 @@
+{
+  "name": "@twitch-radar/web",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler pages dev . --compatibility-date=2026-06-23 --port 8788"
+  },
+  "devDependencies": {
+    "wrangler": "^4.103.0"
+  }
+}

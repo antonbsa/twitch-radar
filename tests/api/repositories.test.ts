@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { createDatabaseClient } from "../../apps/api/src/db/client";
 import { Database } from "../../apps/api/src/db/repositories";
 import { createMigratedD1, SqliteD1Database } from "./utils/sqlite-d1";
 
@@ -8,7 +9,7 @@ describe("Database repositories", () => {
 
   beforeEach(async () => {
     rawDb = (await createMigratedD1()) as unknown as SqliteD1Database;
-    repositories = new Database(rawDb as unknown as D1Database);
+    repositories = new Database(createDatabaseClient(rawDb as unknown as D1Database));
   });
 
   afterEach(() => {

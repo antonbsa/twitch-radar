@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { DatabaseSync, type StatementSync, type SQLInputValue } from "node:sqlite";
@@ -65,6 +65,11 @@ class SqliteD1PreparedStatement {
     };
   }
 
+  async raw<T = unknown[]>(): Promise<T[]> {
+    const rows = this.statement().all(...this.sqliteValues()) as Record<string, unknown>[];
+    return rows.map((row) => Object.keys(row).map((key) => row[key]) as T);
+  }
+
   private statement(): StatementSync {
     return this.db.prepare(this.sql);
   }
@@ -119,7 +124,14 @@ export class SqliteD1Database {
 
 export async function createMigratedD1(): Promise<D1Database> {
   const db = new SqliteD1Database();
-  const migrationPath = resolve(dirname(fileURLToPath(import.meta.url)), "../../../infra/migrations/0001_initial.sql");
-  await db.exec(readFileSync(migrationPath, "utf8"));
+  const migrationsDir = resolve(dirname(fileURLToPath(import.meta.url)), "../../../infra/migrations");
+  const migrationFiles = readdirSync(migrationsDir)
+    .filter((file) => file.endsWith(".sql"))
+    .sort();
+
+  for (const migrationFile of migrationFiles) {
+    await db.exec(readFileSync(resolve(migrationsDir, migrationFile), "utf8"));
+  }
+
   return db as unknown as D1Database;
 }

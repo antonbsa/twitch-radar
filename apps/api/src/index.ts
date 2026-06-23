@@ -1,9 +1,11 @@
 import type { Env } from "./env";
-import { createRouter } from "./http/router";
+import { createApp } from "./http/router";
+
+const app = createApp();
 
 export default {
-  fetch(request: Request, env: Env): Promise<Response> {
-    return createRouter(env)(request);
+  fetch(request: Request, env: Env, ctx: ExecutionContext) {
+    return app.fetch(request, env, ctx);
   },
 
   async queue(batch: MessageBatch, env: Env): Promise<void> {

@@ -17,3 +17,6 @@ Other project documents may state goals, requirements, task scope, validation st
 - [0009 - Use A Consistent JSON API Error Shape](0009-use-consistent-json-api-error-shape.md)
 - [0010 - Keep The POC Separate From The MVP Architecture](0010-keep-poc-separate-from-mvp-architecture.md)
 - [0011 - Keep API Tests Under Root Tests Api](0011-keep-api-tests-under-root-tests-api.md)
+- [0012 - Use NPM Workspaces For App Packages](0012-use-npm-workspaces-for-app-packages.md)
+- [0013 - Use Drizzle ORM For D1 Access](0013-use-drizzle-orm-for-d1-access.md)
+- [0014 - Use Hono For Worker API Routing](0014-use-hono-for-worker-api-routing.md)
