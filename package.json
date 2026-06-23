@@ -1,13 +1,15 @@
 {
   "name": "twitch-radar",
   "version": "1.0.0",
-  "description": "",
-  "main": "dist/server.js",
+  "description": "Mobile-first Twitch category alert PWA.",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "start": "node dist/server.js",
-    "build": "tsc",
-    "typecheck": "tsc --noEmit",
+    "dev": "npm run dev:api",
+    "dev:api": "wrangler dev --config apps/api/wrangler.toml --port 8787",
+    "dev:web": "wrangler pages dev apps/web --port 8788",
+    "db:setup": "wrangler d1 migrations apply twitch-radar-dev --local --config apps/api/wrangler.toml",
+    "build": "tsc -p apps/api/tsconfig.json",
+    "typecheck": "tsc -p apps/api/tsconfig.json --noEmit",
+    "test": "vitest run",
     "vapid": "web-push generate-vapid-keys"
   },
   "keywords": [],
@@ -23,9 +25,12 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "4.20260621.1",
     "@types/node": "^26.0.0",
     "@types/web-push": "^3.6.4",
     "tsx": "^4.22.4",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9",
+    "wrangler": "^4.103.0"
   }
 }

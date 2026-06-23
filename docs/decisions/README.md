@@ -16,3 +16,4 @@ Other project documents may state goals, requirements, task scope, validation st
 - [0008 - Send Category Notifications Only For Future Matching Transitions](0008-send-category-notifications-only-for-future-matching-transitions.md)
 - [0009 - Use A Consistent JSON API Error Shape](0009-use-consistent-json-api-error-shape.md)
 - [0010 - Keep The POC Separate From The MVP Architecture](0010-keep-poc-separate-from-mvp-architecture.md)
+- [0011 - Keep API Tests Under Root Tests Api](0011-keep-api-tests-under-root-tests-api.md)

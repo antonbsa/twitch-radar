@@ -1,3 +1,6 @@
 {
-  "cSpell.words": ["eventsub"]
+  "cSpell.words": ["eventsub"],
+  "search.exclude": {
+    ".agents/worktrees": true
+  }
 }
