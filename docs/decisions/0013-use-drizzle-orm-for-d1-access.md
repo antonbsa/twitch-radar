@@ -18,8 +18,9 @@ Keep SQL migration files under `infra/migrations` as the applied D1 migration so
 
 Use Drizzle schema definitions in API code to provide type-safe query building over the migrated tables.
 
+Migration generation is covered by [ADR 0015](0015-generate-d1-migrations-with-drizzle-kit.md).
+
 ## Consequences
 
 - Repository methods should use Drizzle query APIs instead of raw D1 prepared SQL for ordinary CRUD.
-- The migration SQL and Drizzle schema must stay aligned.
-- Future schema changes should update both the D1 migration and Drizzle schema.
+- The Drizzle schema and applied D1 migrations must stay aligned.

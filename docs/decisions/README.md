@@ -20,3 +20,4 @@ Other project documents may state goals, requirements, task scope, validation st
 - [0012 - Use NPM Workspaces For App Packages](0012-use-npm-workspaces-for-app-packages.md)
 - [0013 - Use Drizzle ORM For D1 Access](0013-use-drizzle-orm-for-d1-access.md)
 - [0014 - Use Hono For Worker API Routing](0014-use-hono-for-worker-api-routing.md)
+- [0015 - Generate D1 Migrations With Drizzle Kit](0015-generate-d1-migrations-with-drizzle-kit.md)

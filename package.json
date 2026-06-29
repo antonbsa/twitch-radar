@@ -12,6 +12,7 @@
     "dev:api": "npm run dev -w @twitch-radar/api",
     "dev:web": "npm run dev -w @twitch-radar/web",
     "db:setup": "npm run db:setup -w @twitch-radar/api",
+    "migrations:create": "npm --workspace @twitch-radar/api run migrations:create --",
     "build": "npm run build --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
@@ -20,7 +21,5 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module",
-  "dependencies": {},
-  "devDependencies": {}
+  "type": "module"
 }

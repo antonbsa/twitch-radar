@@ -1,4 +1,5 @@
-import type { EnvironmentName, NotificationJobMessage, TwitchEventQueueMessage } from "./domain/types";
+import type { Database } from "./db";
+import type { EnvironmentName, NotificationJobMessage, TwitchEventQueueMessage } from "./types";
 
 export interface Env {
   DB: D1Database;
@@ -17,6 +18,13 @@ export interface Env {
   TOKEN_ENCRYPTION_KEY?: string;
   VAPID_PRIVATE_KEY?: string;
 }
+
+export type HonoEnv = {
+  Bindings: Env;
+  Variables: {
+    db: Database;
+  };
+};
 
 export interface AppConfig {
   environment: EnvironmentName;

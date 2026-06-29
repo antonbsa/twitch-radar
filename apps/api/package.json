@@ -4,8 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev --config wrangler.toml --port 8787",
-    "db:setup": "wrangler d1 migrations apply twitch-radar-dev --local --config wrangler.toml",
+    "dev": "wrangler dev --port 8787",
+    "migrations:create": "drizzle-kit generate --config drizzle.config.ts --prefix index",
+    "db:check": "drizzle-kit check --config drizzle.config.ts",
+    "db:setup": "wrangler d1 migrations apply twitch-radar-dev --local",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --root ../.. tests/api",
@@ -22,6 +24,7 @@
     "@cloudflare/workers-types": "4.20260621.1",
     "@types/node": "^26.0.0",
     "@types/web-push": "^3.6.4",
+    "drizzle-kit": "^0.31.10",
     "typescript": "^6.0.3",
     "vitest": "^4.1.9",
     "wrangler": "^4.103.0"

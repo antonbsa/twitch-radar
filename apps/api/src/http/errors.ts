@@ -1,3 +1,5 @@
+import { jsonResponse } from "./response";
+
 export interface ErrorBody {
   error: {
     code: string;
@@ -16,16 +18,6 @@ export class ApiError extends Error {
     this.status = status;
     this.code = code;
   }
-}
-
-export function jsonResponse(body: unknown, init: ResponseInit = {}): Response {
-  const headers = new Headers(init.headers);
-  headers.set("content-type", "application/json; charset=utf-8");
-
-  return new Response(JSON.stringify(body), {
-    ...init,
-    headers
-  });
 }
 
 export function errorResponse(error: unknown, requestId: string): Response {
@@ -54,8 +46,4 @@ export function errorResponse(error: unknown, requestId: string): Response {
     } satisfies ErrorBody,
     { status: 500 }
   );
-}
-
-export function getRequestId(request: Request): string {
-  return request.headers.get("cf-ray") ?? crypto.randomUUID();
 }

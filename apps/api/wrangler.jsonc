@@ -1,0 +1,44 @@
+{
+  "name": "twitch-radar-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-06-22",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "twitch-radar-dev",
+      "database_id": "00000000-0000-0000-0000-000000000001",
+      "migrations_dir": "../../infra/migrations"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "APP_CACHE",
+      "id": "00000000000000000000000000000001",
+      "preview_id": "00000000000000000000000000000002"
+    }
+  ],
+  "queues": {
+    "producers": [
+      {
+        "binding": "TWITCH_EVENTS_QUEUE",
+        "queue": "twitch-radar-twitch-events"
+      },
+      {
+        "binding": "NOTIFICATION_JOBS_QUEUE",
+        "queue": "twitch-radar-notification-jobs"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "twitch-radar-twitch-events",
+        "max_batch_size": 10,
+        "max_batch_timeout": 5
+      },
+      {
+        "queue": "twitch-radar-notification-jobs",
+        "max_batch_size": 10,
+        "max_batch_timeout": 5
+      }
+    ]
+  }
+}

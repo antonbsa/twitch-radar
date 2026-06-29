@@ -3,6 +3,6 @@ import { schema } from "./schema";
 
 export type AppDatabase = DrizzleD1Database<typeof schema>;
 
-export function createDatabaseClient(db: D1Database): AppDatabase {
-  return drizzle(db, { schema });
+export function createDatabaseClient(d1: D1Database): AppDatabase {
+  return drizzle(d1, { schema });
 }

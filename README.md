@@ -24,6 +24,13 @@ Apply local D1 migrations:
 npm run db:setup
 ```
 
+Generate a migration after editing the Drizzle schema:
+
+```sh
+npm run db:generate -- --name create_sessions
+npm run db:check
+```
+
 Start the API Worker:
 
 ```sh
