@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler pages dev . --compatibility-date=2026-06-23 --port 8788"
+    "dev": "wrangler pages dev . --compatibility-date=2026-06-23 --port 8788 --inspector-port 9230"
   },
   "devDependencies": {
     "wrangler": "^4.103.0"
