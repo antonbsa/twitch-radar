@@ -1,13 +1,17 @@
 import { Hono } from "hono";
 import { Database } from "./db";
-import type { Env, HonoEnv } from "./env";
+import { parseEnv, type AppConfig, type Env, type HonoEnv } from "./env";
 import { ApiError, errorResponse } from "./http/errors";
 import { getRequestId } from "./http/response";
 import { handleHealth } from "./http/routes/health";
 
 const app = new Hono<HonoEnv>();
 
+let config: AppConfig | undefined;
+
 app.use("*", (c, next) => {
+  config ??= parseEnv(c.env);
+  c.set("config", config);
   c.set("db", new Database(c.env.DB));
   return next();
 });
