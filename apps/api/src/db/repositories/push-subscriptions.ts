@@ -1,20 +1,24 @@
-import { eq } from "drizzle-orm";
-import type { PushSubscriptionRecord } from "../../types";
-import type { AppDatabase } from "../client";
-import { pushSubscriptions, type PushSubscriptionRow } from "../schema";
+import { eq } from "drizzle-orm"
+import type { PushSubscriptionRecord } from "../../types"
+import type { AppDatabase } from "../client"
+import { pushSubscriptions, type PushSubscriptionRow } from "../schema"
 
 export interface CreatePushSubscriptionInput {
-  id: string;
-  userId: string;
-  endpoint: string;
-  p256dh: string;
-  auth: string;
-  userAgent: string | null;
-  now: string;
+  id: string
+  userId: string
+  endpoint: string
+  p256dh: string
+  auth: string
+  userAgent: string | null
+  now: string
 }
 
 export class PushSubscriptionsRepository {
-  constructor(private readonly db: AppDatabase) {}
+  private readonly db: AppDatabase
+
+  constructor(db: AppDatabase) {
+    this.db = db
+  }
 
   async create(input: CreatePushSubscriptionInput): Promise<void> {
     await this.db
@@ -27,18 +31,20 @@ export class PushSubscriptionsRepository {
         auth: input.auth,
         userAgent: input.userAgent,
         createdAt: input.now,
-        updatedAt: input.now
+        updatedAt: input.now,
       })
-      .run();
+      .run()
   }
 
-  async findByEndpoint(endpoint: string): Promise<PushSubscriptionRecord | null> {
+  async findByEndpoint(
+    endpoint: string,
+  ): Promise<PushSubscriptionRecord | null> {
     const row = await this.db
       .select()
       .from(pushSubscriptions)
       .where(eq(pushSubscriptions.endpoint, endpoint))
-      .get();
-    return row ? toPushSubscription(row) : null;
+      .get()
+    return row ? toPushSubscription(row) : null
   }
 
   async revoke(id: string, revokedAt: string): Promise<void> {
@@ -46,7 +52,7 @@ export class PushSubscriptionsRepository {
       .update(pushSubscriptions)
       .set({ revokedAt, updatedAt: revokedAt })
       .where(eq(pushSubscriptions.id, id))
-      .run();
+      .run()
   }
 }
 
@@ -60,6 +66,6 @@ function toPushSubscription(row: PushSubscriptionRow): PushSubscriptionRecord {
     user_agent: row.userAgent,
     created_at: row.createdAt,
     updated_at: row.updatedAt,
-    revoked_at: row.revokedAt
-  };
+    revoked_at: row.revokedAt,
+  }
 }

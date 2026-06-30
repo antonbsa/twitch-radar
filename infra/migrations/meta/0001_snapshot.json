@@ -60,18 +60,12 @@
       "indexes": {
         "channel_category_preferences_user_id_broadcaster_user_id_category_id_unique": {
           "name": "channel_category_preferences_user_id_broadcaster_user_id_category_id_unique",
-          "columns": [
-            "user_id",
-            "broadcaster_user_id",
-            "category_id"
-          ],
+          "columns": ["user_id", "broadcaster_user_id", "category_id"],
           "isUnique": true
         },
         "idx_channel_category_preferences_user_id": {
           "name": "idx_channel_category_preferences_user_id",
-          "columns": [
-            "user_id"
-          ],
+          "columns": ["user_id"],
           "isUnique": false
         }
       },
@@ -80,12 +74,8 @@
           "name": "channel_category_preferences_user_id_users_id_fk",
           "tableFrom": "channel_category_preferences",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -273,16 +263,12 @@
       "indexes": {
         "channel_state_changes_eventsub_message_id_unique": {
           "name": "channel_state_changes_eventsub_message_id_unique",
-          "columns": [
-            "eventsub_message_id"
-          ],
+          "columns": ["eventsub_message_id"],
           "isUnique": true
         },
         "idx_channel_state_changes_broadcaster_user_id": {
           "name": "idx_channel_state_changes_broadcaster_user_id",
-          "columns": [
-            "broadcaster_user_id"
-          ],
+          "columns": ["broadcaster_user_id"],
           "isUnique": false
         }
       },
@@ -375,25 +361,17 @@
       "indexes": {
         "eventsub_subscriptions_twitch_subscription_id_unique": {
           "name": "eventsub_subscriptions_twitch_subscription_id_unique",
-          "columns": [
-            "twitch_subscription_id"
-          ],
+          "columns": ["twitch_subscription_id"],
           "isUnique": true
         },
         "eventsub_subscriptions_broadcaster_user_id_event_type_event_version_unique": {
           "name": "eventsub_subscriptions_broadcaster_user_id_event_type_event_version_unique",
-          "columns": [
-            "broadcaster_user_id",
-            "event_type",
-            "event_version"
-          ],
+          "columns": ["broadcaster_user_id", "event_type", "event_version"],
           "isUnique": true
         },
         "idx_eventsub_subscriptions_broadcaster_user_id": {
           "name": "idx_eventsub_subscriptions_broadcaster_user_id",
-          "columns": [
-            "broadcaster_user_id"
-          ],
+          "columns": ["broadcaster_user_id"],
           "isUnique": false
         }
       },
@@ -458,9 +436,7 @@
       "indexes": {
         "idx_followed_channels_broadcaster_user_id": {
           "name": "idx_followed_channels_broadcaster_user_id",
-          "columns": [
-            "broadcaster_user_id"
-          ],
+          "columns": ["broadcaster_user_id"],
           "isUnique": false
         }
       },
@@ -469,22 +445,15 @@
           "name": "followed_channels_user_id_users_id_fk",
           "tableFrom": "followed_channels",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
         "followed_channels_user_id_broadcaster_user_id_pk": {
-          "columns": [
-            "user_id",
-            "broadcaster_user_id"
-          ],
+          "columns": ["user_id", "broadcaster_user_id"],
           "name": "followed_channels_user_id_broadcaster_user_id_pk"
         }
       },
@@ -540,17 +509,12 @@
       "indexes": {
         "global_category_preferences_user_id_category_id_unique": {
           "name": "global_category_preferences_user_id_category_id_unique",
-          "columns": [
-            "user_id",
-            "category_id"
-          ],
+          "columns": ["user_id", "category_id"],
           "isUnique": true
         },
         "idx_global_category_preferences_user_id": {
           "name": "idx_global_category_preferences_user_id",
-          "columns": [
-            "user_id"
-          ],
+          "columns": ["user_id"],
           "isUnique": false
         }
       },
@@ -559,12 +523,8 @@
           "name": "global_category_preferences_user_id_users_id_fk",
           "tableFrom": "global_category_preferences",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -734,10 +694,7 @@
         },
         "idx_notification_deliveries_user_status": {
           "name": "idx_notification_deliveries_user_status",
-          "columns": [
-            "user_id",
-            "status"
-          ],
+          "columns": ["user_id", "status"],
           "isUnique": false
         }
       },
@@ -746,12 +703,8 @@
           "name": "notification_deliveries_user_id_users_id_fk",
           "tableFrom": "notification_deliveries",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -759,12 +712,8 @@
           "name": "notification_deliveries_push_subscription_id_push_subscriptions_id_fk",
           "tableFrom": "notification_deliveries",
           "tableTo": "push_subscriptions",
-          "columnsFrom": [
-            "push_subscription_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["push_subscription_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -843,16 +792,12 @@
       "indexes": {
         "push_subscriptions_endpoint_unique": {
           "name": "push_subscriptions_endpoint_unique",
-          "columns": [
-            "endpoint"
-          ],
+          "columns": ["endpoint"],
           "isUnique": true
         },
         "idx_push_subscriptions_user_id": {
           "name": "idx_push_subscriptions_user_id",
-          "columns": [
-            "user_id"
-          ],
+          "columns": ["user_id"],
           "isUnique": false
         }
       },
@@ -861,12 +806,8 @@
           "name": "push_subscriptions_user_id_users_id_fk",
           "tableFrom": "push_subscriptions",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -924,9 +865,7 @@
       "indexes": {
         "idx_twitch_tokens_expires_at": {
           "name": "idx_twitch_tokens_expires_at",
-          "columns": [
-            "expires_at"
-          ],
+          "columns": ["expires_at"],
           "isUnique": false
         }
       },
@@ -935,12 +874,8 @@
           "name": "twitch_tokens_user_id_users_id_fk",
           "tableFrom": "twitch_tokens",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1005,9 +940,7 @@
       "indexes": {
         "users_twitch_user_id_unique": {
           "name": "users_twitch_user_id_unique",
-          "columns": [
-            "twitch_user_id"
-          ],
+          "columns": ["twitch_user_id"],
           "isUnique": true
         }
       },

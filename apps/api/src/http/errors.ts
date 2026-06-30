@@ -1,22 +1,22 @@
-import { jsonResponse } from "./response";
+import { jsonResponse } from "./response"
 
 export interface ErrorBody {
   error: {
-    code: string;
-    message: string;
-    requestId: string;
-  };
+    code: string
+    message: string
+    requestId: string
+  }
 }
 
 export class ApiError extends Error {
-  readonly status: number;
-  readonly code: string;
+  readonly status: number
+  readonly code: string
 
   constructor(status: number, code: string, message: string) {
-    super(message);
-    this.name = "ApiError";
-    this.status = status;
-    this.code = code;
+    super(message)
+    this.name = "ApiError"
+    this.status = status
+    this.code = code
   }
 }
 
@@ -27,23 +27,23 @@ export function errorResponse(error: unknown, requestId: string): Response {
         error: {
           code: error.code,
           message: error.message,
-          requestId
-        }
+          requestId,
+        },
       } satisfies ErrorBody,
-      { status: error.status }
-    );
+      { status: error.status },
+    )
   }
 
-  console.error(error);
+  console.error(error)
 
   return jsonResponse(
     {
       error: {
         code: "internal_error",
         message: "Internal server error",
-        requestId
-      }
+        requestId,
+      },
     } satisfies ErrorBody,
-    { status: 500 }
-  );
+    { status: 500 },
+  )
 }

@@ -12,10 +12,13 @@
     "dev:api": "npm run dev -w @twitch-radar/api",
     "dev:web": "npm run dev -w @twitch-radar/web",
     "db:setup": "npm run db:setup -w @twitch-radar/api",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "migrations:create": "npm --workspace @twitch-radar/api run migrations:create --",
     "build": "npm run build --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present",
+    "test": "concurrently -n apps,tests --hide apps -k -s command-tests -c blue,green \"npm run dev\" \"npm run test:api\"",
+    "test:api": "npm run test -w @twitch-radar/api",
     "vapid": "npm run vapid -w @twitch-radar/api"
   },
   "keywords": [],
@@ -24,5 +27,10 @@
   "type": "module",
   "dependencies": {
     "concurrently": "^10.0.3"
+  },
+  "devDependencies": {
+    "@rocketseat/eslint-config": "^2.2.2",
+    "eslint": "^8.57.1",
+    "prettier": "^3.9.3"
   }
 }
