@@ -5,21 +5,11 @@ import { createMigratedD1 } from "./utils/sqlite-d1"
 
 function createEnv(db: D1Database): Env {
   return {
+    ...(process.env as unknown as Env),
     DB: db,
     APP_CACHE: {} as KVNamespace,
     TWITCH_EVENTS_QUEUE: {} as Queue,
     NOTIFICATION_JOBS_QUEUE: {} as Queue,
-    ENVIRONMENT: "local",
-    PUBLIC_BASE_URL: "http://localhost:8788",
-    TWITCH_CLIENT_ID: "",
-    TWITCH_CLIENT_SECRET: "",
-    TWITCH_REDIRECT_URI: "http://localhost:8787/api/auth/twitch/callback",
-    EVENTSUB_CALLBACK_URL: "http://localhost:8787/api/webhooks/twitch/eventsub",
-    EVENTSUB_WEBHOOK_SECRET: "",
-    TOKEN_ENCRYPTION_KEY: "",
-    VAPID_PUBLIC_KEY: "",
-    VAPID_PRIVATE_KEY: "",
-    VAPID_SUBJECT: "mailto:dev@example.com",
   }
 }
 
