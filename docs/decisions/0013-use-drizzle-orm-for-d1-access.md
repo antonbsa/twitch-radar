@@ -24,3 +24,6 @@ Migration generation is covered by [ADR 0015](0015-generate-d1-migrations-with-d
 
 - Repository methods should use Drizzle query APIs instead of raw D1 prepared SQL for ordinary CRUD.
 - The Drizzle schema and applied D1 migrations must stay aligned.
+- The `Database` class in `db/index.ts` owns all repository instances and is constructed from a raw `D1Database` binding.
+- A new `Database` is created per request by Hono middleware; it is not a module-level singleton.
+- New repositories are added as classes under `db/repositories/` and wired into `Database`.

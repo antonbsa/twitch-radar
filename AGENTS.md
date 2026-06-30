@@ -43,6 +43,51 @@ Suggest a new separate commit message only after a commit has been made, or when
 Do not include a commit message suggestion for planning, explanation, review, or advice-only responses with no file changes.
 The suggestion must follow these commit message rules.
 
+## API Source Layout (`apps/api/src/`)
+
+```
+types.ts                      — shared domain types
+env.ts                        — Env bindings, HonoEnv (Bindings + Variables), loadConfig, requireSecret
+index.ts                      — Hono app setup, middleware, route registration, ExportedHandler
+db/
+  client.ts                   — createDatabaseClient (drizzle factory, no singleton)
+  index.ts                    — Database class (constructs all repositories from a D1Database)
+  schema.ts                   — Drizzle table definitions
+  repositories/
+    users.ts                  — UsersRepository class
+    push-subscriptions.ts     — PushSubscriptionsRepository class
+http/
+  errors.ts                   — ApiError, errorResponse
+  response.ts                 — jsonResponse, getRequestId
+  routes/
+    health.ts                 — handleHealth (and future route handlers)
+```
+
+## DB Access Pattern
+
+A fresh `Database` instance is created per request via Hono middleware in `index.ts`:
+
+```ts
+app.use("*", (c, next) => {
+  c.set("db", new Database(c.env.DB));
+  return next();
+});
+```
+
+Route handlers access it as `c.var.db` (typed via `HonoEnv.Variables`).
+
+Do **not** instantiate `Database` inside route handlers. Do **not** use a module-level singleton.
+
+New repositories go in `db/repositories/<entity>.ts` as a class with `AppDatabase` in the constructor, then get wired into the `Database` class in `db/index.ts`.
+
+## Wrangler Config and Local Env
+
+- Worker config: `apps/api/wrangler.jsonc` (JSONC format, no `wrangler.toml`).
+- Local env vars: `apps/api/.dev.vars.development` — committed file, single source of truth.
+  - Wrangler reads it when `--env development` is passed (used in `dev` and `db:setup` scripts).
+  - Only `TWITCH_CLIENT_ID` and `TWITCH_CLIENT_SECRET` need real values for OAuth flows.
+  - Other secrets use `dev-placeholder` until the feature that consumes them is implemented.
+
 ## Worktree Configuration
 
 All agents and sub-agents must configure git worktrees under `.agents/worktrees/` to keep temporary worktrees organized and hidden from search and file navigation.

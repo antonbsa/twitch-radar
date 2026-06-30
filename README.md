@@ -43,19 +43,9 @@ Check API health:
 http://localhost:8787/api/health
 ```
 
-If port `8787` is occupied:
+If port `8787` is occupied, edit `--port` in `apps/api/package.json`.
 
-```sh
-npx wrangler dev --config apps/api/wrangler.toml --port 8797
-```
-
-Serve the frontend root:
-
-```sh
-npm run dev:web
-```
-
-Copy `apps/api/.dev.vars.example` to `apps/api/.dev.vars` when secrets are needed for later tasks.
+Fill in `TWITCH_CLIENT_ID` and `TWITCH_CLIENT_SECRET` in `apps/api/.dev.vars.development` before using any Twitch OAuth flows. All other variables have working local defaults.
 
 ## Validation
 

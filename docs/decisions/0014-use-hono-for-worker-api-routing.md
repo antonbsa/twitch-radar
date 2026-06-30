@@ -21,3 +21,7 @@ Do not use Fastify for the MVP Worker API.
 - Worker route modules should be Hono apps or route registrations.
 - Error handling should preserve the accepted JSON API error shape.
 - Hono context `env` provides access to Worker bindings.
+- `HonoEnv` (defined in `env.ts`) carries both `Bindings` (Worker env) and `Variables` (per-request deps).
+- Per-request shared dependencies (e.g. `db`) are set in middleware via `c.set()` and read in handlers via `c.var`.
+- Route handlers live in `http/routes/<name>.ts` and are imported into `index.ts` for registration.
+- There is no `router.ts`; the Hono app is constructed directly in `index.ts`.
