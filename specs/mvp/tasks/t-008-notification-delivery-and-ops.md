@@ -1,4 +1,4 @@
-# T-006: Notification Delivery And Ops
+# T-008: Notification Delivery And Ops
 
 ## Goal
 
@@ -65,6 +65,6 @@ Decision references:
 ## Dependencies
 
 - T-001 App Foundation.
-- T-003 PWA Shell And Push.
-- T-004 Preferences And Monitoring.
-- T-005 EventSub And State.
+- T-005 PWA Shell And Push.
+- T-006 Preferences And Monitoring.
+- T-007 EventSub And State.

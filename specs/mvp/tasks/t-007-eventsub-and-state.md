@@ -1,4 +1,4 @@
-# T-005: EventSub And State
+# T-007: EventSub And State
 
 ## Goal
 
@@ -68,4 +68,4 @@ Decision references:
 ## Dependencies
 
 - T-001 App Foundation.
-- T-004 Preferences And Monitoring.
+- T-006 Preferences And Monitoring.
