@@ -1,38 +1,47 @@
-import { readdirSync, readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
-import { DatabaseSync, type StatementSync, type SQLInputValue } from "node:sqlite";
+import { readdirSync, readFileSync } from "node:fs"
+import { dirname, resolve } from "node:path"
+import { fileURLToPath } from "node:url"
+import {
+  DatabaseSync,
+  type StatementSync,
+  type SQLInputValue,
+} from "node:sqlite"
 
-type D1Value = string | number | boolean | null | ArrayBuffer | ArrayBufferView;
+type D1Value = string | number | boolean | null | ArrayBuffer | ArrayBufferView
 
 class SqliteD1PreparedStatement {
-  constructor(
-    private readonly db: DatabaseSync,
-    private readonly sql: string,
-    private readonly values: D1Value[] = []
-  ) {}
+  private readonly db: DatabaseSync
+  private readonly sql: string
+  private readonly values: D1Value[] = []
+
+  constructor(db: DatabaseSync, sql: string, values: D1Value[] = []) {
+    this.db = db
+    this.sql = sql
+    this.values = values
+  }
 
   bind(...values: D1Value[]): SqliteD1PreparedStatement {
-    return new SqliteD1PreparedStatement(this.db, this.sql, values);
+    return new SqliteD1PreparedStatement(this.db, this.sql, values)
   }
 
   async first<T = unknown>(columnName?: string): Promise<T | null> {
-    const row = this.statement().get(...this.sqliteValues()) as Record<string, unknown> | undefined;
+    const row = this.statement().get(...this.sqliteValues()) as
+      Record<string, unknown> | undefined
 
     if (!row) {
-      return null;
+      return null
     }
 
     if (columnName) {
-      return (row[columnName] ?? null) as T;
+      return (row[columnName] ?? null) as T
     }
 
-    return row as T;
+    return row as T
   }
 
   async run(): Promise<D1Result> {
-    const result = this.statement().run(...this.sqliteValues());
-    const changes = Number(result.changes);
+    const result = this.statement().run(...this.sqliteValues())
+    const changes = Number(result.changes)
     return {
       results: [],
       success: true,
@@ -43,13 +52,13 @@ class SqliteD1PreparedStatement {
         changed_db: true,
         size_after: 0,
         rows_read: 0,
-        rows_written: changes
-      }
-    };
+        rows_written: changes,
+      },
+    }
   }
 
   async all<T = unknown>(): Promise<D1Result<T>> {
-    const results = this.statement().all(...this.sqliteValues()) as T[];
+    const results = this.statement().all(...this.sqliteValues()) as T[]
     return {
       results,
       success: true,
@@ -60,78 +69,86 @@ class SqliteD1PreparedStatement {
         changed_db: false,
         size_after: 0,
         rows_read: results.length,
-        rows_written: 0
-      }
-    };
+        rows_written: 0,
+      },
+    }
   }
 
   async raw<T = unknown[]>(): Promise<T[]> {
-    const rows = this.statement().all(...this.sqliteValues()) as Record<string, unknown>[];
-    return rows.map((row) => Object.keys(row).map((key) => row[key]) as T);
+    const rows = this.statement().all(...this.sqliteValues()) as Record<
+      string,
+      unknown
+    >[]
+    return rows.map((row) => Object.keys(row).map((key) => row[key]) as T)
   }
 
   private statement(): StatementSync {
-    return this.db.prepare(this.sql);
+    return this.db.prepare(this.sql)
   }
 
   private sqliteValues(): SQLInputValue[] {
     return this.values.map((value) => {
       if (typeof value === "boolean") {
-        return value ? 1 : 0;
+        return value ? 1 : 0
       }
 
       if (value instanceof ArrayBuffer) {
-        return new Uint8Array(value);
+        return new Uint8Array(value)
       }
 
-      return value as SQLInputValue;
-    });
+      return value as SQLInputValue
+    })
   }
 }
 
 export class SqliteD1Database {
-  readonly sqlite: DatabaseSync;
+  readonly sqlite: DatabaseSync
 
   constructor() {
-    this.sqlite = new DatabaseSync(":memory:");
-    this.sqlite.exec("PRAGMA foreign_keys = ON");
+    this.sqlite = new DatabaseSync(":memory:")
+    this.sqlite.exec("PRAGMA foreign_keys = ON")
   }
 
   prepare(sql: string): SqliteD1PreparedStatement {
-    return new SqliteD1PreparedStatement(this.sqlite, sql);
+    return new SqliteD1PreparedStatement(this.sqlite, sql)
   }
 
   async exec(sql: string): Promise<D1ExecResult> {
-    this.sqlite.exec(sql);
+    this.sqlite.exec(sql)
     return {
       count: 0,
-      duration: 0
-    };
+      duration: 0,
+    }
   }
 
-  async batch<T = unknown>(statements: SqliteD1PreparedStatement[]): Promise<D1Result<T>[]> {
-    const results: D1Result<T>[] = [];
+  async batch<T = unknown>(
+    statements: SqliteD1PreparedStatement[],
+  ): Promise<D1Result<T>[]> {
+    const results: D1Result<T>[] = []
     for (const statement of statements) {
-      results.push((await statement.run()) as D1Result<T>);
+      results.push((await statement.run()) as D1Result<T>)
     }
-    return results;
+    return results
   }
 
   close(): void {
-    this.sqlite.close();
+    this.sqlite.close()
   }
 }
 
 export async function createMigratedD1(): Promise<D1Database> {
-  const db = new SqliteD1Database();
-  const migrationsDir = resolve(dirname(fileURLToPath(import.meta.url)), "../../../infra/migrations");
+  const db = new SqliteD1Database()
+  const migrationsDir = resolve(
+    dirname(fileURLToPath(import.meta.url)),
+    "../../../infra/migrations",
+  )
   const migrationFiles = readdirSync(migrationsDir)
     .filter((file) => file.endsWith(".sql"))
-    .sort();
+    .sort()
 
   for (const migrationFile of migrationFiles) {
-    await db.exec(readFileSync(resolve(migrationsDir, migrationFile), "utf8"));
+    await db.exec(readFileSync(resolve(migrationsDir, migrationFile), "utf8"))
   }
 
-  return db as unknown as D1Database;
+  return db as unknown as D1Database
 }

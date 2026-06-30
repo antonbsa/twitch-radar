@@ -2,8 +2,8 @@ self.addEventListener("push", (event) => {
   const payload = event.data?.json() ?? {
     title: "Stream alert",
     body: "Notification received.",
-    url: "/"
-  };
+    url: "/",
+  }
 
   event.waitUntil(
     self.registration.showNotification(payload.title, {
@@ -11,26 +11,31 @@ self.addEventListener("push", (event) => {
       icon: "/icon.svg",
       badge: "/icon.svg",
       data: {
-        url: payload.url || "/"
-      }
-    })
-  );
-});
+        url: payload.url || "/",
+      },
+    }),
+  )
+})
 
 self.addEventListener("notificationclick", (event) => {
-  event.notification.close();
+  event.notification.close()
 
-  const targetUrl = new URL(event.notification.data?.url || "/", self.location.origin).href;
+  const targetUrl = new URL(
+    event.notification.data?.url || "/",
+    self.location.origin,
+  ).href
 
   event.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
-      for (const client of clients) {
-        if (client.url === targetUrl && "focus" in client) {
-          return client.focus();
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((clients) => {
+        for (const client of clients) {
+          if (client.url === targetUrl && "focus" in client) {
+            return client.focus()
+          }
         }
-      }
 
-      return self.clients.openWindow(targetUrl);
-    })
-  );
-});
+        return self.clients.openWindow(targetUrl)
+      }),
+  )
+})

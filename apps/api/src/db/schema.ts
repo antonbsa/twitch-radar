@@ -1,4 +1,11 @@
-import { index, integer, primaryKey, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import {
+  index,
+  integer,
+  primaryKey,
+  sqliteTable,
+  text,
+  uniqueIndex,
+} from "drizzle-orm/sqlite-core"
 
 export const users = sqliteTable("users", {
   id: text("id").primaryKey(),
@@ -7,8 +14,8 @@ export const users = sqliteTable("users", {
   twitchDisplayName: text("twitch_display_name").notNull(),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
-  lastFollowSyncAt: text("last_follow_sync_at")
-});
+  lastFollowSyncAt: text("last_follow_sync_at"),
+})
 
 export const twitchTokens = sqliteTable(
   "twitch_tokens",
@@ -20,10 +27,10 @@ export const twitchTokens = sqliteTable(
     refreshToken: text("refresh_token").notNull(),
     expiresAt: text("expires_at").notNull(),
     scopes: text("scopes").notNull(),
-    updatedAt: text("updated_at").notNull()
+    updatedAt: text("updated_at").notNull(),
   },
-  (table) => [index("idx_twitch_tokens_expires_at").on(table.expiresAt)]
-);
+  (table) => [index("idx_twitch_tokens_expires_at").on(table.expiresAt)],
+)
 
 export const pushSubscriptions = sqliteTable(
   "push_subscriptions",
@@ -38,10 +45,10 @@ export const pushSubscriptions = sqliteTable(
     userAgent: text("user_agent"),
     createdAt: text("created_at").notNull(),
     updatedAt: text("updated_at").notNull(),
-    revokedAt: text("revoked_at")
+    revokedAt: text("revoked_at"),
   },
-  (table) => [index("idx_push_subscriptions_user_id").on(table.userId)]
-);
+  (table) => [index("idx_push_subscriptions_user_id").on(table.userId)],
+)
 
 export const followedChannels = sqliteTable(
   "followed_channels",
@@ -54,13 +61,15 @@ export const followedChannels = sqliteTable(
     broadcasterDisplayName: text("broadcaster_display_name").notNull(),
     broadcasterProfileImageUrl: text("broadcaster_profile_image_url"),
     followedAt: text("followed_at"),
-    lastSyncedAt: text("last_synced_at").notNull()
+    lastSyncedAt: text("last_synced_at").notNull(),
   },
   (table) => [
     primaryKey({ columns: [table.userId, table.broadcasterUserId] }),
-    index("idx_followed_channels_broadcaster_user_id").on(table.broadcasterUserId)
-  ]
-);
+    index("idx_followed_channels_broadcaster_user_id").on(
+      table.broadcasterUserId,
+    ),
+  ],
+)
 
 export const monitoredChannels = sqliteTable("monitored_channels", {
   broadcasterUserId: text("broadcaster_user_id").primaryKey(),
@@ -69,8 +78,8 @@ export const monitoredChannels = sqliteTable("monitored_channels", {
   monitorReason: text("monitor_reason").notNull(),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
-  disabledAt: text("disabled_at")
-});
+  disabledAt: text("disabled_at"),
+})
 
 export const eventsubSubscriptions = sqliteTable(
   "eventsub_subscriptions",
@@ -85,17 +94,17 @@ export const eventsubSubscriptions = sqliteTable(
     secretVersion: text("secret_version").notNull(),
     createdAt: text("created_at").notNull(),
     updatedAt: text("updated_at").notNull(),
-    revokedAt: text("revoked_at")
+    revokedAt: text("revoked_at"),
   },
   (table) => [
-    uniqueIndex("eventsub_subscriptions_broadcaster_user_id_event_type_event_version_unique").on(
+    uniqueIndex(
+      "eventsub_subscriptions_broadcaster_user_id_event_type_event_version_unique",
+    ).on(table.broadcasterUserId, table.eventType, table.eventVersion),
+    index("idx_eventsub_subscriptions_broadcaster_user_id").on(
       table.broadcasterUserId,
-      table.eventType,
-      table.eventVersion
     ),
-    index("idx_eventsub_subscriptions_broadcaster_user_id").on(table.broadcasterUserId)
-  ]
-);
+  ],
+)
 
 export const channelState = sqliteTable("channel_state", {
   broadcasterUserId: text("broadcaster_user_id").primaryKey(),
@@ -107,8 +116,8 @@ export const channelState = sqliteTable("channel_state", {
   viewerCount: integer("viewer_count"),
   startedAt: text("started_at"),
   updatedFromEventAt: text("updated_from_event_at"),
-  updatedAt: text("updated_at").notNull()
-});
+  updatedAt: text("updated_at").notNull(),
+})
 
 export const channelStateChanges = sqliteTable(
   "channel_state_changes",
@@ -125,10 +134,14 @@ export const channelStateChanges = sqliteTable(
     nextCategoryName: text("next_category_name"),
     streamId: text("stream_id"),
     occurredAt: text("occurred_at").notNull(),
-    createdAt: text("created_at").notNull()
+    createdAt: text("created_at").notNull(),
   },
-  (table) => [index("idx_channel_state_changes_broadcaster_user_id").on(table.broadcasterUserId)]
-);
+  (table) => [
+    index("idx_channel_state_changes_broadcaster_user_id").on(
+      table.broadcasterUserId,
+    ),
+  ],
+)
 
 export const channelCategoryPreferences = sqliteTable(
   "channel_category_preferences",
@@ -141,17 +154,15 @@ export const channelCategoryPreferences = sqliteTable(
     categoryId: text("category_id").notNull(),
     categoryName: text("category_name").notNull(),
     createdAt: text("created_at").notNull(),
-    disabledAt: text("disabled_at")
+    disabledAt: text("disabled_at"),
   },
   (table) => [
-    uniqueIndex("channel_category_preferences_user_id_broadcaster_user_id_category_id_unique").on(
-      table.userId,
-      table.broadcasterUserId,
-      table.categoryId
-    ),
-    index("idx_channel_category_preferences_user_id").on(table.userId)
-  ]
-);
+    uniqueIndex(
+      "channel_category_preferences_user_id_broadcaster_user_id_category_id_unique",
+    ).on(table.userId, table.broadcasterUserId, table.categoryId),
+    index("idx_channel_category_preferences_user_id").on(table.userId),
+  ],
+)
 
 export const globalCategoryPreferences = sqliteTable(
   "global_category_preferences",
@@ -163,13 +174,16 @@ export const globalCategoryPreferences = sqliteTable(
     categoryId: text("category_id").notNull(),
     categoryName: text("category_name").notNull(),
     createdAt: text("created_at").notNull(),
-    disabledAt: text("disabled_at")
+    disabledAt: text("disabled_at"),
   },
   (table) => [
-    uniqueIndex("global_category_preferences_user_id_category_id_unique").on(table.userId, table.categoryId),
-    index("idx_global_category_preferences_user_id").on(table.userId)
-  ]
-);
+    uniqueIndex("global_category_preferences_user_id_category_id_unique").on(
+      table.userId,
+      table.categoryId,
+    ),
+    index("idx_global_category_preferences_user_id").on(table.userId),
+  ],
+)
 
 export const notificationDeliveries = sqliteTable(
   "notification_deliveries",
@@ -178,7 +192,9 @@ export const notificationDeliveries = sqliteTable(
     userId: text("user_id")
       .notNull()
       .references(() => users.id),
-    pushSubscriptionId: text("push_subscription_id").references(() => pushSubscriptions.id),
+    pushSubscriptionId: text("push_subscription_id").references(
+      () => pushSubscriptions.id,
+    ),
     broadcasterUserId: text("broadcaster_user_id").notNull(),
     categoryId: text("category_id").notNull(),
     triggerType: text("trigger_type").notNull(),
@@ -187,19 +203,24 @@ export const notificationDeliveries = sqliteTable(
     status: text("status").notNull(),
     errorMessage: text("error_message"),
     createdAt: text("created_at").notNull(),
-    sentAt: text("sent_at")
+    sentAt: text("sent_at"),
   },
   (table) => [
-    uniqueIndex("notification_deliveries_user_id_broadcaster_user_id_category_id_trigger_type_stream_id_unique").on(
+    uniqueIndex(
+      "notification_deliveries_user_id_broadcaster_user_id_category_id_trigger_type_stream_id_unique",
+    ).on(
       table.userId,
       table.broadcasterUserId,
       table.categoryId,
       table.triggerType,
-      table.streamId
+      table.streamId,
     ),
-    index("idx_notification_deliveries_user_status").on(table.userId, table.status)
-  ]
-);
+    index("idx_notification_deliveries_user_status").on(
+      table.userId,
+      table.status,
+    ),
+  ],
+)
 
 export const schema = {
   users,
@@ -212,8 +233,8 @@ export const schema = {
   channelStateChanges,
   channelCategoryPreferences,
   globalCategoryPreferences,
-  notificationDeliveries
-};
+  notificationDeliveries,
+}
 
-export type UserRow = typeof users.$inferSelect;
-export type PushSubscriptionRow = typeof pushSubscriptions.$inferSelect;
+export type UserRow = typeof users.$inferSelect
+export type PushSubscriptionRow = typeof pushSubscriptions.$inferSelect

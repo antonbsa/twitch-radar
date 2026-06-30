@@ -1,40 +1,43 @@
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
-import path from "node:path";
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises"
+import path from "node:path"
 
-const dataDir = path.resolve(process.cwd(), "data");
+const dataDir = path.resolve(process.cwd(), "data")
 
 async function ensureDataDir() {
-  await mkdir(dataDir, { recursive: true });
+  await mkdir(dataDir, { recursive: true })
 }
 
 async function readJsonFile<T>(fileName: string, fallback: T): Promise<T> {
-  await ensureDataDir();
+  await ensureDataDir()
 
   try {
-    const raw = await readFile(path.join(dataDir, fileName), "utf8");
-    return JSON.parse(raw) as T;
+    const raw = await readFile(path.join(dataDir, fileName), "utf8")
+    return JSON.parse(raw) as T
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-      return fallback;
+      return fallback
     }
 
-    throw error;
+    throw error
   }
 }
 
 async function writeJsonFile<T>(fileName: string, value: T): Promise<void> {
-  await ensureDataDir();
+  await ensureDataDir()
 
-  const target = path.join(dataDir, fileName);
-  const temp = `${target}.tmp`;
-  await writeFile(temp, `${JSON.stringify(value, null, 2)}\n`, "utf8");
-  await rename(temp, target);
+  const target = path.join(dataDir, fileName)
+  const temp = `${target}.tmp`
+  await writeFile(temp, `${JSON.stringify(value, null, 2)}\n`, "utf8")
+  await rename(temp, target)
 }
 
 export async function readCollection<T>(fileName: string): Promise<T[]> {
-  return readJsonFile<T[]>(fileName, []);
+  return readJsonFile<T[]>(fileName, [])
 }
 
-export async function writeCollection<T>(fileName: string, value: T[]): Promise<void> {
-  await writeJsonFile(fileName, value);
+export async function writeCollection<T>(
+  fileName: string,
+  value: T[],
+): Promise<void> {
+  await writeJsonFile(fileName, value)
 }
