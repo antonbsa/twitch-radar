@@ -9,8 +9,8 @@ on:
       - main
 
 jobs:
-  jest:
-    name: Jest Ubuntu
+  api:
+    name: API tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
