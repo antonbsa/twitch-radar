@@ -14,10 +14,10 @@ export interface Env {
   EVENTSUB_CALLBACK_URL: string;
   VAPID_PUBLIC_KEY: string;
   VAPID_SUBJECT: string;
-  TWITCH_CLIENT_SECRET?: string;
-  EVENTSUB_WEBHOOK_SECRET?: string;
-  TOKEN_ENCRYPTION_KEY?: string;
-  VAPID_PRIVATE_KEY?: string;
+  TWITCH_CLIENT_SECRET: string;
+  EVENTSUB_WEBHOOK_SECRET: string;
+  TOKEN_ENCRYPTION_KEY: string;
+  VAPID_PRIVATE_KEY: string;
 }
 
 export type HonoEnv = {
@@ -38,10 +38,7 @@ const EnvSchema = z
     // base64url-encoded uncompressed EC public key (65 bytes → 87 chars)
     VAPID_PUBLIC_KEY: z.string().length(87),
     // RFC 8292: must be mailto: URI or HTTPS URL
-    VAPID_SUBJECT: z.string().refine(
-      (v) => v.startsWith("mailto:") || z.url().safeParse(v).success,
-      { message: "must be a mailto: URI or a URL" }
-    ),
+    VAPID_SUBJECT: z.union([z.string().startsWith("mailto:"), z.url()]),
     TWITCH_CLIENT_SECRET: z.string().min(1),
     // Twitch enforces a max of 100 chars for webhook secrets
     EVENTSUB_WEBHOOK_SECRET: z.string().min(1).max(100),

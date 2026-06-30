@@ -1,5 +1,3 @@
-export type EnvironmentName = "local" | "preview" | "production";
-
 export interface TwitchEventQueueMessage {
   messageId: string;
   eventType: "stream.online" | "stream.offline" | "channel.update";

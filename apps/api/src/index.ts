@@ -1,17 +1,14 @@
 import { Hono } from "hono";
 import { Database } from "./db";
-import { parseEnv, type AppConfig, type Env, type HonoEnv } from "./env";
+import { parseEnv, type Env, type HonoEnv } from "./env";
 import { ApiError, errorResponse } from "./http/errors";
 import { getRequestId } from "./http/response";
 import { handleHealth } from "./http/routes/health";
 
 const app = new Hono<HonoEnv>();
 
-let config: AppConfig | undefined;
-
 app.use("*", (c, next) => {
-  config ??= parseEnv(c.env);
-  c.set("config", config);
+  c.set("config", parseEnv(c.env));
   c.set("db", new Database(c.env.DB));
   return next();
 });
@@ -33,10 +30,11 @@ export default {
   },
 
   async queue(batch: MessageBatch, env: Env): Promise<void> {
+    const config = parseEnv(env);
     console.log("Queue batch received", {
       queue: batch.queue,
       messages: batch.messages.length,
-      environment: env.ENVIRONMENT ?? "local"
+      environment: config.environment
     });
   }
 } satisfies ExportedHandler<Env>;
