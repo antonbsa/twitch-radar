@@ -23,18 +23,22 @@ app.use("*", (c, next) => {
 })
 
 app.options("/*", () => new Response(null, { status: 204 }))
-
 app.get("/", (c) => c.json({ service: "twitch-radar-api" }))
 app.get("/health", handleHealth)
-app.get("/api/health", handleHealth)
 
-app.get("/api/auth/twitch/start", handleAuthStart)
-app.get("/api/auth/twitch/callback", handleAuthCallback)
-app.post("/api/auth/logout", requireAuth, handleLogout)
+const api = new Hono<HonoEnv>()
 
-app.get("/api/me", requireAuth, handleGetMe)
-app.post("/api/sync/follows", requireAuth, handleSyncFollows)
-app.get("/api/channels/followed", requireAuth, handleGetFollowedChannels)
+api.get("/health", handleHealth)
+
+api.get("/auth/twitch/start", handleAuthStart)
+api.get("/auth/twitch/callback", handleAuthCallback)
+api.post("/auth/logout", requireAuth, handleLogout)
+
+api.get("/me", requireAuth, handleGetMe)
+api.post("/sync/follows", requireAuth, handleSyncFollows)
+api.get("/channels/followed", requireAuth, handleGetFollowedChannels)
+
+app.route("/api", api)
 
 app.notFound((c) =>
   errorResponse(
@@ -42,7 +46,6 @@ app.notFound((c) =>
     getRequestId(c.req.raw),
   ),
 )
-
 app.onError((error, c) => errorResponse(error, getRequestId(c.req.raw)))
 
 export default {
