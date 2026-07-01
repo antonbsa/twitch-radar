@@ -59,6 +59,8 @@ export type HonoEnv = {
   Variables: {
     db: Database
     config: AppConfig
+    userId: string
+    sessionId: string
   }
 }
 

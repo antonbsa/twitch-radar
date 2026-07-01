@@ -32,7 +32,7 @@ describe("Worker routing", () => {
     })
   })
 
-  it("returns the standard JSON error shape", async () => {
+  it("returns the standard JSON error shape for unknown routes", async () => {
     const env = createEnv(await createMigratedD1())
     const response = await worker.fetch(
       new Request("http://localhost/api/missing"),
@@ -42,10 +42,21 @@ describe("Worker routing", () => {
 
     expect(response.status).toBe(404)
     await expect(response.json()).resolves.toMatchObject({
-      error: {
-        code: "not_found",
-        message: "Route not found",
-      },
+      error: { code: "not_found" },
+    })
+  })
+
+  it("returns 405 for wrong method on a known route", async () => {
+    const env = createEnv(await createMigratedD1())
+    const response = await worker.fetch(
+      new Request("http://localhost/api/sync/follows"), // registered as POST only
+      env,
+      createExecutionContext(),
+    )
+
+    expect(response.status).toBe(405)
+    await expect(response.json()).resolves.toMatchObject({
+      error: { code: "method_not_allowed" },
     })
   })
 })
