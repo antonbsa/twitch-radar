@@ -29,23 +29,32 @@ app.get("/health", handleHealth)
 const api = new Hono<HonoEnv>()
 
 api.get("/health", handleHealth)
-
 api.get("/auth/twitch/start", handleAuthStart)
 api.get("/auth/twitch/callback", handleAuthCallback)
 api.post("/auth/logout", requireAuth, handleLogout)
-
 api.get("/me", requireAuth, handleGetMe)
 api.post("/sync/follows", requireAuth, handleSyncFollows)
 api.get("/channels/followed", requireAuth, handleGetFollowedChannels)
 
 app.route("/api", api)
 
-app.notFound((c) =>
-  errorResponse(
+app.notFound((c) => {
+  const requestId = getRequestId(c.req.raw)
+  const currentPath = new URL(c.req.url).pathname
+  const pathExists = app.routes.some(
+    (r) => r.path === currentPath && r.method !== "ALL",
+  )
+  if (pathExists) {
+    return errorResponse(
+      new ApiError(405, "method_not_allowed", "Method not allowed"),
+      requestId,
+    )
+  }
+  return errorResponse(
     new ApiError(404, "not_found", "Route not found"),
-    getRequestId(c.req.raw),
-  ),
-)
+    requestId,
+  )
+})
 app.onError((error, c) => errorResponse(error, getRequestId(c.req.raw)))
 
 export default {
