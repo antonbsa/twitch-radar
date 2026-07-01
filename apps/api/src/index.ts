@@ -2,8 +2,17 @@ import { Hono } from "hono"
 import { Database } from "./db"
 import { parseEnv, type Env, type HonoEnv } from "./env"
 import { ApiError, errorResponse } from "./http/errors"
-import { getRequestId } from "./http/response"
+import { requireAuth } from "./http/middleware/auth"
+import { handleGetFollowedChannels } from "./http/routes/channels"
 import { handleHealth } from "./http/routes/health"
+import { handleGetMe } from "./http/routes/me"
+import {
+  handleAuthCallback,
+  handleAuthStart,
+  handleLogout,
+} from "./http/routes/auth"
+import { handleSyncFollows } from "./http/routes/sync"
+import { getRequestId } from "./http/response"
 
 const app = new Hono<HonoEnv>()
 
@@ -16,9 +25,16 @@ app.use("*", (c, next) => {
 app.options("/*", () => new Response(null, { status: 204 }))
 
 app.get("/", (c) => c.json({ service: "twitch-radar-api" }))
-
 app.get("/health", handleHealth)
 app.get("/api/health", handleHealth)
+
+app.get("/api/auth/twitch/start", handleAuthStart)
+app.get("/api/auth/twitch/callback", handleAuthCallback)
+app.post("/api/auth/logout", requireAuth, handleLogout)
+
+app.get("/api/me", requireAuth, handleGetMe)
+app.post("/api/sync/follows", requireAuth, handleSyncFollows)
+app.get("/api/channels/followed", requireAuth, handleGetFollowedChannels)
 
 app.notFound((c) =>
   errorResponse(
