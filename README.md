@@ -45,7 +45,20 @@ http://localhost:8787/api/health
 
 If port `8787` is occupied, edit `--port` in `apps/api/package.json`.
 
-Fill in `TWITCH_CLIENT_ID` and `TWITCH_CLIENT_SECRET` in `apps/api/.dev.vars.development` before using any Twitch OAuth flows. All other variables have working local defaults.
+To use Twitch OAuth flows locally, create `apps/api/.dev.vars.local` with real credentials:
+
+```sh
+TWITCH_CLIENT_ID=<your-client-id>
+TWITCH_CLIENT_SECRET=<your-client-secret>
+```
+
+The Twitch app's redirect URI must be set to `http://localhost:8787/api/auth/twitch/callback` in the Twitch developer console. Then initiate login at:
+
+```txt
+http://localhost:8787/api/auth/twitch/start
+```
+
+All other variables in `apps/api/.dev.vars` have working local defaults.
 
 ## Validation
 

@@ -21,3 +21,7 @@ Other project documents may state goals, requirements, task scope, validation st
 - [0013 - Use Drizzle ORM For D1 Access](0013-use-drizzle-orm-for-d1-access.md)
 - [0014 - Use Hono For Worker API Routing](0014-use-hono-for-worker-api-routing.md)
 - [0015 - Generate D1 Migrations With Drizzle Kit](0015-generate-d1-migrations-with-drizzle-kit.md)
+- [0016 - KV-Backed Session Management](0016-kv-session-management.md)
+- [0017 - KV-Backed OAuth State](0017-kv-oauth-state.md)
+- [0018 - AES-GCM Token Encryption](0018-aes-gcm-token-encryption.md)
+- [0019 - Flat Array Response Shape For Followed Channels](0019-followed-channels-response-shape.md)

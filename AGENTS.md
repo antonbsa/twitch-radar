@@ -46,21 +46,38 @@ The suggestion must follow these commit message rules.
 ## API Source Layout (`apps/api/src/`)
 
 ```
-types.ts                      — shared domain types
-env.ts                        — Env bindings, HonoEnv (Bindings + Variables), loadConfig, requireSecret
-index.ts                      — Hono app setup, middleware, route registration, ExportedHandler
+env.ts                        — Env bindings, HonoEnv (Bindings + Variables), parseEnv
+index.ts                      — Hono app, middleware, sub-router, ExportedHandler; notFound checks
+                                app.routes for 405 vs 404
 db/
-  client.ts                   — createDatabaseClient (drizzle factory, no singleton)
-  index.ts                    — Database class (constructs all repositories from a D1Database)
+  client.ts                   — drizzle factory (no singleton)
+  index.ts                    — Database class (wires all repositories)
   schema.ts                   — Drizzle table definitions
   repositories/
-    users.ts                  — UsersRepository class
-    push-subscriptions.ts     — PushSubscriptionsRepository class
+    users.ts                  — UsersRepository
+    push-subscriptions.ts     — PushSubscriptionsRepository
+    twitch-tokens.ts          — TwitchTokensRepository (encrypted access/refresh tokens)
+    followed-channels.ts      — FollowedChannelsRepository
+    channel-state.ts          — ChannelStateRepository; inArray queries batch at 100 (D1 limit)
 http/
   errors.ts                   — ApiError, errorResponse
   response.ts                 — jsonResponse, getRequestId
+  middleware/
+    auth.ts                   — requireAuth (session cookie → userId + sessionId on context)
   routes/
-    health.ts                 — handleHealth (and future route handlers)
+    health.ts                 — handleHealth
+    auth.ts                   — handleAuthStart, handleAuthCallback, handleLogout
+    channels.ts               — handleGetFollowedChannels
+    me.ts                     — handleGetMe
+    sync.ts                   — handleSyncFollows
+services/
+  crypto.ts                   — encryptToken, decryptToken (AES-256-GCM via Web Crypto)
+  session.ts                  — createSession, getSession, deleteSession, OAuth state helpers
+  twitch/
+    client.ts                 — TwitchApiError, exchangeCode, getAuthenticatedUser,
+                                getAllFollowedChannels, getAllFollowedStreams
+    sync.ts                   — syncFollowedChannels
+    token-refresh.ts          — getValidAccessToken (auto-refresh with 5-min buffer)
 ```
 
 ## DB Access Pattern
@@ -83,10 +100,24 @@ New repositories go in `db/repositories/<entity>.ts` as a class with `AppDatabas
 ## Wrangler Config and Local Env
 
 - Worker config: `apps/api/wrangler.jsonc` (JSONC format, no `wrangler.toml`).
-- Local env vars: `apps/api/.dev.vars.development` — committed file, single source of truth.
-  - Wrangler reads it when `--env development` is passed (used in `dev` and `db:setup` scripts).
-  - Only `TWITCH_CLIENT_ID` and `TWITCH_CLIENT_SECRET` need real values for OAuth flows.
-  - Other secrets use `dev-placeholder` until the feature that consumes them is implemented.
+- `apps/api/.dev.vars` — committed; safe placeholder values for all secrets.
+- `apps/api/.dev.vars.local` — gitignored; override with real values (e.g., actual `TWITCH_CLIENT_ID` / `TWITCH_CLIENT_SECRET`). The `dev` script loads both files; `.dev.vars.local` wins on conflicts.
+- Only `TWITCH_CLIENT_ID` and `TWITCH_CLIENT_SECRET` need real values for OAuth flows; everything else works with the placeholders.
+
+## D1 Query Constraints
+
+D1 enforces a maximum of **100 bound parameters per query**. Any `inArray(column, ids)` call where `ids` may exceed 100 must be batched in chunks:
+
+```ts
+const BATCH_SIZE = 100
+for (let i = 0; i < ids.length; i += BATCH_SIZE) {
+  const rows = await db.select().from(table)
+    .where(inArray(col, ids.slice(i, i + BATCH_SIZE))).all()
+  results.push(...rows)
+}
+```
+
+SQLite in tests has no such limit, so unbatched queries pass locally and only fail in production.
 
 ## Worktree Configuration
 
