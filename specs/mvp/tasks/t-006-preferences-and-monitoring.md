@@ -1,4 +1,4 @@
-# T-004: Preferences And Monitoring
+# T-006: Preferences And Monitoring
 
 ## Goal
 
@@ -30,14 +30,13 @@ Decision references:
 - `DELETE /api/preferences/channel/:id`.
 - `POST /api/preferences/global`.
 - `DELETE /api/preferences/global/:id`.
-- UI for category search and selection.
-- UI for per-channel preferences.
-- UI for global preferences.
 - upsert `channel_category_preferences`.
 - upsert `global_category_preferences`.
 - maintain `monitored_channels`.
 - seed `channel_state` when monitoring starts.
 - enqueue or call EventSub subscription ensure logic for monitored broadcasters.
+
+> UI for category search, per-channel preferences, and global preferences is implemented in T-004 UI Views.
 
 ## Acceptance Criteria
 
@@ -59,10 +58,9 @@ Decision references:
 - Preference create/delete tests pass for channel and global preferences.
 - Monitoring setup tests verify `monitored_channels` changes.
 - State seeding tests verify current stream/channel data is written.
-- Manual UI check confirms preference creation/removal is usable on mobile.
 
 ## Dependencies
 
 - T-001 App Foundation.
-- T-002 Twitch Auth And Followed-Channel Sync.
-- T-003 PWA Shell And Push.
+- T-002 Twitch Auth And Sync.
+- T-004 UI Views.

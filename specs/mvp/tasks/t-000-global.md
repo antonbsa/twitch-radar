@@ -39,7 +39,7 @@ Decision references are listed in [../../../docs/decisions](../../../docs/decisi
 
 ## Completion Validation
 
-- All task-level acceptance criteria for T-001 through T-006 are complete.
+- All task-level acceptance criteria for T-001 through T-008 are complete.
 - Automated tests cover critical domain logic and API behavior.
 - Manual iOS PWA push notification test passes on an installed Home Screen app.
 - A documented end-to-end test path exists for a mocked or real Twitch `stream.online` event and a mocked or real `channel.update` event.
