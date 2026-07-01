@@ -67,21 +67,31 @@ export class ChannelStateRepository {
 
   async findByBroadcasterUserIds(ids: string[]): Promise<ChannelStateRecord[]> {
     if (ids.length === 0) return []
-    const rows = await this.db
-      .select()
-      .from(channelState)
-      .where(inArray(channelState.broadcasterUserId, ids))
-      .all()
-    return rows.map((row) => ({
-      broadcaster_user_id: row.broadcasterUserId,
-      is_live: row.isLive === 1,
-      stream_id: row.streamId,
-      category_id: row.categoryId,
-      category_name: row.categoryName,
-      title: row.title,
-      viewer_count: row.viewerCount,
-      started_at: row.startedAt,
-      updated_at: row.updatedAt,
-    }))
+    // D1 limits bound parameters to 100 per query; batch to stay within that.
+    const BATCH_SIZE = 100
+    const results: ChannelStateRecord[] = []
+    for (let i = 0; i < ids.length; i += BATCH_SIZE) {
+      const rows = await this.db
+        .select()
+        .from(channelState)
+        .where(
+          inArray(channelState.broadcasterUserId, ids.slice(i, i + BATCH_SIZE)),
+        )
+        .all()
+      for (const row of rows) {
+        results.push({
+          broadcaster_user_id: row.broadcasterUserId,
+          is_live: row.isLive === 1,
+          stream_id: row.streamId,
+          category_id: row.categoryId,
+          category_name: row.categoryName,
+          title: row.title,
+          viewer_count: row.viewerCount,
+          started_at: row.startedAt,
+          updated_at: row.updatedAt,
+        })
+      }
+    }
+    return results
   }
 }

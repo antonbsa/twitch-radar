@@ -268,4 +268,38 @@ describe("GET /api/channels/followed", () => {
       started_at: "2024-06-01T10:00:00Z",
     })
   })
+
+  it("returns all channels when the follow list exceeds the D1 per-query variable limit", async () => {
+    const now = "2024-06-01T00:00:00Z"
+    const count = 101
+    await dbClient.followedChannels.upsertAll(
+      Array.from({ length: count }, (_, i) => ({
+        userId: "user_1",
+        broadcasterUserId: String(i + 1),
+        broadcasterLogin: `channel${i + 1}`,
+        broadcasterDisplayName: `Channel${i + 1}`,
+        now,
+      })),
+    )
+    await dbClient.channelState.upsertAll(
+      Array.from({ length: count }, (_, i) => ({
+        broadcasterUserId: String(i + 1),
+        isLive: false,
+        now,
+      })),
+    )
+
+    const env = createEnv(db, kv)
+    const res = await worker.fetch(
+      new Request("http://localhost/api/channels/followed", {
+        headers: { Cookie: `session=${sessionId}` },
+      }),
+      env,
+      ctx(),
+    )
+
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as { data: unknown[] }
+    expect(body.data).toHaveLength(count)
+  })
 })
