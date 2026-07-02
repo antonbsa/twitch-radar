@@ -8,7 +8,7 @@ Decision documentation policy: [ADR 0001](docs/decisions/0001-keep-project-decis
 
 ## Scope Boundary
 
-The proof-of-concept files and docs are historical Web Push validation material. MVP work should follow the active MVP spec and accepted ADRs.
+The original proof-of-concept (Fastify server, local JSON storage, vanilla JS frontend) was historical Web Push validation material and has been removed from the repo — it is not present at any current path. If a task needs to reference its Push API/service worker/notification-matching logic (see [T-005](specs/mvp/tasks/t-005-pwa-shell-and-push.md) and [T-008](specs/mvp/tasks/t-008-notification-delivery-and-ops.md)), check out commit `e8417e9` ("feat: initialize PWA notification POC"). MVP work should follow the active MVP spec and accepted ADRs, not the POC's architecture (see [ADR 0010](docs/decisions/0010-keep-poc-separate-from-mvp-architecture.md)).
 
 ## Implementation Order
 
@@ -80,6 +80,37 @@ services/
     token-refresh.ts          — getValidAccessToken (auto-refresh with 5-min buffer)
 ```
 
+## Web Source Layout (`apps/web/src/`)
+
+```
+main.tsx                      — React root, QueryClientProvider, BrowserRouter, AuthProvider
+App.tsx                       — route tree (Routes/Route), wraps tabs in AuthGate + AuthenticatedLayout
+index.css                     — Tailwind v4 import, theme tokens (CSS custom properties), dark-only theme
+context/
+  auth-context.tsx            — AuthProvider/useAuth; fetches GET /api/me on mount; user/isLoading/
+                                isAuthenticated/refetch/logout
+routes/
+  authenticated-layout.tsx    — bottom-tab-bar layout wrapping the 3 protected tab routes (<Outlet />)
+  login.tsx                   — login screen ("Connect with Twitch" → GET /api/auth/twitch/start)
+  channels.tsx, alerts.tsx,   — tab views (stubs until T-004)
+  account.tsx
+components/
+  auth-gate.tsx                — AuthGate; single guard for both "authenticated" and "guest" route cases
+  bottom-tab-bar.tsx           — persistent 3-tab nav (Channels/Alerts/Account)
+  full-screen-loader.tsx       — shared loading state for AuthGate
+  ui/                          — shadcn/ui primitives (Button, Sheet, Input, Badge, Avatar); copied source,
+                                edit directly, do not treat as an upgradeable dependency
+lib/
+  api.ts                       — fetch wrapper (api.get/api.post), same-origin via Vite dev proxy
+  errors.ts                    — ApiRequestError/ApiErrorBody, matches the API's ADR 0009 error envelope
+  utils.ts                     — shadcn's `cn()` helper
+types/
+  user.ts                      — User type mirrors apps/api's snake_case fields exactly (not shared/imported
+                                across the workspace boundary — see ADR 0012)
+```
+
+`@/*` resolves to `apps/web/src/*`. The alias must be declared in **both** `apps/web/tsconfig.json` (root, read by the `shadcn` CLI) and `apps/web/tsconfig.app.json` (read by `tsc`/the editor) — if only one has it, `npx shadcn add <component>` writes files to a literal `./@` directory instead of `src/components/ui/`.
+
 ## DB Access Pattern
 
 A fresh `Database` instance is created per request via Hono middleware in `index.ts`:
@@ -118,6 +149,10 @@ for (let i = 0; i < ids.length; i += BATCH_SIZE) {
 ```
 
 SQLite in tests has no such limit, so unbatched queries pass locally and only fail in production.
+
+## Lint Config
+
+`eslint.config.mjs`'s `ignores` must cover `**/dist/**` (and any other build-output directory introduced later) with a `**/`-prefixed glob. A minified production bundle (e.g. `apps/web/dist/assets/*.js`, one line of tens of thousands of characters) is pathologically slow for ESLint/Prettier to process — an unignored one causes `npm run lint` to hang for 10+ minutes at 100% CPU with no error output, not a crash. If `lint` ever appears to hang like that, check for an unignored generated/minified file before suspecting an infinite loop in a rule.
 
 ## Worktree Configuration
 

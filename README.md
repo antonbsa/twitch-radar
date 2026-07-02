@@ -31,11 +31,21 @@ npm run db:generate -- --name create_sessions
 npm run db:check
 ```
 
-Start the API Worker:
+Start the API Worker and the web frontend together:
 
 ```sh
 npm run dev
 ```
+
+This runs `dev:api` (Cloudflare Worker, `apps/api`) and `dev:web` (Vite dev server, `apps/web`) concurrently. Open the app at:
+
+```txt
+http://localhost:5173
+```
+
+The Vite dev server proxies `/api/*` requests to the local Worker, so the frontend and API are same-origin in development.
+
+To run either side alone: `npm run dev:api` or `npm run dev:web`.
 
 Check API health:
 
@@ -43,7 +53,7 @@ Check API health:
 http://localhost:8787/api/health
 ```
 
-If port `8787` is occupied, edit `--port` in `apps/api/package.json`.
+If port `8787` or `5173` is occupied, edit `--port` in `apps/api/package.json` or the `server.port` in `apps/web/vite.config.ts` (and update the proxy target if you change the API port).
 
 To use Twitch OAuth flows locally, create `apps/api/.dev.vars.local` with real credentials:
 
@@ -66,5 +76,6 @@ Run:
 
 ```sh
 npm run typecheck
+npm run build
 npm test
 ```
