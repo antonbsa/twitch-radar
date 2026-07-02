@@ -5,3 +5,4 @@ dist/
 .dev.vars.local
 data/*.json
 .agents/
+*.tsbuildinfo

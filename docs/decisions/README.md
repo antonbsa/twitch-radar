@@ -25,3 +25,8 @@ Other project documents may state goals, requirements, task scope, validation st
 - [0017 - KV-Backed OAuth State](0017-kv-oauth-state.md)
 - [0018 - AES-GCM Token Encryption](0018-aes-gcm-token-encryption.md)
 - [0019 - Flat Array Response Shape For Followed Channels](0019-followed-channels-response-shape.md)
+- [0020 - Use React And Vite For The Web Frontend](0020-use-react-and-vite-for-web-frontend.md)
+- [0021 - Use Tailwind CSS For Styling](0021-use-tailwind-css-for-styling.md)
+- [0022 - Use shadcn/ui For Component Primitives](0022-use-shadcn-ui-for-component-primitives.md)
+- [0023 - Use TanStack Query For Server State](0023-use-tanstack-query-for-server-state.md)
+- [0024 - Use React Router v7 For Client Routing](0024-use-react-router-v7-for-client-routing.md)

@@ -1,69 +1,18 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="utf-8" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
-    <meta name="theme-color" content="#111827" />
-    <title>Stream Alerts POC</title>
-    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#0e0e10" />
+    <title>Twitch Radar</title>
     <link rel="apple-touch-icon" href="/icon.svg" />
-    <link rel="stylesheet" href="/styles.css" />
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
   </head>
   <body>
-    <main class="app">
-      <header class="topbar">
-        <div>
-          <p class="eyebrow">Notification POC</p>
-          <h1>Stream alerts</h1>
-        </div>
-        <span id="statusPill" class="status-pill">Checking</span>
-      </header>
-
-      <section class="panel">
-        <button id="enableButton" class="button button-primary" type="button">
-          Enable notifications
-        </button>
-        <p id="supportMessage" class="status-copy" role="status"></p>
-      </section>
-
-      <form id="scheduleForm" class="panel form-panel">
-        <label class="field">
-          <span>Channel</span>
-          <select id="channelSelect" name="channel">
-            <option value="">Select a channel</option>
-          </select>
-        </label>
-
-        <button
-          id="scheduleButton"
-          class="button button-accent"
-          type="submit"
-          disabled
-        >
-          Schedule notification
-        </button>
-      </form>
-
-      <section class="list-section" aria-labelledby="waitingTitle">
-        <div class="section-heading">
-          <h2 id="waitingTitle">Waiting</h2>
-          <span id="waitingCount" class="count">0</span>
-        </div>
-        <ul id="waitingList" class="notification-list"></ul>
-      </section>
-
-      <section class="list-section" aria-labelledby="triggeredTitle">
-        <div class="section-heading">
-          <h2 id="triggeredTitle">Triggered</h2>
-          <span id="triggeredCount" class="count">0</span>
-        </div>
-        <ul id="triggeredList" class="notification-list"></ul>
-      </section>
-    </main>
-
-    <script src="/app.js" type="module"></script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

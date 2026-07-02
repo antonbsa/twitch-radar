@@ -18,7 +18,8 @@ export default [
     ignores: [
       "apps/web/.wrangler/**",
       "apps/api/.wrangler/**",
-      "node_modules/**",
+      "**/node_modules/**",
+      "**/dist/**",
     ],
   },
   ...compat.extends("@rocketseat/eslint-config/react"),

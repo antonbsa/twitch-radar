@@ -4,6 +4,10 @@
 
 Register the PWA service worker, handle browser push subscriptions for authenticated users, and complete the notification permission flow in the Account view.
 
+## POC Reference
+
+The original Web Push POC (`src/push.ts`, `src/server.ts`) proved browser Push API + VAPID mechanics before this task existed. Its architecture (Fastify routing, local JSON storage) is superseded and was removed from the repo, but the Push API/service worker logic is still available for reference at commit `e8417e9` ("feat: initialize PWA notification POC") — see [ADR 0010](../../../docs/decisions/0010-keep-poc-separate-from-mvp-architecture.md).
+
 ## Spec Work
 
 Define or confirm:
