@@ -1,4 +1,4 @@
-import { readFileSync } from "fs"
+import { existsSync, readFileSync } from "fs"
 import { resolve } from "path"
 import { parseEnv } from "./apps/api/src/env"
 import type { Env } from "./apps/api/src/env"
@@ -16,7 +16,12 @@ function parseDevVars(filePath: string): Record<string, string> {
   )
 }
 
-const devVars = parseDevVars(resolve(import.meta.dirname, "apps/api/.dev.vars"))
+const localPath = resolve(import.meta.dirname, ".env.local")
+
+const devVars = {
+  ...parseDevVars(resolve(import.meta.dirname, ".env.development")),
+  ...(existsSync(localPath) ? parseDevVars(localPath) : {}),
+}
 
 parseEnv(devVars as unknown as Env)
 

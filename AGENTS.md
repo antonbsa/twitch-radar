@@ -117,9 +117,9 @@ A fresh `Database` instance is created per request via Hono middleware in `index
 
 ```ts
 app.use("*", (c, next) => {
-  c.set("db", new Database(c.env.DB));
-  return next();
-});
+  c.set("db", new Database(c.env.DB))
+  return next()
+})
 ```
 
 Route handlers access it as `c.var.db` (typed via `HonoEnv.Variables`).
@@ -128,12 +128,12 @@ Do **not** instantiate `Database` inside route handlers. Do **not** use a module
 
 New repositories go in `db/repositories/<entity>.ts` as a class with `AppDatabase` in the constructor, then get wired into the `Database` class in `db/index.ts`.
 
-## Wrangler Config and Local Env
+## Env Vars: Single Source of Truth
 
-- Worker config: `apps/api/wrangler.jsonc` (JSONC format, no `wrangler.toml`).
-- `apps/api/.dev.vars` — committed; safe placeholder values for all secrets.
-- `apps/api/.dev.vars.local` — gitignored; override with real values (e.g., actual `TWITCH_CLIENT_ID` / `TWITCH_CLIENT_SECRET`). The `dev` script loads both files; `.dev.vars.local` wins on conflicts.
-- Only `TWITCH_CLIENT_ID` and `TWITCH_CLIENT_SECRET` need real values for OAuth flows; everything else works with the placeholders.
+- All dev env vars live at the repo root, not per-app: `.env.development` — committed; safe placeholder values for all secrets. `.env.local` — gitignored; override with real values (e.g., actual `TWITCH_CLIENT_ID` / `TWITCH_CLIENT_SECRET`). Only these two need real values for OAuth flows; everything else works with the placeholders.
+- The zod schema that validates these vars and derives the camelCase `AppConfig` lives in `apps/api/src/env.ts`, same as before — it's the only current consumer, so it isn't split into a shared package. If `apps/web` ever needs validated env vars, give it its own small schema for just its `VITE_`-prefixed vars (same duplication pattern as `types/user.ts`, see ADR 0012) rather than sharing this one.
+- Worker config: `apps/api/wrangler.jsonc` (JSONC format, no `wrangler.toml`). The `dev` script points wrangler's `--env-file` flags at the root files (`../../.env.development`, `../../.env.local`); the latter wins on conflicts.
+- `apps/web`'s `vite.config.ts` sets `envDir` to the repo root, so any future `VITE_`-prefixed vars would also be read from `.env.development`/`.env.local` — only `VITE_`-prefixed vars are exposed to client code, so secrets in the shared file are never bundled into the browser build.
 
 ## D1 Query Constraints
 
@@ -142,8 +142,11 @@ D1 enforces a maximum of **100 bound parameters per query**. Any `inArray(column
 ```ts
 const BATCH_SIZE = 100
 for (let i = 0; i < ids.length; i += BATCH_SIZE) {
-  const rows = await db.select().from(table)
-    .where(inArray(col, ids.slice(i, i + BATCH_SIZE))).all()
+  const rows = await db
+    .select()
+    .from(table)
+    .where(inArray(col, ids.slice(i, i + BATCH_SIZE)))
+    .all()
   results.push(...rows)
 }
 ```
