@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes } from "react-router"
 import { AuthGate } from "@/components/auth-gate"
-import { AuthenticatedLayout } from "@/routes/authenticated-layout"
+import { AuthenticatedLayout } from "@/layouts/authenticated-layout"
 import { LoginPage } from "@/routes/login"
 import { ChannelsPage } from "@/routes/channels"
 import { AlertsPage } from "@/routes/alerts"
