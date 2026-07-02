@@ -3,7 +3,7 @@ import { useNavigate } from "react-router"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/context/auth-context"
-import { useSyncFollows } from "@/hooks/use-sync-follows"
+import { useSyncFollows } from "@/hooks/use-channels"
 
 type NotificationPermissionState = NotificationPermission | "unsupported"
 
