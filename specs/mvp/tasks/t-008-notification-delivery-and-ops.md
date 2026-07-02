@@ -4,6 +4,10 @@
 
 Match processed Twitch state transitions against user preferences, send Web Push notifications, dedupe deliveries, and keep external state healthy over time.
 
+## POC Reference
+
+The original notification POC (`src/notifications.ts`, `src/push.ts`) proved matching and Web Push send mechanics with in-memory/local-JSON scheduling. That storage approach is superseded (see [ADR 0010](../../../docs/decisions/0010-keep-poc-separate-from-mvp-architecture.md)) and was removed from the repo, but the logic is still available for reference at commit `e8417e9` ("feat: initialize PWA notification POC").
+
 ## Spec Work
 
 Define or confirm:
