@@ -2,18 +2,16 @@ import { useState } from "react"
 import { useNavigate } from "react-router"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/context/auth-context"
-import { api } from "@/lib/api"
 
 export function AccountPage() {
-  const { user, refetch } = useAuth()
+  const { user, logout } = useAuth()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const navigate = useNavigate()
 
   async function handleLogout() {
     setIsLoggingOut(true)
     try {
-      await api.post("/auth/logout")
-      await refetch()
+      await logout()
       navigate("/login", { replace: true })
     } finally {
       setIsLoggingOut(false)

@@ -16,6 +16,7 @@ interface AuthContextValue {
   isLoading: boolean
   isAuthenticated: boolean
   refetch: () => Promise<void>
+  logout: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
@@ -43,9 +44,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refetch()
   }, [refetch])
 
+  const logout = useCallback(async () => {
+    await api.post("/auth/logout")
+    setUser(null)
+  }, [])
+
   const value = useMemo<AuthContextValue>(
-    () => ({ user, isLoading, isAuthenticated: user !== null, refetch }),
-    [user, isLoading, refetch],
+    () => ({
+      user,
+      isLoading,
+      isAuthenticated: user !== null,
+      refetch,
+      logout,
+    }),
+    [user, isLoading, refetch, logout],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
