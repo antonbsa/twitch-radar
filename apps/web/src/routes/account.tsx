@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useNavigate } from "react-router"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/context/auth-context"
 
@@ -23,9 +24,11 @@ export function AccountPage() {
       <h1 className="text-lg font-semibold">Account</h1>
 
       <div className="mt-4 flex items-center gap-3">
-        <div className="flex size-10 items-center justify-center rounded-full bg-muted text-sm font-medium">
-          {user?.twitch_display_name?.[0]?.toUpperCase()}
-        </div>
+        <Avatar size="lg">
+          <AvatarFallback>
+            {user?.twitch_display_name?.[0]?.toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
         <div>
           <p className="text-sm font-medium">{user?.twitch_display_name}</p>
           <p className="text-xs text-muted-foreground">Connected ✓</p>
