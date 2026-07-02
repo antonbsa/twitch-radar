@@ -7,7 +7,8 @@ import {
   useState,
   type ReactNode,
 } from "react"
-import { api, ApiRequestError } from "@/lib/api"
+import { api } from "@/lib/api"
+import { ApiRequestError } from "@/lib/errors"
 import type { User } from "@/types/user"
 
 interface AuthContextValue {
