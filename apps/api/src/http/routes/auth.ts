@@ -96,7 +96,7 @@ export async function handleAuthCallback(
 
   const headers = new Headers()
   headers.set("Set-Cookie", sessionCookieHeader(sessionId))
-  headers.set("Location", config.publicBaseUrl)
+  headers.set("Location", config.apiUrl)
   return new Response(null, { status: 302, headers })
 }
 

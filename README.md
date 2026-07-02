@@ -68,7 +68,7 @@ The Twitch app's redirect URI must be set to `http://localhost:8787/api/auth/twi
 http://localhost:8787/api/auth/twitch/start
 ```
 
-All other variables in `.env.development` have working local defaults.
+All other variables in `.env.development` have working local defaults, including `API_URL` (the API's own base URL — also read by the Vite dev proxy).
 
 ## Validation
 

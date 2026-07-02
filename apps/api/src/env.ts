@@ -2,16 +2,17 @@ import { z } from "zod"
 import type { Database } from "./db"
 import type { NotificationJobMessage, TwitchEventQueueMessage } from "./types"
 
+// Must stay in sync with the route registration in index.ts (`/auth/twitch/callback` under `/api`).
+const TWITCH_CALLBACK_PATH = "/api/auth/twitch/callback"
+
 export interface Env {
   DB: D1Database
   APP_CACHE: KVNamespace
   TWITCH_EVENTS_QUEUE: Queue<TwitchEventQueueMessage>
   NOTIFICATION_JOBS_QUEUE: Queue<NotificationJobMessage>
   ENVIRONMENT?: string
-  PUBLIC_BASE_URL: string
+  API_URL: string
   TWITCH_CLIENT_ID: string
-  TWITCH_REDIRECT_URI: string
-  EVENTSUB_CALLBACK_URL: string
   VAPID_PUBLIC_KEY: string
   VAPID_SUBJECT: string
   TWITCH_CLIENT_SECRET: string
@@ -23,10 +24,8 @@ export interface Env {
 const EnvSchema = z
   .object({
     ENVIRONMENT: z.enum(["local", "preview", "production"]).default("local"),
-    PUBLIC_BASE_URL: z.url(),
+    API_URL: z.url(),
     TWITCH_CLIENT_ID: z.string().min(1),
-    TWITCH_REDIRECT_URI: z.url(),
-    EVENTSUB_CALLBACK_URL: z.url(),
     // base64url-encoded uncompressed EC public key (65 bytes → 87 chars)
     VAPID_PUBLIC_KEY: z.string().length(87),
     // RFC 8292: must be mailto: URI or HTTPS URL
@@ -40,10 +39,9 @@ const EnvSchema = z
   })
   .transform((d) => ({
     environment: d.ENVIRONMENT,
-    publicBaseUrl: d.PUBLIC_BASE_URL,
+    apiUrl: d.API_URL,
     twitchClientId: d.TWITCH_CLIENT_ID,
-    twitchRedirectUri: d.TWITCH_REDIRECT_URI,
-    eventsubCallbackUrl: d.EVENTSUB_CALLBACK_URL,
+    twitchRedirectUri: `${d.API_URL}${TWITCH_CALLBACK_PATH}`,
     vapidPublicKey: d.VAPID_PUBLIC_KEY,
     vapidSubject: d.VAPID_SUBJECT,
     twitchClientSecret: d.TWITCH_CLIENT_SECRET,
