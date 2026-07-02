@@ -1,6 +1,5 @@
 import { Navigate, Route, Routes } from "react-router"
-import { ProtectedRoute } from "@/routes/protected-route"
-import { LoginRoute } from "@/routes/login-route"
+import { AuthGate } from "@/routes/auth-gate"
 import { AuthenticatedLayout } from "@/routes/authenticated-layout"
 import { LoginPage } from "@/routes/login"
 import { ChannelsPage } from "@/routes/channels"
@@ -14,16 +13,16 @@ export function App() {
       <Route
         path="/login"
         element={
-          <LoginRoute>
+          <AuthGate when="guest" redirectTo="/channels">
             <LoginPage />
-          </LoginRoute>
+          </AuthGate>
         }
       />
       <Route
         element={
-          <ProtectedRoute>
+          <AuthGate when="authenticated" redirectTo="/login">
             <AuthenticatedLayout />
-          </ProtectedRoute>
+          </AuthGate>
         }
       >
         <Route path="/channels" element={<ChannelsPage />} />

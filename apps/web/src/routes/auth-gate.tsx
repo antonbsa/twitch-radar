@@ -3,11 +3,19 @@ import { Navigate } from "react-router"
 import { useAuth } from "@/context/auth-context"
 import { FullScreenLoader } from "@/components/full-screen-loader"
 
-export function LoginRoute({ children }: { children: ReactNode }) {
+interface AuthGateProps {
+  when: "authenticated" | "guest"
+  redirectTo: string
+  children: ReactNode
+}
+
+export function AuthGate({ when, redirectTo, children }: AuthGateProps) {
   const { isAuthenticated, isLoading } = useAuth()
 
   if (isLoading) return <FullScreenLoader />
-  if (isAuthenticated) return <Navigate to="/channels" replace />
+
+  const blocked = when === "authenticated" ? !isAuthenticated : isAuthenticated
+  if (blocked) return <Navigate to={redirectTo} replace />
 
   return <>{children}</>
 }
