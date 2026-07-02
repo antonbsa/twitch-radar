@@ -15,8 +15,10 @@ interface AuthContextValue {
   user: User | null
   isLoading: boolean
   isAuthenticated: boolean
+  isSessionExpired: boolean
   refetch: () => Promise<void>
   logout: () => Promise<void>
+  markSessionExpired: () => void
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
@@ -24,6 +26,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isSessionExpired, setIsSessionExpired] = useState(false)
 
   const refetch = useCallback(async () => {
     setIsLoading(true)
@@ -47,6 +50,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     await api.post("/auth/logout")
     setUser(null)
+    setIsSessionExpired(false)
+  }, [])
+
+  const markSessionExpired = useCallback(() => {
+    setIsSessionExpired(true)
   }, [])
 
   const value = useMemo<AuthContextValue>(
@@ -54,10 +62,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       isLoading,
       isAuthenticated: user !== null,
+      isSessionExpired,
       refetch,
       logout,
+      markSessionExpired,
     }),
-    [user, isLoading, refetch, logout],
+    [user, isLoading, isSessionExpired, refetch, logout, markSessionExpired],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
