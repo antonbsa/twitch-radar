@@ -12,6 +12,7 @@ import {
   handleLogout,
 } from "./http/routes/auth"
 import { handleSyncFollows } from "./http/routes/sync"
+import { handleTestReset, handleTestSeed } from "./http/routes/__test__"
 import { getRequestId } from "./http/response"
 
 const app = new Hono<HonoEnv>()
@@ -37,6 +38,26 @@ api.post("/sync/follows", requireAuth, handleSyncFollows)
 api.get("/channels/followed", requireAuth, handleGetFollowedChannels)
 
 app.route("/api", api)
+
+// Test-seam routes: only reachable outside production and only with the
+// shared secret header, so the guard itself (not registration) keeps them
+// unreachable in production regardless of deploy target.
+const testSeam = new Hono<HonoEnv>()
+testSeam.use("*", async (c, next) => {
+  const config = c.var.config
+  const token = c.req.header("x-test-seed-token")
+  if (
+    config.environment === "production" ||
+    !config.testSeedToken ||
+    token !== config.testSeedToken
+  ) {
+    throw new ApiError(404, "not_found", "Route not found")
+  }
+  return next()
+})
+testSeam.post("/reset", handleTestReset)
+testSeam.post("/seed", handleTestSeed)
+app.route("/api/__test__", testSeam)
 
 app.notFound((c) => {
   const requestId = getRequestId(c.req.raw)

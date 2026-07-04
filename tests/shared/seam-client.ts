@@ -1,0 +1,120 @@
+import type {
+  ResetRequestBody,
+  SeedChannelStateInput,
+  SeedFollowedChannelInput,
+  SeedPreferencesInput,
+  SeedRequestBody,
+  SeedResponse,
+  SeedUserInput,
+} from "../../apps/api/src/http/routes/__test__"
+
+export {
+  E2E_BROADCASTER_PREFIX,
+  E2E_USER_ID,
+} from "../../apps/api/src/http/routes/__test__"
+
+export type {
+  SeedChannelStateInput,
+  SeedFollowedChannelInput,
+  SeedPreferencesInput,
+  SeedRequestBody,
+  SeedUserInput,
+}
+
+export interface SeededUser {
+  userId: string
+  sessionId: string
+  cookie: string
+}
+
+export interface SeamClientOptions {
+  // Lazy so clients can be built at module scope before the runner provides
+  // the values (vitest `inject()` on the api tier, env vars on the e2e tier).
+  baseUrl: () => string
+  token: () => string
+}
+
+/**
+ * HTTP client for the guarded test-seam endpoint (`/api/__test__/*`, see
+ * ADR 0025). This is the only channel test setup/teardown goes through — the
+ * seam runs inside the worker, so it reuses the same repository modules and
+ * D1/KV bindings as the real routes without going through the public API.
+ */
+export function createSeamClient({ baseUrl, token }: SeamClientOptions) {
+  async function call(
+    path: "/reset" | "/seed",
+    body: SeedRequestBody | ResetRequestBody = {},
+  ): Promise<unknown> {
+    const res = await fetch(`${baseUrl()}/api/__test__${path}`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-test-seed-token": token(),
+      },
+      body: JSON.stringify(body),
+    })
+    if (!res.ok) {
+      throw new Error(
+        `Test-seam call to ${path} failed: ${res.status} ${await res.text()}`,
+      )
+    }
+    if (res.status === 204) return undefined
+    return res.json()
+  }
+
+  async function seed(body: SeedRequestBody): Promise<SeedResponse> {
+    return (await call("/seed", body)) as SeedResponse
+  }
+
+  return {
+    /** Deletes the E2E user's rows across all tables and its KV session keys. */
+    async resetState(): Promise<void> {
+      await call("/reset")
+    },
+
+    /**
+     * Wipes every table and session. Only for runners with throwaway D1/KV
+     * state (the api tier's isolated worker) — never against the dev DB.
+     */
+    async resetAll(): Promise<void> {
+      await call("/reset", { scope: "all" })
+    },
+
+    /** Revokes a single session without touching D1 (simulates mid-session expiry). */
+    async revokeSession(sessionId: string): Promise<void> {
+      await call("/reset", { sessionId })
+    },
+
+    seed,
+
+    async seedAuthenticatedUser(
+      overrides?: SeedUserInput,
+    ): Promise<SeededUser> {
+      const result = await seed({ user: overrides ?? {} })
+      if (!result.session) {
+        throw new Error("Test seam did not return a session for seeded user")
+      }
+      return {
+        userId: result.userId,
+        sessionId: result.session.sessionId,
+        cookie: result.session.cookie,
+      }
+    },
+
+    async seedFollowedChannels(
+      channels: SeedFollowedChannelInput[],
+    ): Promise<void> {
+      await seed({ followedChannels: channels })
+    },
+
+    async seedChannelState(states: SeedChannelStateInput[]): Promise<void> {
+      await seed({ channelState: states })
+    },
+
+    async seedPreferences(preferences: SeedPreferencesInput): Promise<void> {
+      await seed({ preferences })
+    },
+  }
+}
+
+export type SeamClient = ReturnType<typeof createSeamClient>

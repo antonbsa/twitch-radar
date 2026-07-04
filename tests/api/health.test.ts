@@ -1,69 +1,40 @@
-import { describe, expect, it } from "vitest"
-import worker from "../../apps/api/src"
-import type { Env } from "../../apps/api/src/env"
-import { createMigratedD1 } from "./utils/sqlite-d1"
+import { afterAll, beforeEach, describe, expect, it } from "vitest"
+import { orchestrator } from "./setup/orchestrator"
 
-function createEnv(db: D1Database): Env {
-  return {
-    ...(process.env as unknown as Env),
-    DB: db,
-    APP_CACHE: {} as KVNamespace,
-    TWITCH_EVENTS_QUEUE: {} as Queue,
-    NOTIFICATION_JOBS_QUEUE: {} as Queue,
-  }
-}
+beforeEach(async () => {
+  await orchestrator.clearDatabase()
+})
 
-describe("Worker routing", () => {
-  it("returns a successful health response", async () => {
-    const env = createEnv(await createMigratedD1())
-    const response = await worker.fetch(
-      new Request("http://localhost/api/health"),
-      env,
-      createExecutionContext(),
-    )
+afterAll(async () => {
+  await orchestrator.clearDatabase()
+})
 
-    expect(response.status).toBe(200)
-    await expect(response.json()).resolves.toMatchObject({
+describe("GET /api/health", () => {
+  it("returns successful health response", async () => {
+    const res = await fetch(`${orchestrator.baseUrl}/api/health`)
+    expect(res.status).toBe(200)
+    await expect(res.json()).resolves.toMatchObject({
       ok: true,
       service: "twitch-radar-api",
-      checks: {
-        d1: "ok",
-      },
+      checks: { d1: "ok" },
     })
   })
+})
 
-  it("returns the standard JSON error shape for unknown routes", async () => {
-    const env = createEnv(await createMigratedD1())
-    const response = await worker.fetch(
-      new Request("http://localhost/api/missing"),
-      env,
-      createExecutionContext(),
-    )
-
-    expect(response.status).toBe(404)
-    await expect(response.json()).resolves.toMatchObject({
+describe("Worker routing", () => {
+  it("returns 404 for unknown routes", async () => {
+    const res = await fetch(`${orchestrator.baseUrl}/api/missing`)
+    expect(res.status).toBe(404)
+    await expect(res.json()).resolves.toMatchObject({
       error: { code: "not_found" },
     })
   })
 
   it("returns 405 for wrong method on a known route", async () => {
-    const env = createEnv(await createMigratedD1())
-    const response = await worker.fetch(
-      new Request("http://localhost/api/sync/follows"), // registered as POST only
-      env,
-      createExecutionContext(),
-    )
-
-    expect(response.status).toBe(405)
-    await expect(response.json()).resolves.toMatchObject({
+    const res = await fetch(`${orchestrator.baseUrl}/api/sync/follows`)
+    expect(res.status).toBe(405)
+    await expect(res.json()).resolves.toMatchObject({
       error: { code: "method_not_allowed" },
     })
   })
 })
-
-function createExecutionContext(): ExecutionContext {
-  return {
-    waitUntil() {},
-    passThroughOnException() {},
-  } as unknown as ExecutionContext
-}

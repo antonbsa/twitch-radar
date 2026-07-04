@@ -12,8 +12,18 @@ export async function syncFollowedChannels(
   const now = new Date().toISOString()
 
   const [channels, streams] = await Promise.all([
-    getAllFollowedChannels(config.twitchClientId, accessToken, twitchUserId),
-    getAllFollowedStreams(config.twitchClientId, accessToken, twitchUserId),
+    getAllFollowedChannels(
+      config.twitchClientId,
+      accessToken,
+      twitchUserId,
+      config.twitchApiBaseUrl,
+    ),
+    getAllFollowedStreams(
+      config.twitchClientId,
+      accessToken,
+      twitchUserId,
+      config.twitchApiBaseUrl,
+    ),
   ])
 
   const streamByBroadcasterId = new Map(streams.map((s) => [s.user_id, s]))

@@ -17,8 +17,13 @@
     "migrations:create": "npm --workspace @twitch-radar/api run migrations:create --",
     "build": "npm run build --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "npm run test:api",
-    "test:api": "npm run test -w @twitch-radar/api",
+    "test": "concurrently -n api,web -c blue,green \"npm run test:api\" \"npm run test:web\"",
+    "test:api": "npm run test:api:migrate && concurrently -k -n mock,worker,tests -c yellow,blue,magenta -s command-tests \"npm run test:api:mock\" \"npm run test:api:worker\" \"wait-on http://127.0.0.1:8799/health http://127.0.0.1:8788/health && vitest run\"",
+    "test:api:migrate": "rm -rf .wrangler/state/test && wrangler d1 migrations apply twitch-radar-dev --local --config apps/api/wrangler.jsonc --persist-to .wrangler/state/test",
+    "test:api:mock": "node tests/api/setup/mock-twitch-server.ts",
+    "test:api:worker": "wrangler dev --config apps/api/wrangler.jsonc --port 8788 --persist-to .wrangler/state/test --env-file .env.development --env-file .env.local --var TWITCH_AUTH_BASE_URL:http://127.0.0.1:8799 --var TWITCH_API_BASE_URL:http://127.0.0.1:8799",
+    "test:web": "vitest run --config vitest.e2e.config.ts",
+    "test:e2e": "vitest run --config vitest.e2e.config.ts tests/web/e2e",
     "vapid": "npm run vapid -w @twitch-radar/api"
   },
   "keywords": [],
@@ -31,6 +36,8 @@
   "devDependencies": {
     "@rocketseat/eslint-config": "^2.2.2",
     "eslint": "^8.57.1",
-    "prettier": "^3.9.3"
+    "playwright": "^1.61.1",
+    "prettier": "^3.9.3",
+    "wait-on": "^9.0.10"
   }
 }

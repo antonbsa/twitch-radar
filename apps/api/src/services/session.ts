@@ -40,6 +40,25 @@ export async function deleteSession(
   await kv.delete(`session:${sessionId}`)
 }
 
+// Sessions are keyed by sessionId, not userId, so removing "all sessions for
+// a user" (test-seam cleanup) means scanning the session: prefix.
+export async function deleteSessionsForUser(
+  kv: KVNamespace,
+  userId: string,
+): Promise<void> {
+  let cursor: string | undefined
+  do {
+    const page = await kv.list({ prefix: "session:", cursor })
+    for (const key of page.keys) {
+      const raw = await kv.get(key.name)
+      if (!raw) continue
+      const data = JSON.parse(raw) as SessionData
+      if (data.userId === userId) await kv.delete(key.name)
+    }
+    cursor = page.list_complete ? undefined : page.cursor
+  } while (cursor)
+}
+
 export async function createOAuthState(kv: KVNamespace): Promise<string> {
   const state = crypto.randomUUID()
   await kv.put(`oauth_state:${state}`, "1", {

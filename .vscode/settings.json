@@ -1,5 +1,5 @@
 {
-  "cSpell.words": ["eventsub"],
+  "cSpell.words": ["eventsub", "geist", "testuser"],
   "search.exclude": {
     ".agents/worktrees": true,
     "apps/api/.wrangler": true,

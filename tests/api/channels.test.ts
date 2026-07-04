@@ -1,222 +1,187 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest"
-import worker from "../../apps/api/src"
-import { Database } from "../../apps/api/src/db"
-import type { Env } from "../../apps/api/src/env"
-import { createSession } from "../../apps/api/src/services/session"
-import { createMigratedD1, SqliteD1Database } from "./utils/sqlite-d1"
-import { MockKVNamespace } from "./utils/mock-kv"
+import { afterAll, beforeEach, describe, expect, it } from "vitest"
+import { orchestrator } from "./setup/orchestrator"
 
-function createEnv(db: D1Database, kv: MockKVNamespace): Env {
-  return {
-    ...(process.env as unknown as Env),
-    DB: db,
-    APP_CACHE: kv as unknown as KVNamespace,
-    TWITCH_EVENTS_QUEUE: {} as Queue,
-    NOTIFICATION_JOBS_QUEUE: {} as Queue,
-  }
-}
+beforeEach(async () => {
+  await orchestrator.clearDatabase()
+  await orchestrator.mockTwitch.reset()
+})
 
-function ctx(): ExecutionContext {
-  return {
-    waitUntil() {},
-    passThroughOnException() {},
-  } as unknown as ExecutionContext
+afterAll(async () => {
+  await orchestrator.clearDatabase()
+})
+
+async function syncChannels(
+  cookie: string,
+  channels: Array<{
+    broadcaster_id: string
+    broadcaster_login: string
+    broadcaster_name: string
+  }>,
+  streams: Array<{
+    id: string
+    user_id: string
+    user_login: string
+    user_name: string
+    game_id: string
+    game_name: string
+    viewer_count: number
+    started_at: string
+    title: string
+  }> = [],
+) {
+  await orchestrator.mockTwitch.onFollowedChannels(channels)
+  await orchestrator.mockTwitch.onFollowedStreams(streams)
+  await fetch(`${orchestrator.baseUrl}/api/sync/follows`, {
+    method: "POST",
+    headers: { Cookie: cookie },
+  })
 }
 
 describe("GET /api/channels/followed", () => {
-  let rawDb: SqliteD1Database
-  let db: D1Database
-  let dbClient: Database
-  let kv: MockKVNamespace
-  let sessionId: string
-
-  beforeEach(async () => {
-    rawDb = (await createMigratedD1()) as unknown as SqliteD1Database
-    db = rawDb as unknown as D1Database
-    dbClient = new Database(db)
-    kv = new MockKVNamespace()
-
-    await dbClient.users.upsert({
-      id: "user_1",
-      twitchUserId: "twitch_123",
-      twitchLogin: "testuser",
-      twitchDisplayName: "TestUser",
-      now: "2024-01-01T00:00:00Z",
-    })
-
-    sessionId = await createSession(kv as unknown as KVNamespace, "user_1")
-  })
-
-  afterEach(() => {
-    rawDb.close()
-  })
-
   it("returns 401 without a session", async () => {
-    const env = createEnv(db, kv)
-    const res = await worker.fetch(
-      new Request("http://localhost/api/channels/followed"),
-      env,
-      ctx(),
-    )
+    const res = await fetch(`${orchestrator.baseUrl}/api/channels/followed`)
     expect(res.status).toBe(401)
   })
 
   it("returns empty array when no channels are synced", async () => {
-    const env = createEnv(db, kv)
-    const res = await worker.fetch(
-      new Request("http://localhost/api/channels/followed", {
-        headers: { Cookie: `session=${sessionId}` },
-      }),
-      env,
-      ctx(),
-    )
+    const { cookie } = await orchestrator.createAuthenticatedSession()
+    const res = await fetch(`${orchestrator.baseUrl}/api/channels/followed`, {
+      headers: { Cookie: cookie },
+    })
     expect(res.status).toBe(200)
     await expect(res.json()).resolves.toMatchObject({ data: [] })
   })
 
   it("returns live channels before offline channels", async () => {
-    const now = "2024-06-01T00:00:00Z"
-    await dbClient.followedChannels.upsertAll([
-      {
-        userId: "user_1",
-        broadcasterUserId: "10",
-        broadcasterLogin: "offline1",
-        broadcasterDisplayName: "Offline1",
-        now,
-      },
-      {
-        userId: "user_1",
-        broadcasterUserId: "20",
-        broadcasterLogin: "live1",
-        broadcasterDisplayName: "Live1",
-        now,
-      },
-    ])
-    await dbClient.channelState.upsertAll([
-      { broadcasterUserId: "10", isLive: false, now },
-      {
-        broadcasterUserId: "20",
-        isLive: true,
-        viewerCount: 500,
-        streamId: "s1",
-        startedAt: "2024-06-01T10:00:00Z",
-        now,
-      },
-    ])
-
-    const env = createEnv(db, kv)
-    const res = await worker.fetch(
-      new Request("http://localhost/api/channels/followed", {
-        headers: { Cookie: `session=${sessionId}` },
-      }),
-      env,
-      ctx(),
+    const { cookie } = await orchestrator.createAuthenticatedSession()
+    await syncChannels(
+      cookie,
+      [
+        {
+          broadcaster_id: "10",
+          broadcaster_login: "offline1",
+          broadcaster_name: "Offline1",
+        },
+        {
+          broadcaster_id: "20",
+          broadcaster_login: "live1",
+          broadcaster_name: "Live1",
+        },
+      ],
+      [
+        {
+          id: "s1",
+          user_id: "20",
+          user_login: "live1",
+          user_name: "Live1",
+          game_id: "g1",
+          game_name: "Game",
+          viewer_count: 500,
+          started_at: "2024-06-01T10:00:00Z",
+          title: "Live now",
+        },
+      ],
     )
 
-    const body = (await res.json()) as {
-      data: { broadcaster_user_id: string; is_live: boolean }[]
+    const res = await fetch(`${orchestrator.baseUrl}/api/channels/followed`, {
+      headers: { Cookie: cookie },
+    })
+    const { data } = (await res.json()) as {
+      data: Array<{ broadcaster_user_id: string; is_live: boolean }>
     }
-    expect(body.data[0].broadcaster_user_id).toBe("20")
-    expect(body.data[0].is_live).toBe(true)
-    expect(body.data[1].broadcaster_user_id).toBe("10")
-    expect(body.data[1].is_live).toBe(false)
+
+    expect(data[0].broadcaster_user_id).toBe("20")
+    expect(data[0].is_live).toBe(true)
+    expect(data[1].broadcaster_user_id).toBe("10")
+    expect(data[1].is_live).toBe(false)
   })
 
   it("sorts live channels by viewer count descending", async () => {
-    const now = "2024-06-01T00:00:00Z"
-    await dbClient.followedChannels.upsertAll([
-      {
-        userId: "user_1",
-        broadcasterUserId: "10",
-        broadcasterLogin: "lowviewer",
-        broadcasterDisplayName: "LowViewer",
-        now,
-      },
-      {
-        userId: "user_1",
-        broadcasterUserId: "20",
-        broadcasterLogin: "highviewer",
-        broadcasterDisplayName: "HighViewer",
-        now,
-      },
-      {
-        userId: "user_1",
-        broadcasterUserId: "30",
-        broadcasterLogin: "midviewer",
-        broadcasterDisplayName: "MidViewer",
-        now,
-      },
-    ])
-    await dbClient.channelState.upsertAll([
-      { broadcasterUserId: "10", isLive: true, viewerCount: 100, now },
-      { broadcasterUserId: "20", isLive: true, viewerCount: 5000, now },
-      { broadcasterUserId: "30", isLive: true, viewerCount: 1000, now },
-    ])
+    const { cookie } = await orchestrator.createAuthenticatedSession()
 
-    const env = createEnv(db, kv)
-    const res = await worker.fetch(
-      new Request("http://localhost/api/channels/followed", {
-        headers: { Cookie: `session=${sessionId}` },
-      }),
-      env,
-      ctx(),
+    const makeStream = (
+      id: string,
+      userId: string,
+      login: string,
+      name: string,
+      viewerCount: number,
+    ) => ({
+      id,
+      user_id: userId,
+      user_login: login,
+      user_name: name,
+      game_id: "g1",
+      game_name: "Game",
+      viewer_count: viewerCount,
+      started_at: "2024-06-01T10:00:00Z",
+      title: "Title",
+    })
+
+    await syncChannels(
+      cookie,
+      [
+        {
+          broadcaster_id: "10",
+          broadcaster_login: "lowviewer",
+          broadcaster_name: "LowViewer",
+        },
+        {
+          broadcaster_id: "20",
+          broadcaster_login: "highviewer",
+          broadcaster_name: "HighViewer",
+        },
+        {
+          broadcaster_id: "30",
+          broadcaster_login: "midviewer",
+          broadcaster_name: "MidViewer",
+        },
+      ],
+      [
+        makeStream("s1", "10", "lowviewer", "LowViewer", 100),
+        makeStream("s2", "20", "highviewer", "HighViewer", 5000),
+        makeStream("s3", "30", "midviewer", "MidViewer", 1000),
+      ],
     )
 
-    const body = (await res.json()) as {
-      data: { broadcaster_user_id: string; viewer_count: number }[]
+    const res = await fetch(`${orchestrator.baseUrl}/api/channels/followed`, {
+      headers: { Cookie: cookie },
+    })
+    const { data } = (await res.json()) as {
+      data: Array<{ broadcaster_user_id: string; viewer_count: number }>
     }
-    expect(body.data.map((c) => c.broadcaster_user_id)).toEqual([
-      "20",
-      "30",
-      "10",
-    ])
-    expect(body.data[0].viewer_count).toBe(5000)
+
+    expect(data.map((c) => c.broadcaster_user_id)).toEqual(["20", "30", "10"])
+    expect(data[0].viewer_count).toBe(5000)
   })
 
-  it("falls back to display name ascending for ties and offline channels", async () => {
-    const now = "2024-06-01T00:00:00Z"
-    await dbClient.followedChannels.upsertAll([
+  it("falls back to display name ascending for offline channels", async () => {
+    const { cookie } = await orchestrator.createAuthenticatedSession()
+    await syncChannels(cookie, [
       {
-        userId: "user_1",
-        broadcasterUserId: "10",
-        broadcasterLogin: "zebra",
-        broadcasterDisplayName: "Zebra",
-        now,
+        broadcaster_id: "10",
+        broadcaster_login: "zebra",
+        broadcaster_name: "Zebra",
       },
       {
-        userId: "user_1",
-        broadcasterUserId: "20",
-        broadcasterLogin: "apple",
-        broadcasterDisplayName: "Apple",
-        now,
+        broadcaster_id: "20",
+        broadcaster_login: "apple",
+        broadcaster_name: "Apple",
       },
       {
-        userId: "user_1",
-        broadcasterUserId: "30",
-        broadcasterLogin: "mango",
-        broadcasterDisplayName: "Mango",
-        now,
+        broadcaster_id: "30",
+        broadcaster_login: "mango",
+        broadcaster_name: "Mango",
       },
     ])
-    await dbClient.channelState.upsertAll([
-      { broadcasterUserId: "10", isLive: false, now },
-      { broadcasterUserId: "20", isLive: false, now },
-      { broadcasterUserId: "30", isLive: false, now },
-    ])
 
-    const env = createEnv(db, kv)
-    const res = await worker.fetch(
-      new Request("http://localhost/api/channels/followed", {
-        headers: { Cookie: `session=${sessionId}` },
-      }),
-      env,
-      ctx(),
-    )
-
-    const body = (await res.json()) as {
-      data: { broadcaster_display_name: string }[]
+    const res = await fetch(`${orchestrator.baseUrl}/api/channels/followed`, {
+      headers: { Cookie: cookie },
+    })
+    const { data } = (await res.json()) as {
+      data: Array<{ broadcaster_display_name: string }>
     }
-    expect(body.data.map((c) => c.broadcaster_display_name)).toEqual([
+
+    expect(data.map((c) => c.broadcaster_display_name)).toEqual([
       "Apple",
       "Mango",
       "Zebra",
@@ -224,41 +189,37 @@ describe("GET /api/channels/followed", () => {
   })
 
   it("includes full stream metadata for live channels", async () => {
-    const now = "2024-06-01T00:00:00Z"
-    await dbClient.followedChannels.upsertAll([
-      {
-        userId: "user_1",
-        broadcasterUserId: "10",
-        broadcasterLogin: "streamer",
-        broadcasterDisplayName: "Streamer",
-        now,
-      },
-    ])
-    await dbClient.channelState.upsertAll([
-      {
-        broadcasterUserId: "10",
-        isLive: true,
-        streamId: "stream_abc",
-        categoryId: "game_123",
-        categoryName: "Minecraft",
-        title: "Building stuff",
-        viewerCount: 777,
-        startedAt: "2024-06-01T10:00:00Z",
-        now,
-      },
-    ])
-
-    const env = createEnv(db, kv)
-    const res = await worker.fetch(
-      new Request("http://localhost/api/channels/followed", {
-        headers: { Cookie: `session=${sessionId}` },
-      }),
-      env,
-      ctx(),
+    const { cookie } = await orchestrator.createAuthenticatedSession()
+    await syncChannels(
+      cookie,
+      [
+        {
+          broadcaster_id: "10",
+          broadcaster_login: "streamer",
+          broadcaster_name: "Streamer",
+        },
+      ],
+      [
+        {
+          id: "stream_abc",
+          user_id: "10",
+          user_login: "streamer",
+          user_name: "Streamer",
+          game_id: "game_123",
+          game_name: "Minecraft",
+          viewer_count: 777,
+          started_at: "2024-06-01T10:00:00Z",
+          title: "Building stuff",
+        },
+      ],
     )
 
-    const body = (await res.json()) as { data: unknown[] }
-    expect(body.data[0]).toMatchObject({
+    const res = await fetch(`${orchestrator.baseUrl}/api/channels/followed`, {
+      headers: { Cookie: cookie },
+    })
+    const { data } = (await res.json()) as { data: unknown[] }
+
+    expect(data[0]).toMatchObject({
       is_live: true,
       stream_id: "stream_abc",
       category_id: "game_123",
@@ -269,37 +230,23 @@ describe("GET /api/channels/followed", () => {
     })
   })
 
-  it("returns all channels when the follow list exceeds the D1 per-query variable limit", async () => {
-    const now = "2024-06-01T00:00:00Z"
-    const count = 101
-    await dbClient.followedChannels.upsertAll(
-      Array.from({ length: count }, (_, i) => ({
-        userId: "user_1",
-        broadcasterUserId: String(i + 1),
-        broadcasterLogin: `channel${i + 1}`,
-        broadcasterDisplayName: `Channel${i + 1}`,
-        now,
-      })),
-    )
-    await dbClient.channelState.upsertAll(
-      Array.from({ length: count }, (_, i) => ({
-        broadcasterUserId: String(i + 1),
-        isLive: false,
-        now,
+  it("returns all channels when follow list exceeds D1 per-query variable limit", async () => {
+    const COUNT = 101
+    const { cookie } = await orchestrator.createAuthenticatedSession()
+    await syncChannels(
+      cookie,
+      Array.from({ length: COUNT }, (_, i) => ({
+        broadcaster_id: String(i + 1),
+        broadcaster_login: `channel${i + 1}`,
+        broadcaster_name: `Channel${i + 1}`,
       })),
     )
 
-    const env = createEnv(db, kv)
-    const res = await worker.fetch(
-      new Request("http://localhost/api/channels/followed", {
-        headers: { Cookie: `session=${sessionId}` },
-      }),
-      env,
-      ctx(),
-    )
-
+    const res = await fetch(`${orchestrator.baseUrl}/api/channels/followed`, {
+      headers: { Cookie: cookie },
+    })
     expect(res.status).toBe(200)
-    const body = (await res.json()) as { data: unknown[] }
-    expect(body.data).toHaveLength(count)
+    const { data } = (await res.json()) as { data: unknown[] }
+    expect(data).toHaveLength(COUNT)
   })
 })
