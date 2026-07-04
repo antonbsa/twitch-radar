@@ -17,7 +17,7 @@ describe("Alerts view", () => {
     await resetState()
   })
 
-  it("shows the empty state when there are no global alerts", async ({
+  it("should show the empty state when there are no global alerts", async ({
     authenticatedSession,
   }) => {
     const { page } = authenticatedSession
@@ -33,7 +33,7 @@ describe("Alerts view", () => {
     await expectVisible(page.getByText("No global alerts set."))
   })
 
-  it("surfaces the error state quickly when preferences fail to load (no 4xx retry)", async ({
+  it("should surface the error state quickly when preferences fail to load (no 4xx retry)", async ({
     authenticatedSession,
   }) => {
     const { page } = authenticatedSession
@@ -45,7 +45,7 @@ describe("Alerts view", () => {
     )
   })
 
-  it("opens the add-category sheet and dismisses it on tap outside", async ({
+  it("should open the add-category sheet and dismiss it on tap outside", async ({
     authenticatedSession,
   }) => {
     const { page } = authenticatedSession
@@ -74,7 +74,7 @@ describe("Alerts view", () => {
   // T-006 (Preferences And Monitoring) owns POST/DELETE /api/preferences/* and
   // GET /api/categories/search. Seeding is wired via seedPreferences() so this
   // only needs its `.skip` removed once that backend exists.
-  it.skip("adds and removes a global category preference end to end", async () => {
+  it.skip("should add and remove a global category preference end to end", async () => {
     // Intentionally left as a stub: real category search + add/remove flow.
   })
 })

@@ -33,7 +33,7 @@ afterAll(async () => {
 })
 
 describe("POST /api/sync/follows", () => {
-  it("syncs followed channels and live stream state", async () => {
+  it("should sync followed channels and live stream state", async () => {
     const { cookie } = await orchestrator.createAuthenticatedSession()
     await orchestrator.mockTwitch.onFollowedChannels([CHANNEL_A, CHANNEL_B])
     await orchestrator.mockTwitch.onFollowedStreams([STREAM_A])
@@ -69,7 +69,7 @@ describe("POST /api/sync/follows", () => {
     expect(b.viewer_count).toBeNull()
   })
 
-  it("handles Twitch pagination across multiple pages", async () => {
+  it("should handle Twitch pagination across multiple pages", async () => {
     const { cookie } = await orchestrator.createAuthenticatedSession()
     await orchestrator.mockTwitch.onFollowedChannels(
       [CHANNEL_A],
@@ -95,7 +95,7 @@ describe("POST /api/sync/follows", () => {
     expect(data).toHaveLength(2)
   })
 
-  it("refreshes an expired token before syncing", async () => {
+  it("should refresh an expired token before syncing", async () => {
     const { cookie } = await orchestrator.createAuthenticatedSession({
       accessToken: "expired-token",
       refreshToken: "valid-refresh-token",
@@ -120,7 +120,7 @@ describe("POST /api/sync/follows", () => {
     expect(res.status).toBe(200)
   })
 
-  it("returns 401 reconnect_required when token refresh fails", async () => {
+  it("should return 401 reconnect_required when token refresh fails", async () => {
     const { cookie } = await orchestrator.createAuthenticatedSession({
       accessToken: "expired-token",
       refreshToken: "bad-refresh-token",
@@ -143,7 +143,7 @@ describe("POST /api/sync/follows", () => {
     })
   })
 
-  it("returns 401 without a session", async () => {
+  it("should return 401 without a session", async () => {
     const res = await fetch(`${orchestrator.baseUrl}/api/sync/follows`, {
       method: "POST",
     })

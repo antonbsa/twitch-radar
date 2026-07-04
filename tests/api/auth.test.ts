@@ -30,7 +30,7 @@ afterAll(async () => {
 })
 
 describe("GET /api/auth/twitch/start", () => {
-  it("redirects to Twitch authorize with correct params and stores state", async () => {
+  it("should redirect to Twitch authorize with correct params and store state", async () => {
     const res = await fetch(`${orchestrator.baseUrl}/api/auth/twitch/start`, {
       redirect: "manual",
     })
@@ -53,7 +53,7 @@ describe("GET /api/auth/twitch/callback", () => {
     return location.searchParams.get("state")!
   }
 
-  it("exchanges code, creates user, stores tokens, returns session cookie", async () => {
+  it("should exchange code, create user, store tokens, and return session cookie", async () => {
     const state = await getOAuthState()
     await orchestrator.mockTwitch.onTokenExchange(TWITCH_TOKEN_RESPONSE)
     await orchestrator.mockTwitch.onUserInfo(TWITCH_USER_RESPONSE)
@@ -71,7 +71,7 @@ describe("GET /api/auth/twitch/callback", () => {
     expect(cookie).toContain("SameSite=Lax")
   })
 
-  it("reconnects an existing user without creating a duplicate", async () => {
+  it("should reconnect an existing user without creating a duplicate", async () => {
     const state1 = await getOAuthState()
     await orchestrator.mockTwitch.onTokenExchange(TWITCH_TOKEN_RESPONSE)
     await orchestrator.mockTwitch.onUserInfo(TWITCH_USER_RESPONSE)
@@ -104,7 +104,7 @@ describe("GET /api/auth/twitch/callback", () => {
     expect(body1.data.id).toBe(body2.data.id)
   })
 
-  it("returns 400 for missing code or state", async () => {
+  it("should return 400 for missing code or state", async () => {
     const res = await fetch(`${orchestrator.baseUrl}/api/auth/twitch/callback`)
     expect(res.status).toBe(400)
     await expect(res.json()).resolves.toMatchObject({
@@ -112,7 +112,7 @@ describe("GET /api/auth/twitch/callback", () => {
     })
   })
 
-  it("returns 400 for invalid state", async () => {
+  it("should return 400 for invalid state", async () => {
     const res = await fetch(
       `${orchestrator.baseUrl}/api/auth/twitch/callback?code=abc&state=not-a-real-state`,
     )
@@ -124,7 +124,7 @@ describe("GET /api/auth/twitch/callback", () => {
 })
 
 describe("POST /api/auth/logout", () => {
-  it("deletes session and clears cookie", async () => {
+  it("should delete session and clear cookie", async () => {
     const { cookie } = await orchestrator.createAuthenticatedSession()
 
     const res = await fetch(`${orchestrator.baseUrl}/api/auth/logout`, {
@@ -141,7 +141,7 @@ describe("POST /api/auth/logout", () => {
     expect(meRes.status).toBe(401)
   })
 
-  it("returns 401 without a session cookie", async () => {
+  it("should return 401 without a session cookie", async () => {
     const res = await fetch(`${orchestrator.baseUrl}/api/auth/logout`, {
       method: "POST",
     })
@@ -150,7 +150,7 @@ describe("POST /api/auth/logout", () => {
 })
 
 describe("GET /api/me", () => {
-  it("returns the authenticated user", async () => {
+  it("should return the authenticated user", async () => {
     const { cookie } = await orchestrator.createAuthenticatedSession({
       twitchLogin: "testuser",
       twitchDisplayName: "TestUser",
@@ -169,7 +169,7 @@ describe("GET /api/me", () => {
     })
   })
 
-  it("returns 401 without a session", async () => {
+  it("should return 401 without a session", async () => {
     const res = await fetch(`${orchestrator.baseUrl}/api/me`)
     expect(res.status).toBe(401)
   })

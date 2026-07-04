@@ -13,7 +13,7 @@ describe("Auth gate", () => {
     await resetState()
   })
 
-  it("redirects to /login and hides the tab bar without a session cookie", async ({
+  it("should redirect to /login and hide the tab bar without a session cookie", async ({
     guestSession,
   }) => {
     const { page } = guestSession
@@ -25,7 +25,7 @@ describe("Auth gate", () => {
     await expect.poll(() => page.getByRole("navigation").count()).toBe(0)
   })
 
-  it("lands on /channels with the tab bar visible when a seeded session cookie is present", async ({
+  it("should land on /channels with the tab bar visible when a seeded session cookie is present", async ({
     authenticatedSession,
   }) => {
     const { page } = authenticatedSession

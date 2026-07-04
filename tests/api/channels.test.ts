@@ -38,12 +38,12 @@ async function syncChannels(
 }
 
 describe("GET /api/channels/followed", () => {
-  it("returns 401 without a session", async () => {
+  it("should return 401 without a session", async () => {
     const res = await fetch(`${orchestrator.baseUrl}/api/channels/followed`)
     expect(res.status).toBe(401)
   })
 
-  it("returns empty array when no channels are synced", async () => {
+  it("should return empty array when no channels are synced", async () => {
     const { cookie } = await orchestrator.createAuthenticatedSession()
     const res = await fetch(`${orchestrator.baseUrl}/api/channels/followed`, {
       headers: { Cookie: cookie },
@@ -52,7 +52,7 @@ describe("GET /api/channels/followed", () => {
     await expect(res.json()).resolves.toMatchObject({ data: [] })
   })
 
-  it("returns live channels before offline channels", async () => {
+  it("should return live channels before offline channels", async () => {
     const { cookie } = await orchestrator.createAuthenticatedSession()
     await syncChannels(
       cookie,
@@ -96,7 +96,7 @@ describe("GET /api/channels/followed", () => {
     expect(data[1].is_live).toBe(false)
   })
 
-  it("sorts live channels by viewer count descending", async () => {
+  it("should sort live channels by viewer count descending", async () => {
     const { cookie } = await orchestrator.createAuthenticatedSession()
 
     const makeStream = (
@@ -154,7 +154,7 @@ describe("GET /api/channels/followed", () => {
     expect(data[0].viewer_count).toBe(5000)
   })
 
-  it("falls back to display name ascending for offline channels", async () => {
+  it("should fall back to display name ascending for offline channels", async () => {
     const { cookie } = await orchestrator.createAuthenticatedSession()
     await syncChannels(cookie, [
       {
@@ -188,7 +188,7 @@ describe("GET /api/channels/followed", () => {
     ])
   })
 
-  it("includes full stream metadata for live channels", async () => {
+  it("should include full stream metadata for live channels", async () => {
     const { cookie } = await orchestrator.createAuthenticatedSession()
     await syncChannels(
       cookie,
@@ -230,7 +230,7 @@ describe("GET /api/channels/followed", () => {
     })
   })
 
-  it("returns all channels when follow list exceeds D1 per-query variable limit", async () => {
+  it("should return all channels when follow list exceeds D1 per-query variable limit", async () => {
     const COUNT = 101
     const { cookie } = await orchestrator.createAuthenticatedSession()
     await syncChannels(

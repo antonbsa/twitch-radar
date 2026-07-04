@@ -10,7 +10,7 @@ afterAll(async () => {
 })
 
 describe("GET /api/health", () => {
-  it("returns successful health response", async () => {
+  it("should return successful health response", async () => {
     const res = await fetch(`${orchestrator.baseUrl}/api/health`)
     expect(res.status).toBe(200)
     await expect(res.json()).resolves.toMatchObject({
@@ -22,7 +22,7 @@ describe("GET /api/health", () => {
 })
 
 describe("Worker routing", () => {
-  it("returns 404 for unknown routes", async () => {
+  it("should return 404 for unknown routes", async () => {
     const res = await fetch(`${orchestrator.baseUrl}/api/missing`)
     expect(res.status).toBe(404)
     await expect(res.json()).resolves.toMatchObject({
@@ -30,7 +30,7 @@ describe("Worker routing", () => {
     })
   })
 
-  it("returns 405 for wrong method on a known route", async () => {
+  it("should return 405 for wrong method on a known route", async () => {
     const res = await fetch(`${orchestrator.baseUrl}/api/sync/follows`)
     expect(res.status).toBe(405)
     await expect(res.json()).resolves.toMatchObject({

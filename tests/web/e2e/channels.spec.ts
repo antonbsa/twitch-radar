@@ -22,7 +22,7 @@ describe("Channels view", () => {
     await resetState()
   })
 
-  it("shows the empty state when no channels are followed", async ({
+  it("should show the empty state when no channels are followed", async ({
     authenticatedSession,
   }) => {
     const { page } = authenticatedSession
@@ -34,7 +34,7 @@ describe("Channels view", () => {
     )
   })
 
-  it("orders live channels by viewer count desc, then offline channels by name asc", async ({
+  it("should order live channels by viewer count desc, then offline channels by name asc", async ({
     authenticatedSession,
   }) => {
     const highViewer = broadcasterId("high")
@@ -90,7 +90,7 @@ describe("Channels view", () => {
       .toBe(zebra)
   })
 
-  it("renders live row content: live dot, category, formatted viewers, and duration", async ({
+  it("should render live row content: live dot, category, formatted viewers, and duration", async ({
     authenticatedSession,
   }) => {
     const id = broadcasterId("content")
@@ -124,7 +124,7 @@ describe("Channels view", () => {
     await expectVisible(row.getByText("In Just Chatting for 1h 23m"))
   })
 
-  it("shows a loading skeleton while channels are being fetched", async ({
+  it("should show a loading skeleton while channels are being fetched", async ({
     authenticatedSession,
   }) => {
     const { page } = authenticatedSession
@@ -141,7 +141,7 @@ describe("Channels view", () => {
     await expectVisible(page.locator('[data-slot="skeleton"]').first())
   })
 
-  it("shows an error state when channels fail to load", async ({
+  it("should show an error state when channels fail to load", async ({
     authenticatedSession,
   }) => {
     const { page } = authenticatedSession
@@ -163,7 +163,7 @@ describe("Channels view", () => {
     )
   })
 
-  it("disables the sync button in-flight and refetches channels on success", async ({
+  it("should disable the sync button in-flight and refetch channels on success", async ({
     authenticatedSession,
   }) => {
     const { page } = authenticatedSession
@@ -203,7 +203,7 @@ describe("Channels view", () => {
     expect(followedCalls).toBeGreaterThan(callsBeforeSync)
   })
 
-  it("opens the per-channel preference sheet from the config button", async ({
+  it("should open the per-channel preference sheet from the config button", async ({
     authenticatedSession,
   }) => {
     const id = broadcasterId("config")

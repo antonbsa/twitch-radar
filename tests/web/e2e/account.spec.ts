@@ -34,7 +34,7 @@ describe("Account view", () => {
     await resetState()
   })
 
-  it("shows the signed-in user's identity from GET /me", async ({
+  it("should show the signed-in user's identity from GET /me", async ({
     authenticatedSession,
   }) => {
     const { page } = authenticatedSession
@@ -50,7 +50,7 @@ describe("Account view", () => {
       .toBe("I")
   })
 
-  it("renders the granted notification permission state", async ({
+  it("should render the granted notification permission state", async ({
     authenticatedSession,
   }) => {
     const { page } = authenticatedSession
@@ -60,7 +60,7 @@ describe("Account view", () => {
     await expectVisible(page.getByText("Status: Enabled"))
   })
 
-  it("renders the default notification permission state with an enable button", async ({
+  it("should render the default notification permission state with an enable button", async ({
     authenticatedSession,
   }) => {
     const { page } = authenticatedSession
@@ -73,7 +73,7 @@ describe("Account view", () => {
     )
   })
 
-  it("renders the denied notification permission state", async ({
+  it("should render the denied notification permission state", async ({
     authenticatedSession,
   }) => {
     const { page } = authenticatedSession
@@ -84,7 +84,7 @@ describe("Account view", () => {
     await expectVisible(page.getByText("Go to browser settings to enable."))
   })
 
-  it("logs out to /login and clears the authenticated context", async ({
+  it("should log out to /login and clear the authenticated context", async ({
     authenticatedSession,
   }) => {
     const { page } = authenticatedSession
@@ -96,7 +96,7 @@ describe("Account view", () => {
     await expect.poll(() => page.getByRole("navigation").count()).toBe(0)
   })
 
-  it("shows Reconnect Twitch on a mid-session 401 without navigating away", async ({
+  it("should show Reconnect Twitch on a mid-session 401 without navigating away", async ({
     authenticatedSession,
   }) => {
     const { page, sessionId } = authenticatedSession
