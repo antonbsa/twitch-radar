@@ -154,10 +154,12 @@ export default async function globalSetup() {
       String(INSPECTOR_PORT),
       "--persist-to",
       PERSIST_DIR,
+      // Only .env.development — its placeholders cover every required var
+      // (see AGENTS.md "Env Vars: Single Source Of Truth"). .env.local exists
+      // to override real OAuth secrets for `npm run dev`; tests never do a
+      // real OAuth round-trip and the file isn't expected to exist in CI.
       "--env-file",
       resolve(REPO_ROOT, ".env.development"),
-      "--env-file",
-      resolve(REPO_ROOT, ".env.local"),
       // Redirects the worker's outbound Twitch calls to the in-process mock
       // above — overrides env.ts's real-Twitch defaults for this run only,
       // never persisted to .env.development/.env.local.

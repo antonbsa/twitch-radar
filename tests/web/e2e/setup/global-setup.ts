@@ -130,10 +130,12 @@ export default async function globalSetup() {
       "dev",
       "--port",
       "8787",
+      // Only .env.development — its placeholders cover every required var
+      // (see AGENTS.md "Env Vars: Single Source Of Truth"). .env.local exists
+      // to override real OAuth secrets for `npm run dev`; tests never do a
+      // real OAuth round-trip and the file isn't expected to exist in CI.
       "--env-file",
       "../../.env.development",
-      "--env-file",
-      "../../.env.local",
     ],
     resolve(REPO_ROOT, "apps/api"),
   )
