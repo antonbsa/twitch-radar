@@ -1,0 +1,116 @@
+import { spawn, type ChildProcess } from "node:child_process"
+
+const READY_TIMEOUT_MS = 60_000
+const READY_POLL_INTERVAL_MS = 300
+
+export interface CapturedProcess {
+  child: ChildProcess
+  readOutput: () => string
+}
+
+// Captures output instead of inheriting it, so a healthy run stays quiet
+// (only vitest's own output prints) while a failure can still be diagnosed.
+export function spawnCapturing(
+  command: string,
+  args: string[],
+  options: { cwd: string; detached?: boolean },
+): CapturedProcess {
+  const child = spawn(command, args, { ...options, stdio: "pipe" })
+  const chunks: Buffer[] = []
+  child.stdout?.on("data", (chunk: Buffer) => chunks.push(chunk))
+  child.stderr?.on("data", (chunk: Buffer) => chunks.push(chunk))
+  return { child, readOutput: () => Buffer.concat(chunks).toString("utf-8") }
+}
+
+export function printCapturedOutput(label: string, output: string): void {
+  if (!output.trim()) return
+  console.error(`--- ${label} output ---\n${output}`)
+}
+
+export function runToCompletion(
+  command: string,
+  args: string[],
+  cwd: string,
+): Promise<void> {
+  const { child, readOutput } = spawnCapturing(command, args, { cwd })
+  return new Promise((resolve, reject) => {
+    child.on("exit", (code) => {
+      if (code === 0) {
+        resolve()
+        return
+      }
+      printCapturedOutput(`${command} ${args.join(" ")}`, readOutput())
+      reject(new Error(`${command} ${args.join(" ")} exited with ${code}`))
+    })
+    child.on("error", reject)
+  })
+}
+
+// Silences the dev server's own request logs so only vitest's test output
+// shows; a crash after setup would otherwise go unnoticed until tests start
+// timing out one by one, so it's still watched and fails the run immediately,
+// printing whatever it wrote before dying.
+export function failOnUnexpectedExit(
+  child: ChildProcess,
+  label: string,
+  isTornDown: () => boolean,
+  readOutput: () => string,
+): void {
+  child.on("exit", (code, signal) => {
+    if (isTornDown()) return
+    printCapturedOutput(label, readOutput())
+    console.error(
+      `${label} exited unexpectedly during the test run (code=${code}, signal=${signal})`,
+    )
+    process.exit(1)
+  })
+}
+
+export function killProcessGroup(child: ChildProcess): void {
+  if (child.pid === undefined || child.killed) return
+  try {
+    process.kill(-child.pid, "SIGTERM")
+  } catch {
+    // process group may already be gone
+  }
+}
+
+async function waitForReady(url: string): Promise<void> {
+  const deadline = Date.now() + READY_TIMEOUT_MS
+  let lastError: unknown
+  while (Date.now() < deadline) {
+    try {
+      const res = await fetch(url)
+      if (res.ok) return
+    } catch (err) {
+      lastError = err
+    }
+    await new Promise((resolve) => setTimeout(resolve, READY_POLL_INTERVAL_MS))
+  }
+  throw new Error(`Timed out waiting for ${url} to become ready: ${lastError}`)
+}
+
+// A port collision (something else already listening) makes the spawned
+// process exit immediately while the *other* thing on that port keeps
+// answering health checks — waitForReady alone would then report "ready"
+// against a process we didn't start. Racing against the child's own exit
+// event turns that into a clear failure instead of a false positive.
+function waitForExit(child: ChildProcess, label: string): Promise<never> {
+  return new Promise((_resolve, reject) => {
+    child.once("exit", (code, signal) => {
+      reject(
+        new Error(
+          `${label} exited during setup (code=${code}, signal=${signal})`,
+        ),
+      )
+    })
+  })
+}
+
+export function waitForReadyOrExit(
+  url: string,
+  child: ChildProcess,
+  label: string,
+): Promise<void> {
+  return Promise.race([waitForReady(url), waitForExit(child, label)])
+}
