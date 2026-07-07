@@ -18,6 +18,8 @@ interface ChannelRowProps {
 export function ChannelRow({ channel, onConfigure }: ChannelRowProps) {
   return (
     <div
+      data-testid="channel-row"
+      data-broadcaster-user-id={channel.broadcaster_user_id}
       className={cn(
         "flex items-center gap-3 px-4 py-2.5",
         !channel.is_live && "opacity-60",

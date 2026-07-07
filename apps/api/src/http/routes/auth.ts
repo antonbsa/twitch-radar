@@ -58,11 +58,13 @@ export async function handleAuthCallback(
     config.twitchClientSecret,
     code,
     config.twitchRedirectUri,
+    config.twitchAuthBaseUrl,
   )
 
   const twitchUser = await getAuthenticatedUser(
     config.twitchClientId,
     tokens.access_token,
+    config.twitchApiBaseUrl,
   )
 
   const now = new Date().toISOString()

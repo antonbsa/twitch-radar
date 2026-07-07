@@ -19,6 +19,8 @@ export interface Env {
   EVENTSUB_WEBHOOK_SECRET: string
   TOKEN_ENCRYPTION_KEY: string
   VAPID_PRIVATE_KEY: string
+  TWITCH_AUTH_BASE_URL?: string
+  TWITCH_API_BASE_URL?: string
 }
 
 const EnvSchema = z
@@ -36,6 +38,8 @@ const EnvSchema = z
     TOKEN_ENCRYPTION_KEY: z.string().min(1),
     // base64url-encoded EC private key (32 bytes → 43 chars)
     VAPID_PRIVATE_KEY: z.string().length(43),
+    TWITCH_AUTH_BASE_URL: z.string().optional().default("https://id.twitch.tv"),
+    TWITCH_API_BASE_URL: z.string().optional().default("https://api.twitch.tv"),
   })
   .transform((d) => ({
     environment: d.ENVIRONMENT,
@@ -48,6 +52,8 @@ const EnvSchema = z
     eventsubWebhookSecret: d.EVENTSUB_WEBHOOK_SECRET,
     tokenEncryptionKey: d.TOKEN_ENCRYPTION_KEY,
     vapidPrivateKey: d.VAPID_PRIVATE_KEY,
+    twitchAuthBaseUrl: d.TWITCH_AUTH_BASE_URL,
+    twitchApiBaseUrl: d.TWITCH_API_BASE_URL,
   }))
 
 export type AppConfig = z.infer<typeof EnvSchema>

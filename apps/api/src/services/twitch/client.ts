@@ -47,8 +47,9 @@ export async function exchangeCode(
   clientSecret: string,
   code: string,
   redirectUri: string,
+  authBaseUrl = "https://id.twitch.tv",
 ): Promise<TwitchTokenResponse> {
-  const res = await fetch("https://id.twitch.tv/oauth2/token", {
+  const res = await fetch(`${authBaseUrl}/oauth2/token`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
@@ -67,8 +68,9 @@ export async function refreshAccessToken(
   clientId: string,
   clientSecret: string,
   refreshToken: string,
+  authBaseUrl = "https://id.twitch.tv",
 ): Promise<TwitchTokenResponse> {
-  const res = await fetch("https://id.twitch.tv/oauth2/token", {
+  const res = await fetch(`${authBaseUrl}/oauth2/token`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
@@ -85,8 +87,9 @@ export async function refreshAccessToken(
 export async function getAuthenticatedUser(
   clientId: string,
   accessToken: string,
+  apiBaseUrl = "https://api.twitch.tv",
 ): Promise<TwitchUser> {
-  const res = await fetch("https://api.twitch.tv/helix/users", {
+  const res = await fetch(`${apiBaseUrl}/helix/users`, {
     headers: {
       "Client-Id": clientId,
       Authorization: `Bearer ${accessToken}`,
@@ -103,12 +106,13 @@ export async function getAllFollowedChannels(
   clientId: string,
   accessToken: string,
   userId: string,
+  apiBaseUrl = "https://api.twitch.tv",
 ): Promise<TwitchFollowedChannel[]> {
   const results: TwitchFollowedChannel[] = []
   let cursor: string | undefined
 
   do {
-    const url = new URL("https://api.twitch.tv/helix/channels/followed")
+    const url = new URL(`${apiBaseUrl}/helix/channels/followed`)
     url.searchParams.set("user_id", userId)
     url.searchParams.set("first", "100")
     if (cursor) url.searchParams.set("after", cursor)
@@ -136,12 +140,13 @@ export async function getAllFollowedStreams(
   clientId: string,
   accessToken: string,
   userId: string,
+  apiBaseUrl = "https://api.twitch.tv",
 ): Promise<TwitchFollowedStream[]> {
   const results: TwitchFollowedStream[] = []
   let cursor: string | undefined
 
   do {
-    const url = new URL("https://api.twitch.tv/helix/streams/followed")
+    const url = new URL(`${apiBaseUrl}/helix/streams/followed`)
     url.searchParams.set("user_id", userId)
     url.searchParams.set("first", "100")
     if (cursor) url.searchParams.set("after", cursor)

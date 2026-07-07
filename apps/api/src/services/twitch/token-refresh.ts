@@ -35,6 +35,7 @@ export async function getValidAccessToken(
       config.twitchClientId,
       config.twitchClientSecret,
       refreshToken,
+      config.twitchAuthBaseUrl,
     )
   } catch (err) {
     if (err instanceof TwitchApiError) {
