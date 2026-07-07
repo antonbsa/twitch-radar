@@ -10,24 +10,21 @@ export {
   type SeededUser,
 } from "../../../shared/seam-client"
 
-function requireEnv(name: "API_URL" | "TEST_SEED_TOKEN"): string {
-  const value = process.env[name]
+function requireApiUrl(): string {
+  const value = process.env.API_URL
   if (!value) {
     throw new Error(
-      `${name} is not set — the e2e global setup (tests/web/e2e/setup/global-setup.ts) should have injected it`,
+      "API_URL is not set — the e2e global setup (tests/web/e2e/setup/global-setup.ts) should have injected it",
     )
   }
   return value
 }
 
-// The env vars are read lazily on each call, so the client can be built at
-// module scope before the global setup has injected them.
+// Read lazily so the client can be built at module scope before the global
+// setup has injected the env var.
 // Note: `resetAll` is deliberately not re-exported — this tier runs against
 // the dev DB, where only the scoped `resetState` is safe.
-const client = createSeamClient({
-  baseUrl: () => requireEnv("API_URL"),
-  token: () => requireEnv("TEST_SEED_TOKEN"),
-})
+const client = createSeamClient({ baseUrl: requireApiUrl })
 
 export const {
   resetState,

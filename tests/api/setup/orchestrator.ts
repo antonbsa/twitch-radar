@@ -2,18 +2,7 @@ import { createSeamClient } from "../../shared/seam-client"
 import type { SeedUserInput } from "../../shared/seam-client"
 import { API_TEST_URL, MOCK_TWITCH_URL } from "./ports"
 
-const seam = createSeamClient({
-  baseUrl: () => API_TEST_URL,
-  token: () => {
-    const token = process.env.TEST_SEED_TOKEN
-    if (!token) {
-      throw new Error(
-        "TEST_SEED_TOKEN is not set. The root vitest.config.ts should inject it from .env.development/.env.local via loadDevVars().",
-      )
-    }
-    return token
-  },
-})
+const seam = createSeamClient({ baseUrl: () => API_TEST_URL })
 
 /** Full wipe of tables + sessions — safe because this tier's worker runs against throwaway D1/KV state. */
 async function clearDatabase() {

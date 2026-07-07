@@ -12,74 +12,73 @@ import {
   handleLogout,
 } from "./http/routes/auth"
 import { handleSyncFollows } from "./http/routes/sync"
-import { handleTestReset, handleTestSeed } from "./http/routes/__test__"
+import { handleTestReset, handleTestSeed } from "./http/routes/_tests"
 import { getRequestId } from "./http/response"
 
-const app = new Hono<HonoEnv>()
+function buildApp(includeTestSeam: boolean): Hono<HonoEnv> {
+  const app = new Hono<HonoEnv>()
 
-app.use("*", (c, next) => {
-  c.set("config", parseEnv(c.env))
-  c.set("db", new Database(c.env.DB))
-  return next()
-})
+  app.use("*", (c, next) => {
+    c.set("config", parseEnv(c.env))
+    c.set("db", new Database(c.env.DB))
+    return next()
+  })
 
-app.options("/*", () => new Response(null, { status: 204 }))
-app.get("/", (c) => c.json({ service: "twitch-radar-api" }))
-app.get("/health", handleHealth)
+  app.options("/*", () => new Response(null, { status: 204 }))
+  app.get("/", (c) => c.json({ service: "twitch-radar-api" }))
+  app.get("/health", handleHealth)
 
-const api = new Hono<HonoEnv>()
+  const api = new Hono<HonoEnv>()
 
-api.get("/health", handleHealth)
-api.get("/auth/twitch/start", handleAuthStart)
-api.get("/auth/twitch/callback", handleAuthCallback)
-api.post("/auth/logout", requireAuth, handleLogout)
-api.get("/me", requireAuth, handleGetMe)
-api.post("/sync/follows", requireAuth, handleSyncFollows)
-api.get("/channels/followed", requireAuth, handleGetFollowedChannels)
+  api.get("/health", handleHealth)
+  api.get("/auth/twitch/start", handleAuthStart)
+  api.get("/auth/twitch/callback", handleAuthCallback)
+  api.post("/auth/logout", requireAuth, handleLogout)
+  api.get("/me", requireAuth, handleGetMe)
+  api.post("/sync/follows", requireAuth, handleSyncFollows)
+  api.get("/channels/followed", requireAuth, handleGetFollowedChannels)
 
-app.route("/api", api)
+  app.route("/api", api)
 
-// Test-seam routes: only reachable outside production and only with the
-// shared secret header, so the guard itself (not registration) keeps them
-// unreachable in production regardless of deploy target.
-const testSeam = new Hono<HonoEnv>()
-testSeam.use("*", async (c, next) => {
-  const config = c.var.config
-  const token = c.req.header("x-test-seed-token")
-  if (
-    config.environment === "production" ||
-    !config.testSeedToken ||
-    token !== config.testSeedToken
-  ) {
-    throw new ApiError(404, "not_found", "Route not found")
+  // Test-seam routes only exist on non-production builds of the app — there
+  // is no per-request guard to bypass because the route is simply never
+  // registered when running as production.
+  if (includeTestSeam) {
+    const testSeam = new Hono<HonoEnv>()
+    testSeam.post("/reset", handleTestReset)
+    testSeam.post("/seed", handleTestSeed)
+    app.route("/api/__test__", testSeam)
   }
-  return next()
-})
-testSeam.post("/reset", handleTestReset)
-testSeam.post("/seed", handleTestSeed)
-app.route("/api/__test__", testSeam)
 
-app.notFound((c) => {
-  const requestId = getRequestId(c.req.raw)
-  const currentPath = new URL(c.req.url).pathname
-  const pathExists = app.routes.some(
-    (r) => r.path === currentPath && r.method !== "ALL",
-  )
-  if (pathExists) {
+  app.notFound((c) => {
+    const requestId = getRequestId(c.req.raw)
+    const currentPath = new URL(c.req.url).pathname
+    const pathExists = app.routes.some(
+      (r) => r.path === currentPath && r.method !== "ALL",
+    )
+    if (pathExists) {
+      return errorResponse(
+        new ApiError(405, "method_not_allowed", "Method not allowed"),
+        requestId,
+      )
+    }
     return errorResponse(
-      new ApiError(405, "method_not_allowed", "Method not allowed"),
+      new ApiError(404, "not_found", "Route not found"),
       requestId,
     )
-  }
-  return errorResponse(
-    new ApiError(404, "not_found", "Route not found"),
-    requestId,
-  )
-})
-app.onError((error, c) => errorResponse(error, getRequestId(c.req.raw)))
+  })
+  app.onError((error, c) => errorResponse(error, getRequestId(c.req.raw)))
+
+  return app
+}
+
+// `ENVIRONMENT` is a static binding for the life of an isolate, so which
+// routes exist is decided once (on the first request) rather than per request.
+let app: Hono<HonoEnv> | undefined
 
 export default {
   fetch(request: Request, env: Env, ctx: ExecutionContext) {
+    if (!app) app = buildApp(parseEnv(env).environment !== "production")
     return app.fetch(request, env, ctx)
   },
 

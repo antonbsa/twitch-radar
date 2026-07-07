@@ -1,10 +1,19 @@
 import { spawn, type ChildProcess } from "node:child_process"
+import { rmSync } from "node:fs"
 import { resolve } from "node:path"
 import { fileURLToPath } from "node:url"
+import { startMockTwitchServer } from "./mock-twitch-server"
+import {
+  API_TEST_PORT,
+  API_TEST_URL,
+  MOCK_TWITCH_PORT,
+  MOCK_TWITCH_URL,
+} from "./ports"
 
-const REPO_ROOT = resolve(fileURLToPath(import.meta.url), "../../../../..")
-const API_HEALTH_URL = "http://localhost:8787/health"
-const WEB_URL = "http://localhost:5173/"
+const REPO_ROOT = resolve(fileURLToPath(import.meta.url), "../../../..")
+const PERSIST_DIR = resolve(REPO_ROOT, ".wrangler/state/test")
+// Distinct from the dev/e2e tiers' default (9229) so all three can run at once.
+const INSPECTOR_PORT = 9230
 const READY_TIMEOUT_MS = 60_000
 const READY_POLL_INTERVAL_MS = 300
 
@@ -19,15 +28,7 @@ function runToCompletion(command: string, args: string[]): Promise<void> {
   })
 }
 
-function spawnDetached(
-  command: string,
-  args: string[],
-  cwd: string,
-): ChildProcess {
-  return spawn(command, args, { cwd, stdio: "ignore", detached: true })
-}
-
-// Silences the dev servers' own request logs so only vitest's test output
+// Silences the dev server's own request logs so only vitest's test output
 // shows; a crash after setup would otherwise go unnoticed until tests start
 // timing out one by one, so it's still watched and fails the run immediately.
 function failOnUnexpectedExit(
@@ -94,46 +95,66 @@ function waitForReadyOrExit(
 }
 
 export default async function globalSetup() {
-  await runToCompletion("npm", ["run", "db:setup"])
+  // Throwaway D1/KV state, isolated from the dev DB the e2e tier and normal
+  // `npm run dev` use — always wiped so each run starts from the migrations.
+  rmSync(PERSIST_DIR, { recursive: true, force: true })
+  await runToCompletion("npx", [
+    "wrangler",
+    "d1",
+    "migrations",
+    "apply",
+    "twitch-radar-dev",
+    "--local",
+    "--config",
+    "apps/api/wrangler.jsonc",
+    "--persist-to",
+    PERSIST_DIR,
+  ])
 
-  const api = spawnDetached(
+  const mockTwitch = await startMockTwitchServer(MOCK_TWITCH_PORT)
+
+  const worker = spawn(
     "npx",
     [
       "wrangler",
       "dev",
+      "--config",
+      "apps/api/wrangler.jsonc",
       "--port",
-      "8787",
+      String(API_TEST_PORT),
+      "--inspector-port",
+      String(INSPECTOR_PORT),
+      "--persist-to",
+      PERSIST_DIR,
       "--env-file",
-      "../../.env.development",
+      resolve(REPO_ROOT, ".env.development"),
       "--env-file",
-      "../../.env.local",
+      resolve(REPO_ROOT, ".env.local"),
+      // Redirects the worker's outbound Twitch calls to the in-process mock
+      // above — overrides env.ts's real-Twitch defaults for this run only,
+      // never persisted to .env.development/.env.local.
+      "--var",
+      `TWITCH_AUTH_BASE_URL:${MOCK_TWITCH_URL}`,
+      "--var",
+      `TWITCH_API_BASE_URL:${MOCK_TWITCH_URL}`,
     ],
-    resolve(REPO_ROOT, "apps/api"),
-  )
-  const web = spawnDetached(
-    "npx",
-    ["vite", "--port", "5173", "--strictPort"],
-    resolve(REPO_ROOT, "apps/web"),
+    { cwd: REPO_ROOT, stdio: "ignore", detached: true },
   )
 
   try {
-    await Promise.all([
-      waitForReadyOrExit(API_HEALTH_URL, api, "wrangler dev"),
-      waitForReadyOrExit(WEB_URL, web, "vite"),
-    ])
+    await waitForReadyOrExit(`${API_TEST_URL}/health`, worker, "wrangler dev")
   } catch (err) {
-    killProcessGroup(api)
-    killProcessGroup(web)
+    mockTwitch.server.close()
+    killProcessGroup(worker)
     throw err
   }
 
   let tornDown = false
-  failOnUnexpectedExit(api, "wrangler dev", () => tornDown)
-  failOnUnexpectedExit(web, "vite", () => tornDown)
+  failOnUnexpectedExit(worker, "wrangler dev", () => tornDown)
 
   return async () => {
     tornDown = true
-    killProcessGroup(api)
-    killProcessGroup(web)
+    mockTwitch.server.close()
+    killProcessGroup(worker)
   }
 }

@@ -1,7 +1,5 @@
 import { createServer, type Server } from "node:http"
 import type { AddressInfo } from "node:net"
-import { fileURLToPath } from "node:url"
-import { MOCK_TWITCH_PORT } from "./ports"
 
 type QueueEntry = {
   pathPattern: string
@@ -17,13 +15,6 @@ function handleRequest(
   rawBody: string,
   respond: (status: number, body: string) => void,
 ) {
-  // Readiness probe for the "test:api:mock" npm script — wait-on polls this
-  // before the worker (which points TWITCH_*_BASE_URL here) is allowed to boot.
-  if (url === "/health" && method === "GET") {
-    respond(200, JSON.stringify({ ok: true }))
-    return
-  }
-
   if (url === "/__mock" && method === "POST") {
     queue.push(JSON.parse(rawBody))
     respond(204, "")
@@ -74,12 +65,4 @@ export async function startMockTwitchServer(
   )
   const { port: boundPort } = server.address() as AddressInfo
   return { url: `http://127.0.0.1:${boundPort}`, server }
-}
-
-// Entry point for the "test:api:mock" npm script — runs as its own long-lived
-// process (spawned by concurrently, killed once the vitest run finishes), on
-// the fixed port the worker's TWITCH_AUTH_BASE_URL/TWITCH_API_BASE_URL point at.
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { url } = await startMockTwitchServer(MOCK_TWITCH_PORT)
-  console.log(`[mock-twitch] listening on ${url}`)
 }

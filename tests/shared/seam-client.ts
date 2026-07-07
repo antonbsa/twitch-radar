@@ -6,12 +6,12 @@ import type {
   SeedRequestBody,
   SeedResponse,
   SeedUserInput,
-} from "../../apps/api/src/http/routes/__test__"
+} from "../../apps/api/src/http/routes/_tests"
 
 export {
   E2E_BROADCASTER_PREFIX,
   E2E_USER_ID,
-} from "../../apps/api/src/http/routes/__test__"
+} from "../../apps/api/src/http/routes/_tests"
 
 export type {
   SeedChannelStateInput,
@@ -28,29 +28,26 @@ export interface SeededUser {
 }
 
 export interface SeamClientOptions {
-  // Lazy so clients can be built at module scope before the runner provides
-  // the values (vitest `inject()` on the api tier, env vars on the e2e tier).
+  // Lazy so the client can be built at module scope before the runner
+  // provides the value (env vars injected by each tier's setup).
   baseUrl: () => string
-  token: () => string
 }
 
 /**
- * HTTP client for the guarded test-seam endpoint (`/api/__test__/*`, see
- * ADR 0025). This is the only channel test setup/teardown goes through — the
- * seam runs inside the worker, so it reuses the same repository modules and
- * D1/KV bindings as the real routes without going through the public API.
+ * HTTP client for the test-seam endpoint (`/api/__test__/*`, see ADR 0025).
+ * This is the only channel test setup/teardown goes through — the seam runs
+ * inside the worker, so it reuses the same repository modules and D1/KV
+ * bindings as the real routes without going through the public API. The
+ * route only exists at all outside production (see `apps/api/src/index.ts`).
  */
-export function createSeamClient({ baseUrl, token }: SeamClientOptions) {
+export function createSeamClient({ baseUrl }: SeamClientOptions) {
   async function call(
     path: "/reset" | "/seed",
     body: SeedRequestBody | ResetRequestBody = {},
   ): Promise<unknown> {
     const res = await fetch(`${baseUrl()}/api/__test__${path}`, {
       method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-test-seed-token": token(),
-      },
+      headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
     })
     if (!res.ok) {

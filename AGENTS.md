@@ -70,10 +70,10 @@ http/
     channels.ts               — handleGetFollowedChannels
     me.ts                     — handleGetMe
     sync.ts                   — handleSyncFollows
-    __test__.ts               — handleTestReset, handleTestSeed; guarded test-seam shared by both
-                                test tiers (tests/api and tests/web/e2e via tests/shared/seam-client.ts),
-                                unreachable unless environment !== "production" and x-test-seed-token
-                                matches TEST_SEED_TOKEN (see ADR 0025)
+    _tests.ts                  — handleTestReset, handleTestSeed; test-seam shared by both test
+                                tiers (tests/api and tests/web/e2e via tests/shared/seam-client.ts).
+                                Only registered on the router at all when environment !== "production"
+                                (see index.ts, ADR 0025) — no separate guard/token to bypass
 services/
   crypto.ts                   — encryptToken, decryptToken (AES-256-GCM via Web Crypto)
   session.ts                  — createSession, getSession, deleteSession, deleteSessionsForUser,
@@ -140,7 +140,7 @@ New repositories go in `db/repositories/<entity>.ts` as a class with `AppDatabas
 - Worker config: `apps/api/wrangler.jsonc` (JSONC format, no `wrangler.toml`). The `dev` script points wrangler's `--env-file` flags at the root files (`../../.env.development`, `../../.env.local`); the latter wins on conflicts.
 - `apps/web`'s `vite.config.ts` sets `envDir` to the repo root and uses Vite's `loadEnv` to read `API_URL` for the dev proxy target (Node-side config only, not bundled). Any future `VITE_`-prefixed vars would also be read from `.env.development`/`.env.local` and exposed to client code via `import.meta.env` — unprefixed vars (including secrets) are never bundled into the browser build.
 - `API_URL` is the API Worker's own base URL (renamed from `PUBLIC_BASE_URL` to make that explicit); `twitchRedirectUri` is derived in `apps/api/src/env.ts` as `${API_URL}${TWITCH_CALLBACK_PATH}` rather than stored as its own var, since the callback path is fixed and must match the route registered in `index.ts`. `EVENTSUB_CALLBACK_URL` was removed (unused until T-007 implements EventSub subscriptions) — derive it the same way from `API_URL` when that lands.
-- `TEST_SEED_TOKEN` (optional in `apps/api/src/env.ts`) gates the `/api/__test__/*` routes both test tiers use for state orchestration (see ADR 0025). It has a placeholder value in `.env.development`; leaving it unset in any deployed environment makes those routes unreachable regardless of `ENVIRONMENT`.
+- The `/api/__test__/*` routes both test tiers use for state orchestration (see ADR 0025) are only registered on the router when `environment !== "production"` — no env var gates them.
 
 ## D1 Query Constraints
 
