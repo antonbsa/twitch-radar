@@ -17,12 +17,37 @@ const INSPECTOR_PORT = 9230
 const READY_TIMEOUT_MS = 60_000
 const READY_POLL_INTERVAL_MS = 300
 
+// Captures output instead of inheriting it, so a healthy run stays quiet
+// (only vitest's own output prints) while a failure can still be diagnosed.
+function spawnCapturing(
+  command: string,
+  args: string[],
+  options: { cwd: string; detached?: boolean },
+): { child: ChildProcess; readOutput: () => string } {
+  const child = spawn(command, args, { ...options, stdio: "pipe" })
+  const chunks: Buffer[] = []
+  child.stdout?.on("data", (chunk: Buffer) => chunks.push(chunk))
+  child.stderr?.on("data", (chunk: Buffer) => chunks.push(chunk))
+  return { child, readOutput: () => Buffer.concat(chunks).toString("utf-8") }
+}
+
+function printCapturedOutput(label: string, output: string): void {
+  if (!output.trim()) return
+  console.error(`--- ${label} output ---\n${output}`)
+}
+
 function runToCompletion(command: string, args: string[]): Promise<void> {
+  const { child, readOutput } = spawnCapturing(command, args, {
+    cwd: REPO_ROOT,
+  })
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, { cwd: REPO_ROOT, stdio: "ignore" })
     child.on("exit", (code) => {
-      if (code === 0) resolve()
-      else reject(new Error(`${command} ${args.join(" ")} exited with ${code}`))
+      if (code === 0) {
+        resolve()
+        return
+      }
+      printCapturedOutput(`${command} ${args.join(" ")}`, readOutput())
+      reject(new Error(`${command} ${args.join(" ")} exited with ${code}`))
     })
     child.on("error", reject)
   })
@@ -30,14 +55,17 @@ function runToCompletion(command: string, args: string[]): Promise<void> {
 
 // Silences the dev server's own request logs so only vitest's test output
 // shows; a crash after setup would otherwise go unnoticed until tests start
-// timing out one by one, so it's still watched and fails the run immediately.
+// timing out one by one, so it's still watched and fails the run immediately,
+// printing whatever it wrote before dying.
 function failOnUnexpectedExit(
   child: ChildProcess,
   label: string,
   isTornDown: () => boolean,
+  readOutput: () => string,
 ): void {
   child.on("exit", (code, signal) => {
     if (isTornDown()) return
+    printCapturedOutput(label, readOutput())
     console.error(
       `${label} exited unexpectedly during the test run (code=${code}, signal=${signal})`,
     )
@@ -113,7 +141,7 @@ export default async function globalSetup() {
 
   const mockTwitch = await startMockTwitchServer(MOCK_TWITCH_PORT)
 
-  const worker = spawn(
+  const { child: worker, readOutput } = spawnCapturing(
     "npx",
     [
       "wrangler",
@@ -138,19 +166,20 @@ export default async function globalSetup() {
       "--var",
       `TWITCH_API_BASE_URL:${MOCK_TWITCH_URL}`,
     ],
-    { cwd: REPO_ROOT, stdio: "ignore", detached: true },
+    { cwd: REPO_ROOT, detached: true },
   )
 
   try {
     await waitForReadyOrExit(`${API_TEST_URL}/health`, worker, "wrangler dev")
   } catch (err) {
+    printCapturedOutput("wrangler dev", readOutput())
     mockTwitch.server.close()
     killProcessGroup(worker)
     throw err
   }
 
   let tornDown = false
-  failOnUnexpectedExit(worker, "wrangler dev", () => tornDown)
+  failOnUnexpectedExit(worker, "wrangler dev", () => tornDown, readOutput)
 
   return async () => {
     tornDown = true
