@@ -141,6 +141,7 @@ New repositories go in `db/repositories/<entity>.ts` as a class with `AppDatabas
 - `apps/web`'s `vite.config.ts` sets `envDir` to the repo root and uses Vite's `loadEnv` to read `API_URL` for the dev proxy target (Node-side config only, not bundled). Any future `VITE_`-prefixed vars would also be read from `.env.development`/`.env.local` and exposed to client code via `import.meta.env` — unprefixed vars (including secrets) are never bundled into the browser build.
 - `API_URL` is the API Worker's own base URL (renamed from `PUBLIC_BASE_URL` to make that explicit); `twitchRedirectUri` is derived in `apps/api/src/env.ts` as `${API_URL}${TWITCH_CALLBACK_PATH}` rather than stored as its own var, since the callback path is fixed and must match the route registered in `index.ts`. `EVENTSUB_CALLBACK_URL` was removed (unused until T-007 implements EventSub subscriptions) — derive it the same way from `API_URL` when that lands.
 - The `/api/__test__/*` routes both test tiers use for state orchestration (see ADR 0025) are only registered on the router when `environment !== "production"` — no env var gates them.
+- Both test tiers' `wrangler dev` invocations (`tests/api/setup/global-setup.ts`, `tests/web/e2e/setup/global-setup.ts`) pass only `--env-file .env.development`, never `.env.local`. `.env.local` is gitignored and absent in CI; passing a nonexistent path makes `wrangler dev` exit immediately (surfaced confusingly as vitest's "No test files found"). Tests never do a real OAuth round-trip, so `.env.development`'s placeholders are sufficient — don't add `.env.local` back to these scripts.
 
 ## D1 Query Constraints
 
@@ -159,6 +160,17 @@ for (let i = 0; i < ids.length; i += BATCH_SIZE) {
 ```
 
 SQLite in tests has no such limit, so unbatched queries pass locally and only fail in production.
+
+## Test Tiers
+
+Two independent tiers, each a plain `vitest run` whose `globalSetup` boots and tears down everything it needs (see ADR 0025):
+
+- `tests/api` — real HTTP requests against a `wrangler dev` worker plus an in-process mock Twitch server (`tests/api/setup/`), against throwaway D1/KV state.
+- `tests/web/e2e` (and `tests/web/unit`) — Playwright driving a real `wrangler dev` + `vite dev` pair (`tests/web/e2e/setup/`), against the shared dev D1/KV.
+
+Both tiers' `global-setup.ts` share their spawn/readiness/teardown plumbing via `tests/shared/setup/process-lifecycle.ts` — add new process-orchestration logic there, not duplicated per tier. Spawned dev-server output is captured, not printed, so a healthy run shows only vitest's own test output; on a setup failure or an unexpected mid-run exit, the captured output is printed and the run fails immediately (`process.exit(1)`) instead of hanging or timing out test by test.
+
+CI (`.github/workflows/tests.yaml`) runs `api` and `e2e` as separate jobs so the Playwright browser install (`npx playwright install --with-deps chromium`) only happens for the e2e job.
 
 ## Lint Config
 
