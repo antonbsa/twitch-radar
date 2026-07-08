@@ -59,6 +59,13 @@ db/
     twitch-tokens.ts          — TwitchTokensRepository (encrypted access/refresh tokens)
     followed-channels.ts      — FollowedChannelsRepository
     channel-state.ts          — ChannelStateRepository; inArray queries batch at 100 (D1 limit)
+    channel-category-preferences.ts — ChannelCategoryPreferencesRepository (soft-disable via
+                                disabled_at, revive on re-create; ADR 0029)
+    global-category-preferences.ts — GlobalCategoryPreferencesRepository (same lifecycle)
+    monitored-channels.ts     — MonitoredChannelsRepository (broadcaster-keyed, soft-disable;
+                                ADR 0030)
+    eventsub-subscriptions.ts — EventsubSubscriptionsRepository; ensurePending stages local
+                                "pending" rows for T-007 to create on Twitch
 http/
   errors.ts                   — ApiError, errorResponse
   response.ts                 — jsonResponse, getRequestId
@@ -68,12 +75,18 @@ http/
     health.ts                 — handleHealth
     auth.ts                   — handleAuthStart, handleAuthCallback, handleLogout
     channels.ts               — handleGetFollowedChannels
+    categories.ts             — handleSearchCategories (proxies Twitch category search with the
+                                user's token)
+    preferences.ts            — handleGetPreferences, handleCreate/DeleteChannelPreference,
+                                handleCreate/DeleteGlobalPreference; idempotent create,
+                                soft-disable delete, monitoring maintenance inline (ADRs 0029–0030)
     me.ts                     — handleGetMe
     push-subscriptions.ts     — handleGetVapidPublicKey, handleCreatePushSubscription (idempotent
                                 upsert by endpoint), handleDeletePushSubscription (soft revoke);
                                 lifecycle contract in ADR 0027
     sync.ts                   — handleSyncFollows
-    _tests.ts                  — handleTestReset, handleTestSeed; test-seam shared by both test
+    _tests.ts                  — handleTestReset, handleTestSeed, handleTestInspect (reads
+                                broadcaster-keyed monitoring state); test-seam shared by both test
                                 tiers (tests/api and tests/web/e2e via tests/shared/seam-client.ts).
                                 Only registered on the router at all when environment !== "production"
                                 (see index.ts, ADR 0025) — no separate guard/token to bypass
@@ -81,10 +94,15 @@ services/
   crypto.ts                   — encryptToken, decryptToken (AES-256-GCM via Web Crypto)
   session.ts                  — createSession, getSession, deleteSession, deleteSessionsForUser,
                                 OAuth state helpers
+  monitoring.ts               — ensureMonitoredBroadcasters (upsert monitored_channels, stage
+                                pending eventsub rows, fill-only channel_state seeding) and
+                                cleanupMonitoringForBroadcasters (ADR 0030)
   twitch/
     client.ts                 — TwitchApiError, exchangeCode, getAuthenticatedUser,
-                                getAllFollowedChannels, getAllFollowedStreams
-    sync.ts                   — syncFollowedChannels
+                                getAllFollowedChannels, getAllFollowedStreams, searchCategories,
+                                getStreamsByUserIds (batched at 100 user_id params)
+    sync.ts                   — syncFollowedChannels; also re-ensures monitoring for users with
+                                active global preferences
     token-refresh.ts          — getValidAccessToken (auto-refresh with 5-min buffer)
 ```
 

@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
 import type { AppDatabase } from "../client"
 import { followedChannels } from "../schema"
 
@@ -55,6 +55,43 @@ export class FollowedChannelsRepository {
         })
         .run()
     }
+  }
+
+  async findOne(
+    userId: string,
+    broadcasterUserId: string,
+  ): Promise<FollowedChannelRecord | null> {
+    const row = await this.db
+      .select()
+      .from(followedChannels)
+      .where(
+        and(
+          eq(followedChannels.userId, userId),
+          eq(followedChannels.broadcasterUserId, broadcasterUserId),
+        ),
+      )
+      .get()
+    if (!row) return null
+    return {
+      user_id: row.userId,
+      broadcaster_user_id: row.broadcasterUserId,
+      broadcaster_login: row.broadcasterLogin,
+      broadcaster_display_name: row.broadcasterDisplayName,
+      broadcaster_profile_image_url: row.broadcasterProfileImageUrl,
+      followed_at: row.followedAt,
+      last_synced_at: row.lastSyncedAt,
+    }
+  }
+
+  async findUserIdsByBroadcasterUserId(
+    broadcasterUserId: string,
+  ): Promise<string[]> {
+    const rows = await this.db
+      .select({ userId: followedChannels.userId })
+      .from(followedChannels)
+      .where(eq(followedChannels.broadcasterUserId, broadcasterUserId))
+      .all()
+    return rows.map((row) => row.userId)
   }
 
   async findByUserId(userId: string): Promise<FollowedChannelRecord[]> {

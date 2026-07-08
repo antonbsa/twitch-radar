@@ -1,4 +1,5 @@
 import type {
+  InspectRequestBody,
   ResetRequestBody,
   SeedChannelStateInput,
   SeedFollowedChannelInput,
@@ -7,6 +8,9 @@ import type {
   SeedResponse,
   SeedUserInput,
 } from "../../apps/api/src/http/routes/_tests"
+import type { ChannelStateRecord } from "../../apps/api/src/db/repositories/channel-state"
+import type { EventsubSubscriptionRecord } from "../../apps/api/src/db/repositories/eventsub-subscriptions"
+import type { MonitoredChannelRecord } from "../../apps/api/src/db/repositories/monitored-channels"
 
 export {
   E2E_BROADCASTER_PREFIX,
@@ -19,6 +23,12 @@ export type {
   SeedPreferencesInput,
   SeedRequestBody,
   SeedUserInput,
+}
+
+export interface InspectResponse {
+  monitoredChannels: MonitoredChannelRecord[]
+  eventsubSubscriptions: EventsubSubscriptionRecord[]
+  channelState: ChannelStateRecord[]
 }
 
 export interface SeededUser {
@@ -42,8 +52,8 @@ export interface SeamClientOptions {
  */
 export function createSeamClient({ baseUrl }: SeamClientOptions) {
   async function call(
-    path: "/reset" | "/seed",
-    body: SeedRequestBody | ResetRequestBody = {},
+    path: "/reset" | "/seed" | "/inspect",
+    body: SeedRequestBody | ResetRequestBody | InspectRequestBody = {},
   ): Promise<unknown> {
     const res = await fetch(`${baseUrl()}/api/__test__${path}`, {
       method: "POST",
@@ -110,6 +120,13 @@ export function createSeamClient({ baseUrl }: SeamClientOptions) {
 
     async seedPreferences(preferences: SeedPreferencesInput): Promise<void> {
       await seed({ preferences })
+    },
+
+    /** Reads broadcaster-keyed monitoring state the public API never exposes. */
+    async inspect(broadcasterUserIds: string[]): Promise<InspectResponse> {
+      return (await call("/inspect", {
+        broadcasterUserIds,
+      })) as InspectResponse
     },
   }
 }

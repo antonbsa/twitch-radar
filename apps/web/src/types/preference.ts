@@ -9,12 +9,14 @@ export interface ChannelPreference {
   broadcaster_user_id: string
   category_id: string
   category_name: string
+  created_at: string
 }
 
 export interface GlobalPreference {
   id: string
   category_id: string
   category_name: string
+  created_at: string
 }
 
 export interface PreferencesResponse {

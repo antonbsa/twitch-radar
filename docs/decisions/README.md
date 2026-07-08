@@ -34,3 +34,5 @@ Other project documents may state goals, requirements, task scope, validation st
 - [0026 - Manual Service Worker And Manifest Without vite-plugin-pwa](0026-manual-service-worker-without-vite-plugin-pwa.md)
 - [0027 - Push Subscription Lifecycle And API Contract](0027-push-subscription-lifecycle-and-api-contract.md)
 - [0028 - Mirror Wire-Shape Types Across Workspaces Instead Of A Shared Package](0028-mirror-wire-shape-types-across-workspaces.md)
+- [0029 - Category Preference API Contract And Lifecycle](0029-category-preference-api-contract-and-lifecycle.md)
+- [0030 - Monitored Broadcaster Lifecycle And State Seeding](0030-monitored-broadcaster-lifecycle-and-state-seeding.md)
