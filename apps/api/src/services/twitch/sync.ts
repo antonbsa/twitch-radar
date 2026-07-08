@@ -1,5 +1,6 @@
 import type { AppConfig } from "../../env"
 import type { Database } from "../../db"
+import { ensureMonitoredBroadcasters } from "../monitoring"
 import { getAllFollowedChannels, getAllFollowedStreams } from "./client"
 
 export async function syncFollowedChannels(
@@ -67,6 +68,26 @@ export async function syncFollowedChannels(
           }
     }),
   )
+
+  // A user with an active global preference monitors all followed
+  // broadcasters (ADR 0007) — keep the monitored set current as follows
+  // change. Channel state for these rows was just seeded above, so the
+  // ensure step only touches monitored_channels/eventsub_subscriptions.
+  const globalPreferences =
+    await db.globalCategoryPreferences.listActiveByUserId(userId)
+  if (globalPreferences.length > 0) {
+    await ensureMonitoredBroadcasters(
+      db,
+      config,
+      userId,
+      channels.map((ch) => ({
+        broadcasterUserId: ch.broadcaster_id,
+        broadcasterLogin: ch.broadcaster_login,
+        broadcasterDisplayName: ch.broadcaster_name,
+      })),
+      "global_preference",
+    )
+  }
 
   await db.users.updateLastFollowSyncAt(userId, now, now)
 }

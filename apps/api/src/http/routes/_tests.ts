@@ -6,8 +6,10 @@ import { createDatabaseClient } from "../../db/client"
 import {
   channelCategoryPreferences,
   channelState,
+  eventsubSubscriptions,
   followedChannels,
   globalCategoryPreferences,
+  monitoredChannels,
   pushSubscriptions,
   twitchTokens,
   users,
@@ -156,34 +158,24 @@ export async function handleTestSeed(c: Context<HonoEnv>): Promise<Response> {
   }
 
   if (body.preferences) {
-    // No repository exists yet for these tables (owned by T-006); the seam
-    // writes directly against the schema since it only needs to unblock the
-    // .skip'd happy-path specs until that lands.
-    const db = createDatabaseClient(c.env.DB)
     for (const pref of body.preferences.channel ?? []) {
-      await db
-        .insert(channelCategoryPreferences)
-        .values({
-          id: `cpref_${nanoid()}`,
-          userId,
-          broadcasterUserId: pref.broadcasterUserId,
-          categoryId: pref.categoryId,
-          categoryName: pref.categoryName,
-          createdAt: now,
-        })
-        .run()
+      await c.var.db.channelCategoryPreferences.create({
+        id: `cpref_${nanoid()}`,
+        userId,
+        broadcasterUserId: pref.broadcasterUserId,
+        categoryId: pref.categoryId,
+        categoryName: pref.categoryName,
+        now,
+      })
     }
     for (const pref of body.preferences.global ?? []) {
-      await db
-        .insert(globalCategoryPreferences)
-        .values({
-          id: `gpref_${nanoid()}`,
-          userId,
-          categoryId: pref.categoryId,
-          categoryName: pref.categoryName,
-          createdAt: now,
-        })
-        .run()
+      await c.var.db.globalCategoryPreferences.create({
+        id: `gpref_${nanoid()}`,
+        userId,
+        categoryId: pref.categoryId,
+        categoryName: pref.categoryName,
+        now,
+      })
     }
   }
 
@@ -268,8 +260,49 @@ export async function handleTestReset(c: Context<HonoEnv>): Promise<Response> {
     .delete(channelState)
     .where(like(channelState.broadcasterUserId, `${E2E_BROADCASTER_PREFIX}%`))
     .run()
+  await db
+    .delete(monitoredChannels)
+    .where(
+      like(monitoredChannels.broadcasterUserId, `${E2E_BROADCASTER_PREFIX}%`),
+    )
+    .run()
+  await db
+    .delete(eventsubSubscriptions)
+    .where(
+      like(
+        eventsubSubscriptions.broadcasterUserId,
+        `${E2E_BROADCASTER_PREFIX}%`,
+      ),
+    )
+    .run()
 
   await deleteSessionsForUser(c.env.APP_CACHE, E2E_USER_ID)
 
   return new Response(null, { status: 204 })
+}
+
+export interface InspectRequestBody {
+  broadcasterUserIds: string[]
+}
+
+// Read-only window into broadcaster-keyed tables the public API never
+// exposes (monitoring is server-internal, ADR 0007) so tests can assert
+// monitored_channels / eventsub_subscriptions / channel_state side effects.
+export async function handleTestInspect(
+  c: Context<HonoEnv>,
+): Promise<Response> {
+  const body = await readJsonBody<InspectRequestBody>(c)
+  const ids = body.broadcasterUserIds ?? []
+
+  const [monitored, eventsub, state] = await Promise.all([
+    c.var.db.monitoredChannels.findByBroadcasterUserIds(ids),
+    c.var.db.eventsubSubscriptions.findByBroadcasterUserIds(ids),
+    c.var.db.channelState.findByBroadcasterUserIds(ids),
+  ])
+
+  return jsonResponse({
+    monitoredChannels: monitored,
+    eventsubSubscriptions: eventsub,
+    channelState: state,
+  })
 }

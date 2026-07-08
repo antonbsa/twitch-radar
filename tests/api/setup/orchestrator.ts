@@ -9,6 +9,23 @@ async function clearDatabase() {
   await seam.resetAll()
 }
 
+async function seedFollowedChannels(
+  userId: string,
+  channels: Array<{
+    broadcasterUserId: string
+    broadcasterLogin: string
+    broadcasterDisplayName: string
+  }>,
+) {
+  // The seam attaches followedChannels to the user in the same request, and
+  // seeding a user upserts it — derive twitchUserId from the id so re-seeds
+  // stay collision-free on the users.twitch_user_id unique constraint.
+  await seam.seed({
+    user: { id: userId, twitchUserId: `twitch_${userId}` },
+    followedChannels: channels,
+  })
+}
+
 async function createAuthenticatedSession(options: SeedUserInput = {}) {
   const seeded = await seam.seedAuthenticatedUser({
     twitchUserId: options.twitchUserId ?? "twitch_test_123",
@@ -83,11 +100,45 @@ const mockTwitch = {
       pagination: {},
     })
   },
+
+  onCategorySearch(
+    categories: Array<{
+      id: string
+      name: string
+      box_art_url?: string | null
+    }>,
+    status = 200,
+  ) {
+    return this.queue("/helix/search/categories", { data: categories }, status)
+  },
+
+  onStreams(
+    streams: Array<{
+      id: string
+      user_id: string
+      user_login: string
+      user_name: string
+      game_id: string
+      game_name: string
+      viewer_count: number
+      started_at: string
+      title: string
+    }>,
+  ) {
+    // The "?" keeps this pattern from also matching /helix/streams/followed
+    // requests (the mock server routes on URL substring containment).
+    return this.queue("/helix/streams?", {
+      data: streams.map((s) => ({ ...s, type: "live" })),
+    })
+  },
 }
 
 export const orchestrator = {
   baseUrl: API_TEST_URL,
   clearDatabase,
   createAuthenticatedSession,
+  seedFollowedChannels,
+  seedChannelState: seam.seedChannelState,
+  inspect: (broadcasterUserIds: string[]) => seam.inspect(broadcasterUserIds),
   mockTwitch,
 }

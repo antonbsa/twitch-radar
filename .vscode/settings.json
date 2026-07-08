@@ -1,11 +1,16 @@
 {
   "cSpell.words": [
+    "channela",
+    "channelb",
+    "cpref",
     "eventsub",
     "geist",
+    "gpref",
     "idempotently",
     "notificationclick",
     "precache",
     "precaching",
+    "prefs",
     "psub",
     "testuser",
     "upserts"

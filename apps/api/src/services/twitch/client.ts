@@ -33,6 +33,25 @@ export interface TwitchFollowedStream {
   started_at: string
 }
 
+export interface TwitchCategory {
+  id: string
+  name: string
+  box_art_url: string | null
+}
+
+export interface TwitchStream {
+  id: string
+  user_id: string
+  user_login: string
+  user_name: string
+  game_id: string
+  game_name: string
+  type: string
+  title: string
+  viewer_count: number
+  started_at: string
+}
+
 export class TwitchApiError extends Error {
   readonly status: number
   constructor(message: string, status: number) {
@@ -132,6 +151,60 @@ export async function getAllFollowedChannels(
     results.push(...body.data)
     cursor = body.pagination?.cursor
   } while (cursor)
+
+  return results
+}
+
+export async function searchCategories(
+  clientId: string,
+  accessToken: string,
+  query: string,
+  apiBaseUrl = "https://api.twitch.tv",
+): Promise<TwitchCategory[]> {
+  const url = new URL(`${apiBaseUrl}/helix/search/categories`)
+  url.searchParams.set("query", query)
+  url.searchParams.set("first", "20")
+
+  const res = await fetch(url.toString(), {
+    headers: {
+      "Client-Id": clientId,
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+  // Twitch returns 404 for queries with no matching categories.
+  if (res.status === 404) return []
+  if (!res.ok) throw new TwitchApiError(`Category search failed`, res.status)
+  const body = (await res.json()) as { data?: TwitchCategory[] }
+  return body.data ?? []
+}
+
+export async function getStreamsByUserIds(
+  clientId: string,
+  accessToken: string,
+  userIds: string[],
+  apiBaseUrl = "https://api.twitch.tv",
+): Promise<TwitchStream[]> {
+  // Get Streams accepts at most 100 user_id params per request.
+  const BATCH_SIZE = 100
+  const results: TwitchStream[] = []
+
+  for (let i = 0; i < userIds.length; i += BATCH_SIZE) {
+    const url = new URL(`${apiBaseUrl}/helix/streams`)
+    for (const userId of userIds.slice(i, i + BATCH_SIZE)) {
+      url.searchParams.append("user_id", userId)
+    }
+    url.searchParams.set("first", "100")
+
+    const res = await fetch(url.toString(), {
+      headers: {
+        "Client-Id": clientId,
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
+    if (!res.ok) throw new TwitchApiError(`Streams fetch failed`, res.status)
+    const body = (await res.json()) as { data: TwitchStream[] }
+    results.push(...body.data)
+  }
 
   return results
 }

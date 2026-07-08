@@ -4,10 +4,6 @@ import { WEB_URL } from "./setup/browser"
 import { it } from "./setup/fixtures"
 import { expectHidden, expectVisible } from "./setup/assertions"
 
-// GET /api/preferences and GET /api/categories/search don't exist yet — they
-// ship with T-006. Until then every real request 404s, which is exactly the
-// "no retry on 4xx" path this suite guards. Tests that need a *successful*
-// response mock it at the network layer instead of depending on T-006.
 describe("Alerts view", () => {
   beforeAll(async () => {
     await resetState()
@@ -37,6 +33,15 @@ describe("Alerts view", () => {
     authenticatedSession,
   }) => {
     const { page } = authenticatedSession
+    await page.route("**/api/preferences", (route) =>
+      route.fulfill({
+        status: 404,
+        contentType: "application/json",
+        body: JSON.stringify({
+          error: { code: "not_found", message: "Route not found" },
+        }),
+      }),
+    )
     await page.goto(`${WEB_URL}/alerts`)
 
     await expectVisible(
@@ -71,10 +76,41 @@ describe("Alerts view", () => {
     await expectHidden(dialog)
   })
 
-  // T-006 (Preferences And Monitoring) owns POST/DELETE /api/preferences/* and
-  // GET /api/categories/search. Seeding is wired via seedPreferences() so this
-  // only needs its `.skip` removed once that backend exists.
-  it.skip("should add and remove a global category preference end to end", async () => {
-    // Intentionally left as a stub: real category search + add/remove flow.
+  it("should add and remove a global category preference end to end", async ({
+    authenticatedSession,
+  }) => {
+    const { page } = authenticatedSession
+    // Only category search is mocked — this tier has no mock Twitch server
+    // and search proxies to the real Twitch API. The preference add/remove
+    // round-trips below hit the real backend (the seeded E2E user has no
+    // followed channels, so no monitoring work reaches Twitch either).
+    await page.route("**/api/categories/search*", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          data: [{ id: "27471", name: "Minecraft", box_art_url: null }],
+        }),
+      }),
+    )
+
+    await page.goto(`${WEB_URL}/alerts`)
+    await expectVisible(page.getByText("No global alerts set."))
+
+    await page.getByRole("button", { name: "Add Category" }).click()
+    const dialog = page.getByRole("dialog")
+    await expectVisible(dialog)
+
+    await dialog.getByPlaceholder("Search categories...").fill("mine")
+    await dialog.getByRole("button", { name: "Minecraft" }).click()
+
+    // The sheet closes on success and the refreshed list shows the new alert.
+    await expectHidden(dialog)
+    await expectVisible(page.getByText("Minecraft"))
+    await expectHidden(page.getByText("No global alerts set."))
+
+    await page.getByRole("button", { name: "Remove Minecraft" }).click()
+    await expectVisible(page.getByText("No global alerts set."))
+    await expectHidden(page.getByText("Minecraft"))
   })
 })
