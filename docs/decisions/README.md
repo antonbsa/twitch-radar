@@ -33,3 +33,4 @@ Other project documents may state goals, requirements, task scope, validation st
 - [0025 - E2E UI Tests With Playwright And A Guarded Test-Seam Endpoint](0025-e2e-ui-tests-with-playwright-and-test-seam.md)
 - [0026 - Manual Service Worker And Manifest Without vite-plugin-pwa](0026-manual-service-worker-without-vite-plugin-pwa.md)
 - [0027 - Push Subscription Lifecycle And API Contract](0027-push-subscription-lifecycle-and-api-contract.md)
+- [0028 - Mirror Wire-Shape Types Across Workspaces Instead Of A Shared Package](0028-mirror-wire-shape-types-across-workspaces.md)

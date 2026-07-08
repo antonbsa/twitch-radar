@@ -122,7 +122,7 @@ lib/
   utils.ts                     — shadcn's `cn()` helper
 types/
   user.ts, push.ts             — mirror apps/api's snake_case fields exactly (not shared/imported
-                                across the workspace boundary — see ADR 0012)
+                                across the workspace boundary — see ADR 0028)
 public/
   manifest.webmanifest         — static PWA manifest (ADR 0026)
   service-worker.js            — hand-written push/notificationclick-only SW; no fetch handler,
@@ -151,7 +151,7 @@ New repositories go in `db/repositories/<entity>.ts` as a class with `AppDatabas
 ## Env Vars: Single Source of Truth
 
 - All dev env vars live at the repo root, not per-app: `.env.development` — committed; safe placeholder values for all secrets. `.env.local` — gitignored; override with real values (e.g., actual `TWITCH_CLIENT_ID` / `TWITCH_CLIENT_SECRET`). Only these two need real values for OAuth flows; everything else works with the placeholders.
-- The zod schema that validates these vars and derives the camelCase `AppConfig` lives in `apps/api/src/env.ts`, same as before — it's the only current consumer, so it isn't split into a shared package. If `apps/web` ever needs validated env vars, give it its own small schema for just its `VITE_`-prefixed vars (same duplication pattern as `types/user.ts`, see ADR 0012) rather than sharing this one.
+- The zod schema that validates these vars and derives the camelCase `AppConfig` lives in `apps/api/src/env.ts`, same as before — it's the only current consumer, so it isn't split into a shared package. If `apps/web` ever needs validated env vars, give it its own small schema for just its `VITE_`-prefixed vars (same duplication pattern as `types/user.ts`, see ADR 0028) rather than sharing this one.
 - Worker config: `apps/api/wrangler.jsonc` (JSONC format, no `wrangler.toml`). The `dev` script points wrangler's `--env-file` flags at the root files (`../../.env.development`, `../../.env.local`); the latter wins on conflicts.
 - `apps/web`'s `vite.config.ts` sets `envDir` to the repo root and uses Vite's `loadEnv` to read `API_URL` for the dev proxy target (Node-side config only, not bundled). Any future `VITE_`-prefixed vars would also be read from `.env.development`/`.env.local` and exposed to client code via `import.meta.env` — unprefixed vars (including secrets) are never bundled into the browser build.
 - `API_URL` is the API Worker's own base URL (renamed from `PUBLIC_BASE_URL` to make that explicit); `twitchRedirectUri` is derived in `apps/api/src/env.ts` as `${API_URL}${TWITCH_CALLBACK_PATH}` rather than stored as its own var, since the callback path is fixed and must match the route registered in `index.ts`. `EVENTSUB_CALLBACK_URL` was removed (unused until T-007 implements EventSub subscriptions) — derive it the same way from `API_URL` when that lands.

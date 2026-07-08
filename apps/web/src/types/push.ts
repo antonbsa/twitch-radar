@@ -1,5 +1,5 @@
 // Mirrors apps/api's PushSubscriptionRecord snake_case fields exactly (not
-// shared/imported across the workspace boundary — see ADR 0012).
+// shared/imported across the workspace boundary — see ADR 0028).
 export interface PushSubscriptionRecord {
   id: string
   user_id: string
