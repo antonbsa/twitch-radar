@@ -5,7 +5,12 @@ import { BrowserRouter } from "react-router"
 import { AuthProvider } from "@/context/auth-context"
 import { App } from "@/App"
 import { ApiRequestError } from "@/lib/errors"
+import { registerServiceWorker } from "@/lib/push"
 import "@/index.css"
+
+// Fire-and-forget: a failed registration only degrades push (surfaced on the
+// Account view), it must never block rendering.
+registerServiceWorker().catch(() => {})
 
 const queryClient = new QueryClient({
   defaultOptions: {

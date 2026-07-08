@@ -21,6 +21,48 @@ async function mockNotificationPermission(
   }, permission)
 }
 
+/**
+ * Headless Chromium has no push service to subscribe against, so the browser
+ * Push API surface is mocked in-page: permission starts at "default" and is
+ * granted by requestPermission, and PushManager hands out a fake subscription.
+ * Everything past that boundary (VAPID key fetch, POST/DELETE against the
+ * real worker and D1) is exercised for real.
+ */
+async function mockPushEnvironment(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    let permission: NotificationPermission = "default"
+    Object.defineProperty(window.Notification, "permission", {
+      get: () => permission,
+      configurable: true,
+    })
+    window.Notification.requestPermission = async () => {
+      permission = "granted"
+      return permission
+    }
+
+    let currentSubscription: PushSubscription | null = null
+    const makeSubscription = () => {
+      const endpoint = `https://push.example.com/e2e/${crypto.randomUUID()}`
+      return {
+        endpoint,
+        toJSON: () => ({
+          endpoint,
+          keys: { p256dh: "e2e-p256dh", auth: "e2e-auth" },
+        }),
+        unsubscribe: async () => {
+          currentSubscription = null
+          return true
+        },
+      } as unknown as PushSubscription
+    }
+    PushManager.prototype.subscribe = async () => {
+      currentSubscription ??= makeSubscription()
+      return currentSubscription
+    }
+    PushManager.prototype.getSubscription = async () => currentSubscription
+  })
+}
+
 // Each test gets its own session via the authenticatedSession fixture rather
 // than sharing one from beforeAll: the logout and mid-session-401 tests
 // intentionally invalidate the session they use, which would break any other
@@ -50,14 +92,52 @@ describe("Account view", () => {
       .toBe("I")
   })
 
-  it("should render the granted notification permission state", async ({
+  it("should treat granted permission without a device subscription as not enabled", async ({
     authenticatedSession,
   }) => {
     const { page } = authenticatedSession
     await mockNotificationPermission(page, "granted")
 
     await page.goto(`${WEB_URL}/account`)
+    await expectVisible(page.getByText("Status: Not enabled"))
+    await expectVisible(
+      page.getByRole("button", { name: "Enable Notifications" }),
+    )
+  })
+
+  it("should render not supported when the Push API is missing", async ({
+    authenticatedSession,
+  }) => {
+    const { page } = authenticatedSession
+    await page.addInitScript(() => {
+      // @ts-expect-error -- simulating a browser without the Push API
+      delete window.PushManager
+    })
+
+    await page.goto(`${WEB_URL}/account`)
+    await expectVisible(page.getByText("Status: Not supported"))
+  })
+
+  it("should enable and disable push notifications end to end", async ({
+    authenticatedSession,
+  }) => {
+    const { page } = authenticatedSession
+    await mockPushEnvironment(page)
+
+    await page.goto(`${WEB_URL}/account`)
+    await expectVisible(page.getByText("Status: Not enabled"))
+
+    await page.getByRole("button", { name: "Enable Notifications" }).click()
     await expectVisible(page.getByText("Status: Enabled"))
+    await expectVisible(
+      page.getByRole("button", { name: "Disable on this device" }),
+    )
+
+    await page.getByRole("button", { name: "Disable on this device" }).click()
+    await expectVisible(page.getByText("Status: Not enabled"))
+    await expectVisible(
+      page.getByRole("button", { name: "Enable Notifications" }),
+    )
   })
 
   it("should render the default notification permission state with an enable button", async ({

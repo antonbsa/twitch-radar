@@ -10,15 +10,17 @@ The original Web Push POC (`src/push.ts`, `src/server.ts`) proved browser Push A
 
 ## Spec Work
 
-Define or confirm:
+Resolved decisions:
 
-- PWA manifest requirements.
-- service worker registration strategy within Vite build (vite-plugin-pwa vs. manual entry point).
-- Push API subscription flow: VAPID key exposure, subscription creation, error handling.
-- push subscription API contract.
-- notification permission UI states and Account view integration (stub defined in T-004).
-- invalid/revoked push subscription behavior.
-- service worker scope and caching strategy (if any).
+- **Service worker strategy:** hand-written `apps/web/public/service-worker.js` registered from `src/main.tsx`; no `vite-plugin-pwa`. Root scope, `push` + `notificationclick` handlers only, **no `fetch` handler and no caching** (network-only app). See [ADR 0026](../../../docs/decisions/0026-manual-service-worker-without-vite-plugin-pwa.md).
+- **PWA manifest:** static `apps/web/public/manifest.webmanifest` linked from `index.html` (`name`, `short_name`, `start_url: "/"`, `scope: "/"`, `display: "standalone"`, dark theme colors, SVG icon with `sizes: "any"`). PNG icons (192/512 + 180px `apple-touch-icon`) are an asset follow-up to produce before the iOS manual validation pass — no local image tooling in the repo.
+- **VAPID key exposure:** `GET /api/push/vapid-public-key` (authenticated) returns `{ "data": { "vapid_public_key": "..." } }`; the key stays single-sourced in the Worker env. See [ADR 0027](../../../docs/decisions/0027-push-subscription-lifecycle-and-api-contract.md).
+- **Push subscription API contract** ([ADR 0027](../../../docs/decisions/0027-push-subscription-lifecycle-and-api-contract.md)):
+  - `POST /api/push-subscriptions` with the `PushSubscription.toJSON()` shape `{ "endpoint": "<url>", "keys": { "p256dh": "...", "auth": "..." } }` — idempotent upsert keyed by endpoint (refreshes keys, reassigns user, clears `revoked_at`); `201` on create, `200` on reuse, both returning the full record. Malformed body → `400 invalid_request`.
+  - `DELETE /api/push-subscriptions/:id` — soft revoke (`revoked_at`), `204`, idempotent; `404 not_found` for unknown or other-user ids.
+- **Client subscription flow:** Enable button → `Notification.requestPermission()` → `navigator.serviceWorker.ready` → `pushManager.subscribe({ userVisibleOnly: true, applicationServerKey })` → POST → cache returned id in `localStorage`. A browser subscription with no cached id is re-POSTed to recover the id (upsert). Disable → `subscription.unsubscribe()` + `DELETE`.
+- **Notification permission UI states (Account view):** status derives from permission **and** device subscription: unsupported (`serviceWorker`/`PushManager`/`Notification` missing) → "Not supported"; `denied` → "Denied" + browser-settings note; `default` or `granted` without an active device subscription → "Not enabled" + "Enable Notifications" button; `granted` with an active subscription → "Enabled" + "Disable on this device" button. Enable failures (permission not granted, subscribe/API error) surface as an inline error message and return to the actionable state.
+- **Invalid/revoked subscription behavior:** rows are soft-revoked, never hard-deleted (`notification_deliveries` references them; T-008 revokes invalid endpoints the same way). Delivery-time filtering of `revoked_at IS NOT NULL` is T-008 scope.
 
 ## Implementation Scope
 

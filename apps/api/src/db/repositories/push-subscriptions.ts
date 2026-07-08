@@ -13,6 +13,15 @@ export interface CreatePushSubscriptionInput {
   now: string
 }
 
+export interface RefreshPushSubscriptionInput {
+  id: string
+  userId: string
+  p256dh: string
+  auth: string
+  userAgent: string | null
+  now: string
+}
+
 export class PushSubscriptionsRepository {
   private readonly db: AppDatabase
 
@@ -36,6 +45,15 @@ export class PushSubscriptionsRepository {
       .run()
   }
 
+  async findById(id: string): Promise<PushSubscriptionRecord | null> {
+    const row = await this.db
+      .select()
+      .from(pushSubscriptions)
+      .where(eq(pushSubscriptions.id, id))
+      .get()
+    return row ? toPushSubscription(row) : null
+  }
+
   async findByEndpoint(
     endpoint: string,
   ): Promise<PushSubscriptionRecord | null> {
@@ -45,6 +63,23 @@ export class PushSubscriptionsRepository {
       .where(eq(pushSubscriptions.endpoint, endpoint))
       .get()
     return row ? toPushSubscription(row) : null
+  }
+
+  // Re-claims an existing endpoint row: refreshes keys, reassigns the owner,
+  // and clears any prior revocation (see ADR 0027).
+  async refresh(input: RefreshPushSubscriptionInput): Promise<void> {
+    await this.db
+      .update(pushSubscriptions)
+      .set({
+        userId: input.userId,
+        p256dh: input.p256dh,
+        auth: input.auth,
+        userAgent: input.userAgent,
+        updatedAt: input.now,
+        revokedAt: null,
+      })
+      .where(eq(pushSubscriptions.id, input.id))
+      .run()
   }
 
   async revoke(id: string, revokedAt: string): Promise<void> {
