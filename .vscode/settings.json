@@ -1,5 +1,15 @@
 {
-  "cSpell.words": ["eventsub", "geist", "testuser"],
+  "cSpell.words": [
+    "eventsub",
+    "geist",
+    "idempotently",
+    "notificationclick",
+    "precache",
+    "precaching",
+    "psub",
+    "testuser",
+    "upserts"
+  ],
   "search.exclude": {
     ".agents/worktrees": true,
     "apps/api/.wrangler": true,

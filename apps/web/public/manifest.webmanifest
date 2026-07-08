@@ -1,0 +1,18 @@
+{
+  "name": "Twitch Radar",
+  "short_name": "Radar",
+  "description": "Category alerts for the Twitch channels you follow.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0e0e10",
+  "theme_color": "#0e0e10",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

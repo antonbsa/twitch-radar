@@ -4,14 +4,16 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/context/auth-context"
 import { useSyncFollows } from "@/hooks/use-channels"
+import {
+  usePushNotifications,
+  type PushStatus,
+} from "@/hooks/use-push-notifications"
 
-type NotificationPermissionState = NotificationPermission | "unsupported"
-
-function notificationStatusLabel(
-  permission: NotificationPermissionState,
-): string {
-  switch (permission) {
-    case "granted":
+function notificationStatusLabel(status: PushStatus): string {
+  switch (status) {
+    case "checking":
+      return "Checking…"
+    case "enabled":
       return "Enabled"
     case "denied":
       return "Denied"
@@ -25,11 +27,7 @@ function notificationStatusLabel(
 export function AccountPage() {
   const { user, isSessionExpired, logout } = useAuth()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
-  const [permission, setPermission] = useState<NotificationPermissionState>(
-    typeof Notification === "undefined"
-      ? "unsupported"
-      : Notification.permission,
-  )
+  const push = usePushNotifications()
   const navigate = useNavigate()
   const syncFollows = useSyncFollows()
 
@@ -41,12 +39,6 @@ export function AccountPage() {
     } finally {
       setIsLoggingOut(false)
     }
-  }
-
-  async function handleEnableNotifications() {
-    if (typeof Notification === "undefined") return
-    const result = await Notification.requestPermission()
-    setPermission(result)
   }
 
   function handleReconnect() {
@@ -72,22 +64,34 @@ export function AccountPage() {
       <div className="mt-6 space-y-2">
         <p className="text-sm font-medium">Notifications</p>
         <p className="text-sm text-muted-foreground">
-          Status: {notificationStatusLabel(permission)}
+          Status: {notificationStatusLabel(push.status)}
         </p>
-        {permission === "default" && (
+        {push.status === "not-enabled" && (
           <Button
             variant="outline"
             size="sm"
-            onClick={handleEnableNotifications}
+            disabled={push.isPending}
+            onClick={push.enable}
           >
             Enable Notifications
           </Button>
         )}
-        {permission === "denied" && (
+        {push.status === "enabled" && (
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={push.isPending}
+            onClick={push.disable}
+          >
+            Disable on this device
+          </Button>
+        )}
+        {push.status === "denied" && (
           <p className="text-xs text-muted-foreground">
             Go to browser settings to enable.
           </p>
         )}
+        {push.error && <p className="text-xs text-destructive">{push.error}</p>}
       </div>
 
       <Button

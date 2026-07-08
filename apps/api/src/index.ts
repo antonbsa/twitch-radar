@@ -11,6 +11,11 @@ import {
   handleAuthStart,
   handleLogout,
 } from "./http/routes/auth"
+import {
+  handleCreatePushSubscription,
+  handleDeletePushSubscription,
+  handleGetVapidPublicKey,
+} from "./http/routes/push-subscriptions"
 import { handleSyncFollows } from "./http/routes/sync"
 import { handleTestReset, handleTestSeed } from "./http/routes/_tests"
 import { getRequestId } from "./http/response"
@@ -37,6 +42,13 @@ function buildApp(includeTestSeam: boolean): Hono<HonoEnv> {
   api.get("/me", requireAuth, handleGetMe)
   api.post("/sync/follows", requireAuth, handleSyncFollows)
   api.get("/channels/followed", requireAuth, handleGetFollowedChannels)
+  api.get("/push/vapid-public-key", requireAuth, handleGetVapidPublicKey)
+  api.post("/push-subscriptions", requireAuth, handleCreatePushSubscription)
+  api.delete(
+    "/push-subscriptions/:id",
+    requireAuth,
+    handleDeletePushSubscription,
+  )
 
   app.route("/api", api)
 
