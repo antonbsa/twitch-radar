@@ -6,6 +6,7 @@ import { createDatabaseClient } from "../../db/client"
 import {
   channelCategoryPreferences,
   channelState,
+  channelStateChanges,
   eventsubSubscriptions,
   followedChannels,
   globalCategoryPreferences,
@@ -15,6 +16,7 @@ import {
   users,
 } from "../../db/schema"
 import { encryptToken } from "../../services/crypto"
+import { APP_TOKEN_KV_KEY } from "../../services/twitch/app-token"
 import {
   createSession,
   deleteSession,
@@ -70,11 +72,21 @@ export interface SeedPreferencesInput {
   global?: { categoryId: string; categoryName: string }[]
 }
 
+export interface SeedEventsubSubscriptionInput {
+  broadcasterUserId: string
+  eventType: string
+  eventVersion?: string
+  status?: string
+  twitchSubscriptionId?: string | null
+  callbackUrl?: string
+}
+
 export interface SeedRequestBody {
   user?: SeedUserInput
   followedChannels?: SeedFollowedChannelInput[]
   channelState?: SeedChannelStateInput[]
   preferences?: SeedPreferencesInput
+  eventsubSubscriptions?: SeedEventsubSubscriptionInput[]
 }
 
 export interface SeedResponse {
@@ -179,6 +191,29 @@ export async function handleTestSeed(c: Context<HonoEnv>): Promise<Response> {
     }
   }
 
+  if (body.eventsubSubscriptions?.length) {
+    const db = createDatabaseClient(c.env.DB)
+    for (const sub of body.eventsubSubscriptions) {
+      await db
+        .insert(eventsubSubscriptions)
+        .values({
+          id: `esub_${nanoid()}`,
+          twitchSubscriptionId: sub.twitchSubscriptionId ?? null,
+          broadcasterUserId: sub.broadcasterUserId,
+          eventType: sub.eventType,
+          eventVersion: sub.eventVersion ?? "1",
+          status: sub.status ?? "pending",
+          callbackUrl:
+            sub.callbackUrl ??
+            `${c.var.config.apiUrl}/api/webhooks/twitch/eventsub`,
+          secretVersion: "1",
+          createdAt: now,
+          updatedAt: now,
+        })
+        .run()
+    }
+  }
+
   return jsonResponse({ userId, session } satisfies SeedResponse)
 }
 
@@ -228,6 +263,9 @@ export async function handleTestReset(c: Context<HonoEnv>): Promise<Response> {
       await c.env.DB.prepare(`DELETE FROM ${table}`).run()
     }
     await deleteAllSessions(c.env.APP_CACHE)
+    // Evict the cached Twitch app token so each test mocks (and asserts) its
+    // own client-credentials exchange deterministically.
+    await c.env.APP_CACHE.delete(APP_TOKEN_KV_KEY)
     return new Response(null, { status: 204 })
   }
 
@@ -275,6 +313,12 @@ export async function handleTestReset(c: Context<HonoEnv>): Promise<Response> {
       ),
     )
     .run()
+  await db
+    .delete(channelStateChanges)
+    .where(
+      like(channelStateChanges.broadcasterUserId, `${E2E_BROADCASTER_PREFIX}%`),
+    )
+    .run()
 
   await deleteSessionsForUser(c.env.APP_CACHE, E2E_USER_ID)
 
@@ -294,15 +338,17 @@ export async function handleTestInspect(
   const body = await readJsonBody<InspectRequestBody>(c)
   const ids = body.broadcasterUserIds ?? []
 
-  const [monitored, eventsub, state] = await Promise.all([
+  const [monitored, eventsub, state, stateChanges] = await Promise.all([
     c.var.db.monitoredChannels.findByBroadcasterUserIds(ids),
     c.var.db.eventsubSubscriptions.findByBroadcasterUserIds(ids),
     c.var.db.channelState.findByBroadcasterUserIds(ids),
+    c.var.db.channelStateChanges.findByBroadcasterUserIds(ids),
   ])
 
   return jsonResponse({
     monitoredChannels: monitored,
     eventsubSubscriptions: eventsub,
     channelState: state,
+    channelStateChanges: stateChanges,
   })
 }

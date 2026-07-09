@@ -11,6 +11,10 @@ export interface UpsertChannelStateInput {
   title?: string | null
   viewerCount?: number | null
   startedAt?: string | null
+  // Twitch's message timestamp when the write comes from an EventSub event;
+  // the stale-event guard compares against it (ADR 0033). Seeding leaves it
+  // unset so the first event for a seeded channel always processes.
+  updatedFromEventAt?: string | null
   now: string
 }
 
@@ -23,6 +27,7 @@ export interface ChannelStateRecord {
   title: string | null
   viewer_count: number | null
   started_at: string | null
+  updated_from_event_at: string | null
   updated_at: string
 }
 
@@ -46,6 +51,7 @@ export class ChannelStateRepository {
           title: input.title ?? null,
           viewerCount: input.viewerCount ?? null,
           startedAt: input.startedAt ?? null,
+          updatedFromEventAt: input.updatedFromEventAt ?? null,
           updatedAt: input.now,
         })
         .onConflictDoUpdate({
@@ -58,6 +64,7 @@ export class ChannelStateRepository {
             title: input.title ?? null,
             viewerCount: input.viewerCount ?? null,
             startedAt: input.startedAt ?? null,
+            updatedFromEventAt: input.updatedFromEventAt ?? null,
             updatedAt: input.now,
           },
         })
@@ -88,10 +95,18 @@ export class ChannelStateRepository {
           title: row.title,
           viewer_count: row.viewerCount,
           started_at: row.startedAt,
+          updated_from_event_at: row.updatedFromEventAt,
           updated_at: row.updatedAt,
         })
       }
     }
     return results
+  }
+
+  async findByBroadcasterUserId(
+    id: string,
+  ): Promise<ChannelStateRecord | null> {
+    const rows = await this.findByBroadcasterUserIds([id])
+    return rows[0] ?? null
   }
 }

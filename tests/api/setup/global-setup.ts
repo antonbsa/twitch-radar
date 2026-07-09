@@ -58,6 +58,9 @@ export default async function globalSetup() {
       String(INSPECTOR_PORT),
       "--persist-to",
       PERSIST_DIR,
+      // Exposes GET /__scheduled so tests can trigger the cron handler
+      // (EventSub subscription creation) on demand.
+      "--test-scheduled",
       // Only .env.development — its placeholders cover every required var
       // (see AGENTS.md "Env Vars: Single Source Of Truth"). .env.local exists
       // to override real OAuth secrets for `npm run dev`; tests never do a

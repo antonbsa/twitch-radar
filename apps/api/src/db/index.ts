@@ -1,6 +1,7 @@
 import { createDatabaseClient } from "./client"
 import { ChannelCategoryPreferencesRepository } from "./repositories/channel-category-preferences"
 import { ChannelStateRepository } from "./repositories/channel-state"
+import { ChannelStateChangesRepository } from "./repositories/channel-state-changes"
 import { EventsubSubscriptionsRepository } from "./repositories/eventsub-subscriptions"
 import { FollowedChannelsRepository } from "./repositories/followed-channels"
 import { GlobalCategoryPreferencesRepository } from "./repositories/global-category-preferences"
@@ -17,6 +18,7 @@ export class Database {
   readonly twitchTokens: TwitchTokensRepository
   readonly followedChannels: FollowedChannelsRepository
   readonly channelState: ChannelStateRepository
+  readonly channelStateChanges: ChannelStateChangesRepository
   readonly channelCategoryPreferences: ChannelCategoryPreferencesRepository
   readonly globalCategoryPreferences: GlobalCategoryPreferencesRepository
   readonly monitoredChannels: MonitoredChannelsRepository
@@ -29,6 +31,7 @@ export class Database {
     this.twitchTokens = new TwitchTokensRepository(db)
     this.followedChannels = new FollowedChannelsRepository(db)
     this.channelState = new ChannelStateRepository(db)
+    this.channelStateChanges = new ChannelStateChangesRepository(db)
     this.channelCategoryPreferences = new ChannelCategoryPreferencesRepository(
       db,
     )

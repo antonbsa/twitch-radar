@@ -25,6 +25,10 @@ import {
   handleGetPreferences,
 } from "./http/routes/preferences"
 import { handleSyncFollows } from "./http/routes/sync"
+import { handleEventsubWebhook } from "./http/routes/webhooks"
+import { createPendingEventsubSubscriptions } from "./services/eventsub/subscriptions"
+import { processTwitchEventMessage } from "./services/eventsub/process"
+import type { TwitchEventQueueMessage } from "./types"
 import {
   handleTestInspect,
   handleTestReset,
@@ -68,6 +72,8 @@ function buildApp(includeTestSeam: boolean): Hono<HonoEnv> {
     requireAuth,
     handleDeleteGlobalPreference,
   )
+  // Called by Twitch, not by users — authenticates via HMAC signature.
+  api.post("/webhooks/twitch/eventsub", handleEventsubWebhook)
   api.get("/push/vapid-public-key", requireAuth, handleGetVapidPublicKey)
   api.post("/push-subscriptions", requireAuth, handleCreatePushSubscription)
   api.delete(
@@ -123,10 +129,44 @@ export default {
 
   async queue(batch: MessageBatch, env: Env): Promise<void> {
     const config = parseEnv(env)
+    const db = new Database(env.DB)
+
+    if (batch.queue === "twitch-radar-twitch-events") {
+      // Ack/retry per message so one failure doesn't replay the whole batch
+      // (replays are safe anyway — processing dedupes on message id).
+      for (const message of batch.messages) {
+        try {
+          await processTwitchEventMessage(
+            db,
+            config,
+            env.APP_CACHE,
+            message.body as TwitchEventQueueMessage,
+          )
+          message.ack()
+        } catch (error) {
+          console.error("Twitch event processing failed", {
+            messageId: (message.body as TwitchEventQueueMessage).messageId,
+            error: error instanceof Error ? error.message : String(error),
+          })
+          message.retry()
+        }
+      }
+      return
+    }
+
+    // twitch-radar-notification-jobs: consumer lands with T-008.
     console.log("Queue batch received", {
       queue: batch.queue,
       messages: batch.messages.length,
       environment: config.environment,
     })
+  },
+
+  // Creates Twitch-side subscriptions for staged pending rows (ADR 0031).
+  // T-008 extends this into full EventSub reconciliation.
+  async scheduled(_controller: ScheduledController, env: Env): Promise<void> {
+    const config = parseEnv(env)
+    const db = new Database(env.DB)
+    await createPendingEventsubSubscriptions(db, config, env.APP_CACHE)
   },
 } satisfies ExportedHandler<Env>

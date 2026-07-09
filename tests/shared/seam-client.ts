@@ -2,6 +2,7 @@ import type {
   InspectRequestBody,
   ResetRequestBody,
   SeedChannelStateInput,
+  SeedEventsubSubscriptionInput,
   SeedFollowedChannelInput,
   SeedPreferencesInput,
   SeedRequestBody,
@@ -9,6 +10,7 @@ import type {
   SeedUserInput,
 } from "../../apps/api/src/http/routes/_tests"
 import type { ChannelStateRecord } from "../../apps/api/src/db/repositories/channel-state"
+import type { ChannelStateChangeRecord } from "../../apps/api/src/db/repositories/channel-state-changes"
 import type { EventsubSubscriptionRecord } from "../../apps/api/src/db/repositories/eventsub-subscriptions"
 import type { MonitoredChannelRecord } from "../../apps/api/src/db/repositories/monitored-channels"
 
@@ -19,6 +21,7 @@ export {
 
 export type {
   SeedChannelStateInput,
+  SeedEventsubSubscriptionInput,
   SeedFollowedChannelInput,
   SeedPreferencesInput,
   SeedRequestBody,
@@ -29,6 +32,7 @@ export interface InspectResponse {
   monitoredChannels: MonitoredChannelRecord[]
   eventsubSubscriptions: EventsubSubscriptionRecord[]
   channelState: ChannelStateRecord[]
+  channelStateChanges: ChannelStateChangeRecord[]
 }
 
 export interface SeededUser {
@@ -120,6 +124,12 @@ export function createSeamClient({ baseUrl }: SeamClientOptions) {
 
     async seedPreferences(preferences: SeedPreferencesInput): Promise<void> {
       await seed({ preferences })
+    },
+
+    async seedEventsubSubscriptions(
+      subscriptions: SeedEventsubSubscriptionInput[],
+    ): Promise<void> {
+      await seed({ eventsubSubscriptions: subscriptions })
     },
 
     /** Reads broadcaster-keyed monitoring state the public API never exposes. */

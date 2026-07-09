@@ -131,6 +131,58 @@ const mockTwitch = {
       data: streams.map((s) => ({ ...s, type: "live" })),
     })
   },
+
+  // Client-credentials exchange (same /oauth2/token path as the user grant).
+  onAppToken(accessToken = "app-access-token") {
+    return this.queue("/oauth2/token", {
+      access_token: accessToken,
+      expires_in: 3600,
+      token_type: "bearer",
+    })
+  },
+
+  onEventsubSubscriptionCreate(
+    twitchSubscriptionId: string,
+    status = "webhook_callback_verification_pending",
+    httpStatus = 202,
+  ) {
+    return this.queue(
+      "/helix/eventsub/subscriptions",
+      { data: [{ id: twitchSubscriptionId, status }] },
+      httpStatus,
+    )
+  },
+}
+
+/**
+ * Triggers the worker's `scheduled()` handler through wrangler dev's
+ * `--test-scheduled` endpoint; resolves after the handler completes.
+ */
+async function runScheduled() {
+  const res = await fetch(`${API_TEST_URL}/__scheduled`)
+  if (!res.ok) throw new Error(`Scheduled trigger failed: ${res.status}`)
+}
+
+/**
+ * Polls the inspect seam until `predicate` passes — queue consumers process
+ * webhook events asynchronously, so state assertions must wait.
+ */
+async function waitForInspect(
+  broadcasterUserIds: string[],
+  predicate: (state: Awaited<ReturnType<typeof seam.inspect>>) => boolean,
+  timeoutMs = 10_000,
+) {
+  const deadline = Date.now() + timeoutMs
+  for (;;) {
+    const state = await seam.inspect(broadcasterUserIds)
+    if (predicate(state)) return state
+    if (Date.now() > deadline) {
+      throw new Error(
+        `waitForInspect timed out after ${timeoutMs}ms: ${JSON.stringify(state)}`,
+      )
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100))
+  }
 }
 
 export const orchestrator = {
@@ -139,6 +191,9 @@ export const orchestrator = {
   createAuthenticatedSession,
   seedFollowedChannels,
   seedChannelState: seam.seedChannelState,
+  seedEventsubSubscriptions: seam.seedEventsubSubscriptions,
   inspect: (broadcasterUserIds: string[]) => seam.inspect(broadcasterUserIds),
+  runScheduled,
+  waitForInspect,
   mockTwitch,
 }
