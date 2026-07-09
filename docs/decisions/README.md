@@ -36,3 +36,6 @@ Other project documents may state goals, requirements, task scope, validation st
 - [0028 - Mirror Wire-Shape Types Across Workspaces Instead Of A Shared Package](0028-mirror-wire-shape-types-across-workspaces.md)
 - [0029 - Category Preference API Contract And Lifecycle](0029-category-preference-api-contract-and-lifecycle.md)
 - [0030 - Monitored Broadcaster Lifecycle And State Seeding](0030-monitored-broadcaster-lifecycle-and-state-seeding.md)
+- [0031 - EventSub Subscription Creation And Status Lifecycle](0031-eventsub-subscription-creation-and-lifecycle.md)
+- [0032 - EventSub Webhook Verification And Queueing](0032-eventsub-webhook-verification-and-queueing.md)
+- [0033 - EventSub State Transition Rules](0033-eventsub-state-transition-rules.md)

@@ -1,4 +1,4 @@
-import { inArray } from "drizzle-orm"
+import { asc, eq, inArray } from "drizzle-orm"
 import { nanoid } from "nanoid"
 import type { AppDatabase } from "../client"
 import { eventsubSubscriptions } from "../schema"
@@ -92,6 +92,60 @@ export class EventsubSubscriptionsRepository {
         })
         .run()
     }
+  }
+
+  async findPending(limit: number): Promise<EventsubSubscriptionRecord[]> {
+    const rows = await this.db
+      .select()
+      .from(eventsubSubscriptions)
+      .where(eq(eventsubSubscriptions.status, "pending"))
+      .orderBy(
+        asc(eventsubSubscriptions.createdAt),
+        asc(eventsubSubscriptions.id),
+      )
+      .limit(limit)
+      .all()
+    return rows.map(toRecord)
+  }
+
+  /** Records the Twitch-side subscription id and Twitch's initial status. */
+  async markCreated(
+    id: string,
+    twitchSubscriptionId: string,
+    status: string,
+    now: string,
+  ): Promise<void> {
+    await this.db
+      .update(eventsubSubscriptions)
+      .set({ twitchSubscriptionId, status, updatedAt: now })
+      .where(eq(eventsubSubscriptions.id, id))
+      .run()
+  }
+
+  /** Called when Twitch's callback verification challenge is answered. */
+  async markVerified(twitchSubscriptionId: string, now: string): Promise<void> {
+    await this.db
+      .update(eventsubSubscriptions)
+      .set({ status: "enabled", updatedAt: now })
+      .where(
+        eq(eventsubSubscriptions.twitchSubscriptionId, twitchSubscriptionId),
+      )
+      .run()
+  }
+
+  /** Records a revocation message; `status` is Twitch's revocation reason. */
+  async markRevoked(
+    twitchSubscriptionId: string,
+    status: string,
+    now: string,
+  ): Promise<void> {
+    await this.db
+      .update(eventsubSubscriptions)
+      .set({ status, revokedAt: now, updatedAt: now })
+      .where(
+        eq(eventsubSubscriptions.twitchSubscriptionId, twitchSubscriptionId),
+      )
+      .run()
   }
 
   async findByBroadcasterUserIds(

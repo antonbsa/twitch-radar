@@ -1,17 +1,22 @@
 {
   "cSpell.words": [
+    "acks",
+    "batchable",
     "channela",
     "channelb",
     "cpref",
+    "esub",
     "eventsub",
     "geist",
     "gpref",
+    "HMAC",
     "idempotently",
     "notificationclick",
     "precache",
     "precaching",
     "prefs",
     "psub",
+    "subrequest",
     "testuser",
     "upserts"
   ],

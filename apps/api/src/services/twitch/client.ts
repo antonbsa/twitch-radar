@@ -103,6 +103,80 @@ export async function refreshAccessToken(
   return res.json() as Promise<TwitchTokenResponse>
 }
 
+export interface TwitchAppTokenResponse {
+  access_token: string
+  expires_in: number
+  token_type: string
+}
+
+// Client-credentials grant. EventSub webhook subscriptions (and the queue
+// consumer's stream lookups) authenticate as the app, not as a user.
+export async function fetchAppAccessToken(
+  clientId: string,
+  clientSecret: string,
+  authBaseUrl = "https://id.twitch.tv",
+): Promise<TwitchAppTokenResponse> {
+  const res = await fetch(`${authBaseUrl}/oauth2/token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      grant_type: "client_credentials",
+    }),
+  })
+  if (!res.ok) throw new TwitchApiError(`App token fetch failed`, res.status)
+  return res.json() as Promise<TwitchAppTokenResponse>
+}
+
+export interface CreateEventsubSubscriptionInput {
+  type: string
+  version: string
+  broadcasterUserId: string
+  callbackUrl: string
+  secret: string
+}
+
+export interface TwitchEventsubSubscription {
+  id: string
+  status: string
+  type: string
+  version: string
+}
+
+export async function createEventsubSubscription(
+  clientId: string,
+  appAccessToken: string,
+  input: CreateEventsubSubscriptionInput,
+  apiBaseUrl = "https://api.twitch.tv",
+): Promise<TwitchEventsubSubscription> {
+  const res = await fetch(`${apiBaseUrl}/helix/eventsub/subscriptions`, {
+    method: "POST",
+    headers: {
+      "Client-Id": clientId,
+      Authorization: `Bearer ${appAccessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      type: input.type,
+      version: input.version,
+      condition: { broadcaster_user_id: input.broadcasterUserId },
+      transport: {
+        method: "webhook",
+        callback: input.callbackUrl,
+        secret: input.secret,
+      },
+    }),
+  })
+  if (!res.ok)
+    throw new TwitchApiError(`EventSub subscription create failed`, res.status)
+  const body = (await res.json()) as { data: TwitchEventsubSubscription[] }
+  const subscription = body.data[0]
+  if (!subscription)
+    throw new TwitchApiError("No subscription in Twitch response", 200)
+  return subscription
+}
+
 export async function getAuthenticatedUser(
   clientId: string,
   accessToken: string,
