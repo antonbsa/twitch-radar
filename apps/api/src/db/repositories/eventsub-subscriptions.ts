@@ -148,6 +148,36 @@ export class EventsubSubscriptionsRepository {
       .run()
   }
 
+  /** Every local row — reconciliation compares the full set against Twitch. */
+  async listAll(): Promise<EventsubSubscriptionRecord[]> {
+    const rows = await this.db.select().from(eventsubSubscriptions).all()
+    return rows.map(toRecord)
+  }
+
+  /**
+   * Sends a row back to the start of the lifecycle so the minutely creation
+   * job recreates it on Twitch (reconciliation repair, ADR 0036).
+   */
+  async resetToPending(id: string, now: string): Promise<void> {
+    await this.db
+      .update(eventsubSubscriptions)
+      .set({
+        twitchSubscriptionId: null,
+        status: "pending",
+        revokedAt: null,
+        updatedAt: now,
+      })
+      .where(eq(eventsubSubscriptions.id, id))
+      .run()
+  }
+
+  async deleteById(id: string): Promise<void> {
+    await this.db
+      .delete(eventsubSubscriptions)
+      .where(eq(eventsubSubscriptions.id, id))
+      .run()
+  }
+
   async findByBroadcasterUserIds(
     ids: string[],
   ): Promise<EventsubSubscriptionRecord[]> {

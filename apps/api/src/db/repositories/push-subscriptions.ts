@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm"
+import { and, eq, isNull } from "drizzle-orm"
 import type { PushSubscriptionRecord } from "../../types"
 import type { AppDatabase } from "../client"
 import { pushSubscriptions, type PushSubscriptionRow } from "../schema"
@@ -80,6 +80,31 @@ export class PushSubscriptionsRepository {
       })
       .where(eq(pushSubscriptions.id, input.id))
       .run()
+  }
+
+  /** All of a user's subscriptions, revoked included (test-seam inspection). */
+  async listByUserId(userId: string): Promise<PushSubscriptionRecord[]> {
+    const rows = await this.db
+      .select()
+      .from(pushSubscriptions)
+      .where(eq(pushSubscriptions.userId, userId))
+      .all()
+    return rows.map(toPushSubscription)
+  }
+
+  /** Non-revoked subscriptions — the send targets for a user's deliveries. */
+  async listActiveByUserId(userId: string): Promise<PushSubscriptionRecord[]> {
+    const rows = await this.db
+      .select()
+      .from(pushSubscriptions)
+      .where(
+        and(
+          eq(pushSubscriptions.userId, userId),
+          isNull(pushSubscriptions.revokedAt),
+        ),
+      )
+      .all()
+    return rows.map(toPushSubscription)
   }
 
   async revoke(id: string, revokedAt: string): Promise<void> {

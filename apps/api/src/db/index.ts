@@ -6,6 +6,7 @@ import { EventsubSubscriptionsRepository } from "./repositories/eventsub-subscri
 import { FollowedChannelsRepository } from "./repositories/followed-channels"
 import { GlobalCategoryPreferencesRepository } from "./repositories/global-category-preferences"
 import { MonitoredChannelsRepository } from "./repositories/monitored-channels"
+import { NotificationDeliveriesRepository } from "./repositories/notification-deliveries"
 import { PushSubscriptionsRepository } from "./repositories/push-subscriptions"
 import { TwitchTokensRepository } from "./repositories/twitch-tokens"
 import { UsersRepository } from "./repositories/users"
@@ -23,6 +24,7 @@ export class Database {
   readonly globalCategoryPreferences: GlobalCategoryPreferencesRepository
   readonly monitoredChannels: MonitoredChannelsRepository
   readonly eventsubSubscriptions: EventsubSubscriptionsRepository
+  readonly notificationDeliveries: NotificationDeliveriesRepository
 
   constructor(d1: D1Database) {
     const db = createDatabaseClient(d1)
@@ -38,5 +40,6 @@ export class Database {
     this.globalCategoryPreferences = new GlobalCategoryPreferencesRepository(db)
     this.monitoredChannels = new MonitoredChannelsRepository(db)
     this.eventsubSubscriptions = new EventsubSubscriptionsRepository(db)
+    this.notificationDeliveries = new NotificationDeliveriesRepository(db)
   }
 }

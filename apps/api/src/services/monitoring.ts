@@ -7,6 +7,15 @@ import { getValidAccessToken } from "./twitch/token-refresh"
 // Must match the webhook route T-007 registers under /api.
 const EVENTSUB_CALLBACK_PATH = "/api/webhooks/twitch/eventsub"
 
+/**
+ * The callback URL this deployment stamps on its EventSub subscriptions —
+ * also reconciliation's ownership marker (ADR 0036): only Twitch-side
+ * subscriptions pointing here are ours to delete.
+ */
+export function eventsubCallbackUrl(config: AppConfig): string {
+  return `${config.apiUrl}${EVENTSUB_CALLBACK_PATH}`
+}
+
 export interface MonitorTarget {
   broadcasterUserId: string
   broadcasterLogin?: string | null
@@ -42,7 +51,7 @@ export async function ensureMonitoredBroadcasters(
     })),
   )
 
-  const callbackUrl = `${config.apiUrl}${EVENTSUB_CALLBACK_PATH}`
+  const callbackUrl = eventsubCallbackUrl(config)
   for (const target of targets) {
     await db.eventsubSubscriptions.ensurePending(
       target.broadcasterUserId,

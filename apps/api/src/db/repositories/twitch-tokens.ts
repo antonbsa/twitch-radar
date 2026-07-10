@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm"
+import { and, asc, eq, isNull, lt } from "drizzle-orm"
 import type { AppDatabase } from "../client"
 import { twitchTokens } from "../schema"
 
@@ -18,6 +18,7 @@ export interface TwitchTokenRecord {
   expires_at: string
   scopes: string
   updated_at: string
+  refresh_failed_at: string | null
 }
 
 export class TwitchTokensRepository {
@@ -46,8 +47,42 @@ export class TwitchTokensRepository {
           expiresAt: input.expiresAt,
           scopes: input.scopes,
           updatedAt: input.now,
+          // Fresh tokens mean the connection works again (re-auth or refresh).
+          refreshFailedAt: null,
         },
       })
+      .run()
+  }
+
+  /**
+   * Tokens expiring before `cutoff` that have not already failed a refresh —
+   * the proactive refresh sweep's work queue. A failed row is excluded until
+   * the user reconnects (re-auth clears the flag via upsert).
+   */
+  async findExpiringBefore(
+    cutoff: string,
+    limit: number,
+  ): Promise<TwitchTokenRecord[]> {
+    const rows = await this.db
+      .select()
+      .from(twitchTokens)
+      .where(
+        and(
+          lt(twitchTokens.expiresAt, cutoff),
+          isNull(twitchTokens.refreshFailedAt),
+        ),
+      )
+      .orderBy(asc(twitchTokens.expiresAt))
+      .limit(limit)
+      .all()
+    return rows.map(toRecord)
+  }
+
+  async markRefreshFailed(userId: string, now: string): Promise<void> {
+    await this.db
+      .update(twitchTokens)
+      .set({ refreshFailedAt: now, updatedAt: now })
+      .where(eq(twitchTokens.userId, userId))
       .run()
   }
 
@@ -57,14 +92,18 @@ export class TwitchTokensRepository {
       .from(twitchTokens)
       .where(eq(twitchTokens.userId, userId))
       .get()
-    if (!row) return null
-    return {
-      user_id: row.userId,
-      access_token: row.accessToken,
-      refresh_token: row.refreshToken,
-      expires_at: row.expiresAt,
-      scopes: row.scopes,
-      updated_at: row.updatedAt,
-    }
+    return row ? toRecord(row) : null
+  }
+}
+
+function toRecord(row: typeof twitchTokens.$inferSelect): TwitchTokenRecord {
+  return {
+    user_id: row.userId,
+    access_token: row.accessToken,
+    refresh_token: row.refreshToken,
+    expires_at: row.expiresAt,
+    scopes: row.scopes,
+    updated_at: row.updatedAt,
+    refresh_failed_at: row.refreshFailedAt,
   }
 }

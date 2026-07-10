@@ -92,14 +92,15 @@ export class ChannelStateChangesRepository {
       .run()
   }
 
-  async existsByEventsubMessageId(messageId: string): Promise<boolean> {
-    const rows = await this.db
-      .select({ id: channelStateChanges.id })
+  async findByEventsubMessageId(
+    messageId: string,
+  ): Promise<ChannelStateChangeRecord | null> {
+    const row = await this.db
+      .select()
       .from(channelStateChanges)
       .where(eq(channelStateChanges.eventsubMessageId, messageId))
-      .limit(1)
-      .all()
-    return rows.length > 0
+      .get()
+    return row ? toRecord(row) : null
   }
 
   async findByBroadcasterUserIds(

@@ -115,6 +115,25 @@ export class ChannelCategoryPreferencesRepository {
     return rows.map(toRecord)
   }
 
+  /** Active preferences (all users) matching one broadcaster+category pair. */
+  async findActiveByBroadcasterAndCategory(
+    broadcasterUserId: string,
+    categoryId: string,
+  ): Promise<ChannelPreferenceRecord[]> {
+    const rows = await this.db
+      .select()
+      .from(channelCategoryPreferences)
+      .where(
+        and(
+          eq(channelCategoryPreferences.broadcasterUserId, broadcasterUserId),
+          eq(channelCategoryPreferences.categoryId, categoryId),
+          isNull(channelCategoryPreferences.disabledAt),
+        ),
+      )
+      .all()
+    return rows.map(toRecord)
+  }
+
   async anyActiveForBroadcaster(broadcasterUserId: string): Promise<boolean> {
     const row = await this.db
       .select({ id: channelCategoryPreferences.id })

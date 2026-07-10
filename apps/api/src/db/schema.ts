@@ -28,6 +28,10 @@ export const twitchTokens = sqliteTable(
     expiresAt: text("expires_at").notNull(),
     scopes: text("scopes").notNull(),
     updatedAt: text("updated_at").notNull(),
+    // Set when a refresh attempt fails permanently (invalid/revoked refresh
+    // token) — the user must reconnect their Twitch account. Cleared by the
+    // next successful token upsert (re-auth or successful refresh).
+    refreshFailedAt: text("refresh_failed_at"),
   },
   (table) => [index("idx_twitch_tokens_expires_at").on(table.expiresAt)],
 )

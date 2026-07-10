@@ -1,4 +1,9 @@
 import { Hono } from "hono"
+import {
+  CRON_EVENTSUB_RECONCILE,
+  CRON_FOLLOW_SYNC,
+  CRON_TOKEN_REFRESH,
+} from "./crons"
 import { Database } from "./db"
 import { parseEnv, type Env, type HonoEnv } from "./env"
 import { ApiError, errorResponse } from "./http/errors"
@@ -28,7 +33,12 @@ import { handleSyncFollows } from "./http/routes/sync"
 import { handleEventsubWebhook } from "./http/routes/webhooks"
 import { createPendingEventsubSubscriptions } from "./services/eventsub/subscriptions"
 import { processTwitchEventMessage } from "./services/eventsub/process"
-import type { TwitchEventQueueMessage } from "./types"
+import { reconcileEventsubSubscriptions } from "./services/eventsub/reconcile"
+import { matchAndCreateDeliveries } from "./services/notifications/match"
+import { deliverNotification } from "./services/notifications/deliver"
+import { refreshExpiringTwitchTokens } from "./services/twitch/token-refresh"
+import { syncStaleFollows } from "./services/twitch/sync"
+import type { NotificationJobMessage, TwitchEventQueueMessage } from "./types"
 import {
   handleTestInspect,
   handleTestReset,
@@ -133,15 +143,23 @@ export default {
 
     if (batch.queue === "twitch-radar-twitch-events") {
       // Ack/retry per message so one failure doesn't replay the whole batch
-      // (replays are safe anyway — processing dedupes on message id).
+      // (replays are safe anyway — processing dedupes on message id and
+      // matching dedupes on the delivery key).
       for (const message of batch.messages) {
         try {
-          await processTwitchEventMessage(
+          const change = await processTwitchEventMessage(
             db,
             config,
             env.APP_CACHE,
             message.body as TwitchEventQueueMessage,
           )
+          if (change) {
+            await matchAndCreateDeliveries(
+              db,
+              env.NOTIFICATION_JOBS_QUEUE,
+              change,
+            )
+          }
           message.ack()
         } catch (error) {
           console.error("Twitch event processing failed", {
@@ -154,19 +172,49 @@ export default {
       return
     }
 
-    // twitch-radar-notification-jobs: consumer lands with T-008.
-    console.log("Queue batch received", {
-      queue: batch.queue,
-      messages: batch.messages.length,
-      environment: config.environment,
-    })
+    if (batch.queue === "twitch-radar-notification-jobs") {
+      for (const message of batch.messages) {
+        try {
+          await deliverNotification(
+            db,
+            config,
+            message.body as NotificationJobMessage,
+          )
+          message.ack()
+        } catch (error) {
+          // Send outcomes never throw (deliverNotification resolves them to
+          // delivery statuses) — a throw here is infrastructure (D1/KV), so
+          // a retry against the still-pending delivery is safe.
+          console.error("Notification job failed", {
+            deliveryId: (message.body as NotificationJobMessage).deliveryId,
+            error: error instanceof Error ? error.message : String(error),
+          })
+          message.retry()
+        }
+      }
+      return
+    }
+
+    console.warn("Batch from unknown queue ignored", { queue: batch.queue })
   },
 
-  // Creates Twitch-side subscriptions for staged pending rows (ADR 0031).
-  // T-008 extends this into full EventSub reconciliation.
-  async scheduled(_controller: ScheduledController, env: Env): Promise<void> {
+  // Cron fan-out (ADR 0036): each schedule owns one job so a slow or failing
+  // job can't starve the others' subrequest budget, and tests can trigger
+  // each in isolation via `/__scheduled?cron=...`. The default branch keeps
+  // the minutely pending-subscription creation (ADR 0031).
+  async scheduled(controller: ScheduledController, env: Env): Promise<void> {
     const config = parseEnv(env)
     const db = new Database(env.DB)
-    await createPendingEventsubSubscriptions(db, config, env.APP_CACHE)
+
+    switch (controller.cron) {
+      case CRON_EVENTSUB_RECONCILE:
+        return reconcileEventsubSubscriptions(db, config, env.APP_CACHE)
+      case CRON_TOKEN_REFRESH:
+        return refreshExpiringTwitchTokens(db, config)
+      case CRON_FOLLOW_SYNC:
+        return syncStaleFollows(db, config)
+      default:
+        return createPendingEventsubSubscriptions(db, config, env.APP_CACHE)
+    }
   },
 } satisfies ExportedHandler<Env>

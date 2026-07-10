@@ -152,14 +152,60 @@ const mockTwitch = {
       httpStatus,
     )
   },
+
+  // The GET list call always carries first=100 (also what keeps its pattern
+  // distinct from the POST create above on the substring-matching mock).
+  onEventsubSubscriptionList(
+    subscriptions: Array<{
+      id: string
+      status: string
+      type: string
+      version?: string
+      broadcaster_user_id: string
+      callback: string
+    }>,
+  ) {
+    return this.queue("/helix/eventsub/subscriptions?first", {
+      data: subscriptions.map((sub) => ({
+        id: sub.id,
+        status: sub.status,
+        type: sub.type,
+        version: sub.version ?? "1",
+        condition: { broadcaster_user_id: sub.broadcaster_user_id },
+        transport: { method: "webhook", callback: sub.callback },
+      })),
+      pagination: {},
+    })
+  },
+
+  onEventsubSubscriptionDelete(status = 204) {
+    return this.queue("/helix/eventsub/subscriptions?id=", {}, status)
+  },
+
+  /**
+   * Queues a response for a Web Push send. The push endpoint itself is a URL
+   * on the mock server (tests seed subscriptions pointing at it), so `path`
+   * is whatever suffix the test chose for that subscription.
+   */
+  onPush(path: string, status = 201) {
+    return this.queue(path, {}, status)
+  },
+}
+
+/** Push endpoint URL on the mock server for a seeded subscription. */
+function pushEndpoint(path: string) {
+  return `${MOCK_TWITCH_URL}${path}`
 }
 
 /**
  * Triggers the worker's `scheduled()` handler through wrangler dev's
- * `--test-scheduled` endpoint; resolves after the handler completes.
+ * `--test-scheduled` endpoint; resolves after the handler completes. `cron`
+ * selects which scheduled job runs (the handler dispatches on
+ * `controller.cron`); without it the default minutely job runs.
  */
-async function runScheduled() {
-  const res = await fetch(`${API_TEST_URL}/__scheduled`)
+async function runScheduled(cron?: string) {
+  const query = cron ? `?cron=${encodeURIComponent(cron)}` : ""
+  const res = await fetch(`${API_TEST_URL}/__scheduled${query}`)
   if (!res.ok) throw new Error(`Scheduled trigger failed: ${res.status}`)
 }
 
@@ -170,11 +216,12 @@ async function runScheduled() {
 async function waitForInspect(
   broadcasterUserIds: string[],
   predicate: (state: Awaited<ReturnType<typeof seam.inspect>>) => boolean,
-  timeoutMs = 10_000,
+  options: { timeoutMs?: number; userId?: string } = {},
 ) {
+  const { timeoutMs = 10_000, userId } = options
   const deadline = Date.now() + timeoutMs
   for (;;) {
-    const state = await seam.inspect(broadcasterUserIds)
+    const state = await seam.inspect(broadcasterUserIds, userId)
     if (predicate(state)) return state
     if (Date.now() > deadline) {
       throw new Error(
@@ -189,11 +236,14 @@ export const orchestrator = {
   baseUrl: API_TEST_URL,
   clearDatabase,
   createAuthenticatedSession,
+  seed: seam.seed,
   seedFollowedChannels,
   seedChannelState: seam.seedChannelState,
   seedEventsubSubscriptions: seam.seedEventsubSubscriptions,
-  inspect: (broadcasterUserIds: string[]) => seam.inspect(broadcasterUserIds),
+  inspect: (broadcasterUserIds: string[], userId?: string) =>
+    seam.inspect(broadcasterUserIds, userId),
   runScheduled,
   waitForInspect,
   mockTwitch,
+  pushEndpoint,
 }

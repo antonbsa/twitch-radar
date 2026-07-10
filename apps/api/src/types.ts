@@ -43,9 +43,22 @@ export type TwitchEventQueueMessage = TwitchEventQueueMessageBase &
     | { eventType: "channel.update"; event: ChannelUpdateEventPayload }
   )
 
+// Web Push payload contract shared with the service worker
+// (apps/web/public/service-worker.js, architecture spec).
+export interface NotificationPayload {
+  title: string
+  body: string
+  url: string
+}
+
+// Queue payload contract for NOTIFICATION_JOBS_QUEUE (ADR 0034). The payload
+// is computed at match time (the matcher holds the change row and broadcaster
+// names); the delivery row referenced by `deliveryId` is the dedupe/audit
+// record and its `pending` status gates the actual send.
 export interface NotificationJobMessage {
   deliveryId: string
   userId: string
+  payload: NotificationPayload
 }
 
 export interface User {

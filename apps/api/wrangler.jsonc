@@ -17,10 +17,12 @@
 			"preview_id": "76f00c08321d4e0c9254304b71ad0dae"
 		}
 	],
-	// Picks up pending eventsub_subscriptions rows and creates them on Twitch
-	// (ADR 0031); becomes the full reconciliation job in T-008.
+	// One cron per scheduled job, dispatched on controller.cron in index.ts
+	// (ADR 0036): minutely pending-subscription creation (ADR 0031, the
+	// default branch), EventSub reconciliation, Twitch token refresh sweep,
+	// and stale follow re-sync.
 	"triggers": {
-		"crons": ["* * * * *"]
+		"crons": ["* * * * *", "*/30 * * * *", "5,35 * * * *", "10 * * * *"]
 	},
 	"queues": {
 		"producers": [
@@ -44,7 +46,9 @@
 			{
 				"queue": "twitch-radar-notification-jobs",
 				"max_batch_size": 10,
-				"max_batch_timeout": 5
+				// Same reasoning as above — a staged notification should reach
+				// the device promptly, not wait out a batch window.
+				"max_batch_timeout": 1
 			}
 		]
 	}
