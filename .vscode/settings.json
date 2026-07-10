@@ -19,6 +19,7 @@
     "psub",
     "subrequest",
     "testuser",
+    "trycloudflare",
     "upserts"
   ],
   "search.exclude": {
