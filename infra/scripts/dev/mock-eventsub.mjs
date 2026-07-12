@@ -25,7 +25,7 @@ import { existsSync, readFileSync } from "node:fs"
 import { resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
-const REPO_ROOT = resolve(fileURLToPath(import.meta.url), "../../..")
+const REPO_ROOT = resolve(fileURLToPath(import.meta.url), "../../../..")
 
 function parseDevVars(filePath) {
   return Object.fromEntries(
