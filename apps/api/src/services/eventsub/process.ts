@@ -1,6 +1,7 @@
 import type { AppConfig } from "../../env"
 import type { Database } from "../../db"
 import type { ChannelStateRecord } from "../../db/repositories/channel-state"
+import type { ChannelStateChangeRecord } from "../../db/repositories/channel-state-changes"
 import type {
   ChannelUpdateEventPayload,
   StreamOfflineEventPayload,
@@ -31,29 +32,40 @@ function isStale(
 /**
  * Applies one EventSub notification to `channel_state` and records relevant
  * transitions in `channel_state_changes` (ADRs 0006, 0033). Idempotent per
- * EventSub message id: a message that already produced a change row is
- * skipped, and change inserts no-op on a duplicate message id. State is
- * written before the change row so `channel_state` stays the source of truth
- * even if the change insert is lost to a crash.
+ * EventSub message id: a message that already produced a change row skips
+ * state processing, and change inserts no-op on a duplicate message id.
+ * State is written before the change row so `channel_state` stays the source
+ * of truth even if the change insert is lost to a crash.
+ *
+ * Returns the change row this message maps to (fresh or pre-existing) so the
+ * caller can run notification matching on it — matching is idempotent at the
+ * delivery-dedupe level, so re-returning a known row on a queue replay is
+ * safe and lets a crashed match/enqueue step recover (ADR 0034).
  */
 export async function processTwitchEventMessage(
   db: Database,
   config: AppConfig,
   kv: KVNamespace,
   message: TwitchEventQueueMessage,
-): Promise<void> {
-  const alreadyProcessed =
-    await db.channelStateChanges.existsByEventsubMessageId(message.messageId)
-  if (alreadyProcessed) return
+): Promise<ChannelStateChangeRecord | null> {
+  const existing = await db.channelStateChanges.findByEventsubMessageId(
+    message.messageId,
+  )
+  if (existing) return existing
 
   switch (message.eventType) {
     case "stream.online":
-      return processStreamOnline(db, config, kv, message.event, message)
+      await processStreamOnline(db, config, kv, message.event, message)
+      break
     case "stream.offline":
-      return processStreamOffline(db, message.event, message)
+      await processStreamOffline(db, message.event, message)
+      break
     case "channel.update":
-      return processChannelUpdate(db, message.event, message)
+      await processChannelUpdate(db, message.event, message)
+      break
   }
+
+  return db.channelStateChanges.findByEventsubMessageId(message.messageId)
 }
 
 async function processStreamOnline(

@@ -5,3 +5,4 @@ dist/
 !.env.development
 .agents/
 *.tsbuildinfo
+test-results/

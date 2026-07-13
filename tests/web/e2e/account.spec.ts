@@ -188,7 +188,7 @@ describe("Account view", () => {
     await revokeSession(sessionId)
 
     await page.getByRole("button", { name: "Sync Channels" }).click()
-    await expectVisible(page.getByRole("button", { name: "Reconnect Twitch" }))
+    await expectVisible(page.getByRole("link", { name: "Reconnect Twitch" }))
     expect(new URL(page.url()).pathname).toBe("/account")
   })
 })

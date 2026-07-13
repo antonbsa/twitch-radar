@@ -41,10 +41,6 @@ export function AccountPage() {
     }
   }
 
-  function handleReconnect() {
-    window.location.href = "/api/auth/twitch/start"
-  }
-
   return (
     <div className="p-4">
       <h1 className="text-lg font-semibold">Account</h1>
@@ -104,8 +100,8 @@ export function AccountPage() {
       </Button>
 
       {isSessionExpired && (
-        <Button className="mt-3 w-full" onClick={handleReconnect}>
-          Reconnect Twitch
+        <Button className="mt-3 w-full" asChild>
+          <a href="/api/auth/twitch/start">Reconnect Twitch</a>
         </Button>
       )}
 

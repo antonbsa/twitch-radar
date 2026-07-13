@@ -78,6 +78,12 @@ export class MonitoredChannelsRepository {
       .run()
   }
 
+  /** Every row — reconciliation derives the desired subscription set from it. */
+  async listAll(): Promise<MonitoredChannelRecord[]> {
+    const rows = await this.db.select().from(monitoredChannels).all()
+    return rows.map(toRecord)
+  }
+
   async findByBroadcasterUserIds(
     ids: string[],
   ): Promise<MonitoredChannelRecord[]> {

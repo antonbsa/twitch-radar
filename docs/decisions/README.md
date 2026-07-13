@@ -39,3 +39,7 @@ Other project documents may state goals, requirements, task scope, validation st
 - [0031 - EventSub Subscription Creation And Status Lifecycle](0031-eventsub-subscription-creation-and-lifecycle.md)
 - [0032 - EventSub Webhook Verification And Queueing](0032-eventsub-webhook-verification-and-queueing.md)
 - [0033 - EventSub State Transition Rules](0033-eventsub-state-transition-rules.md)
+- [0034 - Notification Matching And Delivery Pipeline](0034-notification-matching-and-delivery-pipeline.md)
+- [0035 - Web Push Sends Hand-Rolled On WebCrypto](0035-web-push-via-webcrypto.md)
+- [0036 - Scheduled Ops Jobs: Reconciliation, Token Refresh, Follow Sync](0036-scheduled-ops-jobs.md)
+- [0037 - Single PUBLIC_URL, Same-Origin API And Web In Every Environment](0037-single-public-url-same-origin-deployment.md)

@@ -109,6 +109,33 @@ export class GlobalCategoryPreferencesRepository {
     return rows.map(toRecord)
   }
 
+  /** Active preferences (all users) for one category. */
+  async findActiveByCategoryId(
+    categoryId: string,
+  ): Promise<GlobalPreferenceRecord[]> {
+    const rows = await this.db
+      .select()
+      .from(globalCategoryPreferences)
+      .where(
+        and(
+          eq(globalCategoryPreferences.categoryId, categoryId),
+          isNull(globalCategoryPreferences.disabledAt),
+        ),
+      )
+      .all()
+    return rows.map(toRecord)
+  }
+
+  /** Distinct users holding at least one active global preference. */
+  async listUserIdsWithActive(): Promise<string[]> {
+    const rows = await this.db
+      .selectDistinct({ userId: globalCategoryPreferences.userId })
+      .from(globalCategoryPreferences)
+      .where(isNull(globalCategoryPreferences.disabledAt))
+      .all()
+    return rows.map((row) => row.userId)
+  }
+
   async anyActiveForUsers(userIds: string[]): Promise<boolean> {
     if (userIds.length === 0) return false
     // D1 limits bound parameters to 100 per query; batch to stay within that.

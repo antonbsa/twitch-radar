@@ -4,6 +4,8 @@
     "batchable",
     "channela",
     "channelb",
+    "channeln",
+    "cloudflared",
     "cpref",
     "esub",
     "eventsub",
@@ -18,6 +20,7 @@
     "psub",
     "subrequest",
     "testuser",
+    "trycloudflare",
     "upserts"
   ],
   "search.exclude": {

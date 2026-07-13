@@ -63,7 +63,10 @@ describe("GET /api/auth/twitch/callback", () => {
       { redirect: "manual" },
     )
 
-    expect(res.status).toBe(302)
+    // Not a 302 redirect: Safari drops a Set-Cookie that arrives on the same
+    // response as a Location header for a cross-site redirect chain, so the
+    // callback lands on a real 200 page that redirects client-side instead.
+    expect(res.status).toBe(200)
 
     const cookie = res.headers.get("set-cookie")!
     expect(cookie).toMatch(/^session=/)

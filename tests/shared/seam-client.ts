@@ -4,7 +4,9 @@ import type {
   SeedChannelStateInput,
   SeedEventsubSubscriptionInput,
   SeedFollowedChannelInput,
+  SeedMonitoredChannelInput,
   SeedPreferencesInput,
+  SeedPushSubscriptionInput,
   SeedRequestBody,
   SeedResponse,
   SeedUserInput,
@@ -13,6 +15,8 @@ import type { ChannelStateRecord } from "../../apps/api/src/db/repositories/chan
 import type { ChannelStateChangeRecord } from "../../apps/api/src/db/repositories/channel-state-changes"
 import type { EventsubSubscriptionRecord } from "../../apps/api/src/db/repositories/eventsub-subscriptions"
 import type { MonitoredChannelRecord } from "../../apps/api/src/db/repositories/monitored-channels"
+import type { NotificationDeliveryRecord } from "../../apps/api/src/db/repositories/notification-deliveries"
+import type { PushSubscriptionRecord } from "../../apps/api/src/types"
 
 export {
   E2E_BROADCASTER_PREFIX,
@@ -23,7 +27,9 @@ export type {
   SeedChannelStateInput,
   SeedEventsubSubscriptionInput,
   SeedFollowedChannelInput,
+  SeedMonitoredChannelInput,
   SeedPreferencesInput,
+  SeedPushSubscriptionInput,
   SeedRequestBody,
   SeedUserInput,
 }
@@ -33,6 +39,9 @@ export interface InspectResponse {
   eventsubSubscriptions: EventsubSubscriptionRecord[]
   channelState: ChannelStateRecord[]
   channelStateChanges: ChannelStateChangeRecord[]
+  notificationDeliveries: NotificationDeliveryRecord[]
+  // Only populated when the inspect call passes a userId.
+  pushSubscriptions: PushSubscriptionRecord[]
 }
 
 export interface SeededUser {
@@ -133,9 +142,13 @@ export function createSeamClient({ baseUrl }: SeamClientOptions) {
     },
 
     /** Reads broadcaster-keyed monitoring state the public API never exposes. */
-    async inspect(broadcasterUserIds: string[]): Promise<InspectResponse> {
+    async inspect(
+      broadcasterUserIds: string[],
+      userId?: string,
+    ): Promise<InspectResponse> {
       return (await call("/inspect", {
         broadcasterUserIds,
+        ...(userId ? { userId } : {}),
       })) as InspectResponse
     },
   }

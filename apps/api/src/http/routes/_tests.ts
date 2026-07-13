@@ -11,6 +11,7 @@ import {
   followedChannels,
   globalCategoryPreferences,
   monitoredChannels,
+  notificationDeliveries,
   pushSubscriptions,
   twitchTokens,
   users,
@@ -81,12 +82,30 @@ export interface SeedEventsubSubscriptionInput {
   callbackUrl?: string
 }
 
+export interface SeedMonitoredChannelInput {
+  broadcasterUserId: string
+  broadcasterLogin?: string
+  broadcasterDisplayName?: string
+  disabled?: boolean
+}
+
+export interface SeedPushSubscriptionInput {
+  endpoint: string
+  // Omitted keys are generated as a real P-256 point and 16-byte secret so
+  // the Web Push encryption path works against them (ADR 0035).
+  p256dh?: string
+  auth?: string
+  revoked?: boolean
+}
+
 export interface SeedRequestBody {
   user?: SeedUserInput
   followedChannels?: SeedFollowedChannelInput[]
   channelState?: SeedChannelStateInput[]
   preferences?: SeedPreferencesInput
   eventsubSubscriptions?: SeedEventsubSubscriptionInput[]
+  monitoredChannels?: SeedMonitoredChannelInput[]
+  pushSubscriptions?: SeedPushSubscriptionInput[]
 }
 
 export interface SeedResponse {
@@ -205,7 +224,7 @@ export async function handleTestSeed(c: Context<HonoEnv>): Promise<Response> {
           status: sub.status ?? "pending",
           callbackUrl:
             sub.callbackUrl ??
-            `${c.var.config.apiUrl}/api/webhooks/twitch/eventsub`,
+            `${c.var.config.publicUrl}/api/webhooks/twitch/eventsub`,
           secretVersion: "1",
           createdAt: now,
           updatedAt: now,
@@ -214,7 +233,64 @@ export async function handleTestSeed(c: Context<HonoEnv>): Promise<Response> {
     }
   }
 
+  if (body.monitoredChannels?.length) {
+    await c.var.db.monitoredChannels.upsertAll(
+      body.monitoredChannels.map((channel) => ({
+        broadcasterUserId: channel.broadcasterUserId,
+        broadcasterLogin: channel.broadcasterLogin ?? null,
+        broadcasterDisplayName: channel.broadcasterDisplayName ?? null,
+        monitorReason: "channel_preference",
+        now,
+      })),
+    )
+    for (const channel of body.monitoredChannels) {
+      if (channel.disabled) {
+        await c.var.db.monitoredChannels.disable(channel.broadcasterUserId, now)
+      }
+    }
+  }
+
+  if (body.pushSubscriptions?.length) {
+    for (const subscription of body.pushSubscriptions) {
+      const id = `psub_${nanoid()}`
+      await c.var.db.pushSubscriptions.create({
+        id,
+        userId,
+        endpoint: subscription.endpoint,
+        p256dh: subscription.p256dh ?? (await generateP256dhKey()),
+        auth: subscription.auth ?? generateAuthSecret(),
+        userAgent: null,
+        now,
+      })
+      if (subscription.revoked) {
+        await c.var.db.pushSubscriptions.revoke(id, now)
+      }
+    }
+  }
+
   return jsonResponse({ userId, session } satisfies SeedResponse)
+}
+
+function base64UrlEncode(bytes: Uint8Array): string {
+  let binary = ""
+  for (const byte of bytes) binary += String.fromCharCode(byte)
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "")
+}
+
+// A real (throwaway) P-256 public key — Web Push payload encryption performs
+// actual ECDH against it, so a placeholder string would fail the send path.
+async function generateP256dhKey(): Promise<string> {
+  const pair = await crypto.subtle.generateKey(
+    { name: "ECDH", namedCurve: "P-256" },
+    true,
+    ["deriveBits"],
+  )
+  const raw = await crypto.subtle.exportKey("raw", pair.publicKey)
+  return base64UrlEncode(new Uint8Array(raw))
+}
+
+function generateAuthSecret(): string {
+  return base64UrlEncode(crypto.getRandomValues(new Uint8Array(16)))
 }
 
 export interface ResetRequestBody {
@@ -274,6 +350,10 @@ export async function handleTestReset(c: Context<HonoEnv>): Promise<Response> {
   // (channel_state is monitored globally across users, see ADR 0007, so it's
   // scoped by the E2E_BROADCASTER_PREFIX convention instead of a user id).
   await db
+    .delete(notificationDeliveries)
+    .where(eq(notificationDeliveries.userId, E2E_USER_ID))
+    .run()
+  await db
     .delete(channelCategoryPreferences)
     .where(eq(channelCategoryPreferences.userId, E2E_USER_ID))
     .run()
@@ -327,28 +407,39 @@ export async function handleTestReset(c: Context<HonoEnv>): Promise<Response> {
 
 export interface InspectRequestBody {
   broadcasterUserIds: string[]
+  // When set, the response also carries this user's push subscriptions
+  // (user-keyed, unlike everything else here).
+  userId?: string
 }
 
 // Read-only window into broadcaster-keyed tables the public API never
 // exposes (monitoring is server-internal, ADR 0007) so tests can assert
-// monitored_channels / eventsub_subscriptions / channel_state side effects.
+// monitored_channels / eventsub_subscriptions / channel_state /
+// notification_deliveries side effects.
 export async function handleTestInspect(
   c: Context<HonoEnv>,
 ): Promise<Response> {
   const body = await readJsonBody<InspectRequestBody>(c)
   const ids = body.broadcasterUserIds ?? []
 
-  const [monitored, eventsub, state, stateChanges] = await Promise.all([
-    c.var.db.monitoredChannels.findByBroadcasterUserIds(ids),
-    c.var.db.eventsubSubscriptions.findByBroadcasterUserIds(ids),
-    c.var.db.channelState.findByBroadcasterUserIds(ids),
-    c.var.db.channelStateChanges.findByBroadcasterUserIds(ids),
-  ])
+  const [monitored, eventsub, state, stateChanges, deliveries, pushSubs] =
+    await Promise.all([
+      c.var.db.monitoredChannels.findByBroadcasterUserIds(ids),
+      c.var.db.eventsubSubscriptions.findByBroadcasterUserIds(ids),
+      c.var.db.channelState.findByBroadcasterUserIds(ids),
+      c.var.db.channelStateChanges.findByBroadcasterUserIds(ids),
+      c.var.db.notificationDeliveries.findByBroadcasterUserIds(ids),
+      body.userId
+        ? c.var.db.pushSubscriptions.listByUserId(body.userId)
+        : Promise.resolve([]),
+    ])
 
   return jsonResponse({
     monitoredChannels: monitored,
     eventsubSubscriptions: eventsub,
     channelState: state,
     channelStateChanges: stateChanges,
+    notificationDeliveries: deliveries,
+    pushSubscriptions: pushSubs,
   })
 }

@@ -1,10 +1,6 @@
 import { Button } from "@/components/ui/button"
 
 export function LoginPage() {
-  function handleConnect() {
-    window.location.href = "/api/auth/twitch/start"
-  }
-
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-6 px-6 text-center">
       <div className="space-y-2">
@@ -14,8 +10,13 @@ export function LoginPage() {
           care about.
         </p>
       </div>
-      <Button size="lg" onClick={handleConnect}>
-        Connect with Twitch
+      {/* A real <a> click, not a JS-driven window.location assignment: iOS
+      standalone PWAs only carry the trusted-navigation flag through a
+      redirect chain when it originates from a native link click, and losing
+      it is what stops the soft keyboard from opening on Twitch's login
+      inputs after the redirect. */}
+      <Button size="lg" asChild>
+        <a href="/api/auth/twitch/start">Connect with Twitch</a>
       </Button>
     </div>
   )
