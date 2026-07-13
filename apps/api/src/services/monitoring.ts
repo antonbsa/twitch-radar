@@ -13,7 +13,7 @@ const EVENTSUB_CALLBACK_PATH = "/api/webhooks/twitch/eventsub"
  * subscriptions pointing here are ours to delete.
  */
 export function eventsubCallbackUrl(config: AppConfig): string {
-  return `${config.apiUrl}${EVENTSUB_CALLBACK_PATH}`
+  return `${config.publicUrl}${EVENTSUB_CALLBACK_PATH}`
 }
 
 export interface MonitorTarget {

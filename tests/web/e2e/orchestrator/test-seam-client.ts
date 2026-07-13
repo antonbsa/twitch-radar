@@ -11,10 +11,10 @@ export {
 } from "../../../shared/seam-client"
 
 function requireApiUrl(): string {
-  const value = process.env.API_URL
+  const value = process.env.PUBLIC_URL
   if (!value) {
     throw new Error(
-      "API_URL is not set — the e2e global setup (tests/web/e2e/setup/global-setup.ts) should have injected it",
+      "PUBLIC_URL is not set — the e2e global setup (tests/web/e2e/setup/global-setup.ts) should have injected it",
     )
   }
   return value

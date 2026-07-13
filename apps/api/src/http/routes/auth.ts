@@ -105,10 +105,7 @@ export async function handleAuthCallback(
   const headers = new Headers()
   headers.set("Set-Cookie", sessionCookieHeader(sessionId))
   headers.set("Content-Type", "text/html; charset=utf-8")
-  // The frontend, not this Worker's own origin — apiUrl only serves the
-  // bare `{"service":"twitch-radar-api"}` JSON at "/", so redirecting there
-  // stranded users on that instead of landing back in the app.
-  const target = config.webUrl
+  const target = config.publicUrl
   const body = `<!doctype html><html><head><meta http-equiv="refresh" content="0;url=${target}"></head><body><script>location.replace(${JSON.stringify(target)})</script></body></html>`
   return new Response(body, { status: 200, headers })
 }

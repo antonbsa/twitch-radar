@@ -11,8 +11,11 @@ export interface Env {
   TWITCH_EVENTS_QUEUE: Queue<TwitchEventQueueMessage>
   NOTIFICATION_JOBS_QUEUE: Queue<NotificationJobMessage>
   ENVIRONMENT?: string
-  API_URL: string
-  WEB_URL: string
+  // The one origin the browser and Twitch both reach this deployment
+  // through — API and web are same-origin in every environment (a Worker
+  // route and Pages sharing one domain in prod, the Vite dev proxy or a
+  // tunnel locally), so there is deliberately no separate API-only URL.
+  PUBLIC_URL: string
   TWITCH_CLIENT_ID: string
   VAPID_PUBLIC_KEY: string
   VAPID_SUBJECT: string
@@ -27,8 +30,7 @@ export interface Env {
 const EnvSchema = z
   .object({
     ENVIRONMENT: z.enum(["local", "preview", "production"]).default("local"),
-    API_URL: z.url(),
-    WEB_URL: z.url(),
+    PUBLIC_URL: z.url(),
     TWITCH_CLIENT_ID: z.string().min(1),
     // base64url-encoded uncompressed EC public key (65 bytes → 87 chars)
     VAPID_PUBLIC_KEY: z.string().length(87),
@@ -45,10 +47,9 @@ const EnvSchema = z
   })
   .transform((d) => ({
     environment: d.ENVIRONMENT,
-    apiUrl: d.API_URL,
-    webUrl: d.WEB_URL,
+    publicUrl: d.PUBLIC_URL,
     twitchClientId: d.TWITCH_CLIENT_ID,
-    twitchRedirectUri: `${d.API_URL}${TWITCH_CALLBACK_PATH}`,
+    twitchRedirectUri: `${d.PUBLIC_URL}${TWITCH_CALLBACK_PATH}`,
     vapidPublicKey: d.VAPID_PUBLIC_KEY,
     vapidSubject: d.VAPID_SUBJECT,
     twitchClientSecret: d.TWITCH_CLIENT_SECRET,

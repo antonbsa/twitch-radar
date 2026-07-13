@@ -8,10 +8,10 @@ import { orchestrator } from "./setup/orchestrator"
 
 const BROADCASTER_ID = "300"
 
-// Derived from .env.development's API_URL — the callback the worker under
+// Derived from .env.development's PUBLIC_URL — the callback the worker under
 // test stamps on its subscriptions and uses as its reconciliation ownership
 // marker (ADR 0036).
-const CALLBACK_URL = "http://localhost:8787/api/webhooks/twitch/eventsub"
+const CALLBACK_URL = "http://localhost:5173/api/webhooks/twitch/eventsub"
 
 function remoteSub(
   overrides: Partial<

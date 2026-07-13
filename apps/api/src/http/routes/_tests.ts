@@ -224,7 +224,7 @@ export async function handleTestSeed(c: Context<HonoEnv>): Promise<Response> {
           status: sub.status ?? "pending",
           callbackUrl:
             sub.callbackUrl ??
-            `${c.var.config.apiUrl}/api/webhooks/twitch/eventsub`,
+            `${c.var.config.publicUrl}/api/webhooks/twitch/eventsub`,
           secretVersion: "1",
           createdAt: now,
           updatedAt: now,

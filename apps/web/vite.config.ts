@@ -22,9 +22,9 @@ export default defineConfig(() => {
       allowedHosts: [".trycloudflare.com"],
       port: 5173,
       proxy: {
-        // Always the local worker, not `API_URL` from env — `wrangler dev`
+        // Always the local worker, not `PUBLIC_URL` from env — `wrangler dev`
         // and this Vite server always run on the same machine, on this fixed
-        // port (apps/api/package.json's dev script). `API_URL` itself may be
+        // port (apps/api/package.json's dev script). `PUBLIC_URL` itself may be
         // a public tunnel URL (for OAuth redirects to work on another
         // device); proxying to that instead of localhost would forward a
         // request back out through the tunnel into this same dev server,

@@ -65,16 +65,16 @@ if (!broadcasterUserId || !categoryId || !categoryName) {
 }
 
 const vars = loadDevVars()
-const apiUrl = vars.API_URL
+const publicUrl = vars.PUBLIC_URL
 const webhookSecret = vars.EVENTSUB_WEBHOOK_SECRET
-if (!apiUrl || !webhookSecret) {
+if (!publicUrl || !webhookSecret) {
   throw new Error(
-    "API_URL / EVENTSUB_WEBHOOK_SECRET not found in .env.development/.env.local",
+    "PUBLIC_URL / EVENTSUB_WEBHOOK_SECRET not found in .env.development/.env.local",
   )
 }
 
 async function seed(body) {
-  const res = await fetch(`${apiUrl}/api/__test__/seed`, {
+  const res = await fetch(`${publicUrl}/api/__test__/seed`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
@@ -105,7 +105,7 @@ async function sendEventsubWebhook(
     .update(messageId + timestamp + body)
     .digest("hex")}`
 
-  return fetch(`${apiUrl}/api/webhooks/twitch/eventsub`, {
+  return fetch(`${publicUrl}/api/webhooks/twitch/eventsub`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -120,7 +120,7 @@ async function sendEventsubWebhook(
 }
 
 async function inspect() {
-  const res = await fetch(`${apiUrl}/api/__test__/inspect`, {
+  const res = await fetch(`${publicUrl}/api/__test__/inspect`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ broadcasterUserIds: [broadcasterUserId] }),

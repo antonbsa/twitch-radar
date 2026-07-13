@@ -42,3 +42,4 @@ Other project documents may state goals, requirements, task scope, validation st
 - [0034 - Notification Matching And Delivery Pipeline](0034-notification-matching-and-delivery-pipeline.md)
 - [0035 - Web Push Sends Hand-Rolled On WebCrypto](0035-web-push-via-webcrypto.md)
 - [0036 - Scheduled Ops Jobs: Reconciliation, Token Refresh, Follow Sync](0036-scheduled-ops-jobs.md)
+- [0037 - Single PUBLIC_URL, Same-Origin API And Web In Every Environment](0037-single-public-url-same-origin-deployment.md)

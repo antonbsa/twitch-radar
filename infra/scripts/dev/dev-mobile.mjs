@@ -2,13 +2,12 @@
 // Automates the "Testing On Mobile" flow from the README:
 // 1. Starts a cloudflared quick tunnel in front of the Vite dev server
 // 2. Captures its random *.trycloudflare.com URL
-// 3. Writes it into both API_URL and WEB_URL in .env.local — the tunnel
-//    fronts Vite, which serves the frontend directly and proxies /api to the
-//    worker, so both URLs are the same tunnel origin in this setup (unlike
-//    production, where the API worker and the frontend are separate
-//    deployments — see WEB_URL in apps/api/src/env.ts).
+// 3. Writes it into PUBLIC_URL in .env.local — the tunnel fronts Vite, which
+//    serves the frontend directly and proxies /api to the worker, so this
+//    one URL covers both (see PUBLIC_URL in apps/api/src/env.ts: API and web
+//    are same-origin in every environment, dev included).
 // 4. Prints a QR code of the tunnel URL so you scan-to-open on the mobile instead of typing it.
-// 5. Starts `npm run dev` so the API worker picks up the new API_URL/WEB_URL on boot
+// 5. Starts `npm run dev` so the API worker picks up the new PUBLIC_URL on boot
 //
 // This does NOT register the Twitch redirect URI for you — Twitch has no
 // public API for managing an app's redirect URIs, only the developer
@@ -38,13 +37,12 @@ function setEnvVar(lines, key, value) {
   }
 }
 
-function updateTunnelUrls(tunnelUrl) {
+function updateTunnelUrl(tunnelUrl) {
   const existing = existsSync(ENV_LOCAL_PATH)
     ? readFileSync(ENV_LOCAL_PATH, "utf-8")
     : ""
   const lines = existing.split("\n")
-  setEnvVar(lines, "API_URL", tunnelUrl)
-  setEnvVar(lines, "WEB_URL", tunnelUrl)
+  setEnvVar(lines, "PUBLIC_URL", tunnelUrl)
   writeFileSync(ENV_LOCAL_PATH, lines.join("\n"))
 }
 
@@ -81,12 +79,12 @@ async function main() {
   )
 
   const tunnelUrl = await waitForTunnelUrl(tunnel)
-  updateTunnelUrls(tunnelUrl)
+  updateTunnelUrl(tunnelUrl)
 
   const callbackUrl = `${tunnelUrl}/api/auth/twitch/callback`
   console.log("\n" + "=".repeat(70))
   console.log(`Tunnel ready:  ${tunnelUrl}`)
-  console.log(`API_URL and WEB_URL written to .env.local`)
+  console.log(`PUBLIC_URL written to .env.local`)
   console.log("=".repeat(70))
   console.log(
     `\n1. Add this redirect URI in the Twitch console (if not already there):\n   ${callbackUrl}\n   https://dev.twitch.tv/console/apps`,
