@@ -96,10 +96,21 @@ export async function handleAuthCallback(
 
   const sessionId = await createSession(c.env.APP_CACHE, userId)
 
+  // Not a 302: Safari has a long-standing bug (WebKit bug 188165) where a
+  // Set-Cookie set on the same response as a Location redirect is silently
+  // dropped for a cross-site navigation chain (id.twitch.tv -> here), which
+  // left mobile Safari users "logged out" immediately after completing
+  // Twitch login. Landing on a real 200 response first, then redirecting
+  // client-side, gives the cookie a response of its own to commit on.
   const headers = new Headers()
   headers.set("Set-Cookie", sessionCookieHeader(sessionId))
-  headers.set("Location", config.apiUrl)
-  return new Response(null, { status: 302, headers })
+  headers.set("Content-Type", "text/html; charset=utf-8")
+  // The frontend, not this Worker's own origin — apiUrl only serves the
+  // bare `{"service":"twitch-radar-api"}` JSON at "/", so redirecting there
+  // stranded users on that instead of landing back in the app.
+  const target = config.webUrl
+  const body = `<!doctype html><html><head><meta http-equiv="refresh" content="0;url=${target}"></head><body><script>location.replace(${JSON.stringify(target)})</script></body></html>`
+  return new Response(body, { status: 200, headers })
 }
 
 export async function handleLogout(c: Context<HonoEnv>): Promise<Response> {
