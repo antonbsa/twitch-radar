@@ -22,6 +22,7 @@
     "build": "npm run build --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "mock-eventsub": "node infra/scripts/dev/mock-eventsub.mjs",
+    "dev:mobile": "node infra/scripts/dev/dev-mobile.mjs",
     "vapid": "npm run vapid -w @twitch-radar/api"
   },
   "keywords": [],
@@ -35,6 +36,7 @@
     "@rocketseat/eslint-config": "^2.2.2",
     "eslint": "^8.57.1",
     "playwright": "^1.61.1",
-    "prettier": "^3.9.3"
+    "prettier": "^3.9.3",
+    "qrcode-terminal": "^0.12.0"
   }
 }

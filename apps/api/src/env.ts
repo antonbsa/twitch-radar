@@ -12,6 +12,7 @@ export interface Env {
   NOTIFICATION_JOBS_QUEUE: Queue<NotificationJobMessage>
   ENVIRONMENT?: string
   API_URL: string
+  WEB_URL: string
   TWITCH_CLIENT_ID: string
   VAPID_PUBLIC_KEY: string
   VAPID_SUBJECT: string
@@ -27,6 +28,7 @@ const EnvSchema = z
   .object({
     ENVIRONMENT: z.enum(["local", "preview", "production"]).default("local"),
     API_URL: z.url(),
+    WEB_URL: z.url(),
     TWITCH_CLIENT_ID: z.string().min(1),
     // base64url-encoded uncompressed EC public key (65 bytes → 87 chars)
     VAPID_PUBLIC_KEY: z.string().length(87),
@@ -44,6 +46,7 @@ const EnvSchema = z
   .transform((d) => ({
     environment: d.ENVIRONMENT,
     apiUrl: d.API_URL,
+    webUrl: d.WEB_URL,
     twitchClientId: d.TWITCH_CLIENT_ID,
     twitchRedirectUri: `${d.API_URL}${TWITCH_CALLBACK_PATH}`,
     vapidPublicKey: d.VAPID_PUBLIC_KEY,
