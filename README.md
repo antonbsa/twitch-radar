@@ -74,11 +74,22 @@ All other variables in `.env.development` have working local defaults, including
 
 At this point you can log in, browse channels, and set preferences on the dev machine. The two sections below cover the two things that setup alone doesn't give you: real Web Push notifications, and access from a phone.
 
+## Env Validation And Placeholders
+
+`.env.development` is committed and ships safe placeholder values for every secret, so a fresh checkout boots and the test suites run without any real credentials (`AGENTS.md` § "Env Vars: Single Source Of Truth"). `apps/api/src/env.ts` only checks that these vars have the right *shape* (length, format) — it doesn't know whether a value is a real secret or still the placeholder, since a placeholder is syntactically valid.
+
+Because of that, two secrets that are placeholders by default fail loudly the moment code actually tries to use them for real, rather than at every request:
+
+- `TWITCH_CLIENT_SECRET` (`secret-placeholder`) — `services/twitch/client.ts` checks for this exact string before calling Twitch's OAuth endpoints, and throws a `TwitchConfigError` telling you to get a real secret and add it to `.env.local`. The OAuth callback route turns this into a `500 twitch_not_configured` response instead of a generic error.
+- `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` (`AAAA...`) — not a valid P-256 key pair, so `services/push/web-push.ts` fails to import them as a signing key and throws with instructions to run `npm run vapid` and copy the output into `.env.local` (see "Testing Web Push Notifications" below). The `GET /api/push/vapid-public-key` endpoint checks this up front too, so the frontend gets a clear error instead of a browser-side `PushManager.subscribe()` crash.
+
+This validation intentionally lives at the point each value is actually used, not in `env.ts` itself: `env.ts` runs on every request, and both test tiers (`tests/api`, `tests/web/e2e`) boot the Worker with only `.env.development` — no real secrets — because they never do a real OAuth round-trip. Rejecting placeholders globally would fail those tests (and every unrelated route in local dev) instead of just the features that need real credentials. The test setups instead pass real (throwaway) values for the specific vars their scenarios exercise, via `wrangler dev --var`.
+
 ## Testing Web Push Notifications
 
 Notifications work the same way whether you're on the dev machine or on mobile (see the next section for mobile access itself) — this section applies to both.
 
-1. Generate a real VAPID key pair — `.env.development`'s `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` are placeholders, not a valid key pair, so Web Push sends will fail signing/encryption until you override them:
+1. Generate a real VAPID key pair — `.env.development`'s `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` are placeholders, not a valid key pair, so the API will reject them with a descriptive `vapid_not_configured` error (from `GET /api/push/vapid-public-key`, and from any actual send) until you override them:
    ```sh
    npm run vapid
    ```

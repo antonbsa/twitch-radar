@@ -61,6 +61,29 @@ export class TwitchApiError extends Error {
   }
 }
 
+// Thrown before any network call, distinct from TwitchApiError (which means
+// Twitch itself rejected the request) so callers can tell "not configured"
+// apart from "Twitch said no" and respond accordingly.
+export class TwitchConfigError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = "TwitchConfigError"
+  }
+}
+
+// .env.development ships this placeholder so tests/CI never need a real
+// Twitch client secret (see AGENTS.md "Env Vars: Single Source Of Truth").
+// Any function that actually calls Twitch with it would otherwise fail with
+// an opaque 401/403 from Twitch instead of a clear "set this up" message.
+const PLACEHOLDER_CLIENT_SECRET = "secret-placeholder"
+
+function assertRealClientSecret(clientSecret: string): void {
+  if (clientSecret !== PLACEHOLDER_CLIENT_SECRET) return
+  throw new TwitchConfigError(
+    "TWITCH_CLIENT_SECRET is still the .env.development placeholder. Get a real client secret from the Twitch Developer Console and add it to .env.local.",
+  )
+}
+
 export async function exchangeCode(
   clientId: string,
   clientSecret: string,
@@ -68,6 +91,7 @@ export async function exchangeCode(
   redirectUri: string,
   authBaseUrl = "https://id.twitch.tv",
 ): Promise<TwitchTokenResponse> {
+  assertRealClientSecret(clientSecret)
   const res = await fetch(`${authBaseUrl}/oauth2/token`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -89,6 +113,7 @@ export async function refreshAccessToken(
   refreshToken: string,
   authBaseUrl = "https://id.twitch.tv",
 ): Promise<TwitchTokenResponse> {
+  assertRealClientSecret(clientSecret)
   const res = await fetch(`${authBaseUrl}/oauth2/token`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -116,6 +141,7 @@ export async function fetchAppAccessToken(
   clientSecret: string,
   authBaseUrl = "https://id.twitch.tv",
 ): Promise<TwitchAppTokenResponse> {
+  assertRealClientSecret(clientSecret)
   const res = await fetch(`${authBaseUrl}/oauth2/token`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
