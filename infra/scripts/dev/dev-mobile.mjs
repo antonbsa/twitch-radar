@@ -49,21 +49,30 @@ function updateTunnelUrl(tunnelUrl) {
 function waitForTunnelUrl(child) {
   return new Promise((resolve, reject) => {
     let settled = false
+    let log = ""
     const onData = (data) => {
       const text = data.toString()
-      process.stderr.write(text)
+      log += text
       const match = text.match(TUNNEL_URL_PATTERN)
       if (match && !settled) {
         settled = true
+        child.stderr.off("data", onData)
+        child.stderr.resume()
         resolve(match[0])
       }
     }
     child.stderr.on("data", onData)
     child.on("exit", (code) => {
-      if (!settled) reject(new Error(`cloudflared exited early (code ${code})`))
+      if (!settled) {
+        process.stderr.write(log)
+        reject(new Error(`cloudflared exited early (code ${code})`))
+      }
     })
     child.on("error", (err) => {
-      if (!settled) reject(err)
+      if (!settled) {
+        process.stderr.write(log)
+        reject(err)
+      }
     })
   })
 }
