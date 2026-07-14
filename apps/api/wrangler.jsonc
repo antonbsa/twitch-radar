@@ -186,8 +186,17 @@
           "id": "f3f65972f7404e23ade4a303d9b8371a"
         }
       ],
+      // Cron Triggers are capped account-wide (Cloudflare API error 10072:
+      // "exceeded the limit of 5 cron triggers"), not per Worker. Production
+      // already registers all 4 crons above, leaving only 1 free — so preview
+      // gets just the default minutely job (pending EventSub subscription
+      // creation, ADR 0031) and no scheduled reconcile/token-refresh/
+      // stale-follow-sync in this environment. Those can still be exercised
+      // manually in preview via `wrangler deploy --env preview` +
+      // `/__scheduled?cron=...` against the running dev/preview worker if
+      // needed.
       "triggers": {
-        "crons": ["* * * * *", "*/30 * * * *", "5,35 * * * *", "10 * * * *"]
+        "crons": ["* * * * *"]
       },
       "queues": {
         "producers": [
