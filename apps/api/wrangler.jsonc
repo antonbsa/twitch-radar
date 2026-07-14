@@ -2,24 +2,6 @@
 	"name": "twitch-radar-api",
 	"main": "src/index.ts",
 	"compatibility_date": "2026-06-22",
-	// Serves apps/web's production build directly from this Worker (no
-	// Cloudflare Pages project) so the PWA and the API share one
-	// *.workers.dev origin with no custom domain — required by the session
-	// cookie having no Domain attribute and there being no CORS handling
-	// (see apps/api/src/services/session.ts). Without `run_worker_first`,
-	// Cloudflare's static-assets layer checks for a matching file *before*
-	// invoking the Worker; "/api/*" paths never match a built file, so
-	// `not_found_handling: "single-page-application"` was serving the SPA's
-	// index.html for them instead of running the Worker's fetch handler at
-	// all (e.g. `/api/auth/twitch/start` silently never reached
-	// `handleAuthStart`). `run_worker_first` forces "/api/*" to always go to
-	// the Worker; every other path still falls through to the static
-	// assets, with the SPA index.html as the not-found fallback.
-	"assets": {
-		"directory": "../web/dist",
-		"not_found_handling": "single-page-application",
-		"run_worker_first": ["/api/*"]
-	},
 	"d1_databases": [
 		{
 			"binding": "DB",
@@ -87,6 +69,32 @@
 			// top-level `name` with the environment name. Set explicitly to
 			// pin the exact *.workers.dev hostname.
 			"name": "twitch-radar",
+			// Serves apps/web's production build directly from this Worker (no
+			// Cloudflare Pages project) so the PWA and the API share one
+			// *.workers.dev origin with no custom domain — required by the
+			// session cookie having no Domain attribute and there being no CORS
+			// handling (see apps/api/src/services/session.ts). Scoped to this
+			// environment only (not top-level) - `wrangler dev` (default/dev
+			// env, used by local dev and the E2E test tier) never builds
+			// apps/web, so a top-level `assets` block made it fail outright
+			// with "the directory ... does not exist"; dev serves the SPA via
+			// Vite instead, it doesn't need this at all.
+			//
+			// Without `run_worker_first`, Cloudflare's static-assets layer
+			// checks for a matching file *before* invoking the Worker; "/api/*"
+			// paths never match a built file, so
+			// `not_found_handling: "single-page-application"` was serving the
+			// SPA's index.html for them instead of running the Worker's fetch
+			// handler at all (e.g. `/api/auth/twitch/start` silently never
+			// reached `handleAuthStart`). `run_worker_first` forces "/api/*" to
+			// always go to the Worker; every other path still falls through to
+			// the static assets, with the SPA index.html as the not-found
+			// fallback.
+			"assets": {
+				"directory": "../web/dist",
+				"not_found_handling": "single-page-application",
+				"run_worker_first": ["/api/*"]
+			},
 			"vars": {
 				"ENVIRONMENT": "production",
 				"PUBLIC_URL": "https://twitch-radar.antonbsa.workers.dev",
@@ -157,6 +165,11 @@
 		// notification pipeline without a real Twitch event.
 		"preview": {
 			"name": "twitch-radar-preview",
+			"assets": {
+				"directory": "../web/dist",
+				"not_found_handling": "single-page-application",
+				"run_worker_first": ["/api/*"]
+			},
 			"vars": {
 				"ENVIRONMENT": "preview",
 				// Fill in after the first `wrangler deploy --env preview` -

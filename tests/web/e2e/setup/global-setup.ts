@@ -1,3 +1,4 @@
+import { rm } from "node:fs/promises"
 import { resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import {
@@ -15,6 +16,14 @@ const API_HEALTH_URL = "http://localhost:8787/health"
 const WEB_URL = "http://localhost:5173/"
 
 export default async function globalSetup() {
+  // Failure screenshots (see setup/fixtures.ts) accumulate across runs
+  // otherwise - wipe last run's before this one writes its own, so the
+  // folder only ever reflects the most recent run.
+  await rm(resolve(REPO_ROOT, "test-results"), {
+    recursive: true,
+    force: true,
+  })
+
   await runToCompletion("npm", ["run", "db:setup"], REPO_ROOT)
 
   const vapidKeys = await generateTestVapidKeys()
