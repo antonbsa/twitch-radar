@@ -145,6 +145,20 @@ Notes:
 - `apps/web/vite.config.ts` already allows any `*.trycloudflare.com` host (`server.allowedHosts`) — using a different tunnel provider needs the equivalent domain added there (or use ngrok's own `--host-header` / allowedHosts wildcard).
 - Switching back to same-machine-only testing: set `PUBLIC_URL` back to `http://localhost:5173` in `.env.local` (or delete the override to fall back to `.env.development`'s default) and restart `npm run dev`.
 
+## Production Setup
+
+Secrets that are placeholders in `.env.development` need real values in production, set via `wrangler secret put <NAME>`:
+
+- `TWITCH_CLIENT_SECRET` — from the [Twitch Developer Console](https://dev.twitch.tv/console/apps), not generated.
+- `EVENTSUB_WEBHOOK_SECRET` and `TOKEN_ENCRYPTION_KEY` — random secrets, generate each with:
+  ```sh
+  openssl rand -base64 32
+  ```
+- `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` — must be generated together as a matching pair:
+  ```sh
+  npm run vapid
+  ```
+
 ## Validation
 
 Run:
