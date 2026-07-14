@@ -76,7 +76,7 @@ At this point you can log in, browse channels, and set preferences on the dev ma
 
 ## Env Validation And Placeholders
 
-`.env.development` is committed and ships safe placeholder values for every secret, so a fresh checkout boots and the test suites run without any real credentials (`AGENTS.md` § "Env Vars: Single Source Of Truth"). `apps/api/src/env.ts` only checks that these vars have the right *shape* (length, format) — it doesn't know whether a value is a real secret or still the placeholder, since a placeholder is syntactically valid.
+`.env.development` is committed and ships safe placeholder values for every secret, so a fresh checkout boots and the test suites run without any real credentials (`AGENTS.md` § "Env Vars: Single Source Of Truth"). `apps/api/src/env.ts` only checks that these vars have the right _shape_ (length, format) — it doesn't know whether a value is a real secret or still the placeholder, since a placeholder is syntactically valid.
 
 Because of that, two secrets that are placeholders by default fail loudly the moment code actually tries to use them for real, rather than at every request:
 
@@ -147,17 +147,38 @@ Notes:
 
 ## Production Setup
 
-Secrets that are placeholders in `.env.development` need real values in production, set via `wrangler secret put <NAME>`:
+The app runs as a single Cloudflare Worker (`apps/api`) on the default `*.workers.dev` domain — no Cloudflare Pages project, no custom domain. `apps/web`'s production build is served as static assets directly from that same Worker (`assets` block in `apps/api/wrangler.jsonc`), so the PWA and the API share one origin. This matters because the session cookie has no `Domain` attribute and there's no CORS handling (`apps/api/src/services/session.ts`) — API and web must always be same-origin, in every environment.
 
-- `TWITCH_CLIENT_SECRET` — from the [Twitch Developer Console](https://dev.twitch.tv/console/apps), not generated.
-- `EVENTSUB_WEBHOOK_SECRET` and `TOKEN_ENCRYPTION_KEY` — random secrets, generate each with:
-  ```sh
-  openssl rand -base64 32
-  ```
-- `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` — must be generated together as a matching pair:
-  ```sh
-  npm run vapid
-  ```
+Two `wrangler.jsonc` details that exist specifically to make that work, worth knowing if you're touching config:
+
+- `assets.run_worker_first: ["/api/*"]` — without it, Cloudflare's static-assets layer serves `index.html` for any path that isn't a real file, which includes every `/api/*` route (they never reach the Worker's `fetch` handler at all). This flag forces `/api/*` to always hit the Worker.
+- Anything that reads bindings out of `wrangler.jsonc` (`wrangler deploy`, `wrangler d1 migrations apply`, …) needs `--env production` explicitly, or it silently targets the root/dev config instead of `env.production`.
+
+### One-time setup
+
+- D1 database, KV namespace, and two queues created via `wrangler d1 create` / `wrangler kv namespace create --env production` / `wrangler queues create`, with the resulting ids in `apps/api/wrangler.jsonc`'s `env.production` block.
+- Secrets pushed via `wrangler secret put <NAME> --env production`:
+  - `TWITCH_CLIENT_SECRET` — from the [Twitch Developer Console](https://dev.twitch.tv/console/apps), not generated.
+  - `EVENTSUB_WEBHOOK_SECRET` and `TOKEN_ENCRYPTION_KEY` — random secrets, generate each with `openssl rand -base64 32`.
+  - `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` — generated together as a matching pair via `npm run vapid` (the public half also goes into `env.production.vars.VAPID_PUBLIC_KEY`, non-secret).
+- Production redirect URI (`https://<PUBLIC_URL host>/api/auth/twitch/callback`) added in the Twitch Developer Console.
+- `CLOUDFLARE_API_TOKEN` added as a **repository secret** (`gh secret set CLOUDFLARE_API_TOKEN`, run from this repo) — scoped to this repo only, not shared account-wide, needed by the deploy workflow below.
+
+### Deploying
+
+Every push to `main` deploys automatically via `.github/workflows/deploy.yaml`: lint, typecheck, API tests, and E2E tests run first (skipped if the push came from merging a PR, since those already ran against the `pull_request` event), then pending D1 migrations are applied and `npm run deploy` runs.
+
+To deploy manually instead (e.g. to test a change before merging):
+
+```sh
+npm run deploy
+```
+
+This builds `apps/web`, then runs `wrangler deploy --env production` from `apps/api`. If you added a new D1 migration, apply it first (not part of `npm run deploy`):
+
+```sh
+cd apps/api && npx wrangler d1 migrations apply twitch-radar-prod --remote --env production
+```
 
 ## Validation
 
