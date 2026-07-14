@@ -147,6 +147,74 @@
 					}
 				]
 			}
+		},
+		// Same shape as production - separate D1/KV/queues (queue names are
+		// account-global, so they can't share production's) and its own
+		// secrets, so it exercises the real deploy path (including EventSub
+		// webhooks) without touching production data or users.
+		// `mock-eventsub` only disables itself when ENVIRONMENT ===
+		// "production", so it also works here for testing the full
+		// notification pipeline without a real Twitch event.
+		"preview": {
+			"name": "twitch-radar-preview",
+			"vars": {
+				"ENVIRONMENT": "preview",
+				// Fill in after the first `wrangler deploy --env preview` -
+				// Wrangler prints the resulting workers.dev URL.
+				"PUBLIC_URL": "https://twitch-radar-preview.antonbsa.workers.dev",
+				// Same Twitch app as production - add this environment's
+				// PUBLIC_URL callback as an additional redirect URI in the
+				// Twitch Developer Console (Twitch allows multiple per app).
+				"TWITCH_CLIENT_ID": "2rhxfgk2zy59lgplzfjoovkdx1r2pq",
+				"VAPID_PUBLIC_KEY": "BIDjVv9wJgaJ6-GTxIrnbE_zkbOT2uzCc7TrVkevCP0XVqC8DGMd2I1IxBKPwllX5EtiK0KVLOXWhzVybY0_DaQ",
+				"VAPID_SUBJECT": "mailto:antonbsa.dev@gmail.com"
+			},
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "twitch-radar-preview",
+					"database_id": "cf06d56e-fad0-419f-bef3-4705e59310a9",
+					"migrations_dir": "../../infra/migrations"
+				}
+			],
+			"kv_namespaces": [
+				{
+					"binding": "KV_APP_CACHE",
+					"id": "f3f65972f7404e23ade4a303d9b8371a"
+				}
+			],
+			"triggers": {
+				"crons": [
+					"* * * * *",
+					"*/30 * * * *",
+					"5,35 * * * *",
+					"10 * * * *"
+				]
+			},
+			"queues": {
+				"producers": [
+					{
+						"binding": "TWITCH_EVENTS_QUEUE",
+						"queue": "twitch-radar-twitch-events-preview"
+					},
+					{
+						"binding": "NOTIFICATION_JOBS_QUEUE",
+						"queue": "twitch-radar-notification-jobs-preview"
+					}
+				],
+				"consumers": [
+					{
+						"queue": "twitch-radar-twitch-events-preview",
+						"max_batch_size": 10,
+						"max_batch_timeout": 1
+					},
+					{
+						"queue": "twitch-radar-notification-jobs-preview",
+						"max_batch_size": 10,
+						"max_batch_timeout": 1
+					}
+				]
+			}
 		}
 	}
 }
