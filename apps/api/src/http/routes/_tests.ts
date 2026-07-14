@@ -154,7 +154,7 @@ export async function handleTestSeed(c: Context<HonoEnv>): Promise<Response> {
       })
     }
 
-    const sessionId = await createSession(c.env.APP_CACHE, userId)
+    const sessionId = await createSession(c.env.KV_APP_CACHE, userId)
     session = { sessionId, cookie: sessionCookieHeader(sessionId) }
   }
 
@@ -330,7 +330,7 @@ export async function handleTestReset(c: Context<HonoEnv>): Promise<Response> {
 
   // Revoking a single session (simulating mid-session expiry) never touches D1.
   if (body.sessionId) {
-    await deleteSession(c.env.APP_CACHE, body.sessionId)
+    await deleteSession(c.env.KV_APP_CACHE, body.sessionId)
     return new Response(null, { status: 204 })
   }
 
@@ -338,10 +338,10 @@ export async function handleTestReset(c: Context<HonoEnv>): Promise<Response> {
     for (const table of ALL_TABLES) {
       await c.env.DB.prepare(`DELETE FROM ${table}`).run()
     }
-    await deleteAllSessions(c.env.APP_CACHE)
+    await deleteAllSessions(c.env.KV_APP_CACHE)
     // Evict the cached Twitch app token so each test mocks (and asserts) its
     // own client-credentials exchange deterministically.
-    await c.env.APP_CACHE.delete(APP_TOKEN_KV_KEY)
+    await c.env.KV_APP_CACHE.delete(APP_TOKEN_KV_KEY)
     return new Response(null, { status: 204 })
   }
 
@@ -400,7 +400,7 @@ export async function handleTestReset(c: Context<HonoEnv>): Promise<Response> {
     )
     .run()
 
-  await deleteSessionsForUser(c.env.APP_CACHE, E2E_USER_ID)
+  await deleteSessionsForUser(c.env.KV_APP_CACHE, E2E_USER_ID)
 
   return new Response(null, { status: 204 })
 }

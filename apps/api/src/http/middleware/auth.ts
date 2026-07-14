@@ -10,7 +10,7 @@ export const requireAuth: MiddlewareHandler<HonoEnv> = async (c, next) => {
     throw new ApiError(401, "auth_required", "Authentication required")
   }
 
-  const session = await getSession(c.env.APP_CACHE, sessionId)
+  const session = await getSession(c.env.KV_APP_CACHE, sessionId)
   if (!session) {
     throw new ApiError(401, "session_expired", "Session expired or invalid")
   }

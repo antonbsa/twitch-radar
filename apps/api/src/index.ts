@@ -150,7 +150,7 @@ export default {
           const change = await processTwitchEventMessage(
             db,
             config,
-            env.APP_CACHE,
+            env.KV_APP_CACHE,
             message.body as TwitchEventQueueMessage,
           )
           if (change) {
@@ -208,13 +208,13 @@ export default {
 
     switch (controller.cron) {
       case CRON_EVENTSUB_RECONCILE:
-        return reconcileEventsubSubscriptions(db, config, env.APP_CACHE)
+        return reconcileEventsubSubscriptions(db, config, env.KV_APP_CACHE)
       case CRON_TOKEN_REFRESH:
         return refreshExpiringTwitchTokens(db, config)
       case CRON_FOLLOW_SYNC:
         return syncStaleFollows(db, config)
       default:
-        return createPendingEventsubSubscriptions(db, config, env.APP_CACHE)
+        return createPendingEventsubSubscriptions(db, config, env.KV_APP_CACHE)
     }
   },
 } satisfies ExportedHandler<Env>

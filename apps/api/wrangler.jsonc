@@ -30,7 +30,7 @@
 	],
 	"kv_namespaces": [
 		{
-			"binding": "APP_CACHE",
+			"binding": "KV_APP_CACHE",
 			"id": "ab13e012ba264799a934310d5948f8e5",
 			"preview_id": "76f00c08321d4e0c9254304b71ad0dae"
 		}
@@ -110,8 +110,8 @@
 			],
 			"kv_namespaces": [
 				{
-					"binding": "APP_CACHE",
-					// Filled in by `wrangler kv namespace create APP_CACHE --env production`.
+					"binding": "KV_APP_CACHE",
+					// Filled in by `wrangler kv namespace create KV_APP_CACHE --env production`.
 					"id": "7ee708aa02514ba181737f5123ed5407"
 				}
 			],
