@@ -2,6 +2,24 @@
 	"name": "twitch-radar-api",
 	"main": "src/index.ts",
 	"compatibility_date": "2026-06-22",
+	// Serves apps/web's production build directly from this Worker (no
+	// Cloudflare Pages project) so the PWA and the API share one
+	// *.workers.dev origin with no custom domain — required by the session
+	// cookie having no Domain attribute and there being no CORS handling
+	// (see apps/api/src/services/session.ts). Without `run_worker_first`,
+	// Cloudflare's static-assets layer checks for a matching file *before*
+	// invoking the Worker; "/api/*" paths never match a built file, so
+	// `not_found_handling: "single-page-application"` was serving the SPA's
+	// index.html for them instead of running the Worker's fetch handler at
+	// all (e.g. `/api/auth/twitch/start` silently never reached
+	// `handleAuthStart`). `run_worker_first` forces "/api/*" to always go to
+	// the Worker; every other path still falls through to the static
+	// assets, with the SPA index.html as the not-found fallback.
+	"assets": {
+		"directory": "../web/dist",
+		"not_found_handling": "single-page-application",
+		"run_worker_first": ["/api/*"]
+	},
 	"d1_databases": [
 		{
 			"binding": "DB",
@@ -22,7 +40,12 @@
 	// default branch), EventSub reconciliation, Twitch token refresh sweep,
 	// and stale follow re-sync.
 	"triggers": {
-		"crons": ["* * * * *", "*/30 * * * *", "5,35 * * * *", "10 * * * *"]
+		"crons": [
+			"* * * * *",
+			"*/30 * * * *",
+			"5,35 * * * *",
+			"10 * * * *"
+		]
 	},
 	"queues": {
 		"producers": [
@@ -51,5 +74,79 @@
 				"max_batch_timeout": 1
 			}
 		]
+	},
+	// Named environments don't inherit bindings/vars/triggers from the
+	// top-level block above, so everything the Worker needs in production
+	// is re-declared here in full (Cloudflare Wrangler environment
+	// semantics: only a few keys like `main`/`compatibility_date`/`assets`
+	// are inherited).
+	"env": {
+		"production": {
+			// Without this, Wrangler defaults to "<name>-production"
+			// (`twitch-radar-api-production`), since it suffixes the
+			// top-level `name` with the environment name. Set explicitly to
+			// pin the exact *.workers.dev hostname.
+			"name": "twitch-radar",
+			"vars": {
+				"ENVIRONMENT": "production",
+				"PUBLIC_URL": "https://twitch-radar.antonbsa.workers.dev",
+				// Twitch app's client ID — same app as dev works fine (Twitch
+				// allows multiple redirect URIs per client), confirm this
+				// matches the app that has the production redirect URI added.
+				"TWITCH_CLIENT_ID": "2rhxfgk2zy59lgplzfjoovkdx1r2pq",
+				// Public half of a fresh production VAPID keypair — generate
+				// with `npm run vapid`, do not reuse the dev keypair. Fill in
+				// alongside pushing VAPID_PRIVATE_KEY as a secret (below).
+				"VAPID_PUBLIC_KEY": "BEpVIJaZy_euAJ1g4rdM67HkG-ge-uSlnd9sD9dhAOpiEkTYJXE_5Ac3NYCXfKKxZDp8Az1KXqIuZJP-MzhNlEY",
+				"VAPID_SUBJECT": "mailto:antonbsa.dev@gmail.com"
+			},
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "twitch-radar-prod",
+					"database_id": "92f19382-7232-4183-a123-ec842bb8843c",
+					"migrations_dir": "../../infra/migrations"
+				}
+			],
+			"kv_namespaces": [
+				{
+					"binding": "APP_CACHE",
+					// Filled in by `wrangler kv namespace create APP_CACHE --env production`.
+					"id": "7ee708aa02514ba181737f5123ed5407"
+				}
+			],
+			"triggers": {
+				"crons": [
+					"* * * * *",
+					"*/30 * * * *",
+					"5,35 * * * *",
+					"10 * * * *"
+				]
+			},
+			"queues": {
+				"producers": [
+					{
+						"binding": "TWITCH_EVENTS_QUEUE",
+						"queue": "twitch-radar-twitch-events"
+					},
+					{
+						"binding": "NOTIFICATION_JOBS_QUEUE",
+						"queue": "twitch-radar-notification-jobs"
+					}
+				],
+				"consumers": [
+					{
+						"queue": "twitch-radar-twitch-events",
+						"max_batch_size": 10,
+						"max_batch_timeout": 1
+					},
+					{
+						"queue": "twitch-radar-notification-jobs",
+						"max_batch_size": 10,
+						"max_batch_timeout": 1
+					}
+				]
+			}
+		}
 	}
 }
