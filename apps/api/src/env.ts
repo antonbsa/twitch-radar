@@ -7,7 +7,7 @@ const TWITCH_CALLBACK_PATH = "/api/auth/twitch/callback"
 
 export interface Env {
   DB: D1Database
-  APP_CACHE: KVNamespace
+  KV_APP_CACHE: KVNamespace
   TWITCH_EVENTS_QUEUE: Queue<TwitchEventQueueMessage>
   NOTIFICATION_JOBS_QUEUE: Queue<NotificationJobMessage>
   ENVIRONMENT?: string

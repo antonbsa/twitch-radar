@@ -6,4 +6,12 @@ export default {
   singleQuote: false,
   tabWidth: 2,
   trailingComma: "all",
+  overrides: [
+    {
+      files: ["*.json", "*.jsonc"],
+      options: {
+        trailingComma: "none",
+      },
+    },
+  ],
 }

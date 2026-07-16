@@ -2,6 +2,7 @@ import { nanoid } from "nanoid"
 import { z } from "zod"
 import type { Context } from "hono"
 import type { HonoEnv } from "../../env"
+import { importVapidSigningKey } from "../../services/push/web-push"
 import { ApiError } from "../errors"
 import { jsonResponse } from "../response"
 
@@ -17,6 +18,19 @@ const CreatePushSubscriptionSchema = z.object({
 export async function handleGetVapidPublicKey(
   c: Context<HonoEnv>,
 ): Promise<Response> {
+  // Fails fast with a descriptive message if the configured key isn't a real
+  // P-256 pair, instead of letting the browser's PushManager.subscribe()
+  // reject with an opaque InvalidAccessError further down the line.
+  try {
+    await importVapidSigningKey(c.var.config)
+  } catch (error) {
+    throw new ApiError(
+      500,
+      "vapid_not_configured",
+      error instanceof Error ? error.message : "VAPID keys are not configured",
+    )
+  }
+
   return jsonResponse({
     data: { vapid_public_key: c.var.config.vapidPublicKey },
   })

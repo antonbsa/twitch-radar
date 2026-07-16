@@ -108,7 +108,7 @@ export async function handleEventsubWebhook(
     }
 
     const dedupeKey = `eventsub:msg:${messageId}`
-    const alreadySeen = await c.env.APP_CACHE.get(dedupeKey)
+    const alreadySeen = await c.env.KV_APP_CACHE.get(dedupeKey)
     if (!alreadySeen) {
       await c.env.TWITCH_EVENTS_QUEUE.send({
         messageId,
@@ -117,7 +117,7 @@ export async function handleEventsubWebhook(
         receivedAt: now,
         event: body.event,
       } as TwitchEventQueueMessage)
-      await c.env.APP_CACHE.put(dedupeKey, "1", {
+      await c.env.KV_APP_CACHE.put(dedupeKey, "1", {
         expirationTtl: MESSAGE_DEDUPE_TTL_SECONDS,
       })
     }

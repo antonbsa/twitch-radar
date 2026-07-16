@@ -23,7 +23,9 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "mock-eventsub": "node infra/scripts/dev/mock-eventsub.mjs",
     "dev:mobile": "node infra/scripts/dev/dev-mobile.mjs",
-    "vapid": "npm run vapid -w @twitch-radar/api"
+    "vapid": "npm run vapid -w @twitch-radar/api",
+    "deploy": "npm run build -w @twitch-radar/web && npm run deploy -w @twitch-radar/api",
+    "deploy:preview": "npm run build -w @twitch-radar/web && npm run deploy:preview -w @twitch-radar/api"
   },
   "keywords": [],
   "author": "",

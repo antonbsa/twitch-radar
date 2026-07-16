@@ -1,0 +1,149 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  # A push to main can be a direct push or the result of merging a PR
+  # (merge/squash/rebase). If it went through a PR, linting.yaml/tests.yaml
+  # already ran these same checks against that PR's pull_request event -
+  # rerunning them here would be pure duplication. Commit-message matching
+  # can't reliably tell the two apart (rebase merges carry no PR reference
+  # in the message), so ask GitHub directly which PRs, if any, are
+  # associated with this commit.
+  check-pr-origin:
+    name: Check push origin
+    runs-on: ubuntu-latest
+    outputs:
+      via_pr: ${{ steps.check.outputs.via_pr }}
+    steps:
+      - name: Check associated PRs
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          count=$(gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/pulls" --jq 'map(select(.merged_at != null)) | length')
+          if [ "$count" -gt 0 ]; then
+            echo "via_pr=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "via_pr=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  lint:
+    name: EsLint
+    needs: [check-pr-origin]
+    runs-on: ubuntu-latest
+    steps:
+      - if: needs.check-pr-origin.outputs.via_pr != 'true'
+        uses: actions/checkout@v5
+      - if: needs.check-pr-origin.outputs.via_pr != 'true'
+        name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - if: needs.check-pr-origin.outputs.via_pr != 'true'
+        name: Install dependencies
+        run: npm ci
+      - if: needs.check-pr-origin.outputs.via_pr != 'true'
+        name: Run eslint
+        run: npm run lint
+
+  typecheck:
+    name: Typecheck
+    needs: [check-pr-origin]
+    runs-on: ubuntu-latest
+    steps:
+      - if: needs.check-pr-origin.outputs.via_pr != 'true'
+        uses: actions/checkout@v5
+      - if: needs.check-pr-origin.outputs.via_pr != 'true'
+        name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - if: needs.check-pr-origin.outputs.via_pr != 'true'
+        name: Install dependencies
+        run: npm ci
+      - if: needs.check-pr-origin.outputs.via_pr != 'true'
+        name: Run typecheck
+        run: npm run typecheck
+
+  test-api:
+    name: API tests
+    needs: [check-pr-origin]
+    runs-on: ubuntu-latest
+    steps:
+      - if: needs.check-pr-origin.outputs.via_pr != 'true'
+        uses: actions/checkout@v5
+      - if: needs.check-pr-origin.outputs.via_pr != 'true'
+        name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - if: needs.check-pr-origin.outputs.via_pr != 'true'
+        name: Install dependencies
+        run: npm ci
+      - if: needs.check-pr-origin.outputs.via_pr != 'true'
+        name: Run tests
+        run: npm run test:api
+
+  test-e2e:
+    name: E2E tests
+    needs: [check-pr-origin]
+    runs-on: ubuntu-latest
+    steps:
+      - if: needs.check-pr-origin.outputs.via_pr != 'true'
+        uses: actions/checkout@v5
+      - if: needs.check-pr-origin.outputs.via_pr != 'true'
+        name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - if: needs.check-pr-origin.outputs.via_pr != 'true'
+        name: Install dependencies
+        run: npm ci
+      - if: needs.check-pr-origin.outputs.via_pr != 'true'
+        name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+      - if: needs.check-pr-origin.outputs.via_pr != 'true'
+        name: Run tests
+        run: npm run test:web
+
+  deploy:
+    name: Deploy to Cloudflare
+    needs: [lint, typecheck, test-api, test-e2e]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      # Idempotent - only applies migrations not yet recorded against the
+      # remote D1 database, so safe to run on every deploy.
+      - name: Apply D1 migrations
+        working-directory: apps/api
+        run: npx wrangler d1 migrations apply twitch-radar-prod --remote --env production
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: 6dad0696ed2343ee7ebbc98e75f677fe
+      # Builds apps/web then runs `wrangler deploy --env production` from
+      # apps/api (see the root "deploy" script) - the same command used for
+      # local manual deploys.
+      - name: Build and deploy
+        run: npm run deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: 6dad0696ed2343ee7ebbc98e75f677fe

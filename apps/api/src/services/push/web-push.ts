@@ -58,21 +58,34 @@ function concatBytes(...parts: Uint8Array[]): Bytes {
  * and a 32-byte scalar (private), both base64url. WebCrypto imports private
  * EC keys only as JWK/PKCS8, so rebuild the JWK from the two raw values.
  */
-async function importVapidSigningKey(config: AppConfig): Promise<CryptoKey> {
+export async function importVapidSigningKey(
+  config: AppConfig,
+): Promise<CryptoKey> {
   const publicKeyBytes = base64UrlDecode(config.vapidPublicKey)
-  return crypto.subtle.importKey(
-    "jwk",
-    {
-      kty: "EC",
-      crv: "P-256",
-      x: base64UrlEncode(publicKeyBytes.slice(1, 33)),
-      y: base64UrlEncode(publicKeyBytes.slice(33, 65)),
-      d: config.vapidPrivateKey,
-    },
-    { name: "ECDSA", namedCurve: "P-256" },
-    false,
-    ["sign"],
-  )
+  try {
+    return await crypto.subtle.importKey(
+      "jwk",
+      {
+        kty: "EC",
+        crv: "P-256",
+        x: base64UrlEncode(publicKeyBytes.slice(1, 33)),
+        y: base64UrlEncode(publicKeyBytes.slice(33, 65)),
+        d: config.vapidPrivateKey,
+      },
+      { name: "ECDSA", namedCurve: "P-256" },
+      false,
+      ["sign"],
+    )
+  } catch (error) {
+    // .env.development ships empty/placeholder VAPID values on purpose (see
+    // AGENTS.md "Env Vars: Single Source Of Truth") — they pass env.ts's
+    // length checks but aren't a real P-256 key pair, so WebCrypto rejects
+    // them here with an opaque DOMException. Surface the actual fix instead.
+    throw new Error(
+      'VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY are missing or not a valid key pair. Run `npm run vapid` to generate a real one, then add both values to .env.local (see README § "Testing Web Push Notifications").',
+      { cause: error },
+    )
+  }
 }
 
 /** RFC 8292 `vapid t=<jwt>, k=<public key>` Authorization header value. */
