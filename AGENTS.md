@@ -6,6 +6,10 @@ For future implementation work, treat [specs/mvp/00. architecture.md](specs/mvp/
 
 Decision documentation policy: [ADR 0001](docs/decisions/0001-keep-project-decisions-in-adrs.md).
 
+## Spec Location
+
+The MVP spec at `specs/mvp/` is closed to new work. From now on, all new specs must live under `specs/milestones/<name>`, one directory per milestone, e.g. milestone 0: `specs/milestones/0-foundations`.
+
 ## Scope Boundary
 
 The original proof-of-concept (Fastify server, local JSON storage, vanilla JS frontend) was historical Web Push validation material and has been removed from the repo — it is not present at any current path. If a task needs to reference its Push API/service worker/notification-matching logic (see [T-005](specs/mvp/tasks/t-005-pwa-shell-and-push.md) and [T-008](specs/mvp/tasks/t-008-notification-delivery-and-ops.md)), check out commit `e8417e9` ("feat: initialize PWA notification POC"). MVP work should follow the active MVP spec and accepted ADRs, not the POC's architecture (see [ADR 0010](docs/decisions/0010-keep-poc-separate-from-mvp-architecture.md)).
