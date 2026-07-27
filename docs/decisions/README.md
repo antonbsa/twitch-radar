@@ -43,3 +43,4 @@ Other project documents may state goals, requirements, task scope, validation st
 - [0035 - Web Push Sends Hand-Rolled On WebCrypto](0035-web-push-via-webcrypto.md)
 - [0036 - Scheduled Ops Jobs: Reconciliation, Token Refresh, Follow Sync](0036-scheduled-ops-jobs.md)
 - [0037 - Single PUBLIC_URL, Same-Origin API And Web In Every Environment](0037-single-public-url-same-origin-deployment.md)
+- [0038 - Adopt Role-Scoped Subagents, Reject The Rest Of The Agent-Context-Template Pattern](0038-adopt-role-scoped-subagents-reject-template.md)
