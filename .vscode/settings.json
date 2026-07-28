@@ -26,6 +26,7 @@
   "search.exclude": {
     ".agents/worktrees": true,
     "apps/api/.wrangler": true,
-    "apps/web/.wrangler": true
+    "apps/web/.wrangler": true,
+    ".claude/worktrees": true
   }
 }
