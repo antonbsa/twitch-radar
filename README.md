@@ -6,6 +6,7 @@ Mobile-first PWA for Twitch viewers who want push notifications when followed st
 
 - [MVP architecture](specs/mvp/00.%20architecture.md)
 - [Architecture decisions](docs/decisions/README.md)
+- [Technical notes](docs/notes/README.md)
 - [SDD implementation plan](specs/mvp/01.%20sdd-implementation-plan.md)
 - [MVP implementation tasks](specs/mvp/tasks/t-000-global.md)
 - [Project guidance](AGENTS.md)

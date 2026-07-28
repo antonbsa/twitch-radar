@@ -6,6 +6,8 @@ For future implementation work, treat [specs/mvp/00. architecture.md](specs/mvp/
 
 Decision documentation policy: [ADR 0001](docs/decisions/0001-keep-project-decisions-in-adrs.md).
 
+Non-decision research policy: [ADR 0039](docs/decisions/0039-adopt-technical-notes-for-non-decision-research.md).
+
 ## Spec Location
 
 The MVP spec at `specs/mvp/` is closed to new work. From now on, all new specs must live under `specs/milestones/<name>`, one directory per milestone, e.g. milestone 0: `specs/milestones/0-foundations`.
@@ -25,6 +27,17 @@ Follow the MVP phases from the architecture spec:
 5. Notification delivery.
 
 When implementation details are unclear, update or extend the MVP spec for requirements and follow [ADR 0001](docs/decisions/0001-keep-project-decisions-in-adrs.md) for decision changes before coding broad changes.
+
+## ADRs vs Technical Notes
+
+Two directories capture different things — do not conflate them:
+
+- `docs/decisions` (ADRs) — an **accepted decision** that the code is expected to reflect. Use when a change is being made or has been made.
+- `docs/notes` (TNs) — a **researched conclusion that is not an action**. Use when a discussion, investigation, or alignment reaches a conclusion worth keeping (including "we considered this and are not doing it," or "we confirmed X works this way"), but nothing in the codebase changes as a result.
+
+When to suggest writing a TN: after a research/debate thread converges on a conclusion that isn't captured anywhere else, and there's no resulting code or spec change to hang an ADR off of. Do not write a TN to justify a change that's actually happening now — that's an ADR.
+
+How: copy [docs/notes/TEMPLATE.md](docs/notes/TEMPLATE.md) to `docs/notes/NNNN-kebab-case-title.md` (next sequence number, independent from ADR numbers), fill it in, and add it to the index in [docs/notes/README.md](docs/notes/README.md). If the conclusion later becomes something the project acts on, write an ADR referencing the TN and mark the TN as superseded by it.
 
 ## Commit Message Rules
 
