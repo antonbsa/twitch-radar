@@ -8,6 +8,16 @@ Decision documentation policy: [ADR 0001](docs/decisions/0001-keep-project-decis
 
 Non-decision research policy: [ADR 0039](docs/decisions/0039-adopt-technical-notes-for-non-decision-research.md).
 
+## Development Workflow
+
+The expected path from idea to merged change:
+
+1. **Issue (optional).** GitHub issues may describe work generically — a bug report, a rough feature idea — before it's scoped. Not every change needs one; skip straight to a spec for well-understood work. An issue may also be the input used to draft a spec.
+2. **Spec.** From there on, work is driven by a spec under `specs/milestones/<name>` (see "Spec Location" below) describing goals, requirements, scope, and validation.
+3. **Decision changes.** If the spec requires an accepted decision, add or update an ADR per [ADR 0001](docs/decisions/0001-keep-project-decisions-in-adrs.md) before broad coding. Non-decision research/conclusions go in a TN instead (see "ADRs vs Technical Notes" below).
+4. **Implementation.** Code the change, committed together with the spec/task updates it completes.
+5. **Review and merge.** Open a PR following [creating-pull-requests](.claude/skills/creating-pull-requests) — tests, migrations/config, and specs/ADRs are part of the review, not follow-ups.
+
 ## Spec Location
 
 The MVP spec at `specs/mvp/` is closed to new work. From now on, all new specs must live under `specs/milestones/<name>`, one directory per milestone, e.g. milestone 0: `specs/milestones/0-foundations`.
