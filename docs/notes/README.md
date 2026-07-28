@@ -18,4 +18,5 @@ TNs never carry authorization on their own. If a TN's conclusion later becomes s
 
 ## Index
 
-- [0001 - Viewer Count Freshness and Rate-Limit Scalability](0001-viewer-count-freshness-and-rate-limit-scalability.md)
+- [0001 - Viewer Count Freshness and Rate-Limit Scalability](0001-viewer-count-freshness-and-rate-limit-scalability.md) — superseded by 0002
+- [0002 - Viewer Count Cron Sufficiency for Twitch-Like Freshness](0002-viewer-count-cron-sufficiency-for-twitch-like-freshness.md)

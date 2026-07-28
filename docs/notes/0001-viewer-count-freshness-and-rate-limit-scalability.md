@@ -2,7 +2,7 @@
 
 ## Status
 
-Deferred
+Superseded by [TN 0002](0002-viewer-count-cron-sufficiency-for-twitch-like-freshness.md)
 
 ## Related
 
