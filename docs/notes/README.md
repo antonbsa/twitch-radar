@@ -18,4 +18,4 @@ TNs never carry authorization on their own. If a TN's conclusion later becomes s
 
 ## Index
 
-_No technical notes yet._
+- [0001 - Viewer Count Freshness and Rate-Limit Scalability](0001-viewer-count-freshness-and-rate-limit-scalability.md)
