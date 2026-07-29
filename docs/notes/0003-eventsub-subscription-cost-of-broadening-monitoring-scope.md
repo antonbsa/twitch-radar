@@ -109,6 +109,67 @@ can be queried against the actual production/staging app today to see current he
 re-checked as the registered-user base grows — turning "we don't know when this breaks" into
 "here's the real number, measured."
 
+**`total_cost`/`max_total_cost` are currently fetched and discarded — surfacing them costs
+nothing extra.** [`getAllEventsubSubscriptions`](../../apps/api/src/services/twitch/client.ts:215)
+already calls `GET /helix/eventsub/subscriptions` every 30 minutes (via reconciliation, ADR
+0036) and Twitch returns `total_cost`/`max_total_cost` on every page of that response — the
+function only destructures `data`/`pagination.cursor` and drops both fields. No new Twitch API
+call, cadence, or credential is needed to start observing this; it only needs reading two
+fields already present in a response the app already makes.
+
+**Runtime use (circuit breaker) and periodic use (human-facing observability) are different
+problems and should be designed separately, even though they read the same underlying number.**
+A runtime check before creating new pending subscriptions
+([`subscriptions.ts`](../../apps/api/src/services/eventsub/subscriptions.ts), minutely) is a
+defensive guard against ever hitting a hard Twitch-side rejection — it should read a *cached*
+last-known value (updated by reconciliation every 30 min), not make a fresh
+`GET /eventsub/subscriptions` call on every one-minute tick; that would add subrequest cost to
+a job that doesn't otherwise need it. Separately, a human needs to see the *trend* over weeks/
+months as the registered-user base grows, to make a proactive scope/design call before the
+runtime guard ever has to act. The two share one source value but serve different consumers.
+
+**Where to persist it, evaluated against what this app already has:**
+
+- A new scheduled GitHub Actions workflow was considered and set aside: it would duplicate a
+  call reconciliation already makes every 30 minutes, needs its own `TWITCH_CLIENT_ID`/
+  `TWITCH_CLIENT_SECRET` as GitHub Secrets (separate credential surface from the Worker's own),
+  and GitHub's scheduled-workflow cron has known slack under platform load and gets disabled
+  after 60 days of repo inactivity — an external dependency for something the app already
+  computes.
+- Cloudflare Logpush / Workers Logs dashboards were considered and set aside for now: checked
+  [`wrangler.jsonc`](../../apps/api/wrangler.jsonc) — no `observability` block is configured
+  today, and Logpush is a paid-tier feature; adopting it would be new infrastructure, not reuse
+  of what exists.
+- **Recommended: a single KV entry, updated at the end of every reconciliation run**, alongside
+  the existing app-access-token KV caching pattern
+  ([`app-token.ts`](../../apps/api/src/services/twitch/app-token.ts)). Shape:
+
+  ```json
+  {
+    "totalCost": 142,
+    "maxTotalCost": 800,
+    "firstSeenAt": "2026-07-20T03:00:00.000Z",
+    "lastCheckedAt": "2026-07-28T09:30:00.000Z"
+  }
+  ```
+
+  `lastCheckedAt` is overwritten on every successful reconciliation run, value changed or not —
+  it's the liveness signal; a stale `lastCheckedAt` means reconciliation itself stopped
+  running/succeeding, independent of what the cost values say. `firstSeenAt` is only overwritten
+  when `(totalCost, maxTotalCost)` differs from what's currently stored — it answers "since when
+  has cost held at this level," which is what a growth-rate read needs. Storing only one
+  timestamp (update-on-every-check) would lose the growth-rate signal; storing only one
+  timestamp (update-only-on-change) would make "value hasn't moved" indistinguishable from
+  "nobody's checked in weeks" — both fields are needed, and it's still one KV key, no added
+  infrastructure.
+- The runtime circuit breaker in `subscriptions.ts` reads this same KV entry (cheap, already
+  cached) rather than calling Twitch again.
+- For alerting without new infrastructure: reconciliation can `console.error` when
+  `totalCost`/`maxTotalCost` crosses a threshold (e.g. 80%) — visible immediately via
+  `wrangler tail` and any log-based alerting already wired to the Worker, no Logpush required.
+  If alerting outside Cloudflare (Slack/email) is wanted later, that would consume this
+  already-persisted KV value rather than becoming a second poller against Twitch.
+
 **Directional reasoning on user-count scale (not a measured fact — flagged as such).** Distinct
 followed-broadcaster count likely grows sub-linearly with registered-user count: popular
 streamers get followed redundantly by many users, so each additional user mostly contributes
@@ -140,6 +201,14 @@ Cloudflare-side throughput cap as a correctness concern, leaving it as a backgro
 detail only. The remaining open variable — actual `max_total_cost` headroom — is directly
 measurable via `GET /helix/eventsub/subscriptions` and should be checked against real numbers
 before an ADR is written, rather than estimated from Twitch's public docs alone.
+
+Observability for that headroom over time doesn't need new infrastructure: reconciliation
+already fetches `total_cost`/`max_total_cost` and currently discards them. Persisting them to a
+single KV entry (with a `firstSeenAt` that only moves on value change, alongside a
+`lastCheckedAt` that moves on every successful check, so staleness and stability stay
+distinguishable) gives both the runtime circuit breaker and a human doing capacity planning the
+same source of truth, at the cost of two extra fields read from a response already being made
+— no new scheduled job, credential, or paid Cloudflare tier required.
 
 No code or spec change resulted from this discussion. This feeds directly into
 [issue #21](../../.agents/issues/21-followed-channels-without-preference-not-monitored.md),
