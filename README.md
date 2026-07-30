@@ -1,6 +1,25 @@
-# Twitch Category Alerts
+# Twitch Radar
 
-Mobile-first PWA for Twitch viewers who want push notifications when followed streamers start streaming selected categories.
+Get a push notification the moment someone you follow on Twitch switches into a category you care about.
+
+Mobile-first PWA for Twitch viewers who want push notifications when followed streamers start streaming selected categories. Log in with Twitch, pick the broadcasters and categories you care about, and let a Cloudflare Worker watch EventSub for you in the background — no polling, no app to keep open.
+
+<!-- TODO: add screenshots/demo -->
+
+## Table Of Contents
+
+- [Documentation](#documentation)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Cloning](#cloning)
+  - [Environment Configuration](#environment-configuration)
+  - [Starting](#starting)
+- [Testing Web Push Notifications](#testing-web-push-notifications)
+- [Testing On Mobile (Or Any Other Device)](#testing-on-mobile-or-any-other-device)
+- [Cloudflare Queues And Cron Triggers](#cloudflare-queues-and-cron-triggers)
+- [Deployment](#deployment)
+- [Validation](#validation)
+- [Contributing](#contributing)
 
 ## Documentation
 
@@ -11,11 +30,18 @@ Mobile-first PWA for Twitch viewers who want push notifications when followed st
 - [MVP implementation tasks](specs/mvp/tasks/t-000-global.md)
 - [Project guidance](AGENTS.md)
 
-## Local Development
+## Getting Started
 
-Install dependencies:
+### Prerequisites
+
+- Node.js and npm (see `package.json` for workspace tooling; no specific version is pinned beyond what the installed `npm`/`node` on your machine already supports).
+- A Cloudflare account is **not** required for local development — `wrangler dev` runs entirely locally against local D1/KV state.
+
+### Cloning
 
 ```sh
+git clone https://github.com/antonbsa/twitch-radar.git
+cd twitch-radar
 npm install
 ```
 
@@ -25,12 +51,29 @@ Apply local D1 migrations:
 npm run db:setup
 ```
 
-Generate a migration after editing the Drizzle schema:
+### Environment Configuration
+
+`.env.development` (repo root) is committed and ships safe placeholder values for every secret, so a fresh checkout boots and the test suites run without any real credentials (see `AGENTS.md` § "Env Vars: Single Source Of Truth"). `apps/api/src/env.ts` only checks that these vars have the right _shape_ (length, format) — it doesn't know whether a value is a real secret or still the placeholder, since a placeholder is syntactically valid.
+
+Because of that, two secrets that are placeholders by default fail loudly the moment code actually tries to use them for real, rather than at every request:
+
+- `TWITCH_CLIENT_SECRET` (`secret-placeholder`) — `services/twitch/client.ts` checks for this exact string before calling Twitch's OAuth endpoints, and throws a `TwitchConfigError` telling you to get a real secret and add it to `.env.local`. The OAuth callback route turns this into a `500 twitch_not_configured` response instead of a generic error.
+- `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` (`AAAA...`) — not a valid P-256 key pair, so `services/push/web-push.ts` fails to import them as a signing key and throws with instructions to run `npm run vapid` and copy the output into `.env.local` (see ["Testing Web Push Notifications"](#testing-web-push-notifications) below). The `GET /api/push/vapid-public-key` endpoint checks this up front too, so the frontend gets a clear error instead of a browser-side `PushManager.subscribe()` crash.
+
+This validation intentionally lives at the point each value is actually used, not in `env.ts` itself: `env.ts` runs on every request, and both test tiers (`tests/api`, `tests/web/e2e`) boot the Worker with only `.env.development` — no real secrets — because they never do a real OAuth round-trip. Rejecting placeholders globally would fail those tests (and every unrelated route in local dev) instead of just the features that need real credentials. The test setups instead pass real (throwaway) values for the specific vars their scenarios exercise, via `wrangler dev --var`.
+
+To use Twitch OAuth flows locally, create `.env.local` (repo root, gitignored) with real credentials:
 
 ```sh
-npm run migrations:create -- --name create_sessions
-npm run db:check -w @twitch-radar/api
+TWITCH_CLIENT_ID=<your-client-id>
+TWITCH_CLIENT_SECRET=<your-client-secret>
 ```
+
+The Twitch app's redirect URI must be set to `http://localhost:5173/api/auth/twitch/callback` in the Twitch developer console.
+
+All other variables in `.env.development` have working local defaults, including `PUBLIC_URL` (used both to build the OAuth redirect URI and to send the browser back into the app once login completes). The Vite dev proxy target is fixed to `http://localhost:8787` independent of `PUBLIC_URL` — the two can diverge (e.g. when tunneling the dev server to another device), see `apps/web/vite.config.ts`.
+
+### Starting
 
 Start the API Worker and the web frontend together:
 
@@ -56,14 +99,7 @@ http://localhost:8787/api/health
 
 If port `8787` or `5173` is occupied, edit `--port` in `apps/api/package.json` or the `server.port` in `apps/web/vite.config.ts` (and update the proxy target if you change the API port).
 
-To use Twitch OAuth flows locally, create `.env.local` (repo root) with real credentials:
-
-```sh
-TWITCH_CLIENT_ID=<your-client-id>
-TWITCH_CLIENT_SECRET=<your-client-secret>
-```
-
-The Twitch app's redirect URI must be set to `http://localhost:5173/api/auth/twitch/callback` in the Twitch developer console. Then initiate login at:
+Then initiate login at:
 
 ```txt
 http://localhost:5173/api/auth/twitch/start
@@ -71,20 +107,7 @@ http://localhost:5173/api/auth/twitch/start
 
 (via Vite's proxy, not `:8787` directly — API and web are same-origin in every environment, including local dev, so there's one `PUBLIC_URL` for both; see `apps/api/src/env.ts`.)
 
-All other variables in `.env.development` have working local defaults, including `PUBLIC_URL` (used both to build the OAuth redirect URI and to send the browser back into the app once login completes). The Vite dev proxy target is fixed to `http://localhost:8787` independent of `PUBLIC_URL` — the two can diverge (e.g. when tunneling the dev server to another device), see `apps/web/vite.config.ts`.
-
 At this point you can log in, browse channels, and set preferences on the dev machine. The two sections below cover the two things that setup alone doesn't give you: real Web Push notifications, and access from a phone.
-
-## Env Validation And Placeholders
-
-`.env.development` is committed and ships safe placeholder values for every secret, so a fresh checkout boots and the test suites run without any real credentials (`AGENTS.md` § "Env Vars: Single Source Of Truth"). `apps/api/src/env.ts` only checks that these vars have the right _shape_ (length, format) — it doesn't know whether a value is a real secret or still the placeholder, since a placeholder is syntactically valid.
-
-Because of that, two secrets that are placeholders by default fail loudly the moment code actually tries to use them for real, rather than at every request:
-
-- `TWITCH_CLIENT_SECRET` (`secret-placeholder`) — `services/twitch/client.ts` checks for this exact string before calling Twitch's OAuth endpoints, and throws a `TwitchConfigError` telling you to get a real secret and add it to `.env.local`. The OAuth callback route turns this into a `500 twitch_not_configured` response instead of a generic error.
-- `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` (`AAAA...`) — not a valid P-256 key pair, so `services/push/web-push.ts` fails to import them as a signing key and throws with instructions to run `npm run vapid` and copy the output into `.env.local` (see "Testing Web Push Notifications" below). The `GET /api/push/vapid-public-key` endpoint checks this up front too, so the frontend gets a clear error instead of a browser-side `PushManager.subscribe()` crash.
-
-This validation intentionally lives at the point each value is actually used, not in `env.ts` itself: `env.ts` runs on every request, and both test tiers (`tests/api`, `tests/web/e2e`) boot the Worker with only `.env.development` — no real secrets — because they never do a real OAuth round-trip. Rejecting placeholders globally would fail those tests (and every unrelated route in local dev) instead of just the features that need real credentials. The test setups instead pass real (throwaway) values for the specific vars their scenarios exercise, via `wrangler dev --var`.
 
 ## Testing Web Push Notifications
 
@@ -146,47 +169,39 @@ Notes:
 - `apps/web/vite.config.ts` already allows any `*.trycloudflare.com` host (`server.allowedHosts`) — using a different tunnel provider needs the equivalent domain added there (or use ngrok's own `--host-header` / allowedHosts wildcard).
 - Switching back to same-machine-only testing: set `PUBLIC_URL` back to `http://localhost:5173` in `.env.local` (or delete the override to fall back to `.env.development`'s default) and restart `npm run dev`.
 
-## Production Setup
+## Cloudflare Queues And Cron Triggers
 
-The app runs as a single Cloudflare Worker (`apps/api`) on the default `*.workers.dev` domain — no Cloudflare Pages project, no custom domain. `apps/web`'s production build is served as static assets directly from that same Worker (`assets` block in `apps/api/wrangler.jsonc`), so the PWA and the API share one origin. This matters because the session cookie has no `Domain` attribute and there's no CORS handling (`apps/api/src/services/session.ts`) — API and web must always be same-origin, in every environment.
+<details>
+<summary>How EventSub events and notifications flow through Cloudflare Queues, and what each Cron Trigger does</summary>
 
-Two `wrangler.jsonc` details that exist specifically to make that work, worth knowing if you're touching config:
+This project relies on two Cloudflare-specific runtime primitives beyond the Worker itself, both configured in `apps/api/wrangler.jsonc`.
 
-- `assets.run_worker_first: ["/api/*"]` — without it, Cloudflare's static-assets layer serves `index.html` for any path that isn't a real file, which includes every `/api/*` route (they never reach the Worker's `fetch` handler at all). This flag forces `/api/*` to always hit the Worker.
-- Anything that reads bindings out of `wrangler.jsonc` (`wrangler deploy`, `wrangler d1 migrations apply`, …) needs `--env production` explicitly, or it silently targets the root/dev config instead of `env.production`.
+**Queues.** Two queues decouple receiving a Twitch event from acting on it:
 
-### One-time setup
+- `TWITCH_EVENTS_QUEUE` (`twitch-radar-twitch-events`) — incoming EventSub webhook payloads, queued as soon as they're signature-verified so the webhook response can return fast (see [ADR 0032](docs/decisions/0032-eventsub-webhook-verification-and-queueing.md)).
+- `NOTIFICATION_JOBS_QUEUE` (`twitch-radar-notification-jobs`) — staged push notification jobs, consumed to actually deliver Web Push messages (see [ADR 0034](docs/decisions/0034-notification-matching-and-delivery-pipeline.md)).
 
-- D1 database, KV namespace, and two queues created via `wrangler d1 create` / `wrangler kv namespace create --env production` / `wrangler queues create`, with the resulting ids in `apps/api/wrangler.jsonc`'s `env.production` block.
-- Secrets pushed via `wrangler secret put <NAME> --env production`:
-  - `TWITCH_CLIENT_SECRET` — from the [Twitch Developer Console](https://dev.twitch.tv/console/apps), not generated.
-  - `EVENTSUB_WEBHOOK_SECRET` and `TOKEN_ENCRYPTION_KEY` — random secrets, generate each with `openssl rand -base64 32`.
-  - `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` — generated together as a matching pair via `npm run vapid` (the public half also goes into `env.production.vars.VAPID_PUBLIC_KEY`, non-secret).
-- Production redirect URI (`https://<PUBLIC_URL host>/api/auth/twitch/callback`) added in the Twitch Developer Console.
-- `CLOUDFLARE_API_TOKEN` added as a **repository secret** (`gh secret set CLOUDFLARE_API_TOKEN`, run from this repo) — scoped to this repo only, not shared account-wide, needed by the deploy workflow below.
+Both consumers are configured with `max_batch_size: 10` and `max_batch_timeout: 1` — a one-second timeout rather than waiting for a fuller batch, since notifications are time-sensitive and shouldn't sit in a partially-filled batch window.
 
-### Deploying
+**Cron Triggers.** Four cron expressions in `triggers.crons`, dispatched via `controller.cron` in `apps/api/src/index.ts`:
 
-Every push to `main` deploys automatically via `.github/workflows/deploy.yaml`: lint, typecheck, API tests, and E2E tests run first (skipped if the push came from merging a PR, since those already ran against the `pull_request` event), then pending D1 migrations are applied and `npm run deploy` runs.
+- `* * * * *` — every minute, creates pending EventSub subscriptions (the default branch of the subscription lifecycle — see [ADR 0031](docs/decisions/0031-eventsub-subscription-creation-and-lifecycle.md)).
+- `*/30 * * * *` — every 30 minutes, EventSub reconciliation.
+- `5,35 * * * *` — twice an hour, Twitch token refresh sweep.
+- `10 * * * *` — hourly, stale follow re-sync.
 
-To deploy manually instead (e.g. to test a change before merging):
+See [ADR 0036](docs/decisions/0036-scheduled-ops-jobs.md) for the rationale behind each job.
 
-```sh
-npm run deploy
-```
+**The account-wide 5-cron cap.** Cloudflare caps Cron Triggers at 5 **per account**, not per Worker. Production registers all 4 crons above, leaving only 1 free — so the `preview` environment gets just the minutely pending-subscription job and none of the other three scheduled jobs. Those can still be exercised manually against preview via `wrangler deploy --env preview` plus a manual `/__scheduled?cron=...` request.
 
-This builds `apps/web`, then runs `wrangler deploy --env production` from `apps/api`. If you added a new D1 migration, apply it first (not part of `npm run deploy`):
+</details>
 
-```sh
-cd apps/api && npx wrangler d1 migrations apply twitch-radar-prod --remote --env production
-```
+## Deployment
 
-## Validation
+The app runs as a single Cloudflare Worker (`apps/api`) on the default `*.workers.dev` domain — no Cloudflare Pages project, no custom domain. `apps/web`'s production build is served as static assets directly from that same Worker, so the PWA and the API share one origin. Every push to `main` deploys automatically via `.github/workflows/deploy.yaml`: lint, typecheck, API tests, and E2E tests run first, then pending D1 migrations are applied and `npm run deploy` runs.
 
-Run:
+For the full walkthrough — generating keys, creating Cloudflare resources, pushing secrets, the Twitch console step, and deploying manually — see [`docs/deployment.md`](docs/deployment.md).
 
-```sh
-npm run typecheck
-npm run build
-npm test
-```
+## Contributing
+
+This is a solo-maintained project. Issues and pull requests are welcome! For development conventions and contribution guidance, see `CLAUDE.md`.
