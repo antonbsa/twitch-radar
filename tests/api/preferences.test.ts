@@ -284,8 +284,11 @@ describe("POST /api/preferences/global", () => {
     expect(prefs.global).toHaveLength(1)
   })
 
-  it("should monitor a realistic large followed-channel list in one create (batched upserts)", async () => {
+  it("should batch eventsub subscription creation for a large followed list and stay idempotent on retry", async () => {
     const { cookie, userId } = await orchestrator.createAuthenticatedSession()
+    // Large enough to require multiple insert batches under the 9-params-
+    // per-row chunking in ensurePending (100/9 = 11 rows per batch) and
+    // multiple Get Streams batches (100 user_id per request).
     const BROADCASTER_COUNT = 250
     const broadcasters = Array.from({ length: BROADCASTER_COUNT }, (_, i) => ({
       broadcasterUserId: `${1000 + i}`,
@@ -293,8 +296,7 @@ describe("POST /api/preferences/global", () => {
       broadcasterDisplayName: `Channel${i}`,
     }))
     await orchestrator.seedFollowedChannels(userId, broadcasters)
-    // getStreamsByUserIds chunks Get Streams calls at 100 user_id per
-    // request, so a 250-broadcaster follow list issues 3 fetches.
+    // seedMissingChannelState batches Get Streams at 100 user_ids/request.
     await orchestrator.mockTwitch.onStreams([])
     await orchestrator.mockTwitch.onStreams([])
     await orchestrator.mockTwitch.onStreams([])
@@ -302,24 +304,29 @@ describe("POST /api/preferences/global", () => {
     const res = await postGlobalPref(cookie)
     expect(res.status).toBe(201)
 
-    const state = await orchestrator.inspect(
-      broadcasters.map((b) => b.broadcasterUserId),
-    )
+    const broadcasterIds = broadcasters.map((b) => b.broadcasterUserId)
+    const state = await orchestrator.inspect(broadcasterIds)
     expect(state.monitoredChannels).toHaveLength(BROADCASTER_COUNT)
     for (const monitored of state.monitoredChannels) {
       expect(monitored.monitor_reason).toBe("global_preference")
       expect(monitored.disabled_at).toBeNull()
     }
     expect(state.channelState).toHaveLength(BROADCASTER_COUNT)
+    // 3 monitored event types per broadcaster, no duplicates.
+    expect(state.eventsubSubscriptions).toHaveLength(BROADCASTER_COUNT * 3)
 
-    // Repeating the create is idempotent even at this scale: rows are
-    // re-upserted in place, no duplicates, no thrown errors.
-    const second = await postGlobalPref(cookie)
-    expect(second.status).toBe(200)
-    const stateAgain = await orchestrator.inspect(
-      broadcasters.map((b) => b.broadcasterUserId),
+    // Re-creating the same preference re-runs ensureMonitoredBroadcasters
+    // over the same broadcaster list; onConflictDoNothing must keep this
+    // idempotent instead of erroring or duplicating pending rows. Channel
+    // state is already seeded for all broadcasters, so no further Get
+    // Streams calls are made here.
+    const repeat = await postGlobalPref(cookie)
+    expect(repeat.status).toBe(200)
+    const stateAfterRepeat = await orchestrator.inspect(broadcasterIds)
+    expect(stateAfterRepeat.monitoredChannels).toHaveLength(BROADCASTER_COUNT)
+    expect(stateAfterRepeat.eventsubSubscriptions).toHaveLength(
+      BROADCASTER_COUNT * 3,
     )
-    expect(stateAgain.monitoredChannels).toHaveLength(BROADCASTER_COUNT)
   }, 30_000)
 })
 

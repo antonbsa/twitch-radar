@@ -147,24 +147,24 @@ export async function reconcileEventsubSubscriptions(
     types.add(row.event_type)
     eventTypesByBroadcaster.set(row.broadcaster_user_id, types)
   }
-  let staged = 0
+  const broadcastersMissingSubscriptions: string[] = []
   for (const broadcasterUserId of activeBroadcasterIds) {
     const types = eventTypesByBroadcaster.get(broadcasterUserId)
     if (!types || MONITORED_EVENT_TYPES.some((type) => !types.has(type))) {
-      await db.eventsubSubscriptions.ensurePending(
-        broadcasterUserId,
-        callbackUrl,
-        now,
-      )
-      staged += 1
+      broadcastersMissingSubscriptions.push(broadcasterUserId)
     }
   }
+  await db.eventsubSubscriptions.ensurePending(
+    broadcastersMissingSubscriptions,
+    callbackUrl,
+    now,
+  )
 
   logger.info("EventSub reconciliation run completed", {
     localRowsDeleted,
     localRowsReset,
     localRowsUpdated,
-    staged,
+    staged: broadcastersMissingSubscriptions.length,
     remoteDeletes,
   })
 }

@@ -52,13 +52,11 @@ export async function ensureMonitoredBroadcasters(
   )
 
   const callbackUrl = eventsubCallbackUrl(config)
-  for (const target of targets) {
-    await db.eventsubSubscriptions.ensurePending(
-      target.broadcasterUserId,
-      callbackUrl,
-      now,
-    )
-  }
+  await db.eventsubSubscriptions.ensurePending(
+    targets.map((target) => target.broadcasterUserId),
+    callbackUrl,
+    now,
+  )
 
   await seedMissingChannelState(
     db,
