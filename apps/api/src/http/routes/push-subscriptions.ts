@@ -1,4 +1,3 @@
-import { nanoid } from "nanoid"
 import { z } from "zod"
 import type { Context } from "hono"
 import type { HonoEnv } from "../../env"
@@ -70,9 +69,7 @@ export async function handleCreatePushSubscription(
     return jsonResponse({ data: record })
   }
 
-  const id = `psub_${nanoid()}`
-  await c.var.db.pushSubscriptions.create({
-    id,
+  const record = await c.var.db.pushSubscriptions.create({
     userId: c.var.userId,
     endpoint,
     p256dh: keys.p256dh,
@@ -80,7 +77,6 @@ export async function handleCreatePushSubscription(
     userAgent,
     now,
   })
-  const record = await c.var.db.pushSubscriptions.findById(id)
   return jsonResponse({ data: record }, { status: 201 })
 }
 

@@ -1,4 +1,3 @@
-import { nanoid } from "nanoid"
 import { z } from "zod"
 import type { Context } from "hono"
 import type { HonoEnv } from "../../env"
@@ -98,15 +97,14 @@ export async function handleCreateChannelPreference(
       input.category_name,
     )
   } else {
-    id = `cpref_${nanoid()}`
-    await c.var.db.channelCategoryPreferences.create({
-      id,
+    const created = await c.var.db.channelCategoryPreferences.create({
       userId: c.var.userId,
       broadcasterUserId: input.broadcaster_user_id,
       categoryId: input.category_id,
       categoryName: input.category_name,
       now: new Date().toISOString(),
     })
+    id = created.id
   }
 
   // Per-channel preferences monitor only the selected broadcaster (ADR 0007).
@@ -178,14 +176,13 @@ export async function handleCreateGlobalPreference(
     id = existing.id
     await c.var.db.globalCategoryPreferences.reactivate(id, input.category_name)
   } else {
-    id = `gpref_${nanoid()}`
-    await c.var.db.globalCategoryPreferences.create({
-      id,
+    const created = await c.var.db.globalCategoryPreferences.create({
       userId: c.var.userId,
       categoryId: input.category_id,
       categoryName: input.category_name,
       now: new Date().toISOString(),
     })
+    id = created.id
   }
 
   // A global preference monitors all of the user's followed broadcasters

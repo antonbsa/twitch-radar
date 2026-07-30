@@ -1,5 +1,4 @@
 import type { Context } from "hono"
-import { nanoid } from "nanoid"
 import type { HonoEnv } from "../../env"
 import { encryptToken } from "../../services/crypto"
 import {
@@ -77,16 +76,13 @@ export async function handleAuthCallback(
   )
 
   const now = new Date().toISOString()
-  const existing = await c.var.db.users.findByTwitchUserId(twitchUser.id)
-  const userId = existing?.id ?? `usr_${nanoid()}`
-
-  await c.var.db.users.upsert({
-    id: userId,
+  const user = await c.var.db.users.upsertByTwitchUserId({
     twitchUserId: twitchUser.id,
     twitchLogin: twitchUser.login,
     twitchDisplayName: twitchUser.display_name,
     now,
   })
+  const userId = user.id
 
   await c.var.db.twitchTokens.upsert({
     userId,

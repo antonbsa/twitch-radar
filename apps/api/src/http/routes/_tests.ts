@@ -191,7 +191,6 @@ export async function handleTestSeed(c: Context<HonoEnv>): Promise<Response> {
   if (body.preferences) {
     for (const pref of body.preferences.channel ?? []) {
       await c.var.db.channelCategoryPreferences.create({
-        id: `cpref_${nanoid()}`,
         userId,
         broadcasterUserId: pref.broadcasterUserId,
         categoryId: pref.categoryId,
@@ -201,7 +200,6 @@ export async function handleTestSeed(c: Context<HonoEnv>): Promise<Response> {
     }
     for (const pref of body.preferences.global ?? []) {
       await c.var.db.globalCategoryPreferences.create({
-        id: `gpref_${nanoid()}`,
         userId,
         categoryId: pref.categoryId,
         categoryName: pref.categoryName,
@@ -252,9 +250,7 @@ export async function handleTestSeed(c: Context<HonoEnv>): Promise<Response> {
 
   if (body.pushSubscriptions?.length) {
     for (const subscription of body.pushSubscriptions) {
-      const id = `psub_${nanoid()}`
-      await c.var.db.pushSubscriptions.create({
-        id,
+      const record = await c.var.db.pushSubscriptions.create({
         userId,
         endpoint: subscription.endpoint,
         p256dh: subscription.p256dh ?? (await generateP256dhKey()),
@@ -263,7 +259,7 @@ export async function handleTestSeed(c: Context<HonoEnv>): Promise<Response> {
         now,
       })
       if (subscription.revoked) {
-        await c.var.db.pushSubscriptions.revoke(id, now)
+        await c.var.db.pushSubscriptions.revoke(record.id, now)
       }
     }
   }
