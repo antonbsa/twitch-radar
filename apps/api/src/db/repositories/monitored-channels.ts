@@ -1,4 +1,4 @@
-import { eq, inArray } from "drizzle-orm"
+import { eq, inArray, sql } from "drizzle-orm"
 import type { AppDatabase } from "../client"
 import { monitoredChannels } from "../schema"
 
@@ -45,25 +45,33 @@ export class MonitoredChannelsRepository {
 
   /** Idempotent: an existing row is re-enabled and refreshed in place. */
   async upsertAll(inputs: UpsertMonitoredChannelInput[]): Promise<void> {
-    for (const input of inputs) {
+    if (inputs.length === 0) return
+    // 6 bound params per row (broadcasterUserId, broadcasterLogin,
+    // broadcasterDisplayName, monitorReason, createdAt, updatedAt); D1 caps
+    // bound params at 100 per query, so 16 rows/batch stays under it (96).
+    const BATCH_SIZE = 16
+    for (let i = 0; i < inputs.length; i += BATCH_SIZE) {
+      const batch = inputs.slice(i, i + BATCH_SIZE)
       await this.db
         .insert(monitoredChannels)
-        .values({
-          broadcasterUserId: input.broadcasterUserId,
-          broadcasterLogin: input.broadcasterLogin ?? null,
-          broadcasterDisplayName: input.broadcasterDisplayName ?? null,
-          monitorReason: input.monitorReason,
-          createdAt: input.now,
-          updatedAt: input.now,
-        })
-        .onConflictDoUpdate({
-          target: monitoredChannels.broadcasterUserId,
-          set: {
+        .values(
+          batch.map((input) => ({
+            broadcasterUserId: input.broadcasterUserId,
             broadcasterLogin: input.broadcasterLogin ?? null,
             broadcasterDisplayName: input.broadcasterDisplayName ?? null,
             monitorReason: input.monitorReason,
+            createdAt: input.now,
             updatedAt: input.now,
-            disabledAt: null,
+          })),
+        )
+        .onConflictDoUpdate({
+          target: monitoredChannels.broadcasterUserId,
+          set: {
+            broadcasterLogin: sql`excluded.broadcaster_login`,
+            broadcasterDisplayName: sql`excluded.broadcaster_display_name`,
+            monitorReason: sql`excluded.monitor_reason`,
+            updatedAt: sql`excluded.updated_at`,
+            disabledAt: sql`null`,
           },
         })
         .run()
