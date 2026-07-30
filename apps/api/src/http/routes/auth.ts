@@ -76,13 +76,12 @@ export async function handleAuthCallback(
   )
 
   const now = new Date().toISOString()
-  const user = await c.var.db.users.upsertByTwitchUserId({
+  const userId = await c.var.db.users.upsertByTwitchUserId({
     twitchUserId: twitchUser.id,
     twitchLogin: twitchUser.login,
     twitchDisplayName: twitchUser.display_name,
     now,
   })
-  const userId = user.id
 
   await c.var.db.twitchTokens.upsert({
     userId,

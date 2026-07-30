@@ -39,9 +39,7 @@ export class GlobalCategoryPreferencesRepository {
     this.db = db
   }
 
-  async create(
-    input: CreateGlobalPreferenceInput,
-  ): Promise<GlobalPreferenceRecord> {
+  async create(input: CreateGlobalPreferenceInput): Promise<string> {
     const id = `gpref_${nanoid()}`
     await this.db
       .insert(globalCategoryPreferences)
@@ -53,14 +51,7 @@ export class GlobalCategoryPreferencesRepository {
         createdAt: input.now,
       })
       .run()
-    return {
-      id,
-      user_id: input.userId,
-      category_id: input.categoryId,
-      category_name: input.categoryName,
-      created_at: input.now,
-      disabled_at: null,
-    }
+    return id
   }
 
   /** Re-enables a soft-disabled preference (or refreshes the stored name). */

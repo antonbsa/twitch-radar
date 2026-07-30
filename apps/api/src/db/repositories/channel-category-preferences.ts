@@ -42,9 +42,7 @@ export class ChannelCategoryPreferencesRepository {
     this.db = db
   }
 
-  async create(
-    input: CreateChannelPreferenceInput,
-  ): Promise<ChannelPreferenceRecord> {
+  async create(input: CreateChannelPreferenceInput): Promise<string> {
     const id = `cpref_${nanoid()}`
     await this.db
       .insert(channelCategoryPreferences)
@@ -57,15 +55,7 @@ export class ChannelCategoryPreferencesRepository {
         createdAt: input.now,
       })
       .run()
-    return {
-      id,
-      user_id: input.userId,
-      broadcaster_user_id: input.broadcasterUserId,
-      category_id: input.categoryId,
-      category_name: input.categoryName,
-      created_at: input.now,
-      disabled_at: null,
-    }
+    return id
   }
 
   /** Re-enables a soft-disabled preference (or refreshes the stored name). */

@@ -55,7 +55,9 @@ export class UsersRepository {
    * internally, so callers no longer need to look up the existing user just
    * to decide whether to generate an id.
    */
-  async upsertByTwitchUserId(input: UpsertUserByTwitchIdInput): Promise<User> {
+  async upsertByTwitchUserId(
+    input: UpsertUserByTwitchIdInput,
+  ): Promise<string> {
     const existing = await this.findByTwitchUserId(input.twitchUserId)
     const id = existing?.id ?? `usr_${nanoid()}`
     await this.upsert({
@@ -65,15 +67,7 @@ export class UsersRepository {
       twitchDisplayName: input.twitchDisplayName,
       now: input.now,
     })
-    return {
-      id,
-      twitch_user_id: input.twitchUserId,
-      twitch_login: input.twitchLogin,
-      twitch_display_name: input.twitchDisplayName,
-      created_at: existing?.created_at ?? input.now,
-      updated_at: input.now,
-      last_follow_sync_at: existing?.last_follow_sync_at ?? null,
-    }
+    return id
   }
 
   async findById(id: string): Promise<User | null> {

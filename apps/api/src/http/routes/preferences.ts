@@ -89,22 +89,35 @@ export async function handleCreateChannelPreference(
       input.category_id,
     )
 
-  let id: string
+  let record: ChannelPreferenceRecord
   if (existing) {
-    id = existing.id
     await c.var.db.channelCategoryPreferences.reactivate(
-      id,
+      existing.id,
       input.category_name,
     )
+    record = {
+      ...existing,
+      category_name: input.category_name,
+      disabled_at: null,
+    }
   } else {
-    const created = await c.var.db.channelCategoryPreferences.create({
+    const now = new Date().toISOString()
+    const id = await c.var.db.channelCategoryPreferences.create({
       userId: c.var.userId,
       broadcasterUserId: input.broadcaster_user_id,
       categoryId: input.category_id,
       categoryName: input.category_name,
-      now: new Date().toISOString(),
+      now,
     })
-    id = created.id
+    record = {
+      id,
+      user_id: c.var.userId,
+      broadcaster_user_id: input.broadcaster_user_id,
+      category_id: input.category_id,
+      category_name: input.category_name,
+      created_at: now,
+      disabled_at: null,
+    }
   }
 
   // Per-channel preferences monitor only the selected broadcaster (ADR 0007).
@@ -122,8 +135,6 @@ export async function handleCreateChannelPreference(
     "channel_preference",
   )
 
-  const record = await c.var.db.channelCategoryPreferences.findById(id)
-  if (!record) throw new Error("Preference not found after write")
   return jsonResponse(
     { data: toChannelPreferenceItem(record) },
     { status: existing ? 200 : 201 },
@@ -171,18 +182,33 @@ export async function handleCreateGlobalPreference(
       input.category_id,
     )
 
-  let id: string
+  let record: GlobalPreferenceRecord
   if (existing) {
-    id = existing.id
-    await c.var.db.globalCategoryPreferences.reactivate(id, input.category_name)
+    await c.var.db.globalCategoryPreferences.reactivate(
+      existing.id,
+      input.category_name,
+    )
+    record = {
+      ...existing,
+      category_name: input.category_name,
+      disabled_at: null,
+    }
   } else {
-    const created = await c.var.db.globalCategoryPreferences.create({
+    const now = new Date().toISOString()
+    const id = await c.var.db.globalCategoryPreferences.create({
       userId: c.var.userId,
       categoryId: input.category_id,
       categoryName: input.category_name,
-      now: new Date().toISOString(),
+      now,
     })
-    id = created.id
+    record = {
+      id,
+      user_id: c.var.userId,
+      category_id: input.category_id,
+      category_name: input.category_name,
+      created_at: now,
+      disabled_at: null,
+    }
   }
 
   // A global preference monitors all of the user's followed broadcasters
@@ -200,8 +226,6 @@ export async function handleCreateGlobalPreference(
     "global_preference",
   )
 
-  const record = await c.var.db.globalCategoryPreferences.findById(id)
-  if (!record) throw new Error("Preference not found after write")
   return jsonResponse(
     { data: toGlobalPreferenceItem(record) },
     { status: existing ? 200 : 201 },
