@@ -283,6 +283,44 @@ describe("POST /api/preferences/global", () => {
     const prefs = await getPreferences(cookie)
     expect(prefs.global).toHaveLength(1)
   })
+
+  it("should monitor a realistic large followed-channel list in one create (batched upserts)", async () => {
+    const { cookie, userId } = await orchestrator.createAuthenticatedSession()
+    const BROADCASTER_COUNT = 250
+    const broadcasters = Array.from({ length: BROADCASTER_COUNT }, (_, i) => ({
+      broadcasterUserId: `${1000 + i}`,
+      broadcasterLogin: `channel${i}`,
+      broadcasterDisplayName: `Channel${i}`,
+    }))
+    await orchestrator.seedFollowedChannels(userId, broadcasters)
+    // getStreamsByUserIds chunks Get Streams calls at 100 user_id per
+    // request, so a 250-broadcaster follow list issues 3 fetches.
+    await orchestrator.mockTwitch.onStreams([])
+    await orchestrator.mockTwitch.onStreams([])
+    await orchestrator.mockTwitch.onStreams([])
+
+    const res = await postGlobalPref(cookie)
+    expect(res.status).toBe(201)
+
+    const state = await orchestrator.inspect(
+      broadcasters.map((b) => b.broadcasterUserId),
+    )
+    expect(state.monitoredChannels).toHaveLength(BROADCASTER_COUNT)
+    for (const monitored of state.monitoredChannels) {
+      expect(monitored.monitor_reason).toBe("global_preference")
+      expect(monitored.disabled_at).toBeNull()
+    }
+    expect(state.channelState).toHaveLength(BROADCASTER_COUNT)
+
+    // Repeating the create is idempotent even at this scale: rows are
+    // re-upserted in place, no duplicates, no thrown errors.
+    const second = await postGlobalPref(cookie)
+    expect(second.status).toBe(200)
+    const stateAgain = await orchestrator.inspect(
+      broadcasters.map((b) => b.broadcasterUserId),
+    )
+    expect(stateAgain.monitoredChannels).toHaveLength(BROADCASTER_COUNT)
+  }, 30_000)
 })
 
 describe("DELETE /api/preferences/channel/:id", () => {
