@@ -57,9 +57,15 @@ export class ChannelCategoryPreferencesRepository {
         createdAt: input.now,
       })
       .run()
-    const record = await this.findById(id)
-    if (!record) throw new Error("Channel preference not found after create")
-    return record
+    return {
+      id,
+      user_id: input.userId,
+      broadcaster_user_id: input.broadcasterUserId,
+      category_id: input.categoryId,
+      category_name: input.categoryName,
+      created_at: input.now,
+      disabled_at: null,
+    }
   }
 
   /** Re-enables a soft-disabled preference (or refreshes the stored name). */

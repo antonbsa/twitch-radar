@@ -53,9 +53,14 @@ export class GlobalCategoryPreferencesRepository {
         createdAt: input.now,
       })
       .run()
-    const record = await this.findById(id)
-    if (!record) throw new Error("Global preference not found after create")
-    return record
+    return {
+      id,
+      user_id: input.userId,
+      category_id: input.categoryId,
+      category_name: input.categoryName,
+      created_at: input.now,
+      disabled_at: null,
+    }
   }
 
   /** Re-enables a soft-disabled preference (or refreshes the stored name). */

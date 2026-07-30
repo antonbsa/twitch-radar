@@ -46,9 +46,17 @@ export class PushSubscriptionsRepository {
         updatedAt: input.now,
       })
       .run()
-    const record = await this.findById(id)
-    if (!record) throw new Error("Push subscription not found after create")
-    return record
+    return {
+      id,
+      user_id: input.userId,
+      endpoint: input.endpoint,
+      p256dh: input.p256dh,
+      auth: input.auth,
+      user_agent: input.userAgent,
+      created_at: input.now,
+      updated_at: input.now,
+      revoked_at: null,
+    }
   }
 
   async findById(id: string): Promise<PushSubscriptionRecord | null> {

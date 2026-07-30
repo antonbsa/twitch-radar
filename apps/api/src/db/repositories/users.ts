@@ -65,9 +65,15 @@ export class UsersRepository {
       twitchDisplayName: input.twitchDisplayName,
       now: input.now,
     })
-    const record = await this.findById(id)
-    if (!record) throw new Error("User not found after upsert")
-    return record
+    return {
+      id,
+      twitch_user_id: input.twitchUserId,
+      twitch_login: input.twitchLogin,
+      twitch_display_name: input.twitchDisplayName,
+      created_at: existing?.created_at ?? input.now,
+      updated_at: input.now,
+      last_follow_sync_at: existing?.last_follow_sync_at ?? null,
+    }
   }
 
   async findById(id: string): Promise<User | null> {
