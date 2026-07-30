@@ -1,10 +1,10 @@
 import { and, eq, isNull } from "drizzle-orm"
+import { nanoid } from "nanoid"
 import type { PushSubscriptionRecord } from "../../types"
 import type { AppDatabase } from "../client"
 import { pushSubscriptions, type PushSubscriptionRow } from "../schema"
 
 export interface CreatePushSubscriptionInput {
-  id: string
   userId: string
   endpoint: string
   p256dh: string
@@ -29,11 +29,14 @@ export class PushSubscriptionsRepository {
     this.db = db
   }
 
-  async create(input: CreatePushSubscriptionInput): Promise<void> {
+  async create(
+    input: CreatePushSubscriptionInput,
+  ): Promise<PushSubscriptionRecord> {
+    const id = `psub_${nanoid()}`
     await this.db
       .insert(pushSubscriptions)
       .values({
-        id: input.id,
+        id,
         userId: input.userId,
         endpoint: input.endpoint,
         p256dh: input.p256dh,
@@ -43,6 +46,17 @@ export class PushSubscriptionsRepository {
         updatedAt: input.now,
       })
       .run()
+    return {
+      id,
+      user_id: input.userId,
+      endpoint: input.endpoint,
+      p256dh: input.p256dh,
+      auth: input.auth,
+      user_agent: input.userAgent,
+      created_at: input.now,
+      updated_at: input.now,
+      revoked_at: null,
+    }
   }
 
   async findById(id: string): Promise<PushSubscriptionRecord | null> {

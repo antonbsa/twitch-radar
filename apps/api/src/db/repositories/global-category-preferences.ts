@@ -1,9 +1,9 @@
 import { and, eq, inArray, isNull } from "drizzle-orm"
+import { nanoid } from "nanoid"
 import type { AppDatabase } from "../client"
 import { globalCategoryPreferences } from "../schema"
 
 export interface CreateGlobalPreferenceInput {
-  id: string
   userId: string
   categoryId: string
   categoryName: string
@@ -39,17 +39,19 @@ export class GlobalCategoryPreferencesRepository {
     this.db = db
   }
 
-  async create(input: CreateGlobalPreferenceInput): Promise<void> {
+  async create(input: CreateGlobalPreferenceInput): Promise<string> {
+    const id = `gpref_${nanoid()}`
     await this.db
       .insert(globalCategoryPreferences)
       .values({
-        id: input.id,
+        id,
         userId: input.userId,
         categoryId: input.categoryId,
         categoryName: input.categoryName,
         createdAt: input.now,
       })
       .run()
+    return id
   }
 
   /** Re-enables a soft-disabled preference (or refreshes the stored name). */
