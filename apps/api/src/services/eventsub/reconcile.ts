@@ -138,14 +138,16 @@ export async function reconcileEventsubSubscriptions(
     types.add(row.event_type)
     eventTypesByBroadcaster.set(row.broadcaster_user_id, types)
   }
+  const broadcastersMissingSubscriptions: string[] = []
   for (const broadcasterUserId of activeBroadcasterIds) {
     const types = eventTypesByBroadcaster.get(broadcasterUserId)
     if (!types || MONITORED_EVENT_TYPES.some((type) => !types.has(type))) {
-      await db.eventsubSubscriptions.ensurePending(
-        broadcasterUserId,
-        callbackUrl,
-        now,
-      )
+      broadcastersMissingSubscriptions.push(broadcasterUserId)
     }
   }
+  await db.eventsubSubscriptions.ensurePending(
+    broadcastersMissingSubscriptions,
+    callbackUrl,
+    now,
+  )
 }

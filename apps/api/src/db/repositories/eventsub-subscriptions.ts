@@ -59,30 +59,43 @@ export class EventsubSubscriptionsRepository {
   }
 
   /**
-   * Ensures a local row exists for each monitored event type of the
+   * Ensures a local row exists for each monitored event type of every given
    * broadcaster. New rows start as `pending`; T-007's creation/reconciliation
    * job picks pending rows up and creates them on Twitch. Existing rows
    * (any status) are left untouched — reconciliation owns status repair.
+   *
+   * Issues a single multi-row `INSERT ... ON CONFLICT DO NOTHING` per chunk
+   * instead of one statement per (broadcaster, event type) pair. Each row
+   * binds 9 params, so the chunk size accounts for D1's 100-bound-parameter
+   * limit on total params, not just row count.
    */
   async ensurePending(
-    broadcasterUserId: string,
+    broadcasterUserIds: string[],
     callbackUrl: string,
     now: string,
   ): Promise<void> {
-    for (const eventType of MONITORED_EVENT_TYPES) {
+    if (broadcasterUserIds.length === 0) return
+
+    const rows = broadcasterUserIds.flatMap((broadcasterUserId) =>
+      MONITORED_EVENT_TYPES.map((eventType) => ({
+        id: `esub_${nanoid()}`,
+        broadcasterUserId,
+        eventType,
+        eventVersion: EVENT_VERSIONS[eventType],
+        status: "pending" as const,
+        callbackUrl,
+        secretVersion: "1",
+        createdAt: now,
+        updatedAt: now,
+      })),
+    )
+
+    const PARAMS_PER_ROW = 9
+    const BATCH_SIZE = Math.floor(100 / PARAMS_PER_ROW)
+    for (let i = 0; i < rows.length; i += BATCH_SIZE) {
       await this.db
         .insert(eventsubSubscriptions)
-        .values({
-          id: `esub_${nanoid()}`,
-          broadcasterUserId,
-          eventType,
-          eventVersion: EVENT_VERSIONS[eventType],
-          status: "pending",
-          callbackUrl,
-          secretVersion: "1",
-          createdAt: now,
-          updatedAt: now,
-        })
+        .values(rows.slice(i, i + BATCH_SIZE))
         .onConflictDoNothing({
           target: [
             eventsubSubscriptions.broadcasterUserId,

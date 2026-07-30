@@ -283,6 +283,45 @@ describe("POST /api/preferences/global", () => {
     const prefs = await getPreferences(cookie)
     expect(prefs.global).toHaveLength(1)
   })
+
+  it("should batch eventsub subscription creation for a large followed list and stay idempotent on retry", async () => {
+    const { cookie, userId } = await orchestrator.createAuthenticatedSession()
+    // Large enough to require multiple insert batches under the 9-params-
+    // per-row chunking in ensurePending (100/9 = 11 rows per batch) and
+    // multiple Get Streams batches (100 user_id per request).
+    const BROADCASTER_COUNT = 250
+    const broadcasters = Array.from({ length: BROADCASTER_COUNT }, (_, i) => ({
+      broadcasterUserId: `${1000 + i}`,
+      broadcasterLogin: `channel${i}`,
+      broadcasterDisplayName: `Channel${i}`,
+    }))
+    await orchestrator.seedFollowedChannels(userId, broadcasters)
+    // seedMissingChannelState batches Get Streams at 100 user_ids/request.
+    await orchestrator.mockTwitch.onStreams([])
+    await orchestrator.mockTwitch.onStreams([])
+    await orchestrator.mockTwitch.onStreams([])
+
+    const res = await postGlobalPref(cookie)
+    expect(res.status).toBe(201)
+
+    const broadcasterIds = broadcasters.map((b) => b.broadcasterUserId)
+    const state = await orchestrator.inspect(broadcasterIds)
+    expect(state.monitoredChannels).toHaveLength(BROADCASTER_COUNT)
+    // 3 monitored event types per broadcaster, no duplicates.
+    expect(state.eventsubSubscriptions).toHaveLength(BROADCASTER_COUNT * 3)
+
+    // Re-creating the same preference re-runs ensureMonitoredBroadcasters
+    // over the same broadcaster list; onConflictDoNothing must keep this
+    // idempotent instead of erroring or duplicating pending rows. Channel
+    // state is already seeded for all broadcasters, so no further Get
+    // Streams calls are made here.
+    const repeat = await postGlobalPref(cookie)
+    expect(repeat.status).toBe(200)
+    const stateAfterRepeat = await orchestrator.inspect(broadcasterIds)
+    expect(stateAfterRepeat.eventsubSubscriptions).toHaveLength(
+      BROADCASTER_COUNT * 3,
+    )
+  }, 20_000)
 })
 
 describe("DELETE /api/preferences/channel/:id", () => {
