@@ -45,3 +45,4 @@ Other project documents may state goals, requirements, task scope, validation st
 - [0037 - Single PUBLIC_URL, Same-Origin API And Web In Every Environment](0037-single-public-url-same-origin-deployment.md)
 - [0038 - Adopt Role-Scoped Subagents, Reject The Rest Of The Agent-Context-Template Pattern](0038-adopt-role-scoped-subagents-reject-template.md)
 - [0039 - Adopt Technical Notes For Non-Decision Research](0039-adopt-technical-notes-for-non-decision-research.md)
+- [0040 - Structured Leveled Logging Convention](0040-structured-leveled-logging-convention.md)
