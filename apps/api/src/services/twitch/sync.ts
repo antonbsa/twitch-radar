@@ -1,5 +1,6 @@
 import type { AppConfig } from "../../env"
 import type { Database } from "../../db"
+import { logger, serializeError } from "../../logger"
 import { ensureMonitoredBroadcasters } from "../monitoring"
 import { getAllFollowedChannels, getAllFollowedStreams } from "./client"
 import { getValidAccessToken } from "./token-refresh"
@@ -114,6 +115,7 @@ export async function syncStaleFollows(
   const userIds = await db.globalCategoryPreferences.listUserIdsWithActive()
   const cutoff = Date.now() - FOLLOW_SYNC_STALE_MS
   let attempted = 0
+  let succeeded = 0
 
   for (const userId of userIds) {
     if (attempted >= MAX_FOLLOW_SYNCS_PER_RUN) break
@@ -136,11 +138,18 @@ export async function syncStaleFollows(
         user.twitch_user_id,
         accessToken,
       )
+      succeeded += 1
     } catch (error) {
-      console.error("Scheduled follow sync failed", {
+      logger.error("Scheduled follow sync failed", {
         userId,
-        error: error instanceof Error ? error.message : String(error),
+        ...serializeError(error),
       })
     }
   }
+
+  logger.info("Scheduled follow sync run completed", {
+    attempted,
+    succeeded,
+    failed: attempted - succeeded,
+  })
 }

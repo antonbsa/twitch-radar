@@ -1,3 +1,4 @@
+import { logger, serializeError } from "../logger"
 import { jsonResponse } from "./response"
 
 export interface ErrorBody {
@@ -34,7 +35,7 @@ export function errorResponse(error: unknown, requestId: string): Response {
     )
   }
 
-  console.error(error)
+  logger.error("Unhandled error", { ...serializeError(error) })
 
   return jsonResponse(
     {
