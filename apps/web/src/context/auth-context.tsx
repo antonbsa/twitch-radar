@@ -34,7 +34,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data } = await api.get<{ data: User }>("/me")
       setUser(data)
     } catch (err) {
-      if (!(err instanceof ApiRequestError && err.status === 401)) {
+      if (
+        import.meta.env.DEV &&
+        !(err instanceof ApiRequestError && err.status === 401)
+      ) {
         console.error("Failed to load session", err)
       }
       setUser(null)

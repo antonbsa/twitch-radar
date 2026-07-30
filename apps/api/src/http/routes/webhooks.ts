@@ -5,6 +5,7 @@ import {
   MONITORED_EVENT_TYPES,
   type MonitoredEventType,
 } from "../../db/repositories/eventsub-subscriptions"
+import { logger } from "../../logger"
 import { verifyEventsubSignature } from "../../services/eventsub/verify"
 import { ApiError } from "../errors"
 
@@ -103,9 +104,15 @@ export async function handleEventsubWebhook(
     const eventType = body.subscription?.type
     if (!isMonitoredEventType(eventType)) {
       // Ack so Twitch doesn't retry an event type we'll never process.
-      console.warn("Ignoring unmonitored EventSub type", { eventType })
+      logger.warn("Ignoring unmonitored EventSub type", { eventType })
       return new Response(null, { status: 204 })
     }
+
+    logger.debug("EventSub webhook notification received", {
+      messageId,
+      eventType,
+      subscriptionId: body.subscription?.id,
+    })
 
     const dedupeKey = `eventsub:msg:${messageId}`
     const alreadySeen = await c.env.KV_APP_CACHE.get(dedupeKey)
@@ -124,6 +131,6 @@ export async function handleEventsubWebhook(
     return new Response(null, { status: 204 })
   }
 
-  console.warn("Ignoring unknown EventSub message type", { messageType })
+  logger.warn("Ignoring unknown EventSub message type", { messageType })
   return new Response(null, { status: 204 })
 }

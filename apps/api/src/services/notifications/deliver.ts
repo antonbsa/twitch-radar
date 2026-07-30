@@ -1,5 +1,6 @@
 import type { AppConfig } from "../../env"
 import type { Database } from "../../db"
+import { logger } from "../../logger"
 import type { NotificationJobMessage } from "../../types"
 import { sendWebPush } from "../push/web-push"
 
@@ -50,7 +51,7 @@ export async function deliverNotification(
     errors.push(`${subscription.id}: ${result.error}`)
     if (result.endpointGone) {
       await db.pushSubscriptions.revoke(subscription.id, now)
-      console.warn("Revoked invalid push subscription", {
+      logger.warn("Revoked invalid push subscription", {
         pushSubscriptionId: subscription.id,
         userId: message.userId,
         status: result.status,
@@ -64,11 +65,16 @@ export async function deliverNotification(
       sentSubscriptionId,
       now,
     )
+    logger.info("Notification delivered", {
+      deliveryId: delivery.id,
+      userId: message.userId,
+      sentSubscriptionId,
+    })
     return
   }
 
   await db.notificationDeliveries.markFailed(delivery.id, errors.join("; "))
-  console.error("Notification delivery failed", {
+  logger.error("Notification delivery failed", {
     deliveryId: delivery.id,
     userId: message.userId,
     errors,

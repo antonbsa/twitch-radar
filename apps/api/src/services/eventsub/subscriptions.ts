@@ -1,5 +1,6 @@
 import type { AppConfig } from "../../env"
 import type { Database } from "../../db"
+import { logger, serializeError } from "../../logger"
 import { createEventsubSubscription } from "../twitch/client"
 import { getAppAccessToken } from "../twitch/app-token"
 
@@ -27,6 +28,7 @@ export async function createPendingEventsubSubscriptions(
 
   const appAccessToken = await getAppAccessToken(kv, config)
   const now = new Date().toISOString()
+  let succeeded = 0
 
   for (const row of pending) {
     try {
@@ -48,13 +50,20 @@ export async function createPendingEventsubSubscriptions(
         created.status,
         now,
       )
+      succeeded += 1
     } catch (error) {
-      console.error("EventSub subscription create failed", {
+      logger.error("EventSub subscription create failed", {
         subscriptionId: row.id,
         broadcasterUserId: row.broadcaster_user_id,
         eventType: row.event_type,
-        error: error instanceof Error ? error.message : String(error),
+        ...serializeError(error),
       })
     }
   }
+
+  logger.info("Pending EventSub subscription creation run completed", {
+    attempted: pending.length,
+    succeeded,
+    failed: pending.length - succeeded,
+  })
 }

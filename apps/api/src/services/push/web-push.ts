@@ -283,10 +283,14 @@ export async function sendWebPush(
   }
 
   if (response.ok) return { ok: true, status: response.status }
+  // Push service rejection bodies (invalid VAPID, payload too large, etc.)
+  // are always small text/JSON in practice; the truncation cap is a safety
+  // net against a pathological response, not an expected path.
+  const bodyText = (await response.text().catch(() => "")).slice(0, 2000)
   return {
     ok: false,
     status: response.status,
     endpointGone: response.status === 404 || response.status === 410,
-    error: `Push service responded ${response.status}`,
+    error: `Push service responded ${response.status}: ${bodyText}`,
   }
 }
