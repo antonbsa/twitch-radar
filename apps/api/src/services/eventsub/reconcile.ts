@@ -1,6 +1,7 @@
 import type { AppConfig } from "../../env"
 import type { Database } from "../../db"
 import { MONITORED_EVENT_TYPES } from "../../db/repositories/eventsub-subscriptions"
+import { logger, serializeError } from "../../logger"
 import { eventsubCallbackUrl } from "../monitoring"
 import { getAppAccessToken } from "../twitch/app-token"
 import {
@@ -83,13 +84,17 @@ export async function reconcileEventsubSubscriptions(
       )
       return true
     } catch (error) {
-      console.error("EventSub subscription delete failed", {
+      logger.error("EventSub subscription delete failed", {
         twitchSubscriptionId,
-        error: error instanceof Error ? error.message : String(error),
+        ...serializeError(error),
       })
       return false
     }
   }
+
+  let localRowsDeleted = 0
+  let localRowsReset = 0
+  let localRowsUpdated = 0
 
   const claimedTwitchIds = new Set<string>()
   for (const row of local) {
@@ -103,6 +108,7 @@ export async function reconcileEventsubSubscriptions(
       // retried next run instead of leaking the Twitch-side subscription.
       if (remoteSub && !(await deleteRemote(remoteSub.id))) continue
       await db.eventsubSubscriptions.deleteById(row.id)
+      localRowsDeleted += 1
       continue
     }
 
@@ -110,11 +116,13 @@ export async function reconcileEventsubSubscriptions(
 
     if (!remoteSub) {
       await db.eventsubSubscriptions.resetToPending(row.id, now)
+      localRowsReset += 1
       continue
     }
     if (!HEALTHY_REMOTE_STATUSES.has(remoteSub.status)) {
       await deleteRemote(remoteSub.id)
       await db.eventsubSubscriptions.resetToPending(row.id, now)
+      localRowsReset += 1
       continue
     }
     if (row.status !== remoteSub.status) {
@@ -124,6 +132,7 @@ export async function reconcileEventsubSubscriptions(
         remoteSub.status,
         now,
       )
+      localRowsUpdated += 1
     }
   }
 
@@ -150,4 +159,12 @@ export async function reconcileEventsubSubscriptions(
     callbackUrl,
     now,
   )
+
+  logger.info("EventSub reconciliation run completed", {
+    localRowsDeleted,
+    localRowsReset,
+    localRowsUpdated,
+    staged: broadcastersMissingSubscriptions.length,
+    remoteDeletes,
+  })
 }

@@ -138,6 +138,12 @@ CI (`.github/workflows/tests.yaml`) runs `api` and `e2e` as separate jobs so the
 
 `eslint.config.mjs`'s `ignores` must cover `**/dist/**` (and any other build-output directory introduced later) with a `**/`-prefixed glob. A minified production bundle (e.g. `apps/web/dist/assets/*.js`, one line of tens of thousands of characters) is pathologically slow for ESLint/Prettier to process — an unignored one causes `npm run lint` to hang for 10+ minutes at 100% CPU with no error output, not a crash. If `lint` ever appears to hang like that, check for an unignored generated/minified file before suspecting an infinite loop in a rule.
 
+## Pre-commit Hook
+
+`husky` is wired via the root `package.json` `prepare` script, so hooks install automatically after `npm install`. `.husky/pre-commit` runs `npm run lint && npm run typecheck`.
+
+This hook is a **local convenience for fast feedback only, not an enforcement mechanism** — it can be bypassed with `git commit --no-verify` (a viable, documented escape hatch, e.g. for WIP commits), and it isn't run at all if someone commits without ever running `npm install` in this repo. The actual enforced check remains CI (`.github/workflows/linting.yaml`, `.github/workflows/tests.yaml`) on every push/PR. This distinction matters here because this is a private repo on GitHub's free plan, so classic branch protection on `main` isn't available — nothing server-side currently gates a broken commit from landing on `main`, CI only reports after the fact. The hook exists to shorten the local feedback loop given that gap, not to replace CI as the source of truth. There is deliberately no pre-push hook: the full API/E2E suite is too slow for interactive use (spins up `wrangler dev`, and for E2E, Playwright + a browser install) and stays CI-only.
+
 ## Worktree Configuration
 
 All agents and sub-agents must configure git worktrees under `.agents/worktrees/` to keep temporary worktrees organized and hidden from search and file navigation.

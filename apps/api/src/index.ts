@@ -7,6 +7,7 @@ import {
 import { Database } from "./db"
 import { parseEnv, type Env, type HonoEnv } from "./env"
 import { ApiError, errorResponse } from "./http/errors"
+import { logger, serializeError } from "./logger"
 import { requireAuth } from "./http/middleware/auth"
 import { handleSearchCategories } from "./http/routes/categories"
 import { handleGetFollowedChannels } from "./http/routes/channels"
@@ -50,7 +51,9 @@ function buildApp(includeTestSeam: boolean): Hono<HonoEnv> {
   const app = new Hono<HonoEnv>()
 
   app.use("*", (c, next) => {
-    c.set("config", parseEnv(c.env))
+    const config = parseEnv(c.env)
+    logger.configure(config.environment)
+    c.set("config", config)
     c.set("db", new Database(c.env.DB))
     return next()
   })
@@ -139,6 +142,7 @@ export default {
 
   async queue(batch: MessageBatch, env: Env): Promise<void> {
     const config = parseEnv(env)
+    logger.configure(config.environment)
     const db = new Database(env.DB)
 
     if (batch.queue === "twitch-radar-twitch-events") {
@@ -146,12 +150,13 @@ export default {
       // (replays are safe anyway — processing dedupes on message id and
       // matching dedupes on the delivery key).
       for (const message of batch.messages) {
+        const eventMessage = message.body as TwitchEventQueueMessage
         try {
           const change = await processTwitchEventMessage(
             db,
             config,
             env.KV_APP_CACHE,
-            message.body as TwitchEventQueueMessage,
+            eventMessage,
           )
           if (change) {
             await matchAndCreateDeliveries(
@@ -160,11 +165,16 @@ export default {
               change,
             )
           }
+          logger.debug("Twitch event processed", {
+            messageId: eventMessage.messageId,
+            eventType: eventMessage.eventType,
+            stateChanged: change !== null,
+          })
           message.ack()
         } catch (error) {
-          console.error("Twitch event processing failed", {
-            messageId: (message.body as TwitchEventQueueMessage).messageId,
-            error: error instanceof Error ? error.message : String(error),
+          logger.error("Twitch event processing failed", {
+            messageId: eventMessage.messageId,
+            ...serializeError(error),
           })
           message.retry()
         }
@@ -185,9 +195,9 @@ export default {
           // Send outcomes never throw (deliverNotification resolves them to
           // delivery statuses) — a throw here is infrastructure (D1/KV), so
           // a retry against the still-pending delivery is safe.
-          console.error("Notification job failed", {
+          logger.error("Notification job failed", {
             deliveryId: (message.body as NotificationJobMessage).deliveryId,
-            error: error instanceof Error ? error.message : String(error),
+            ...serializeError(error),
           })
           message.retry()
         }
@@ -195,7 +205,7 @@ export default {
       return
     }
 
-    console.warn("Batch from unknown queue ignored", { queue: batch.queue })
+    logger.warn("Batch from unknown queue ignored", { queue: batch.queue })
   },
 
   // Cron fan-out (ADR 0036): each schedule owns one job so a slow or failing
@@ -204,6 +214,7 @@ export default {
   // the minutely pending-subscription creation (ADR 0031).
   async scheduled(controller: ScheduledController, env: Env): Promise<void> {
     const config = parseEnv(env)
+    logger.configure(config.environment)
     const db = new Database(env.DB)
 
     switch (controller.cron) {

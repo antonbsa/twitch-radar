@@ -52,12 +52,24 @@ export interface TwitchStream {
   started_at: string
 }
 
+// Twitch error bodies are always small JSON in practice; this is a safety
+// cap so a pathological response can't blow up a log record, not an
+// expected path.
+const MAX_ERROR_BODY_LENGTH = 2000
+
+async function readErrorBody(res: Response): Promise<string> {
+  const text = await res.text().catch(() => "")
+  return text.slice(0, MAX_ERROR_BODY_LENGTH)
+}
+
 export class TwitchApiError extends Error {
   readonly status: number
-  constructor(message: string, status: number) {
+  readonly body: string
+  constructor(message: string, status: number, body: string) {
     super(message)
     this.name = "TwitchApiError"
     this.status = status
+    this.body = body
   }
 }
 
@@ -103,7 +115,12 @@ export async function exchangeCode(
       redirect_uri: redirectUri,
     }),
   })
-  if (!res.ok) throw new TwitchApiError(`Token exchange failed`, res.status)
+  if (!res.ok)
+    throw new TwitchApiError(
+      `Token exchange failed`,
+      res.status,
+      await readErrorBody(res),
+    )
   return res.json() as Promise<TwitchTokenResponse>
 }
 
@@ -124,7 +141,12 @@ export async function refreshAccessToken(
       refresh_token: refreshToken,
     }),
   })
-  if (!res.ok) throw new TwitchApiError(`Token refresh failed`, res.status)
+  if (!res.ok)
+    throw new TwitchApiError(
+      `Token refresh failed`,
+      res.status,
+      await readErrorBody(res),
+    )
   return res.json() as Promise<TwitchTokenResponse>
 }
 
@@ -151,7 +173,12 @@ export async function fetchAppAccessToken(
       grant_type: "client_credentials",
     }),
   })
-  if (!res.ok) throw new TwitchApiError(`App token fetch failed`, res.status)
+  if (!res.ok)
+    throw new TwitchApiError(
+      `App token fetch failed`,
+      res.status,
+      await readErrorBody(res),
+    )
   return res.json() as Promise<TwitchAppTokenResponse>
 }
 
@@ -195,11 +222,15 @@ export async function createEventsubSubscription(
     }),
   })
   if (!res.ok)
-    throw new TwitchApiError(`EventSub subscription create failed`, res.status)
+    throw new TwitchApiError(
+      `EventSub subscription create failed`,
+      res.status,
+      await readErrorBody(res),
+    )
   const body = (await res.json()) as { data: TwitchEventsubSubscription[] }
   const subscription = body.data[0]
   if (!subscription)
-    throw new TwitchApiError("No subscription in Twitch response", 200)
+    throw new TwitchApiError("No subscription in Twitch response", 200, "")
   return subscription
 }
 
@@ -234,7 +265,11 @@ export async function getAllEventsubSubscriptions(
       },
     })
     if (!res.ok)
-      throw new TwitchApiError(`EventSub subscription list failed`, res.status)
+      throw new TwitchApiError(
+        `EventSub subscription list failed`,
+        res.status,
+        await readErrorBody(res),
+      )
     const body = (await res.json()) as {
       data: TwitchEventsubSubscriptionDetails[]
       pagination?: { cursor?: string }
@@ -264,7 +299,11 @@ export async function deleteEventsubSubscription(
   })
   // Already gone on Twitch's side is the desired end state, not a failure.
   if (!res.ok && res.status !== 404)
-    throw new TwitchApiError(`EventSub subscription delete failed`, res.status)
+    throw new TwitchApiError(
+      `EventSub subscription delete failed`,
+      res.status,
+      await readErrorBody(res),
+    )
 }
 
 export async function getAuthenticatedUser(
@@ -278,10 +317,15 @@ export async function getAuthenticatedUser(
       Authorization: `Bearer ${accessToken}`,
     },
   })
-  if (!res.ok) throw new TwitchApiError(`User profile fetch failed`, res.status)
+  if (!res.ok)
+    throw new TwitchApiError(
+      `User profile fetch failed`,
+      res.status,
+      await readErrorBody(res),
+    )
   const body = (await res.json()) as { data: TwitchUser[] }
   const user = body.data[0]
-  if (!user) throw new TwitchApiError("No user in Twitch response", 200)
+  if (!user) throw new TwitchApiError("No user in Twitch response", 200, "")
   return user
 }
 
@@ -307,7 +351,11 @@ export async function getAllFollowedChannels(
       },
     })
     if (!res.ok)
-      throw new TwitchApiError(`Followed channels fetch failed`, res.status)
+      throw new TwitchApiError(
+        `Followed channels fetch failed`,
+        res.status,
+        await readErrorBody(res),
+      )
     const body = (await res.json()) as {
       data: TwitchFollowedChannel[]
       pagination?: { cursor?: string }
@@ -337,7 +385,12 @@ export async function searchCategories(
   })
   // Twitch returns 404 for queries with no matching categories.
   if (res.status === 404) return []
-  if (!res.ok) throw new TwitchApiError(`Category search failed`, res.status)
+  if (!res.ok)
+    throw new TwitchApiError(
+      `Category search failed`,
+      res.status,
+      await readErrorBody(res),
+    )
   const body = (await res.json()) as { data?: TwitchCategory[] }
   return body.data ?? []
 }
@@ -365,7 +418,12 @@ export async function getStreamsByUserIds(
         Authorization: `Bearer ${accessToken}`,
       },
     })
-    if (!res.ok) throw new TwitchApiError(`Streams fetch failed`, res.status)
+    if (!res.ok)
+      throw new TwitchApiError(
+        `Streams fetch failed`,
+        res.status,
+        await readErrorBody(res),
+      )
     const body = (await res.json()) as { data: TwitchStream[] }
     results.push(...body.data)
   }
@@ -395,7 +453,11 @@ export async function getAllFollowedStreams(
       },
     })
     if (!res.ok)
-      throw new TwitchApiError(`Followed streams fetch failed`, res.status)
+      throw new TwitchApiError(
+        `Followed streams fetch failed`,
+        res.status,
+        await readErrorBody(res),
+      )
     const body = (await res.json()) as {
       data: TwitchFollowedStream[]
       pagination?: { cursor?: string }

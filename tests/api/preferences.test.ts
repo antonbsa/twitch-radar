@@ -307,6 +307,11 @@ describe("POST /api/preferences/global", () => {
     const broadcasterIds = broadcasters.map((b) => b.broadcasterUserId)
     const state = await orchestrator.inspect(broadcasterIds)
     expect(state.monitoredChannels).toHaveLength(BROADCASTER_COUNT)
+    for (const monitored of state.monitoredChannels) {
+      expect(monitored.monitor_reason).toBe("global_preference")
+      expect(monitored.disabled_at).toBeNull()
+    }
+    expect(state.channelState).toHaveLength(BROADCASTER_COUNT)
     // 3 monitored event types per broadcaster, no duplicates.
     expect(state.eventsubSubscriptions).toHaveLength(BROADCASTER_COUNT * 3)
 
@@ -318,10 +323,11 @@ describe("POST /api/preferences/global", () => {
     const repeat = await postGlobalPref(cookie)
     expect(repeat.status).toBe(200)
     const stateAfterRepeat = await orchestrator.inspect(broadcasterIds)
+    expect(stateAfterRepeat.monitoredChannels).toHaveLength(BROADCASTER_COUNT)
     expect(stateAfterRepeat.eventsubSubscriptions).toHaveLength(
       BROADCASTER_COUNT * 3,
     )
-  }, 20_000)
+  }, 30_000)
 })
 
 describe("DELETE /api/preferences/channel/:id", () => {

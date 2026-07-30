@@ -1,5 +1,6 @@
 import type { AppConfig } from "../../env"
 import { ApiError } from "../../http/errors"
+import { logger, serializeError } from "../../logger"
 import { decryptToken, encryptToken } from "../crypto"
 import { TwitchApiError, refreshAccessToken } from "./client"
 import type { Database } from "../../db"
@@ -116,15 +117,23 @@ export async function refreshExpiringTwitchTokens(
     cutoff,
     MAX_SCHEDULED_REFRESHES_PER_RUN,
   )
+  let succeeded = 0
 
   for (const record of expiring) {
     try {
       await refreshAndStoreToken(db, config, record)
+      succeeded += 1
     } catch (error) {
-      console.error("Scheduled Twitch token refresh failed", {
+      logger.error("Scheduled Twitch token refresh failed", {
         userId: record.user_id,
-        error: error instanceof Error ? error.message : String(error),
+        ...serializeError(error),
       })
     }
   }
+
+  logger.info("Scheduled Twitch token refresh sweep completed", {
+    attempted: expiring.length,
+    succeeded,
+    failed: expiring.length - succeeded,
+  })
 }

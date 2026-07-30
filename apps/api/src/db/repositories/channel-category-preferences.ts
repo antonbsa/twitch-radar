@@ -1,9 +1,9 @@
 import { and, eq, isNull } from "drizzle-orm"
+import { nanoid } from "nanoid"
 import type { AppDatabase } from "../client"
 import { channelCategoryPreferences } from "../schema"
 
 export interface CreateChannelPreferenceInput {
-  id: string
   userId: string
   broadcasterUserId: string
   categoryId: string
@@ -42,11 +42,12 @@ export class ChannelCategoryPreferencesRepository {
     this.db = db
   }
 
-  async create(input: CreateChannelPreferenceInput): Promise<void> {
+  async create(input: CreateChannelPreferenceInput): Promise<string> {
+    const id = `cpref_${nanoid()}`
     await this.db
       .insert(channelCategoryPreferences)
       .values({
-        id: input.id,
+        id,
         userId: input.userId,
         broadcasterUserId: input.broadcasterUserId,
         categoryId: input.categoryId,
@@ -54,6 +55,7 @@ export class ChannelCategoryPreferencesRepository {
         createdAt: input.now,
       })
       .run()
+    return id
   }
 
   /** Re-enables a soft-disabled preference (or refreshes the stored name). */
