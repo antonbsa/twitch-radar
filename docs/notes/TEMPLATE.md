@@ -20,7 +20,7 @@ What was discovered: facts, API/platform constraints, benchmarks, prior art, spi
 ## Options considered
 
 | Option | Pros | Cons | Verdict |
-| --- | --- | --- | --- |
+| ------ | ---- | ---- | ------- |
 |        |      |      |         |
 
 ## Conclusion

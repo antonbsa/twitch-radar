@@ -24,7 +24,6 @@ Title: follow the Conventional Commits prefixes from CLAUDE.md's "Commit Message
      - link to another, if applicable
      Delete lines/section that don't apply. -->
 
-
 ## Checklist
 
 <!-- Check what applies. If a box can't be checked, explain why in a sub-bullet
