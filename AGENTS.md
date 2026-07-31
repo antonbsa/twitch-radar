@@ -50,6 +50,12 @@ When to suggest writing a TN: after a research/debate thread converges on a conc
 
 How: copy [docs/notes/TEMPLATE.md](docs/notes/TEMPLATE.md) to `docs/notes/NNNN-kebab-case-title.md` (next sequence number, independent from ADR numbers), fill it in, and add it to the index in [docs/notes/README.md](docs/notes/README.md). If the conclusion later becomes something the project acts on, write an ADR referencing the TN and mark the TN as superseded by it.
 
+## Language
+
+Chat responses (the conversational reply to the user) follow the language the user is writing in for that turn - reply in Portuguese if the user writes in Portuguese, in English if they write in English, etc.
+
+Everything that becomes part of the codebase or project artifacts is always written in English, regardless of the chat language: code, identifiers, comments, commit messages, document content, and issue/PR titles and descriptions.
+
 ## Commit Message Rules
 
 Use Conventional Commits.
