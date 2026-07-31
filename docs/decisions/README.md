@@ -46,3 +46,4 @@ Other project documents may state goals, requirements, task scope, validation st
 - [0038 - Adopt Role-Scoped Subagents, Reject The Rest Of The Agent-Context-Template Pattern](0038-adopt-role-scoped-subagents-reject-template.md)
 - [0039 - Adopt Technical Notes For Non-Decision Research](0039-adopt-technical-notes-for-non-decision-research.md)
 - [0040 - Structured Leveled Logging Convention](0040-structured-leveled-logging-convention.md)
+- [0041 - Release-Gated Production Deploys, Automatic Preview Deploys](0041-release-gated-production-deploys.md)
