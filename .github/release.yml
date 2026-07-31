@@ -11,7 +11,7 @@ changelog:
     authors:
       - dependabot
   categories:
-    - title: ⚠️ Migrations & Config
+    - title: Migrations & Config
       labels:
         - migration
         - config
