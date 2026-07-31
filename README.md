@@ -209,4 +209,4 @@ For the full walkthrough — generating keys, creating Cloudflare resources, pus
 
 ## Contributing
 
-This is a solo-maintained project. Issues and pull requests are welcome! For development conventions and contribution guidance, see `CLAUDE.md`.
+This is a solo-maintained project. Issues and pull requests are welcome! For development conventions and contribution guidance, see `AGENTS.md`.
