@@ -16,7 +16,8 @@ The expected path from idea to merged change:
 2. **Spec.** From there on, work is driven by a spec under `specs/milestones/<name>` (see "Spec Location" below) describing goals, requirements, scope, and validation.
 3. **Decision changes.** If the spec requires an accepted decision, add or update an ADR per [ADR 0001](docs/decisions/0001-keep-project-decisions-in-adrs.md) before broad coding. Non-decision research/conclusions go in a TN instead (see "ADRs vs Technical Notes" below).
 4. **Implementation.** Code the change, committed together with the spec/task updates it completes.
-5. **Review and merge.** Open a PR following [creating-pull-requests](.claude/skills/creating-pull-requests) — tests, migrations/config, and specs/ADRs are part of the review, not follow-ups.
+5. **Review and merge.** Open a PR following [creating-pull-requests](.claude/skills/creating-pull-requests) — tests, migrations/config, and specs/ADRs are part of the review, not follow-ups. Apply GitHub labels when opening the PR (`gh pr edit --add-label ...` or via `gh pr create`), not just when explicitly asked: `migration` if it touches `infra/migrations`, `config` if it touches `apps/api/wrangler.jsonc`/`crons.ts`/`env.ts`, plus the applicable default label (`bug`, `enhancement`, `documentation`). These drive the categorized release notes in [.github/release.yml](.github/release.yml) — an unlabeled PR still ships, but silently lands in "Other Changes" instead of the risk-flagged category it belongs in.
+6. **Release.** Merging to `main` only deploys preview. Production ships when a GitHub release is published ([ADR 0041](docs/decisions/0041-release-gated-production-deploys.md)); follow [preparing-a-release](.claude/skills/preparing-a-release).
 
 ## Spec Location
 

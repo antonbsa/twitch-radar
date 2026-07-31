@@ -1,0 +1,32 @@
+# Controls GitHub's "Generate release notes" button and the auto-generated
+# body of `gh release create --generate-notes`. Categories are matched top to
+# bottom and the first match wins, so the migration/config category is listed
+# first: a PR labeled both `migration` and `enhancement` must surface as a
+# migration, since that is the part of the release that is hard to roll back.
+# See docs/decisions/0041-release-gated-production-deploys.md.
+changelog:
+  exclude:
+    labels:
+      - skip-changelog
+    authors:
+      - dependabot
+  categories:
+    - title: ⚠️ Migrations & Config
+      labels:
+        - migration
+        - config
+    - title: Features
+      labels:
+        - enhancement
+        - feature
+    - title: Fixes
+      labels:
+        - bug
+    - title: Docs & Decisions
+      labels:
+        - documentation
+    # Catch-all for unlabeled PRs - without it they are dropped from the notes
+    # entirely rather than listed uncategorized.
+    - title: Other Changes
+      labels:
+        - "*"
