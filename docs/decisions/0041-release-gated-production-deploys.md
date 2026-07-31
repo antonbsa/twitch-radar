@@ -24,7 +24,9 @@ Split the single `deploy.yaml` into two independent workflows, matching the two 
 - **`deploy-preview.yaml`** — trigger: `push` to `main`. Runs lint/typecheck/API tests/E2E tests (skipped if the push came from a merged PR, since `linting.yaml`/`tests.yaml` already ran them against that PR), applies pending D1 migrations against `twitch-radar-preview`, then `npm run deploy:preview`.
 - **`deploy-release.yaml`** — trigger: `release: published`. Checks out the release's tag, always re-runs the full lint/typecheck/API/E2E suite against that exact commit (not skipped — a release isn't necessarily tied to a just-checked PR, e.g. a tag could be created against an older `main` commit), applies pending D1 migrations against `twitch-radar-prod`, then `npm run deploy`.
 
-`main` moving forward never touches production by itself. Production only advances when someone deliberately tags a commit and publishes a release. Versioning starts at `v0.1.0` (SemVer, major pinned at 0 while the MVP is still under active development per the Implementation Order in `CLAUDE.md`) — not `v1.0.0`, despite `package.json` already reading `"1.0.0"`, since the software isn't being declared stable by this ADR.
+`main` moving forward never touches production by itself. Production only advances when someone deliberately tags a commit and publishes a release. Versioning starts at `v0.1.0` (SemVer, major pinned at 0 while the MVP is still under active development per the Implementation Order in `CLAUDE.md`) — not `v1.0.0`.
+
+The git tag is the sole source of truth for the project's version — `deploy-release.yaml` never reads or writes `package.json`, and nothing in the codebase reads its `version` field. The `"version"` key is removed from the root, `apps/api`, and `apps/web` `package.json` files (they previously read a stale, hand-set `"1.0.0"` with no relation to the release tags) to avoid implying it tracks anything.
 
 Both workflows keep using the single `CLOUDFLARE_API_TOKEN` repository secret already provisioned — no new secret, since one Cloudflare account token authorizes deploys to both environments' resources.
 

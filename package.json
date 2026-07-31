@@ -1,6 +1,5 @@
 {
   "name": "twitch-radar",
-  "version": "1.0.0",
   "description": "Mobile-first Twitch category alert PWA.",
   "private": true,
   "workspaces": [
