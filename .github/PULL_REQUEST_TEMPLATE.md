@@ -5,7 +5,16 @@ Title: follow the Conventional Commits prefixes from CLAUDE.md's "Commit Message
 
 ## Summary
 
-<!-- What changed and why. -->
+<!-- What changed and why - objective, only what's actually relevant to review.
+     Prefer bullet points; a short lead-in sentence plus bullets works too.
+     Avoid storytelling/narrative - only justified for genuinely dense changes. -->
+
+## Impact
+
+<!-- The outcome: what this improves, fixes, or changes for users or the system,
+     backed by proof (command output, screenshots, benchmark results).
+     For bug fixes: show the failure before and the pass after.
+     Skip/mark N/A for changes with no external effect (e.g. pure refactor, docs). -->
 
 ## References
 
@@ -25,9 +34,8 @@ Title: follow the Conventional Commits prefixes from CLAUDE.md's "Commit Message
 - [ ] Includes a D1 migration, `wrangler.jsonc`/cron change, or a new/changed env var - called out in Summary
 - [ ] Updates specs/ADRs if this changes accepted behavior or a prior decision
 
-## Evidence
+## How to test
 
-<!-- Command output, screenshots, or a short repro/verification note.
-     For bug fixes: show the failure before and the pass after. -->
+<!-- Steps for a reviewer to manually reproduce/verify this, if applicable. -->
 
 ## Additional context (optional)

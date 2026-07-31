@@ -198,7 +198,12 @@ See [ADR 0036](docs/decisions/0036-scheduled-ops-jobs.md) for the rationale behi
 
 ## Deployment
 
-The app runs as a single Cloudflare Worker (`apps/api`) on the default `*.workers.dev` domain — no Cloudflare Pages project, no custom domain. `apps/web`'s production build is served as static assets directly from that same Worker, so the PWA and the API share one origin. Every push to `main` deploys automatically via `.github/workflows/deploy.yaml`: lint, typecheck, API tests, and E2E tests run first, then pending D1 migrations are applied and `npm run deploy` runs.
+The app runs as a single Cloudflare Worker (`apps/api`) on the default `*.workers.dev` domain — no Cloudflare Pages project, no custom domain. `apps/web`'s production build is served as static assets directly from that same Worker, so the PWA and the API share one origin.
+
+Two independent pipelines, each running lint, typecheck, API tests, and E2E tests before deploying:
+
+- Every push to `main` deploys to the `preview` environment automatically via [`.github/workflows/deploy-preview.yaml`](.github/workflows/deploy-preview.yaml): pending D1 migrations against `twitch-radar-preview` are applied, then `npm run deploy:preview` runs.
+- Publishing a GitHub release deploys to `production` via [`.github/workflows/deploy-release.yaml`](.github/workflows/deploy-release.yaml), checked out at the release's tag: pending D1 migrations against `twitch-radar-prod` are applied, then `npm run deploy` runs. Production only ever moves forward through a tagged release — merging to `main` alone never touches it.
 
 For the full walkthrough — generating keys, creating Cloudflare resources, pushing secrets, the Twitch console step, and deploying manually — see [`docs/deployment.md`](docs/deployment.md).
 
