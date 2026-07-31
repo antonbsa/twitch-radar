@@ -5,7 +5,9 @@ Title: follow the Conventional Commits prefixes from CLAUDE.md's "Commit Message
 
 ## Summary
 
-<!-- What changed and why. -->
+<!-- What changed and why - objective, only what's actually relevant to review.
+     Prefer bullet points; a short lead-in sentence plus bullets works too.
+     Avoid storytelling/narrative - only justified for genuinely dense changes. -->
 
 ## Impact
 
