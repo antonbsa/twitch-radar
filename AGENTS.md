@@ -153,6 +153,10 @@ CI (`.github/workflows/tests.yaml`) runs `api` and `e2e` as separate jobs so the
 
 This hook is a **local convenience for fast feedback only, not an enforcement mechanism** — it can be bypassed with `git commit --no-verify` (a viable, documented escape hatch, e.g. for WIP commits), and it isn't run at all if someone commits without ever running `npm install` in this repo. The actual enforced check remains CI (`.github/workflows/linting.yaml`, `.github/workflows/tests.yaml`) on every push/PR. This distinction matters here because this is a private repo on GitHub's free plan, so classic branch protection on `main` isn't available — nothing server-side currently gates a broken commit from landing on `main`, CI only reports after the fact. The hook exists to shorten the local feedback loop given that gap, not to replace CI as the source of truth. There is deliberately no pre-push hook: the full API/E2E suite is too slow for interactive use (spins up `wrangler dev`, and for E2E, Playwright + a browser install) and stays CI-only.
 
+## `.agents/` Directory Scope
+
+`.agents/` (gitignored, not part of the repo) is a local scratch space for drafts and internal validation - issue drafts, follow-up notes, worktrees. Its contents are not project state: they're leftovers from past iterations, not something every agent needs to track. Do not read, summarize, or factor in anything under `.agents/` unless a task explicitly points you at a specific file in it (e.g. the user references an issue draft by path). Never treat its presence or content as informing unrelated work, and never assume it reflects current decisions - those live in `docs/decisions`, `docs/notes`, and `specs/`.
+
 ## Worktree Configuration
 
 All agents and sub-agents must configure git worktrees under `.agents/worktrees/` to keep temporary worktrees organized and hidden from search and file navigation.
