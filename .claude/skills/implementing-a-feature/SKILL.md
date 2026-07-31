@@ -29,19 +29,22 @@ Given a spec path (`specs/milestones/<name>/*.md`), a GitHub issue (number or UR
 
    If the input already has no open items, say so and proceed straight to implementation. Do not invent questions that aren't there.
 
-4. **Implement.** Follow the existing per-domain conventions ([docs/agents/api-source-layout.md](../../../docs/agents/api-source-layout.md), [docs/agents/web-source-layout.md](../../../docs/agents/web-source-layout.md)) and any referenced ADRs. Delegate to the `api-engineer`/`web-engineer` subagents when the work is confined to their domain.
+4. **For bug reports, confirm the repro before fixing.** If the input's `Proposed solution` (or equivalent) has an unconfirmed repro, an unidentified root cause, or hedges with "if it still reproduces" / "possible explanations" — reproduce it on current `main` first (or write a failing test that captures it) before touching implementation code. Invoke the superpowers:systematic-debugging skill for the root-cause work itself. If it doesn't reproduce, say so and stop — close/report that instead of fixing a guessed cause.
 
-5. **Write the handoff doc.** On completion, create `.agents/handoff-<slug>.md` (slug derived from the spec/issue name) containing:
+5. **Implement.** Follow the existing per-domain conventions ([docs/agents/api-source-layout.md](../../../docs/agents/api-source-layout.md), [docs/agents/web-source-layout.md](../../../docs/agents/web-source-layout.md)) and any referenced ADRs. Delegate to the `api-engineer`/`web-engineer` subagents when the work is confined to their domain.
+
+6. **Write the handoff doc.** On completion, create `.agents/handoff-<slug>.md` (slug derived from the spec/issue name) containing:
    - What was implemented, against which spec/issue.
    - Every decision from step 3 (question → resolution → reasoning), plus any decision made mid-implementation that wasn't in the original input.
    - How to test: automated (which suites/commands) and manual (concrete steps a reviewer can follow).
    - Anything left undone or deliberately out of scope.
 
-6. **Stop. Do not touch git.** Never run `git add`, `git commit`, `git reset`, or any other staging/history command, even after the handoff doc is written. Report what changed in chat and let the user stage and commit it themselves.
+7. **Stop. Do not touch git.** Never run `git add`, `git commit`, `git reset`, or any other staging/history command, even after the handoff doc is written. Report what changed in chat and let the user stage and commit it themselves.
 
 ## Common mistakes
 
 - Starting implementation on a bare issue title with no resolved scope — that's spec work, not implementation work.
 - Resolving a TBD silently and only mentioning it in the handoff doc afterward — confirmation happens before code, not after.
+- Fixing a bug from its proposed solution without confirming the repro/root cause first — the proposed solution may itself be a guess (e.g. "if it still reproduces...").
 - Skipping the handoff doc because "nothing interesting happened" — write it every time; it's the reviewer's only account of decisions made mid-implementation.
 - Running `git add` "just to stage for review" — staging is git state manipulation and stays off-limits exactly like commit/push.
