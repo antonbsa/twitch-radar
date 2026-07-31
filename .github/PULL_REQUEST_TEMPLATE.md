@@ -7,6 +7,13 @@ Title: follow the Conventional Commits prefixes from CLAUDE.md's "Commit Message
 
 <!-- What changed and why. -->
 
+## Impact
+
+<!-- The outcome: what this improves, fixes, or changes for users or the system,
+     backed by proof (command output, screenshots, benchmark results).
+     For bug fixes: show the failure before and the pass after.
+     Skip/mark N/A for changes with no external effect (e.g. pure refactor, docs). -->
+
 ## References
 
 <!-- Issue: Closes #123 / Refs #123
@@ -25,9 +32,8 @@ Title: follow the Conventional Commits prefixes from CLAUDE.md's "Commit Message
 - [ ] Includes a D1 migration, `wrangler.jsonc`/cron change, or a new/changed env var - called out in Summary
 - [ ] Updates specs/ADRs if this changes accepted behavior or a prior decision
 
-## Evidence
+## How to test
 
-<!-- Command output, screenshots, or a short repro/verification note.
-     For bug fixes: show the failure before and the pass after. -->
+<!-- Steps for a reviewer to manually reproduce/verify this, if applicable. -->
 
 ## Additional context (optional)

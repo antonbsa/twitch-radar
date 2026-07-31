@@ -18,8 +18,9 @@ Before running `gh pr create`, or before a human opens a PR in the GitHub UI, fo
 1. Read `.github/PULL_REQUEST_TEMPLATE.md`. Its HTML comments are the instructions - resolve every comment into real content, don't leave placeholders or delete sections that apply.
 2. Title: use the Conventional Commits prefix from this repo's commit message rules (`feat:`, `fix:`, `docs:`, `test:`, `chore:`, `refactor:` - see the project CLAUDE.md).
 3. Checklist: check only boxes that are actually true. For anything unchecked, add a one-line reason (e.g. "manual only - no harness for push permission prompts"). This includes the migration/config and specs/ADR items, not just tests - if the PR touches `infra/migrations`, `wrangler.jsonc`, crons, or env vars, call it out in the Summary too.
-4. Evidence section: paste real command output or describe the manual repro. Don't write "tests pass" without having run them (see superpowers:verification-before-completion).
-5. If there's no tracked issue and no spec/ADR link, delete the "References" section rather than leaving it empty.
+4. Impact section: the outcome, not the mechanism - what improves, is fixed, or changes as a result, backed by real proof (command output, screenshots, benchmark results). Don't restate Summary. Don't write "tests pass" without having run them (see superpowers:verification-before-completion). Mark N/A for changes with no external effect (pure refactor, docs).
+5. How to test section: reproduction steps for a reviewer, if applicable - instructions, not proof; the proof itself goes in Impact.
+6. If there's no tracked issue and no spec/ADR link, delete the "References" section rather than leaving it empty.
 
 ## Common mistakes
 
@@ -27,3 +28,5 @@ Before running `gh pr create`, or before a human opens a PR in the GitHub UI, fo
 - Checking "added tests" without having actually run them - verify before checking, don't assume.
 - Restating the diff instead of the *why* in the Summary section.
 - Missing that a migration/config-touching change needs both the checklist box and a Summary mention - the box alone doesn't say what changed.
+- Impact repeating Summary's "why" instead of naming the concrete outcome and showing proof of it.
+- Repro steps dumped into Impact instead of How to test - How to test holds instructions, Impact holds the outcome and its evidence.
