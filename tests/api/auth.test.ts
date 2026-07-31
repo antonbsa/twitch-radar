@@ -115,6 +115,18 @@ describe("GET /api/auth/twitch/callback", () => {
     })
   })
 
+  it("should redirect to login with an error param when Twitch reports the user declined", async () => {
+    const res = await fetch(
+      `${orchestrator.baseUrl}/api/auth/twitch/callback?error=access_denied&error_description=The+user+denied+you+access`,
+      { redirect: "manual" },
+    )
+
+    expect(res.status).toBe(302)
+    const location = new URL(res.headers.get("location")!)
+    expect(location.pathname).toBe("/login")
+    expect(location.searchParams.get("error")).toBe("twitch_declined")
+  })
+
   it("should return 400 for invalid state", async () => {
     const res = await fetch(
       `${orchestrator.baseUrl}/api/auth/twitch/callback?code=abc&state=not-a-real-state`,
