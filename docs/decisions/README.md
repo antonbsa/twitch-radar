@@ -47,3 +47,7 @@ Other project documents may state goals, requirements, task scope, validation st
 - [0039 - Adopt Technical Notes For Non-Decision Research](0039-adopt-technical-notes-for-non-decision-research.md)
 - [0040 - Structured Leveled Logging Convention](0040-structured-leveled-logging-convention.md)
 - [0041 - Release-Gated Production Deploys, Automatic Preview Deploys](0041-release-gated-production-deploys.md)
+
+## Proposed ADRs
+
+- [0042 - Async Follow Sync Via Queue With KV-Backed Progress Polling](0042-async-follow-sync-with-progress-polling.md)
