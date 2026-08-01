@@ -4,12 +4,14 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ChannelRow } from "@/components/channel-row"
 import { ChannelPreferencesSheet } from "@/components/channel-preferences-sheet"
+import { useAuth } from "@/context/auth-context"
 import { useFollowedChannels, useSyncFollows } from "@/hooks/use-channels"
 import { cn } from "@/lib/utils"
 import type { FollowedChannel } from "@/types/channel"
 
 export function ChannelsPage() {
   const { data: channels, isLoading, isError } = useFollowedChannels()
+  const { reconnectRequired } = useAuth()
   const syncFollows = useSyncFollows()
   const [configuringChannel, setConfiguringChannel] =
     useState<FollowedChannel | null>(null)
@@ -47,7 +49,19 @@ export function ChannelsPage() {
         </div>
       )}
 
-      {!isLoading && isError && (
+      {!isLoading && isError && reconnectRequired && (
+        <div className="px-4 py-6 text-sm text-muted-foreground">
+          <p>Your Twitch connection needs to be renewed.</p>
+          <a
+            href="/api/auth/twitch/start"
+            className="mt-1 inline-block text-primary underline"
+          >
+            Reconnect Twitch
+          </a>
+        </div>
+      )}
+
+      {!isLoading && isError && !reconnectRequired && (
         <p className="px-4 py-6 text-sm text-muted-foreground">
           Failed to load channels. Try syncing or reload the page.
         </p>
