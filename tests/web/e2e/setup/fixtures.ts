@@ -52,7 +52,15 @@ interface E2eFixtures {
 
 export const it = base.extend<E2eFixtures>({
   authenticatedSession: async ({ task }, use) => {
-    const { userId, sessionId } = await seedAuthenticatedUser()
+    // Seed a live (non-expired, never-failed) Twitch token by default so
+    // GET /me's twitch_reconnect_required comes back false — matching the
+    // "normally connected" user nearly every test implicitly assumes. Tests
+    // that specifically want the reconnect-required state (e.g. a mid-session
+    // 401) provoke it themselves rather than relying on the fixture default.
+    const { userId, sessionId } = await seedAuthenticatedUser({
+      accessToken: "e2e-fixture-access-token",
+      refreshToken: "e2e-fixture-refresh-token",
+    })
     const session = await openBrowser(sessionId)
     try {
       await runWithFailureScreenshot({ task }, session.page, use, {

@@ -49,49 +49,30 @@ HTTP wrappers around the test seam that guarantee and clean state:
 
 ### 4. Harness (`tests/web/e2e/setup/`)
 
-- `global-setup.ts` — run `db:setup`, boot `wrangler dev` + `vite dev`, poll both
-  ports until healthy, tear both down on teardown.
+- `global-setup.ts` — run `db:setup`, boot `wrangler dev` + `vite dev`, poll both ports until healthy, tear both down on teardown.
 - `browser.ts` — launch Chromium, 390×844 context, cookie-injection helper.
 
 ### 5. Unit tier (`tests/web/unit/`)
 
-- `format.test.ts` — pure-function coverage for `lib/format.ts`
-  (`42K` / `1.2M` / `1h 23m` / `Ym` under an hour) using fake timers for the
-  `Date.now()`-based duration. Locks the formatting ACs deterministically without a
-  browser.
+- `format.test.ts` — pure-function coverage for `lib/format.ts` (`42K` / `1.2M` / `1h 23m` / `Ym` under an hour) using fake timers for the `Date.now()`-based duration. Locks the formatting ACs deterministically without a browser.
 
 ### 6. E2E specs (`tests/web/e2e/`)
 
-- `auth-gate.spec.ts` — no cookie → `/login`, tab bar absent; seeded cookie →
-  `/channels`.
-- `channels.spec.ts` — ordering (live by viewer desc, offline by name asc), row
-  content (live dot, category, formatted viewers, `Xh Ym`), loading skeleton, empty
-  state, error state, sync button in-flight disable + refetch, config opens sheet.
-- `alerts.spec.ts` — empty state text; **error state asserted to appear within
-  ~2s** (regression guard for the 4xx-no-retry fix in `main.tsx`); add-category
-  sheet opens + tap-outside dismiss.
-- `account.spec.ts` — identity from `/me`; notification permission rendered for
-  `granted` / `default` / `denied`; logout → `/login` + cleared context;
-  mid-session 401 (orchestrator revokes session, then click Sync) → "Reconnect
-  Twitch" appears and URL stays `/account`.
+- `auth-gate.spec.ts` — no cookie → `/login`, tab bar absent; seeded cookie → `/channels`.
+- `channels.spec.ts` — ordering (live by viewer desc, offline by name asc), row content (live dot, category, formatted viewers, `Xh Ym`), loading skeleton, empty state, error state, sync button in-flight disable + refetch, config opens sheet.
+- `alerts.spec.ts` — empty state text; **error state asserted to appear within ~2s** (regression guard for the 4xx-no-retry fix in `main.tsx`); add-category sheet opens + tap-outside dismiss.
+- `account.spec.ts` — identity from `/me`; notification permission rendered for `granted` / `default` / `denied`; logout → `/login` + cleared context; mid-session 401 (orchestrator revokes session, then click Sync) → "Reconnect Twitch" appears and URL stays `/account`.
 
 ### Gated on T-006
 
-The preferences/categories backend (`/api/preferences*`, `/api/categories/search`)
-does not exist yet — T-006 owns it and depends on T-004. Until it ships, the
-category-search-returns-results and preference add/remove happy-paths land as
-`.skip` stubs (with the seed orchestrator ready), rather than being faked. Today
-those paths are covered only at the empty/error level.
+The preferences/categories backend (`/api/preferences*`, `/api/categories/search`) does not exist yet — T-006 owns it and depends on T-004. Until it ships, the category-search-returns-results and preference add/remove happy-paths land as `.skip` stubs (with the seed orchestrator ready), rather than being faked. Today those paths are covered only at the empty/error level.
 
 ## Acceptance Criteria
 
-- `npm run test:e2e` boots the real app, runs all specs green, and tears the app
-  down cleanly.
-- The E2E user's state is created before each spec file and fully removed after —
-  no residue in local D1/KV between runs.
+- `npm run test:e2e` boots the real app, runs all specs green, and tears the app down cleanly.
+- The E2E user's state is created before each spec file and fully removed after — no residue in local D1/KV between runs.
 - The test-seam endpoint is provably unreachable when `environment === "production"`.
-- Unit tier (`npm run test:web`) covers viewer-count and live-duration formatting
-  deterministically.
+- Unit tier (`npm run test:web`) covers viewer-count and live-duration formatting deterministically.
 - Specs assert against the rendered UI, not just API responses.
 - Mobile-viewport assertions run at 390×844.
 - The Alerts error state is asserted to surface fast (guards the retry fix).
@@ -99,8 +80,7 @@ those paths are covered only at the empty/error level.
 
 ## Completion Validation
 
-- Full E2E run is green locally from a clean checkout after `db:setup` +
-  `npx playwright install chromium`.
+- Full E2E run is green locally from a clean checkout after `db:setup` + `npx playwright install chromium`.
 - Re-running the suite twice in a row passes (confirms reset/cleanup is idempotent).
 - Grepping the built worker confirms the test seam is absent under production env.
 - Unit tier passes under fake timers with no reliance on wall-clock time.

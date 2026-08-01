@@ -56,6 +56,12 @@ Chat responses (the conversational reply to the user) follow the language the us
 
 Everything that becomes part of the codebase or project artifacts is always written in English, regardless of the chat language: code, identifiers, comments, commit messages, document content, and issue/PR titles and descriptions.
 
+## Markdown Prose Formatting
+
+Do not hard-wrap prose paragraphs in markdown files at a fixed column width. Each paragraph is one line, however long — let the editor/terminal soft-wrap it for display. This applies to prose only, not to fenced code blocks, tables, or list-item continuation lines, which keep their own formatting rules.
+
+`prettier.config.mjs` enforces this with a `*.md` override (`proseWrap: "never"`), so `npx prettier --write <file>.md` reflows an already hard-wrapped file back to one line per paragraph.
+
 ## Commit Message Rules
 
 Use Conventional Commits.
@@ -71,11 +77,7 @@ Preferred prefixes:
 
 Use `docs:` for documentation-only changes under `docs/`, `specs/`, and `AGENTS.md`, including spec changes and task status updates. Use `chore:` when the change also updates tooling, dependencies, or package scripts.
 
-When completing work that actually changed project files, include one suggested commit message at the end of the final response.
-While iterating on the same uncommitted work, update that single suggestion so it reflects the full accumulated change set. Do not replace it with a different message that only describes the latest iteration.
-Suggest a new separate commit message only after a commit has been made, or when the user explicitly starts separate work that should be committed independently.
-Do not include a commit message suggestion for planning, explanation, review, or advice-only responses with no file changes.
-The suggestion must follow these commit message rules.
+When completing work that actually changed project files, include one suggested commit message at the end of the final response. While iterating on the same uncommitted work, update that single suggestion so it reflects the full accumulated change set. Do not replace it with a different message that only describes the latest iteration. Suggest a new separate commit message only after a commit has been made, or when the user explicitly starts separate work that should be committed independently. Do not include a commit message suggestion for planning, explanation, review, or advice-only responses with no file changes. The suggestion must follow these commit message rules.
 
 ## API Source Layout (`apps/api/src/`)
 
@@ -108,7 +110,7 @@ New repositories go in `db/repositories/<entity>.ts` as a class with `AppDatabas
 - The zod schema that validates these vars and derives the camelCase `AppConfig` lives in `apps/api/src/env.ts`, same as before — it's the only current consumer, so it isn't split into a shared package. If `apps/web` ever needs validated env vars, give it its own small schema for just its `VITE_`-prefixed vars (same duplication pattern as `types/user.ts`, see ADR 0028) rather than sharing this one.
 - Worker config: `apps/api/wrangler.jsonc` (JSONC format, no `wrangler.toml`). The `dev` script points wrangler's `--env-file` flags at the root files (`../../.env.development`, `../../.env.local`); the latter wins on conflicts.
 - `apps/web`'s `vite.config.ts` sets `envDir` to the repo root so any future `VITE_`-prefixed vars are read from `.env.development`/`.env.local` and exposed to client code via `import.meta.env` — unprefixed vars (including secrets) are never bundled into the browser build. The `/api` dev proxy target is hardcoded to `http://localhost:8787`, deliberately **not** read from `PUBLIC_URL`: `wrangler dev` and this Vite server always run on the same machine on that fixed port, and `PUBLIC_URL` itself may legitimately differ (e.g. a public tunnel URL so Twitch's OAuth redirect is reachable from another device) — proxying to `PUBLIC_URL` in that case would forward a request back out through the tunnel into this same dev server, an infinite self-loop.
-- `PUBLIC_URL` (ADR 0037) is the *one* origin API and web are reachable through, in every environment — there is deliberately no separate API-only URL var. `twitchRedirectUri` is derived in `apps/api/src/env.ts` as `${PUBLIC_URL}${TWITCH_CALLBACK_PATH}` rather than stored as its own var, since the callback path is fixed and must match the route registered in `index.ts`. There is no `EVENTSUB_CALLBACK_URL` var either — the webhook callback URL is derived from `PUBLIC_URL` in `services/monitoring.ts` when pending subscription rows are staged, and stored per row. The post-login redirect (`http/routes/auth.ts`) also lands the browser on `PUBLIC_URL`. Local dev registers the Twitch redirect URI on `:5173` (through the Vite proxy), not `:8787` directly, so this holds even without a tunnel.
+- `PUBLIC_URL` (ADR 0037) is the _one_ origin API and web are reachable through, in every environment — there is deliberately no separate API-only URL var. `twitchRedirectUri` is derived in `apps/api/src/env.ts` as `${PUBLIC_URL}${TWITCH_CALLBACK_PATH}` rather than stored as its own var, since the callback path is fixed and must match the route registered in `index.ts`. There is no `EVENTSUB_CALLBACK_URL` var either — the webhook callback URL is derived from `PUBLIC_URL` in `services/monitoring.ts` when pending subscription rows are staged, and stored per row. The post-login redirect (`http/routes/auth.ts`) also lands the browser on `PUBLIC_URL`. Local dev registers the Twitch redirect URI on `:5173` (through the Vite proxy), not `:8787` directly, so this holds even without a tunnel.
 - The `/api/__test__/*` routes both test tiers use for state orchestration (see ADR 0025) are only registered on the router when `environment !== "production"` — no env var gates them.
 - Both test tiers' `wrangler dev` invocations (`tests/api/setup/global-setup.ts`, `tests/web/e2e/setup/global-setup.ts`) pass only `--env-file .env.development`, never `.env.local`. `.env.local` is gitignored and absent in CI; passing a nonexistent path makes `wrangler dev` exit immediately (surfaced confusingly as vitest's "No test files found"). Tests never do a real OAuth round-trip, so `.env.development`'s placeholders are sufficient — don't add `.env.local` back to these scripts.
 
@@ -147,9 +149,13 @@ CI (`.github/workflows/tests.yaml`) runs `api` and `e2e` as separate jobs so the
 
 ## Pre-commit Hook
 
-`husky` is wired via the root `package.json` `prepare` script, so hooks install automatically after `npm install`. `.husky/pre-commit` runs `npm run lint && npm run typecheck`.
+`husky` is wired via the root `package.json` `prepare` script, so hooks install automatically after `npm install`. `.husky/pre-commit` runs `npm run lint && npm run typecheck && npm run prettier`.
 
 This hook is a **local convenience for fast feedback only, not an enforcement mechanism** — it can be bypassed with `git commit --no-verify` (a viable, documented escape hatch, e.g. for WIP commits), and it isn't run at all if someone commits without ever running `npm install` in this repo. The actual enforced check remains CI (`.github/workflows/linting.yaml`, `.github/workflows/tests.yaml`) on every push/PR. This distinction matters here because this is a private repo on GitHub's free plan, so classic branch protection on `main` isn't available — nothing server-side currently gates a broken commit from landing on `main`, CI only reports after the fact. The hook exists to shorten the local feedback loop given that gap, not to replace CI as the source of truth. There is deliberately no pre-push hook: the full API/E2E suite is too slow for interactive use (spins up `wrangler dev`, and for E2E, Playwright + a browser install) and stays CI-only.
+
+## `.agents/` Directory Scope
+
+`.agents/` (gitignored, not part of the repo) is a local scratch space for drafts and internal validation - issue drafts, follow-up notes, worktrees. Its contents are not project state: they're leftovers from past iterations, not something every agent needs to track. Do not read, summarize, or factor in anything under `.agents/` unless a task explicitly points you at a specific file in it (e.g. the user references an issue draft by path). Never treat its presence or content as informing unrelated work, and never assume it reflects current decisions - those live in `docs/decisions`, `docs/notes`, and `specs/`.
 
 ## Worktree Configuration
 

@@ -22,7 +22,7 @@ Return `{ data: FollowedChannelItem[] }` — a flat array wrapped in a `data` ke
 Each item includes:
 
 | field | source |
-|---|---|
+| --- | --- |
 | `broadcaster_user_id` | `followed_channels` |
 | `broadcaster_login` | `followed_channels` |
 | `broadcaster_display_name` | `followed_channels` |

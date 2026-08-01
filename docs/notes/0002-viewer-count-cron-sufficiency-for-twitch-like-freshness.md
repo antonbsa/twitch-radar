@@ -42,7 +42,7 @@ curl -s "https://api.twitch.tv/helix/streams?user_login=STREAMER_LOGIN" \
   -H "Authorization: Bearer ACCESS_TOKEN"
 ```
 
-**Rate-limit math from TN 0001 still holds and was not re-litigated.** The app-access-token bucket (800 pts/min, shared app-wide, per [Twitch's rate-limit docs](https://dev.twitch.tv/docs/api/guide/)) scales with *distinct live monitored broadcasters* via `monitored_channels` dedup ([ADR 0030](../decisions/0030-monitored-broadcaster-lifecycle-and-state-seeding.md)), batched 100 per request in `getStreamsByUserIds` — not with registered- or active-user count. A 5-minute cron comfortably fits this headroom at current/foreseeable MVP scale; nothing in this note changes that conclusion.
+**Rate-limit math from TN 0001 still holds and was not re-litigated.** The app-access-token bucket (800 pts/min, shared app-wide, per [Twitch's rate-limit docs](https://dev.twitch.tv/docs/api/guide/)) scales with _distinct live monitored broadcasters_ via `monitored_channels` dedup ([ADR 0030](../decisions/0030-monitored-broadcaster-lifecycle-and-state-seeding.md)), batched 100 per request in `getStreamsByUserIds` — not with registered- or active-user count. A 5-minute cron comfortably fits this headroom at current/foreseeable MVP scale; nothing in this note changes that conclusion.
 
 ## Options considered
 

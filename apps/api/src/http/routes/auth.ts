@@ -39,6 +39,20 @@ export async function handleAuthCallback(
   const config = c.var.config
   const code = c.req.query("code")
   const state = c.req.query("state")
+  const error = c.req.query("error")
+
+  if (error) {
+    // Twitch redirects here with ?error=access_denied&error_description=...
+    // (no code) when the user clicks "Cancel" on the consent screen - this is
+    // standard OAuth authorization-code behavior, not malformed input. This is
+    // a top-level browser navigation, not a fetch() the SPA can intercept, so
+    // we can't throw ApiError (it would render a raw JSON page); redirect back
+    // to the login screen instead, same as the successful-login case below.
+    return new Response(null, {
+      status: 302,
+      headers: { Location: `${config.publicUrl}/login?error=twitch_declined` },
+    })
+  }
 
   if (!code || !state) {
     throw new ApiError(

@@ -3,6 +3,8 @@ import { Plus, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AddGlobalCategorySheet } from "@/components/add-global-category-sheet"
+import { ReconnectRequired } from "@/components/reconnect-required"
+import { useAuth } from "@/context/auth-context"
 import {
   usePreferences,
   useRemoveGlobalPreference,
@@ -10,6 +12,7 @@ import {
 
 export function AlertsPage() {
   const { data: preferences, isLoading, isError } = usePreferences()
+  const { reconnectRequired } = useAuth()
   const removePreference = useRemoveGlobalPreference()
   const [addSheetOpen, setAddSheetOpen] = useState(false)
 
@@ -40,7 +43,9 @@ export function AlertsPage() {
           </div>
         )}
 
-        {!isLoading && isError && (
+        {!isLoading && isError && reconnectRequired && <ReconnectRequired />}
+
+        {!isLoading && isError && !reconnectRequired && (
           <p className="px-4 py-6 text-sm text-muted-foreground">
             Failed to load alerts. Try again later.
           </p>
