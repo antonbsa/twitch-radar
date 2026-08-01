@@ -160,3 +160,5 @@ When using git worktree operations (including tools like Gitlens Start Work or G
 - Specify the worktree path as `.agents/worktrees/<descriptive-name>` relative to the repository root
 - This keeps the workspace clean and prevents cluttering the editor's file explorer and search results
 - The `.agents` folder is already excluded in `.vscode/settings.json`
+- Name the branch succinctly after what the work actually is (e.g. `oauth-cancel-callback`, `reconnect-required-signal`, `adr-async-follow-sync-progress`) — do not prefix with `issue-<n>` and do not use a generic name like `agent-<id>` or `worktree-<id>`
+- The worktree directory name must match the branch name (`.agents/worktrees/<branch-name>`), not a generic agent/task identifier
