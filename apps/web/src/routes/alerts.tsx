@@ -3,6 +3,7 @@ import { Plus, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AddGlobalCategorySheet } from "@/components/add-global-category-sheet"
+import { ReconnectRequired } from "@/components/reconnect-required"
 import { useAuth } from "@/context/auth-context"
 import {
   usePreferences,
@@ -42,17 +43,7 @@ export function AlertsPage() {
           </div>
         )}
 
-        {!isLoading && isError && reconnectRequired && (
-          <div className="px-4 py-6 text-sm text-muted-foreground">
-            <p>Your Twitch connection needs to be renewed.</p>
-            <a
-              href="/api/auth/twitch/start"
-              className="mt-1 inline-block text-primary underline"
-            >
-              Reconnect Twitch
-            </a>
-          </div>
-        )}
+        {!isLoading && isError && reconnectRequired && <ReconnectRequired />}
 
         {!isLoading && isError && !reconnectRequired && (
           <p className="px-4 py-6 text-sm text-muted-foreground">
