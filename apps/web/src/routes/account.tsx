@@ -25,7 +25,7 @@ function notificationStatusLabel(status: PushStatus): string {
 }
 
 export function AccountPage() {
-  const { user, isSessionExpired, logout } = useAuth()
+  const { user, reconnectRequired, logout } = useAuth()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const push = usePushNotifications()
   const navigate = useNavigate()
@@ -99,7 +99,7 @@ export function AccountPage() {
         Sync Channels
       </Button>
 
-      {isSessionExpired && (
+      {reconnectRequired && (
         <Button className="mt-3 w-full" asChild>
           <a href="/api/auth/twitch/start">Reconnect Twitch</a>
         </Button>

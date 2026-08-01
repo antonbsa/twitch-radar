@@ -13,13 +13,13 @@ export function useSessionAwareMutation<
 >(
   options: UseMutationOptions<TData, Error, TVariables, TContext>,
 ): UseMutationResult<TData, Error, TVariables, TContext> {
-  const { markSessionExpired } = useAuth()
+  const { markReconnectRequired } = useAuth()
 
   return useMutation({
     ...options,
     onError: (error, variables, onMutateResult, context) => {
       if (error instanceof ApiRequestError && error.status === 401) {
-        markSessionExpired()
+        markReconnectRequired()
       }
       options.onError?.(error, variables, onMutateResult, context)
     },
