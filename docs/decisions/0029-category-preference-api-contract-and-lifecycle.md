@@ -11,18 +11,34 @@ T-006 implements category search and per-channel/global category preferences. Th
 ## Decision
 
 - **Category search** is `GET /api/categories/search?q=...` (authenticated). It proxies Twitch `GET /helix/search/categories` with the user's token (`first=20`, single page — a type-ahead needs relevance, not completeness) and returns `{ "data": [{ "id", "name", "box_art_url" }] }`. A blank or missing `q` is `400 invalid_request`; a Twitch 404 (no matches) maps to an empty list, not an error.
-- **List** is `GET /api/preferences` returning both kinds in one payload of *active* rows only:
+- **List** is `GET /api/preferences` returning both kinds in one payload of _active_ rows only:
 
   ```json
   {
     "data": {
-      "channel": [{ "id": "cpref_…", "broadcaster_user_id": "…", "category_id": "…", "category_name": "…", "created_at": "…" }],
-      "global": [{ "id": "gpref_…", "category_id": "…", "category_name": "…", "created_at": "…" }]
+      "channel": [
+        {
+          "id": "cpref_…",
+          "broadcaster_user_id": "…",
+          "category_id": "…",
+          "category_name": "…",
+          "created_at": "…"
+        }
+      ],
+      "global": [
+        {
+          "id": "gpref_…",
+          "category_id": "…",
+          "category_name": "…",
+          "created_at": "…"
+        }
+      ]
     }
   }
   ```
 
   `user_id` (implied by the session) and `disabled_at` (always null in the list) are not exposed. The shapes are mirrored in `apps/web/src/types/preference.ts` (ADR 0028).
+
 - **Create is an idempotent upsert on the preference's natural key** — user/broadcaster/category for `POST /api/preferences/channel`, user/category for `POST /api/preferences/global`. A new row (`cpref_<nanoid>` / `gpref_<nanoid>`) returns `201`; a repeat (including one after a delete) revives the existing row in place — `category_name` refreshed, `disabled_at` cleared — and returns `200` with the same id. Both return the full record.
 - **Channel preference eligibility:** the broadcaster must be in the user's `followed_channels`, otherwise `400 invalid_request`. This bounds monitoring to followed channels (ADR 0007) and lets the API copy login/display name from the followed row into `monitored_channels`.
 - **Delete is a soft disable.** `DELETE /api/preferences/{channel,global}/:id` sets `disabled_at` and returns `204`; repeating it is a no-op `204`; an unknown id or another user's preference is `404 not_found`. Rows are kept so notification-dedupe history survives a disable/re-enable cycle and re-creation keeps a stable id.

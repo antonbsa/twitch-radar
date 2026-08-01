@@ -4,7 +4,7 @@
 
 ## Goal
 
-Give the deployed Worker and PWA a shared, leveled logging convention so production issues (EventSub processing, notification matching/delivery, sync/cron runs, token refresh) are diagnosable after the fact, without requiring `wrangler tail` to be attached at the exact moment something happens. This includes making sure the *content* reaching the logger is actually useful: today several error paths construct an error from only an HTTP status code, discarding the response body where the failing service (Twitch, a push service) explains what went wrong — no logger can surface detail that was already thrown away one layer earlier.
+Give the deployed Worker and PWA a shared, leveled logging convention so production issues (EventSub processing, notification matching/delivery, sync/cron runs, token refresh) are diagnosable after the fact, without requiring `wrangler tail` to be attached at the exact moment something happens. This includes making sure the _content_ reaching the logger is actually useful: today several error paths construct an error from only an HTTP status code, discarding the response body where the failing service (Twitch, a push service) explains what went wrong — no logger can surface detail that was already thrown away one layer earlier.
 
 ## Grounding
 

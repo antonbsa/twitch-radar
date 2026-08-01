@@ -1,8 +1,5 @@
 {
   "permissions": {
-    "deny": [
-      "Bash(git add *)",
-      "Bash(git restore *)"
-    ]
+    "deny": ["Bash(git add *)", "Bash(git restore *)"]
   }
 }

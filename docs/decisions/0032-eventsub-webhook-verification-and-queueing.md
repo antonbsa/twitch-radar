@@ -16,7 +16,7 @@ ADR 0004 requires the webhook handler to verify HMAC signatures against the raw 
   - `revocation` → record Twitch's status + `revoked_at` on the local row, respond `204`.
   - `notification` → dedupe, enqueue, respond `204`. Notifications for event types this app never subscribes to are acknowledged with `204` (and logged) without enqueueing, so Twitch doesn't retry them.
   - unknown types → `204`, logged.
-- **Dedupe at the webhook is best-effort:** KV key `eventsub:msg:<message id>` with a 10-minute TTL, checked before enqueue and written after. It exists to spare the queue from Twitch's retries; the *hard* idempotency guarantee is the consumer's unique `channel_state_changes.eventsub_message_id` (ADR 0033), because KV is eventually consistent across edges.
+- **Dedupe at the webhook is best-effort:** KV key `eventsub:msg:<message id>` with a 10-minute TTL, checked before enqueue and written after. It exists to spare the queue from Twitch's retries; the _hard_ idempotency guarantee is the consumer's unique `channel_state_changes.eventsub_message_id` (ADR 0033), because KV is eventually consistent across edges.
 - **Queue payload** (`TWITCH_EVENTS_QUEUE`, typed as `TwitchEventQueueMessage`): `{ messageId, eventType, messageTimestamp, receivedAt, event }` — a discriminated union on `eventType` carrying the parsed `event` object. `messageId` is the idempotency key; `messageTimestamp` (the Twitch header) drives stale-event ordering. The `subscription` envelope is not forwarded; nothing downstream needs it.
 - **Ack semantics:** the events queue consumer acks/retries per message (not per batch), and its `max_batch_timeout` is 1 second — alerts are time-sensitive, so events are not held back waiting for a fuller batch.
 

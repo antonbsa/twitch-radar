@@ -26,7 +26,7 @@ Before running `gh pr create`, or before a human opens a PR in the GitHub UI, fo
 
 - Filling in the summary but skipping the checklist entirely - it exists so reviewers don't have to ask "was this tested? did this touch a migration?"
 - Checking "added tests" without having actually run them - verify before checking, don't assume.
-- Restating the diff instead of the *why* in the Summary section.
+- Restating the diff instead of the _why_ in the Summary section.
 - Missing that a migration/config-touching change needs both the checklist box and a Summary mention - the box alone doesn't say what changed.
 - Impact repeating Summary's "why" instead of naming the concrete outcome and showing proof of it.
 - Repro steps dumped into Impact instead of How to test - How to test holds instructions, Impact holds the outcome and its evidence.
