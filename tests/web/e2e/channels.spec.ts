@@ -203,6 +203,40 @@ describe("Channels view", () => {
     expect(followedCalls).toBeGreaterThan(callsBeforeSync)
   })
 
+  it("should not blink the rate-limit label when sync is retried while still limited", async ({
+    authenticatedSession,
+  }) => {
+    const { page } = authenticatedSession
+    await page.route("**/api/sync/follows", async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 300))
+      await route.fulfill({
+        status: 429,
+        contentType: "application/json",
+        body: JSON.stringify({
+          error: {
+            code: "sync_rate_limited",
+            message: "Synced recently. Try again in a bit",
+            requestId: "test",
+          },
+        }),
+      })
+    })
+
+    await page.goto(WEB_URL)
+    const syncButton = page.getByRole("button", { name: /sync/i })
+    const label = page.getByText("Synced recently. Try again in a bit")
+
+    await syncButton.click()
+    await expectVisible(label)
+
+    await syncButton.click()
+    const deadline = Date.now() + 250
+    while (Date.now() < deadline) {
+      await expect(label).toBeVisible()
+      await page.waitForTimeout(20)
+    }
+  })
+
   it("should open the per-channel preference sheet from the config button", async ({
     authenticatedSession,
   }) => {
