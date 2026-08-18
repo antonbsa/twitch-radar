@@ -232,7 +232,7 @@ describe("Channels view", () => {
     await syncButton.click()
     const deadline = Date.now() + 250
     while (Date.now() < deadline) {
-      await expect(label).toBeVisible()
+      await expectVisible(label, 50)
       await page.waitForTimeout(20)
     }
   })
