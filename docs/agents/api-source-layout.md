@@ -72,8 +72,8 @@ services/
   crypto.ts                   — encryptToken, decryptToken (AES-256-GCM via Web Crypto)
   session.ts                  — createSession, getSession, deleteSession, deleteSessionsForUser,
                                 OAuth state helpers
-  sync-cooldown.ts             — getSyncCooldownRemaining/startSyncCooldown/clearSyncCooldown; KV
-                                TTL'd per-user cooldown key (30s) guarding POST /sync/follows
+  sync-cooldown.ts            — getSyncCooldownRemaining/startSyncCooldown/clearSyncCooldown; KV
+                                TTL'd per-user cooldown key (60s) guarding POST /sync/follows
                                 against repeat clicks, same idiom as session.ts
   monitoring.ts               — ensureMonitoredBroadcasters (upsert monitored_channels, stage
                                 pending eventsub rows, fill-only channel_state seeding),
