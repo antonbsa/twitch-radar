@@ -7,6 +7,7 @@ import { ChannelPreferencesSheet } from "@/components/channel-preferences-sheet"
 import { ReconnectRequired } from "@/components/reconnect-required"
 import { useAuth } from "@/context/auth-context"
 import { useFollowedChannels, useSyncFollows } from "@/hooks/use-channels"
+import { ApiRequestError } from "@/lib/errors"
 import { cn } from "@/lib/utils"
 import type { FollowedChannel } from "@/types/channel"
 
@@ -25,21 +26,35 @@ export function ChannelsPage() {
     }
   }, [channels])
 
+  const syncRateLimited =
+    syncFollows.error instanceof ApiRequestError &&
+    syncFollows.error.code === "sync_rate_limited"
+
   return (
     <div>
       <div className="flex items-center justify-between px-4 py-3">
         <h1 className="text-lg font-semibold">Channels</h1>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={syncFollows.isPending}
-          onClick={() => syncFollows.mutate()}
-        >
-          <RefreshCw
-            className={cn("size-3.5", syncFollows.isPending && "animate-spin")}
-          />
-          Sync
-        </Button>
+        <div className="flex items-center gap-2">
+          {syncRateLimited && (
+            <span className="text-xs text-muted-foreground">
+              Synced recently. Try again in a bit
+            </span>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={syncFollows.isPending}
+            onClick={() => syncFollows.mutate()}
+          >
+            <RefreshCw
+              className={cn(
+                "size-3.5",
+                syncFollows.isPending && "animate-spin",
+              )}
+            />
+            Sync
+          </Button>
+        </div>
       </div>
 
       {isLoading && (

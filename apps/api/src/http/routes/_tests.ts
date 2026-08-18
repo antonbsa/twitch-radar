@@ -24,6 +24,7 @@ import {
   deleteSessionsForUser,
   sessionCookieHeader,
 } from "../../services/session"
+import { clearSyncCooldown } from "../../services/sync-cooldown"
 import { jsonResponse } from "../response"
 
 // Fixed identity so the reset/seed cycle is idempotent across runs. Broadcaster
@@ -321,6 +322,17 @@ async function deleteAllSessions(kv: KVNamespace): Promise<void> {
   } while (cursor)
 }
 
+// Most tests reuse the fixed E2E_USER_ID, so a sync cooldown started by one
+// test would otherwise still be within its TTL for the next test's sync call.
+async function deleteAllSyncCooldowns(kv: KVNamespace): Promise<void> {
+  let cursor: string | undefined
+  do {
+    const page = await kv.list({ prefix: "sync_cooldown:", cursor })
+    for (const key of page.keys) await kv.delete(key.name)
+    cursor = page.list_complete ? undefined : page.cursor
+  } while (cursor)
+}
+
 export async function handleTestReset(c: Context<HonoEnv>): Promise<Response> {
   const body = await readJsonBody<ResetRequestBody>(c)
 
@@ -335,6 +347,7 @@ export async function handleTestReset(c: Context<HonoEnv>): Promise<Response> {
       await c.env.DB.prepare(`DELETE FROM ${table}`).run()
     }
     await deleteAllSessions(c.env.KV_APP_CACHE)
+    await deleteAllSyncCooldowns(c.env.KV_APP_CACHE)
     // Evict the cached Twitch app token so each test mocks (and asserts) its
     // own client-credentials exchange deterministically.
     await c.env.KV_APP_CACHE.delete(APP_TOKEN_KV_KEY)
@@ -397,6 +410,7 @@ export async function handleTestReset(c: Context<HonoEnv>): Promise<Response> {
     .run()
 
   await deleteSessionsForUser(c.env.KV_APP_CACHE, E2E_USER_ID)
+  await clearSyncCooldown(c.env.KV_APP_CACHE, E2E_USER_ID)
 
   return new Response(null, { status: 204 })
 }
