@@ -24,27 +24,29 @@
   "triggers": {
     "crons": ["* * * * *", "*/30 * * * *", "5,35 * * * *", "10 * * * *"]
   },
+  // "-dev" suffix so an accidental `wrangler dev --remote` without `--env`
+  // can't bind to production's real queues below.
   "queues": {
     "producers": [
       {
         "binding": "TWITCH_EVENTS_QUEUE",
-        "queue": "twitch-radar-twitch-events"
+        "queue": "twitch-radar-twitch-events-dev"
       },
       {
         "binding": "NOTIFICATION_JOBS_QUEUE",
-        "queue": "twitch-radar-notification-jobs"
+        "queue": "twitch-radar-notification-jobs-dev"
       }
     ],
     "consumers": [
       {
-        "queue": "twitch-radar-twitch-events",
+        "queue": "twitch-radar-twitch-events-dev",
         "max_batch_size": 10,
         // Notifications are time-sensitive: don't hold events waiting
         // for a fuller batch.
         "max_batch_timeout": 1
       },
       {
-        "queue": "twitch-radar-notification-jobs",
+        "queue": "twitch-radar-notification-jobs-dev",
         "max_batch_size": 10,
         // Same reasoning as above — a staged notification should reach
         // the device promptly, not wait out a batch window.
