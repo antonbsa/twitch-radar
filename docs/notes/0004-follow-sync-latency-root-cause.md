@@ -41,7 +41,46 @@ Backend total: **687ms**, covering both Twitch fetches, the D1 upserts, and the 
 
 **The original D1-round-trip hypothesis was directionally right but not the dominant cost.** Before #54, `followedChannels.upsertAll` alone issued ~105 sequential awaited `.run()` calls; across all four repositories touched by a full sync, roughly ~193 sequential D1 round trips collapsed to ~8 batched ones. Back-of-envelope from the invalid 22s→20s reading (~2s saved for ~185 round trips eliminated) suggested ~11ms/round-trip — an order of magnitude below what turned out to be true, since that reading was noise, not signal. The real, validly-measured before/after is unknown for the exact same account, but the current 687ms backend time for a 105-follow account with monitoring fully exercised is consistent with #54's batching plus parallelization being sufficient on its own — no separate bottleneck (e.g. Twitch cursor pagination, duplicated token refresh) is visible in the phase breakdown above; the largest single contributor is `sync.twitchFetch` at 194ms across only 2 Twitch pages.
 
-**A second, unrelated bug was found and fixed during this investigation:** `wrangler dev`'s inspector-based console relay (both local and `--remote`) does not forward `console.debug()` calls to the terminal, only `console.log`/`info`/`warn`/`error`. `apps/api/src/logger.ts`'s `debug()` method used `console.debug` internally, which made the `debug`-level phase-timing logs silently invisible in the terminal even though `ENVIRONMENT=preview` correctly set the minimum log level to `debug`. Fixed by switching the underlying console method to `console.log` while keeping the `debug` level-filtering logic (and its production exclusion) unchanged.
+**A second, unrelated bug was found and fixed during this investigation:** `wrangler dev`'s inspector-based console relay (both local and `--remote`) does not forward `console.debug()` calls to the terminal, only `console.log`/`info`/`warn`/`error`. `apps/api/src/logger.ts`'s `debug()` method used `console.debug` internally, which made the `debug`-level phase-timing logs silently invisible in the terminal even though `ENVIRONMENT=preview` correctly set the minimum log level to `debug`. Fixed by switching the underlying console method to `console.log` while keeping the `debug` level-filtering logic (and its production exclusion) unchanged — this fix is kept in the codebase independent of the instrumentation below.
+
+## Profiling approach (for future reuse)
+
+The phase-level timing used for the table above was ad hoc instrumentation added for this investigation and removed afterward — it doesn't earn its keep as permanent code (added meaningfully to how many places in the sync path read, only valid for this one diagnostic), but the approach worked well enough to be worth reproducing verbatim if a similar slow-path investigation comes up again, rather than re-deriving it. It was a single helper in `apps/api/src/logger.ts`:
+
+```ts
+async function timed<T>(
+  phase: string,
+  fn: () => Promise<T>,
+  describe?: (result: T) => Record<string, unknown>,
+): Promise<T> {
+  const startedAt = Date.now()
+  const result = await fn()
+  logger.debug("phase timing", {
+    phase,
+    ms: Date.now() - startedAt,
+    ...describe?.(result),
+  })
+  return result
+}
+```
+
+Used by wrapping the specific async step under investigation:
+
+```ts
+const channels = await timed(
+  "sync.twitchFetch.followedChannels",
+  () => getAllFollowedChannels(clientId, accessToken, twitchUserId, apiBaseUrl),
+  (r) => ({ channels: r.length }),
+)
+```
+
+Key properties that made it useful:
+
+- `phase` is a free-form dotted string, not tied to a function/method name, so nested measurements (e.g. `sync.twitchFetch` wrapping two child `timed()` calls run inside the same `Promise.all`) read as a hierarchy in the log stream.
+- `describe` attaches scale metadata (row counts, page numbers) to the duration — without it, a slow duration and a duration covering many fast iterations are indistinguishable.
+- It logs at `debug`, which this codebase already filters out of production (`apps/api/src/logger.ts`'s `ENVIRONMENT_MIN_LEVEL`), so it was safe to leave temporarily wired through several files without a production cost, as long as it's removed before merging rather than left as permanent surface area.
+
+A class-based `@timed` decorator was considered as a way to reduce call-site boilerplate and rejected: most of the call sites here are plain exported functions in module files (`sync.ts`, `monitoring.ts`, `client.ts`), not class methods, so adopting decorators would have meant restructuring those modules into classes just to get the syntax — a much larger and unrelated change. It would also have lost the free-form nested phase naming and per-call `describe` callback, both of which were exercised above.
 
 ## Options considered
 
@@ -53,4 +92,4 @@ The ~20-31s latency reported for `POST /api/sync/follows` was real, but the "no 
 
 ## If we revisit this
 
-If a future account with a much larger follow count (thousands, not ~100) shows real multi-second latency under the same phase-level instrumentation (kept in the codebase at `debug` level — filtered out of production, but active in local/preview), re-open a design discussion at that point using real numbers for that scale, rather than reintroducing async/polling design work speculatively. Twitch's cursor pagination (`getAllFollowedChannels`/`getAllFollowedStreams`, page size 100) is the most likely place latency would reappear at that scale, since it's the one part of the sync that is inherently sequential and was not exercised beyond 2 pages in this measurement.
+If a future account with a much larger follow count (thousands, not ~100) shows real multi-second latency, re-add phase-level timing along the lines described above (temporarily, removed again once the investigation concludes) rather than reintroducing async/polling design work speculatively. Twitch's cursor pagination (`getAllFollowedChannels`/`getAllFollowedStreams`, page size 100) is the most likely place latency would reappear at that scale, since it's the one part of the sync that is inherently sequential and was not exercised beyond 2 pages in this measurement.
