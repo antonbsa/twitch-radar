@@ -132,23 +132,34 @@ export async function cleanupMonitoringForBroadcasters(
   db: Database,
   broadcasterUserIds: string[],
 ): Promise<void> {
+  if (broadcasterUserIds.length === 0) return
   const now = new Date().toISOString()
 
-  for (const broadcasterUserId of broadcasterUserIds) {
-    const requiredByChannelPref =
-      await db.channelCategoryPreferences.anyActiveForBroadcaster(
-        broadcasterUserId,
-      )
-    if (requiredByChannelPref) continue
+  const requiredByChannelPref =
+    await db.channelCategoryPreferences.listBroadcastersWithActive(
+      broadcasterUserIds,
+    )
+  const candidates = broadcasterUserIds.filter(
+    (id) => !requiredByChannelPref.has(id),
+  )
+  if (candidates.length === 0) return
 
-    const followerUserIds =
-      await db.followedChannels.findUserIdsByBroadcasterUserId(
-        broadcasterUserId,
-      )
-    const requiredByGlobalPref =
-      await db.globalCategoryPreferences.anyActiveForUsers(followerUserIds)
-    if (requiredByGlobalPref) continue
+  const followersByBroadcaster =
+    await db.followedChannels.findUserIdsByBroadcasterUserIds(candidates)
+  const allFollowerUserIds = [
+    ...new Set(Array.from(followersByBroadcaster.values()).flat()),
+  ]
+  const usersWithActiveGlobalPref =
+    await db.globalCategoryPreferences.listUsersWithActive(allFollowerUserIds)
 
-    await db.monitoredChannels.disable(broadcasterUserId, now)
+  const toDisable = candidates.filter((broadcasterUserId) => {
+    const followerUserIds = followersByBroadcaster.get(broadcasterUserId) ?? []
+    return !followerUserIds.some((userId) =>
+      usersWithActiveGlobalPref.has(userId),
+    )
+  })
+
+  if (toDisable.length > 0) {
+    await db.monitoredChannels.disableAll(toDisable, now)
   }
 }

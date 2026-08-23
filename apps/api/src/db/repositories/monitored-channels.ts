@@ -91,6 +91,25 @@ export class MonitoredChannelsRepository {
       .run()
   }
 
+  async disableAll(broadcasterUserIds: string[], now: string): Promise<void> {
+    if (broadcasterUserIds.length === 0) return
+    // Each id is a bound param, plus disabledAt/updatedAt (2 more) per query;
+    // D1 caps bound params at 100, so 98 ids/batch stays under it (100).
+    const BATCH_SIZE = 98
+    for (let i = 0; i < broadcasterUserIds.length; i += BATCH_SIZE) {
+      await this.db
+        .update(monitoredChannels)
+        .set({ disabledAt: now, updatedAt: now })
+        .where(
+          inArray(
+            monitoredChannels.broadcasterUserId,
+            broadcasterUserIds.slice(i, i + BATCH_SIZE),
+          ),
+        )
+        .run()
+    }
+  }
+
   /** Every row — reconciliation derives the desired subscription set from it. */
   async listAll(): Promise<MonitoredChannelRecord[]> {
     const rows = await this.db.select().from(monitoredChannels).all()

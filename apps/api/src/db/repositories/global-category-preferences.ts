@@ -138,13 +138,15 @@ export class GlobalCategoryPreferencesRepository {
     return rows.map((row) => row.userId)
   }
 
-  async anyActiveForUsers(userIds: string[]): Promise<boolean> {
-    if (userIds.length === 0) return false
+  /** Subset of the given users holding at least one active global preference. */
+  async listUsersWithActive(userIds: string[]): Promise<Set<string>> {
+    if (userIds.length === 0) return new Set()
     // D1 limits bound parameters to 100 per query; batch to stay within that.
     const BATCH_SIZE = 100
+    const result = new Set<string>()
     for (let i = 0; i < userIds.length; i += BATCH_SIZE) {
-      const row = await this.db
-        .select({ id: globalCategoryPreferences.id })
+      const rows = await this.db
+        .selectDistinct({ userId: globalCategoryPreferences.userId })
         .from(globalCategoryPreferences)
         .where(
           and(
@@ -155,10 +157,9 @@ export class GlobalCategoryPreferencesRepository {
             isNull(globalCategoryPreferences.disabledAt),
           ),
         )
-        .limit(1)
-        .get()
-      if (row) return true
+        .all()
+      for (const row of rows) result.add(row.userId)
     }
-    return false
+    return result
   }
 }
