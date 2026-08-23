@@ -2,3 +2,4 @@ node_modules
 dist
 .wrangler
 infra/migrations/meta
+.claude

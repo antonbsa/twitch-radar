@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -7,8 +7,12 @@ import { ChannelPreferencesSheet } from "@/components/channel-preferences-sheet"
 import { ReconnectRequired } from "@/components/reconnect-required"
 import { useAuth } from "@/context/auth-context"
 import { useFollowedChannels, useSyncFollows } from "@/hooks/use-channels"
+import { ApiRequestError } from "@/lib/errors"
 import { cn } from "@/lib/utils"
 import type { FollowedChannel } from "@/types/channel"
+
+// How long the rate-limit label stays fully visible before it starts fading out.
+const SYNC_RATE_LIMIT_LABEL_HOLD_MS = 2500
 
 export function ChannelsPage() {
   const { data: channels, isLoading, isError } = useFollowedChannels()
@@ -25,21 +29,72 @@ export function ChannelsPage() {
     }
   }, [channels])
 
+  // Tracked separately from syncFollows.error, which resets to null on every
+  // mutate() call — deriving visibility from it directly would blink the label.
+  const [syncRateLimited, setSyncRateLimited] = useState(false)
+  // Whether the label is fading/faded out. Retriggering while still false
+  // (label fully visible) is a no-op, so the fade-in only replays once faded.
+  const [labelFaded, setLabelFaded] = useState(false)
+  const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (syncFollows.status === "success") {
+      setSyncRateLimited(false)
+      if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current)
+    } else if (syncFollows.status === "error") {
+      const isRateLimited =
+        syncFollows.error instanceof ApiRequestError &&
+        syncFollows.error.code === "sync_rate_limited"
+      setSyncRateLimited(isRateLimited)
+      if (isRateLimited) {
+        setLabelFaded(false)
+        if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current)
+        hideTimeoutRef.current = setTimeout(
+          () => setLabelFaded(true),
+          SYNC_RATE_LIMIT_LABEL_HOLD_MS,
+        )
+      }
+    }
+  }, [syncFollows.status, syncFollows.error])
+
   return (
     <div>
       <div className="flex items-center justify-between px-4 py-3">
         <h1 className="text-lg font-semibold">Channels</h1>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={syncFollows.isPending}
-          onClick={() => syncFollows.mutate()}
-        >
-          <RefreshCw
-            className={cn("size-3.5", syncFollows.isPending && "animate-spin")}
-          />
-          Sync
-        </Button>
+        <div className="flex items-center gap-2">
+          {syncRateLimited && (
+            <span
+              className={cn(
+                "text-xs text-muted-foreground transition-opacity",
+                labelFaded
+                  ? "opacity-0 duration-800"
+                  : "opacity-100 duration-200",
+              )}
+            >
+              Synced recently. Try again in a bit
+            </span>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={syncFollows.isPending}
+            onClick={() => syncFollows.mutate()}
+          >
+            <RefreshCw
+              className={cn(
+                "size-3.5",
+                syncFollows.isPending && "animate-spin",
+              )}
+            />
+            Sync
+          </Button>
+        </div>
       </div>
 
       {isLoading && (

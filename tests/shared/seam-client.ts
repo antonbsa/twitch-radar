@@ -105,6 +105,11 @@ export function createSeamClient({ baseUrl }: SeamClientOptions) {
       await call("/reset", { sessionId })
     },
 
+    /** Clears one user's sync cooldown without touching sessions or D1 rows. */
+    async clearSyncCooldown(userId: string): Promise<void> {
+      await call("/reset", { cooldownUserId: userId })
+    },
+
     seed,
 
     async seedAuthenticatedUser(

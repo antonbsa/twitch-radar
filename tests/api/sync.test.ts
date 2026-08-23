@@ -120,7 +120,7 @@ describe("POST /api/sync/follows", () => {
     expect(res.status).toBe(200)
   })
 
-  it("should return 401 reconnect_required when token refresh fails", async () => {
+  it("should return 401 reconnect_required when token refresh fails, without marking the sync cooldown", async () => {
     const { cookie } = await orchestrator.createAuthenticatedSession({
       accessToken: "expired-token",
       refreshToken: "bad-refresh-token",
@@ -141,6 +141,25 @@ describe("POST /api/sync/follows", () => {
     await expect(res.json()).resolves.toMatchObject({
       error: { code: "reconnect_required" },
     })
+
+    // A 401 shouldn't leave the user stuck waiting out the cooldown on top
+    // of having to reconnect - retrying with valid credentials right after
+    // should be allowed to proceed rather than 429.
+    await orchestrator.mockTwitch.onTokenExchange({
+      access_token: "new-access-token",
+      refresh_token: "new-refresh-token",
+      expires_in: 14400,
+      scope: ["user:read:follows"],
+      token_type: "bearer",
+    })
+    await orchestrator.mockTwitch.onFollowedChannels([CHANNEL_A])
+    await orchestrator.mockTwitch.onFollowedStreams([])
+
+    const retry = await fetch(`${orchestrator.baseUrl}/api/sync/follows`, {
+      method: "POST",
+      headers: { Cookie: cookie },
+    })
+    expect(retry.status).toBe(200)
   })
 
   it("should return 401 without a session", async () => {
@@ -150,8 +169,29 @@ describe("POST /api/sync/follows", () => {
     expect(res.status).toBe(401)
   })
 
-  it("should batch a large followed list across multiple chunks and stay idempotent on retry", async () => {
+  it("should return 429 sync_rate_limited on an immediate repeat sync", async () => {
     const { cookie } = await orchestrator.createAuthenticatedSession()
+    await orchestrator.mockTwitch.onFollowedChannels([CHANNEL_A])
+    await orchestrator.mockTwitch.onFollowedStreams([])
+
+    const first = await fetch(`${orchestrator.baseUrl}/api/sync/follows`, {
+      method: "POST",
+      headers: { Cookie: cookie },
+    })
+    expect(first.status).toBe(200)
+
+    const second = await fetch(`${orchestrator.baseUrl}/api/sync/follows`, {
+      method: "POST",
+      headers: { Cookie: cookie },
+    })
+    expect(second.status).toBe(429)
+    await expect(second.json()).resolves.toMatchObject({
+      error: { code: "sync_rate_limited" },
+    })
+  })
+
+  it("should batch a large followed list across multiple chunks and stay idempotent on retry", async () => {
+    const { cookie, userId } = await orchestrator.createAuthenticatedSession()
     // Large enough to require multiple batches under followedChannels'
     // 8-rows-per-chunk and channelState's 10-rows-per-chunk limits, so this
     // exercises both the multi-row upsert and the single db.batch() call
@@ -213,6 +253,9 @@ describe("POST /api/sync/follows", () => {
     await orchestrator.mockTwitch.reset()
     await orchestrator.mockTwitch.onFollowedChannels(updatedChannels)
     await orchestrator.mockTwitch.onFollowedStreams([])
+    // Bypass the sync cooldown so this immediate re-sync isn't rate-limited -
+    // this test is about batching/idempotency, not the cooldown.
+    await orchestrator.clearSyncCooldown(userId)
 
     const res2 = await fetch(`${orchestrator.baseUrl}/api/sync/follows`, {
       method: "POST",
