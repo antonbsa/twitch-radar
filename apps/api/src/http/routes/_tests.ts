@@ -292,6 +292,9 @@ function generateAuthSecret(): string {
 
 export interface ResetRequestBody {
   sessionId?: string
+  // Clears one user's sync cooldown without touching sessions or D1 rows -
+  // for tests that need consecutive syncs within the same cooldown window.
+  cooldownUserId?: string
   // "e2e" (default) removes only the E2E user's rows and E2E-prefixed
   // broadcaster state, preserving any manually-created data in the same DB.
   // "all" wipes every table; it exists for the API test tier, which runs
@@ -339,6 +342,11 @@ export async function handleTestReset(c: Context<HonoEnv>): Promise<Response> {
   // Revoking a single session (simulating mid-session expiry) never touches D1.
   if (body.sessionId) {
     await deleteSession(c.env.KV_APP_CACHE, body.sessionId)
+    return new Response(null, { status: 204 })
+  }
+
+  if (body.cooldownUserId) {
+    await clearSyncCooldown(c.env.KV_APP_CACHE, body.cooldownUserId)
     return new Response(null, { status: 204 })
   }
 
