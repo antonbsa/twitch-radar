@@ -39,45 +39,49 @@ export async function syncFollowedChannels(
 
   const streamByBroadcasterId = new Map(streams.map((s) => [s.user_id, s]))
 
-  await db.followedChannels.upsertAll(
-    channels.map((ch) => ({
-      userId,
-      broadcasterUserId: ch.broadcaster_id,
-      broadcasterLogin: ch.broadcaster_login,
-      broadcasterDisplayName: ch.broadcaster_name,
-      followedAt: ch.followed_at,
-      now,
-    })),
-  )
-
-  await db.channelState.upsertAll(
-    channels.map((ch) => {
-      const stream = streamByBroadcasterId.get(ch.broadcaster_id)
-      return stream
-        ? {
-            broadcasterUserId: ch.broadcaster_id,
-            isLive: true,
-            streamId: stream.id,
-            categoryId: stream.game_id || null,
-            categoryName: stream.game_name || null,
-            title: stream.title || null,
-            viewerCount: stream.viewer_count,
-            startedAt: stream.started_at,
-            now,
-          }
-        : {
-            broadcasterUserId: ch.broadcaster_id,
-            isLive: false,
-            streamId: null,
-            categoryId: null,
-            categoryName: null,
-            title: null,
-            viewerCount: null,
-            startedAt: null,
-            now,
-          }
-    }),
-  )
+  // followedChannels and channelState write different tables with no
+  // dependency on each other's result — run them concurrently instead of
+  // stacking two sequential D1 round trips.
+  await Promise.all([
+    db.followedChannels.upsertAll(
+      channels.map((ch) => ({
+        userId,
+        broadcasterUserId: ch.broadcaster_id,
+        broadcasterLogin: ch.broadcaster_login,
+        broadcasterDisplayName: ch.broadcaster_name,
+        followedAt: ch.followed_at,
+        now,
+      })),
+    ),
+    db.channelState.upsertAll(
+      channels.map((ch) => {
+        const stream = streamByBroadcasterId.get(ch.broadcaster_id)
+        return stream
+          ? {
+              broadcasterUserId: ch.broadcaster_id,
+              isLive: true,
+              streamId: stream.id,
+              categoryId: stream.game_id || null,
+              categoryName: stream.game_name || null,
+              title: stream.title || null,
+              viewerCount: stream.viewer_count,
+              startedAt: stream.started_at,
+              now,
+            }
+          : {
+              broadcasterUserId: ch.broadcaster_id,
+              isLive: false,
+              streamId: null,
+              categoryId: null,
+              categoryName: null,
+              title: null,
+              viewerCount: null,
+              startedAt: null,
+              now,
+            }
+      }),
+    ),
+  ])
 
   // A user with an active global preference monitors all followed
   // broadcasters (ADR 0007) — keep the monitored set current as follows

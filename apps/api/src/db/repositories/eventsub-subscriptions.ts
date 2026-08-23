@@ -1,6 +1,6 @@
 import { asc, eq, inArray } from "drizzle-orm"
 import { nanoid } from "nanoid"
-import type { AppDatabase } from "../client"
+import { asBatch, type AppDatabase } from "../client"
 import { eventsubSubscriptions } from "../schema"
 
 export const MONITORED_EVENT_TYPES = [
@@ -67,7 +67,10 @@ export class EventsubSubscriptionsRepository {
    * Issues a single multi-row `INSERT ... ON CONFLICT DO NOTHING` per chunk
    * instead of one statement per (broadcaster, event type) pair. Each row
    * binds 9 params, so the chunk size accounts for D1's 100-bound-parameter
-   * limit on total params, not just row count.
+   * limit on total params, not just row count. All chunk statements are then
+   * submitted via a single `db.batch()` call instead of one await per
+   * chunk — see the batch()-limits note in followed-channels.ts's
+   * upsertAll.
    */
   async ensurePending(
     broadcasterUserIds: string[],
@@ -92,19 +95,22 @@ export class EventsubSubscriptionsRepository {
 
     const PARAMS_PER_ROW = 9
     const BATCH_SIZE = Math.floor(100 / PARAMS_PER_ROW)
+    const statements = []
     for (let i = 0; i < rows.length; i += BATCH_SIZE) {
-      await this.db
-        .insert(eventsubSubscriptions)
-        .values(rows.slice(i, i + BATCH_SIZE))
-        .onConflictDoNothing({
-          target: [
-            eventsubSubscriptions.broadcasterUserId,
-            eventsubSubscriptions.eventType,
-            eventsubSubscriptions.eventVersion,
-          ],
-        })
-        .run()
+      statements.push(
+        this.db
+          .insert(eventsubSubscriptions)
+          .values(rows.slice(i, i + BATCH_SIZE))
+          .onConflictDoNothing({
+            target: [
+              eventsubSubscriptions.broadcasterUserId,
+              eventsubSubscriptions.eventType,
+              eventsubSubscriptions.eventVersion,
+            ],
+          }),
+      )
     }
+    await this.db.batch(asBatch(statements))
   }
 
   async findPending(limit: number): Promise<EventsubSubscriptionRecord[]> {
