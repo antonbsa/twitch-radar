@@ -40,30 +40,34 @@ export async function ensureMonitoredBroadcasters(
 ): Promise<void> {
   if (targets.length === 0) return
   const now = new Date().toISOString()
-
-  await db.monitoredChannels.upsertAll(
-    targets.map((target) => ({
-      broadcasterUserId: target.broadcasterUserId,
-      broadcasterLogin: target.broadcasterLogin ?? null,
-      broadcasterDisplayName: target.broadcasterDisplayName ?? null,
-      monitorReason: reason,
-      now,
-    })),
-  )
-
   const callbackUrl = eventsubCallbackUrl(config)
-  await db.eventsubSubscriptions.ensurePending(
-    targets.map((target) => target.broadcasterUserId),
-    callbackUrl,
-    now,
-  )
 
-  await seedMissingChannelState(
-    db,
-    config,
-    userId,
-    targets.map((target) => target.broadcasterUserId),
-  )
+  // monitoredChannels, eventsubSubscriptions, and channelState (seeded by
+  // seedMissingChannelState) are independent tables with no ordering
+  // dependency between these three writes — run them concurrently instead
+  // of stacking three sequential D1 round trips.
+  await Promise.all([
+    db.monitoredChannels.upsertAll(
+      targets.map((target) => ({
+        broadcasterUserId: target.broadcasterUserId,
+        broadcasterLogin: target.broadcasterLogin ?? null,
+        broadcasterDisplayName: target.broadcasterDisplayName ?? null,
+        monitorReason: reason,
+        now,
+      })),
+    ),
+    db.eventsubSubscriptions.ensurePending(
+      targets.map((target) => target.broadcasterUserId),
+      callbackUrl,
+      now,
+    ),
+    seedMissingChannelState(
+      db,
+      config,
+      userId,
+      targets.map((target) => target.broadcasterUserId),
+    ),
+  ])
 }
 
 async function seedMissingChannelState(
