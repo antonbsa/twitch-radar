@@ -145,7 +145,10 @@ export default {
     logger.configure(config.environment)
     const db = new Database(env.DB)
 
-    if (batch.queue === "twitch-radar-twitch-events") {
+    // Match by prefix: each environment suffixes its queue name
+    // ("-preview", "-dev"), and an exact match here previously made
+    // preview's consumer silently ignore every batch.
+    if (batch.queue.startsWith("twitch-radar-twitch-events")) {
       // Ack/retry per message so one failure doesn't replay the whole batch
       // (replays are safe anyway — processing dedupes on message id and
       // matching dedupes on the delivery key).
@@ -182,7 +185,7 @@ export default {
       return
     }
 
-    if (batch.queue === "twitch-radar-notification-jobs") {
+    if (batch.queue.startsWith("twitch-radar-notification-jobs")) {
       for (const message of batch.messages) {
         try {
           await deliverNotification(
