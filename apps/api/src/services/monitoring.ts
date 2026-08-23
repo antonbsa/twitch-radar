@@ -40,30 +40,34 @@ export async function ensureMonitoredBroadcasters(
 ): Promise<void> {
   if (targets.length === 0) return
   const now = new Date().toISOString()
-
-  await db.monitoredChannels.upsertAll(
-    targets.map((target) => ({
-      broadcasterUserId: target.broadcasterUserId,
-      broadcasterLogin: target.broadcasterLogin ?? null,
-      broadcasterDisplayName: target.broadcasterDisplayName ?? null,
-      monitorReason: reason,
-      now,
-    })),
-  )
-
   const callbackUrl = eventsubCallbackUrl(config)
-  await db.eventsubSubscriptions.ensurePending(
-    targets.map((target) => target.broadcasterUserId),
-    callbackUrl,
-    now,
-  )
 
-  await seedMissingChannelState(
-    db,
-    config,
-    userId,
-    targets.map((target) => target.broadcasterUserId),
-  )
+  // monitoredChannels, eventsubSubscriptions, and channelState (seeded by
+  // seedMissingChannelState) are independent tables with no ordering
+  // dependency between these three writes — run them concurrently instead
+  // of stacking three sequential D1 round trips.
+  await Promise.all([
+    db.monitoredChannels.upsertAll(
+      targets.map((target) => ({
+        broadcasterUserId: target.broadcasterUserId,
+        broadcasterLogin: target.broadcasterLogin ?? null,
+        broadcasterDisplayName: target.broadcasterDisplayName ?? null,
+        monitorReason: reason,
+        now,
+      })),
+    ),
+    db.eventsubSubscriptions.ensurePending(
+      targets.map((target) => target.broadcasterUserId),
+      callbackUrl,
+      now,
+    ),
+    seedMissingChannelState(
+      db,
+      config,
+      userId,
+      targets.map((target) => target.broadcasterUserId),
+    ),
+  ])
 }
 
 async function seedMissingChannelState(
@@ -128,23 +132,34 @@ export async function cleanupMonitoringForBroadcasters(
   db: Database,
   broadcasterUserIds: string[],
 ): Promise<void> {
+  if (broadcasterUserIds.length === 0) return
   const now = new Date().toISOString()
 
-  for (const broadcasterUserId of broadcasterUserIds) {
-    const requiredByChannelPref =
-      await db.channelCategoryPreferences.anyActiveForBroadcaster(
-        broadcasterUserId,
-      )
-    if (requiredByChannelPref) continue
+  const requiredByChannelPref =
+    await db.channelCategoryPreferences.listBroadcastersWithActive(
+      broadcasterUserIds,
+    )
+  const candidates = broadcasterUserIds.filter(
+    (id) => !requiredByChannelPref.has(id),
+  )
+  if (candidates.length === 0) return
 
-    const followerUserIds =
-      await db.followedChannels.findUserIdsByBroadcasterUserId(
-        broadcasterUserId,
-      )
-    const requiredByGlobalPref =
-      await db.globalCategoryPreferences.anyActiveForUsers(followerUserIds)
-    if (requiredByGlobalPref) continue
+  const followersByBroadcaster =
+    await db.followedChannels.findUserIdsByBroadcasterUserIds(candidates)
+  const allFollowerUserIds = [
+    ...new Set(Array.from(followersByBroadcaster.values()).flat()),
+  ]
+  const usersWithActiveGlobalPref =
+    await db.globalCategoryPreferences.listUsersWithActive(allFollowerUserIds)
 
-    await db.monitoredChannels.disable(broadcasterUserId, now)
+  const toDisable = candidates.filter((broadcasterUserId) => {
+    const followerUserIds = followersByBroadcaster.get(broadcasterUserId) ?? []
+    return !followerUserIds.some((userId) =>
+      usersWithActiveGlobalPref.has(userId),
+    )
+  })
+
+  if (toDisable.length > 0) {
+    await db.monitoredChannels.disableAll(toDisable, now)
   }
 }

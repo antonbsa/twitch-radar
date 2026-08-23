@@ -1,5 +1,5 @@
 import { eq, inArray, sql } from "drizzle-orm"
-import type { AppDatabase } from "../client"
+import { asBatch, type AppDatabase } from "../client"
 import { monitoredChannels } from "../schema"
 
 export type MonitorReason = "channel_preference" | "global_preference"
@@ -50,32 +50,37 @@ export class MonitoredChannelsRepository {
     // broadcasterDisplayName, monitorReason, createdAt, updatedAt); D1 caps
     // bound params at 100 per query, so 16 rows/batch stays under it (96).
     const BATCH_SIZE = 16
+    const statements = []
     for (let i = 0; i < inputs.length; i += BATCH_SIZE) {
       const batch = inputs.slice(i, i + BATCH_SIZE)
-      await this.db
-        .insert(monitoredChannels)
-        .values(
-          batch.map((input) => ({
-            broadcasterUserId: input.broadcasterUserId,
-            broadcasterLogin: input.broadcasterLogin ?? null,
-            broadcasterDisplayName: input.broadcasterDisplayName ?? null,
-            monitorReason: input.monitorReason,
-            createdAt: input.now,
-            updatedAt: input.now,
-          })),
-        )
-        .onConflictDoUpdate({
-          target: monitoredChannels.broadcasterUserId,
-          set: {
-            broadcasterLogin: sql`excluded.broadcaster_login`,
-            broadcasterDisplayName: sql`excluded.broadcaster_display_name`,
-            monitorReason: sql`excluded.monitor_reason`,
-            updatedAt: sql`excluded.updated_at`,
-            disabledAt: sql`null`,
-          },
-        })
-        .run()
+      statements.push(
+        this.db
+          .insert(monitoredChannels)
+          .values(
+            batch.map((input) => ({
+              broadcasterUserId: input.broadcasterUserId,
+              broadcasterLogin: input.broadcasterLogin ?? null,
+              broadcasterDisplayName: input.broadcasterDisplayName ?? null,
+              monitorReason: input.monitorReason,
+              createdAt: input.now,
+              updatedAt: input.now,
+            })),
+          )
+          .onConflictDoUpdate({
+            target: monitoredChannels.broadcasterUserId,
+            set: {
+              broadcasterLogin: sql`excluded.broadcaster_login`,
+              broadcasterDisplayName: sql`excluded.broadcaster_display_name`,
+              monitorReason: sql`excluded.monitor_reason`,
+              updatedAt: sql`excluded.updated_at`,
+              disabledAt: sql`null`,
+            },
+          }),
+      )
     }
+    // Single D1 round trip for every chunk instead of one await per chunk —
+    // see the batch()-limits note in followed-channels.ts's upsertAll.
+    await this.db.batch(asBatch(statements))
   }
 
   async disable(broadcasterUserId: string, now: string): Promise<void> {
@@ -84,6 +89,25 @@ export class MonitoredChannelsRepository {
       .set({ disabledAt: now, updatedAt: now })
       .where(eq(monitoredChannels.broadcasterUserId, broadcasterUserId))
       .run()
+  }
+
+  async disableAll(broadcasterUserIds: string[], now: string): Promise<void> {
+    if (broadcasterUserIds.length === 0) return
+    // Each id is a bound param, plus disabledAt/updatedAt (2 more) per query;
+    // D1 caps bound params at 100, so 98 ids/batch stays under it (100).
+    const BATCH_SIZE = 98
+    for (let i = 0; i < broadcasterUserIds.length; i += BATCH_SIZE) {
+      await this.db
+        .update(monitoredChannels)
+        .set({ disabledAt: now, updatedAt: now })
+        .where(
+          inArray(
+            monitoredChannels.broadcasterUserId,
+            broadcasterUserIds.slice(i, i + BATCH_SIZE),
+          ),
+        )
+        .run()
+    }
   }
 
   /** Every row — reconciliation derives the desired subscription set from it. */

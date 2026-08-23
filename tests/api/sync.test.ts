@@ -189,4 +189,98 @@ describe("POST /api/sync/follows", () => {
       error: { code: "sync_rate_limited" },
     })
   })
+
+  it("should batch a large followed list across multiple chunks and stay idempotent on retry", async () => {
+    const { cookie, userId } = await orchestrator.createAuthenticatedSession()
+    // Large enough to require multiple batches under followedChannels'
+    // 8-rows-per-chunk and channelState's 10-rows-per-chunk limits, so this
+    // exercises both the multi-row upsert and the single db.batch() call
+    // per repository instead of just a single chunk.
+    const BROADCASTER_COUNT = 40
+    const channels = Array.from({ length: BROADCASTER_COUNT }, (_, i) => ({
+      broadcaster_id: `${5000 + i}`,
+      broadcaster_login: `channel${i}`,
+      broadcaster_name: `Channel${i}`,
+    }))
+    await orchestrator.mockTwitch.onFollowedChannels(channels)
+    await orchestrator.mockTwitch.onFollowedStreams([
+      {
+        id: "stream_1",
+        user_id: channels[0].broadcaster_id,
+        user_login: channels[0].broadcaster_login,
+        user_name: channels[0].broadcaster_name,
+        game_id: "game_1",
+        game_name: "Minecraft",
+        viewer_count: 500,
+        started_at: "2024-06-01T12:00:00Z",
+        title: "Live now",
+      },
+    ])
+
+    const res = await fetch(`${orchestrator.baseUrl}/api/sync/follows`, {
+      method: "POST",
+      headers: { Cookie: cookie },
+    })
+    expect(res.status).toBe(200)
+
+    const channelsRes = await fetch(
+      `${orchestrator.baseUrl}/api/channels/followed`,
+      { headers: { Cookie: cookie } },
+    )
+    const { data } = (await channelsRes.json()) as {
+      data: Array<{
+        broadcaster_user_id: string
+        broadcaster_display_name: string
+        is_live: boolean
+        viewer_count: number | null
+      }>
+    }
+    expect(data).toHaveLength(BROADCASTER_COUNT)
+    const live = data.filter((c) => c.is_live)
+    expect(live).toHaveLength(1)
+    expect(live[0]!.broadcaster_user_id).toBe(channels[0]!.broadcaster_id)
+    expect(live[0]!.viewer_count).toBe(500)
+
+    // Re-sync with refreshed display names and the stream now offline — a
+    // repeat run over the same broadcasters must refresh rows in place
+    // (unchanged count, updated fields), not error or duplicate, including
+    // with followedChannels.upsertAll and channelState.upsertAll now
+    // running concurrently via Promise.all.
+    const updatedChannels = channels.map((ch) => ({
+      ...ch,
+      broadcaster_name: `${ch.broadcaster_name}Updated`,
+    }))
+    await orchestrator.mockTwitch.reset()
+    await orchestrator.mockTwitch.onFollowedChannels(updatedChannels)
+    await orchestrator.mockTwitch.onFollowedStreams([])
+    // Bypass the sync cooldown so this immediate re-sync isn't rate-limited -
+    // this test is about batching/idempotency, not the cooldown.
+    await orchestrator.clearSyncCooldown(userId)
+
+    const res2 = await fetch(`${orchestrator.baseUrl}/api/sync/follows`, {
+      method: "POST",
+      headers: { Cookie: cookie },
+    })
+    expect(res2.status).toBe(200)
+
+    const channelsRes2 = await fetch(
+      `${orchestrator.baseUrl}/api/channels/followed`,
+      { headers: { Cookie: cookie } },
+    )
+    const { data: data2 } = (await channelsRes2.json()) as {
+      data: Array<{
+        broadcaster_user_id: string
+        broadcaster_display_name: string
+        is_live: boolean
+      }>
+    }
+    expect(data2).toHaveLength(BROADCASTER_COUNT)
+    expect(data2.every((c) => !c.is_live)).toBe(true)
+    const first = data2.find(
+      (c) => c.broadcaster_user_id === channels[0]!.broadcaster_id,
+    )!
+    expect(first.broadcaster_display_name).toBe(
+      `${channels[0]!.broadcaster_name}Updated`,
+    )
+  }, 30_000)
 })

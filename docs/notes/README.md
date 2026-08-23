@@ -21,3 +21,4 @@ TNs never carry authorization on their own. If a TN's conclusion later becomes s
 - [0001 - Viewer Count Freshness and Rate-Limit Scalability](0001-viewer-count-freshness-and-rate-limit-scalability.md) — superseded by 0002
 - [0002 - Viewer Count Cron Sufficiency for Twitch-Like Freshness](0002-viewer-count-cron-sufficiency-for-twitch-like-freshness.md)
 - [0003 - EventSub Subscription Cost of Broadening Monitoring Scope](0003-eventsub-subscription-cost-of-broadening-monitoring-scope.md)
+- [0004 - Follow Sync Latency Root Cause](0004-follow-sync-latency-root-cause.md)

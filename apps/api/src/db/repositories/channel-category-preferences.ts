@@ -1,4 +1,4 @@
-import { and, eq, isNull } from "drizzle-orm"
+import { and, eq, inArray, isNull } from "drizzle-orm"
 import { nanoid } from "nanoid"
 import type { AppDatabase } from "../client"
 import { channelCategoryPreferences } from "../schema"
@@ -136,18 +136,32 @@ export class ChannelCategoryPreferencesRepository {
     return rows.map(toRecord)
   }
 
-  async anyActiveForBroadcaster(broadcasterUserId: string): Promise<boolean> {
-    const row = await this.db
-      .select({ id: channelCategoryPreferences.id })
-      .from(channelCategoryPreferences)
-      .where(
-        and(
-          eq(channelCategoryPreferences.broadcasterUserId, broadcasterUserId),
-          isNull(channelCategoryPreferences.disabledAt),
-        ),
-      )
-      .limit(1)
-      .get()
-    return row !== undefined
+  /** Subset of the given broadcasters with at least one active preference (any user). */
+  async listBroadcastersWithActive(
+    broadcasterUserIds: string[],
+  ): Promise<Set<string>> {
+    if (broadcasterUserIds.length === 0) return new Set()
+    // D1 limits bound parameters to 100 per query; batch to stay within that.
+    const BATCH_SIZE = 100
+    const result = new Set<string>()
+    for (let i = 0; i < broadcasterUserIds.length; i += BATCH_SIZE) {
+      const rows = await this.db
+        .selectDistinct({
+          broadcasterUserId: channelCategoryPreferences.broadcasterUserId,
+        })
+        .from(channelCategoryPreferences)
+        .where(
+          and(
+            inArray(
+              channelCategoryPreferences.broadcasterUserId,
+              broadcasterUserIds.slice(i, i + BATCH_SIZE),
+            ),
+            isNull(channelCategoryPreferences.disabledAt),
+          ),
+        )
+        .all()
+      for (const row of rows) result.add(row.broadcasterUserId)
+    }
+    return result
   }
 }
