@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm"
+import { and, eq, inArray } from "drizzle-orm"
 import type { AppDatabase } from "../client"
 import { followedChannels } from "../schema"
 
@@ -92,6 +92,40 @@ export class FollowedChannelsRepository {
       .where(eq(followedChannels.broadcasterUserId, broadcasterUserId))
       .all()
     return rows.map((row) => row.userId)
+  }
+
+  /** Follower user ids for each of the given broadcasters, keyed by broadcaster id. */
+  async findUserIdsByBroadcasterUserIds(
+    broadcasterUserIds: string[],
+  ): Promise<Map<string, string[]>> {
+    const result = new Map<string, string[]>()
+    if (broadcasterUserIds.length === 0) return result
+    // D1 limits bound parameters to 100 per query; batch to stay within that.
+    const BATCH_SIZE = 100
+    for (let i = 0; i < broadcasterUserIds.length; i += BATCH_SIZE) {
+      const rows = await this.db
+        .select({
+          userId: followedChannels.userId,
+          broadcasterUserId: followedChannels.broadcasterUserId,
+        })
+        .from(followedChannels)
+        .where(
+          inArray(
+            followedChannels.broadcasterUserId,
+            broadcasterUserIds.slice(i, i + BATCH_SIZE),
+          ),
+        )
+        .all()
+      for (const row of rows) {
+        const followers = result.get(row.broadcasterUserId)
+        if (followers) {
+          followers.push(row.userId)
+        } else {
+          result.set(row.broadcasterUserId, [row.userId])
+        }
+      }
+    }
+    return result
   }
 
   async findByUserId(userId: string): Promise<FollowedChannelRecord[]> {
