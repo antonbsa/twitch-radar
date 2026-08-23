@@ -2,7 +2,9 @@
 
 ## Status
 
-Proposed
+Rejected
+
+This ADR was drafted against a measured `POST /api/sync/follows` latency of ~20-31s. Issue #54's batched-write and parallelized-await fix (D1 upserts via `db.batch()`, concurrent Twitch fetches, concurrent monitoring writes) brought a real 105-follow account down to ~700ms backend time end to end, measured with per-phase timing against a real preview deployment. The original measurement turned out to conflate two separate deployments: a local-dev redirect bug (`PUBLIC_URL` pointing at the published preview Worker instead of the local one under test) meant every prior manual timing test had actually exercised the old, unbatched Worker rather than the code being changed. With the actual bottleneck gone, the async/polling design this ADR proposes no longer has a latency problem to solve — see [TN 0004](../notes/0004-follow-sync-latency-root-cause.md) for the full investigation.
 
 ## Context
 

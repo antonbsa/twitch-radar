@@ -6,3 +6,4 @@ dist/
 .agents/
 *.tsbuildinfo
 test-results/
+wrangler.generated-*.jsonc
