@@ -12,7 +12,7 @@ Non-decision research policy: [ADR 0039](docs/decisions/0039-adopt-technical-not
 
 The expected path from idea to merged change:
 
-1. **Issue (optional).** GitHub issues may describe work generically — a bug report, a rough feature idea — before it's scoped. Not every change needs one; skip straight to a spec for well-understood work. An issue may also be the input used to draft a spec.
+1. **Issue (optional).** GitHub issues may describe work generically — a bug report, a rough feature idea — before it's scoped. Not every change needs one; skip straight to a spec for well-understood work. An issue may also be the input used to draft a spec. When opening an issue via a prompt, it must be assigned a milestone (`gh issue edit --milestone ...` or via `gh issue create`): if the prompt already names one, use it as given; otherwise inspect existing milestones (`gh api repos/{owner}/{repo}/milestones` or the GitHub UI) and suggest the one whose scope fits the issue, or, if none fit, say so and suggest opening a new milestone rather than guessing or leaving it unset.
 2. **Spec.** From there on, work is driven by a spec under `specs/milestones/<name>` (see "Spec Location" below) describing goals, requirements, scope, and validation.
 3. **Decision changes.** If the spec requires an accepted decision, add or update an ADR per [ADR 0001](docs/decisions/0001-keep-project-decisions-in-adrs.md) before broad coding. Non-decision research/conclusions go in a TN instead (see "ADRs vs Technical Notes" below).
 4. **Implementation.** Code the change, committed together with the spec/task updates it completes.

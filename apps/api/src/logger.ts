@@ -33,7 +33,9 @@ class Logger {
   }
 
   debug(message: string, fields?: Record<string, unknown>): void {
-    this.emit("debug", console.debug, message, fields)
+    // console.debug specifically (unlike log/info/warn/error) isn't forwarded
+    // to the terminal by wrangler dev's inspector relay, local or --remote
+    this.emit("debug", console.log, message, fields)
   }
 
   info(message: string, fields?: Record<string, unknown>): void {
