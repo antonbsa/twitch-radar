@@ -7,3 +7,4 @@ dist/
 *.tsbuildinfo
 test-results/
 wrangler.generated-*.jsonc
+.claude/settings.local.json
