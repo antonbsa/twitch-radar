@@ -35,14 +35,15 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
-    "concurrently": "^10.0.3"
+    "concurrently": "^10.0.3",
+    "drizzle-kit": "^0.31.10"
   },
   "devDependencies": {
-    "@rocketseat/eslint-config": "^2.2.2",
+    "@rocketseat/eslint-config": "^3.0.12",
     "eslint": "^8.57.1",
     "husky": "^9.1.7",
-    "lint-staged": "^17.3.0",
     "jsonc-parser": "^3.3.1",
+    "lint-staged": "^17.3.0",
     "playwright": "^1.61.1",
     "prettier": "^3.9.3",
     "qrcode-terminal": "^0.12.0"
