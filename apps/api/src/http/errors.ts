@@ -35,7 +35,14 @@ export function errorResponse(error: unknown, requestId: string): Response {
     )
   }
 
-  logger.error("Unhandled error", { ...serializeError(error) })
+  if (isMissingLocalD1SchemaError(error)) {
+    logger.error(
+      "Unhandled error: local D1 database is missing tables - run 'npm run db:setup' in apps/api to apply migrations (see README setup steps)",
+      { ...serializeError(error) },
+    )
+  } else {
+    logger.error("Unhandled error", { ...serializeError(error) })
+  }
 
   return jsonResponse(
     {
@@ -47,4 +54,13 @@ export function errorResponse(error: unknown, requestId: string): Response {
     } satisfies ErrorBody,
     { status: 500 },
   )
+}
+
+// Detects an unmigrated local D1 (e.g. a fresh worktree) so the log can
+// point at `npm run db:setup` instead of SQLite's generic "no such table".
+function isMissingLocalD1SchemaError(error: unknown): boolean {
+  if (!(error instanceof Error) || error.cause === undefined) return false
+  const causeMessage =
+    error.cause instanceof Error ? error.cause.message : String(error.cause)
+  return /no such table/i.test(causeMessage)
 }

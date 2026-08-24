@@ -20,6 +20,7 @@ const ENVIRONMENT_MIN_LEVEL: Record<AppConfig["environment"], LogLevel> = {
 
 class Logger {
   private minLevel: LogLevel = ENVIRONMENT_MIN_LEVEL.local
+  private environment: AppConfig["environment"] = "local"
 
   /**
    * Sets the minimum emitted log level from the app's configured environment.
@@ -29,6 +30,7 @@ class Logger {
    * memoizing further.
    */
   configure(environment: AppConfig["environment"]): void {
+    this.environment = environment
     this.minLevel = ENVIRONMENT_MIN_LEVEL[environment]
   }
 
@@ -57,18 +59,42 @@ class Logger {
     fields?: Record<string, unknown>,
   ): void {
     if (LEVEL_WEIGHT[level] < LEVEL_WEIGHT[this.minLevel]) return
+    const record = {
+      level,
+      message,
+      timestamp: new Date().toISOString(),
+      ...fields,
+    }
     consoleMethod(
-      JSON.stringify({
-        level,
-        message,
-        timestamp: new Date().toISOString(),
-        ...fields,
-      }),
+      this.environment === "local"
+        ? formatForTerminal(record)
+        : JSON.stringify(record),
     )
   }
 }
 
 export const logger = new Logger()
+
+// Human-readable rendering for `environment === "local"` only. real newlines
+// instead of a single JSON line with escaped `\n`. preview/prod keep JSON,
+// which Workers Logs relies on for field extraction (ADR 0040)
+function formatForTerminal(record: Record<string, unknown>): string {
+  const { level, message, timestamp, ...fields } = record
+  const lines = [
+    `[${String(level).toUpperCase()}] ${String(message)}`,
+    `  timestamp: ${String(timestamp)}`,
+  ]
+  for (const [key, value] of Object.entries(fields)) {
+    if (typeof value === "string" && value.includes("\n")) {
+      lines.push(`  ${key}:`, ...value.split("\n").map((line) => `    ${line}`))
+    } else {
+      lines.push(
+        `  ${key}: ${typeof value === "string" ? value : JSON.stringify(value)}`,
+      )
+    }
+  }
+  return lines.join("\n")
+}
 
 // Twitch/push error bodies are always small JSON in practice — this is a
 // safety cap against a pathological response blowing up log record size,
