@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev --port 8787 --inspector-port 9229 --env-file ../../.env.development --env-file ../../.env.local",
+    "dev": "WRANGLER_LOG_PATH=.wrangler/logs wrangler dev --port 8787 --inspector-port 9229 --env-file ../../.env.development --env-file ../../.env.local",
     "migrations:create": "drizzle-kit generate --config drizzle.config.ts --prefix index",
     "db:check": "drizzle-kit check --config drizzle.config.ts",
     "db:setup": "wrangler d1 migrations apply twitch-radar-dev --local",
