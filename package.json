@@ -39,7 +39,7 @@
     "drizzle-kit": "^0.31.10"
   },
   "devDependencies": {
-    "@rocketseat/eslint-config": "^3.0.12",
+    "@rocketseat/eslint-config": "^2.2.2",
     "eslint": "^8.57.1",
     "husky": "^9.1.7",
     "jsonc-parser": "^3.3.1",
