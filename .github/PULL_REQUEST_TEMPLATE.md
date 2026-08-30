@@ -5,15 +5,17 @@ Title: follow the Conventional Commits prefixes from CLAUDE.md's "Commit Message
 
 ## Summary
 
-<!-- What changed and why - objective, only what's actually relevant to review.
-     Prefer bullet points; a short lead-in sentence plus bullets works too.
-     Avoid storytelling/narrative - only justified for genuinely dense changes. -->
+<!-- The problem/context and the changes made to address it - objective, only what's relevant to review.
+     Bullet points are encouraged for listing the changes; lead with a sentence or two of prose when
+     framing the problem/context, or when a bullet would otherwise need its own justification to make sense.
+     Design-decision rationale that needs its own record belongs in an ADR (linked in References), not here. -->
 
 ## Impact
 
-<!-- The outcome: what this improves, fixes, or changes for users or the system,
-     backed by proof (command output, screenshots, benchmark results).
-     For bug fixes: show the failure before and the pass after.
+<!-- The specific effect this PR causes: a capability that now exists, a bug that's now fixed, a behavior
+     that's now different - for users or the system. Be precise about the actual effect, not a before/after
+     template to fill in. Attach proof (command output, screenshots, benchmark numbers) only to substantiate
+     that specific claim - not as a standalone test/lint recap.
      Skip/mark N/A for changes with no external effect (e.g. pure refactor, docs). -->
 
 ## References
