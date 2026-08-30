@@ -34,6 +34,7 @@ Title: follow the Conventional Commits prefixes from CLAUDE.md's "Commit Message
 - [ ] Added/updated automated tests (`tests/api` and/or `tests/web`) covering this change (if not docs-only, config-only, etc.)
 - [ ] Includes a D1 migration, `wrangler.jsonc`/cron change, or a new/changed env var - called out in Summary
 - [ ] Updates specs/ADRs if this changes accepted behavior or a prior decision
+- [ ] Verified lint, typecheck, and relevant test suites pass locally
 
 ## How to test
 
