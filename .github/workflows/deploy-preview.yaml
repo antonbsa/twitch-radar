@@ -131,6 +131,12 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+      # Fails if a required secret was never set via `wrangler secret put`.
+      - name: Check preview secrets
+        run: npm run check-secrets:preview
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: 6dad0696ed2343ee7ebbc98e75f677fe
       # Idempotent - only applies migrations not yet recorded against the
       # remote D1 database, so safe to run on every deploy.
       - name: Apply D1 migrations
