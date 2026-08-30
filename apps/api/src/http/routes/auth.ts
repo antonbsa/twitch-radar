@@ -12,7 +12,6 @@ import {
 import {
   exchangeCode,
   getAuthenticatedUser,
-  TwitchConfigError,
 } from "../../services/twitch/client"
 import { ApiError } from "../errors"
 
@@ -67,21 +66,13 @@ export async function handleAuthCallback(
     throw new ApiError(400, "invalid_state", "OAuth state mismatch or expired")
   }
 
-  let tokens
-  try {
-    tokens = await exchangeCode(
-      config.twitchClientId,
-      config.twitchClientSecret,
-      code,
-      config.twitchRedirectUri,
-      config.twitchAuthBaseUrl,
-    )
-  } catch (error) {
-    if (error instanceof TwitchConfigError) {
-      throw new ApiError(500, "twitch_not_configured", error.message)
-    }
-    throw error
-  }
+  const tokens = await exchangeCode(
+    config.twitchClientId,
+    config.twitchClientSecret,
+    code,
+    config.twitchRedirectUri,
+    config.twitchAuthBaseUrl,
+  )
 
   const twitchUser = await getAuthenticatedUser(
     config.twitchClientId,
