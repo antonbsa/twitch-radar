@@ -1,26 +1,26 @@
 ---
 name: implementing-a-feature
-description: Use when asked to implement a feature from a spec path, GitHub issue, or local issue file in this repo, before writing any implementation code.
+description: Use when asked to implement a feature from a GitHub issue, local issue file, or spec path in this repo, before writing any implementation code.
 ---
 
 # Implementing a Feature
 
 ## Overview
 
-Operationalizes this repo's Development Workflow (project CLAUDE.md): take in a spec or issue, resolve every open question with the user before coding, implement, then leave a handoff doc for the human who will review and commit.
+Operationalizes this repo's Development Workflow (project CLAUDE.md): take in a spec-shaped GitHub issue (the normal case, per ADR 0043) or a committed spec document, resolve every open question with the user before coding, implement, then leave a handoff doc for the human who will review and commit.
 
 ## When to use
 
-Given a spec path (`specs/milestones/<name>/*.md`), a GitHub issue (number or URL), or a local issue file (`.agents/issues/*.md`), before starting implementation work.
+Given a GitHub issue (number or URL) — the default input from milestone 1 onward — a local issue file (`.agents/issues/*.md`), or a spec path (`specs/milestones/<name>/*.md`) for the rarer milestone-overview case, before starting implementation work.
 
 ## What to do
 
 1. **Load the input.**
-   - Spec path under `specs/milestones/<name>/`: read it directly, treat as source of truth.
    - GitHub issue: `gh issue view <number>`.
    - Local issue file (`.agents/issues/*.md`): read it directly.
+   - Spec path under `specs/milestones/<name>/`: read it directly, treat as source of truth.
 
-2. **Check it's spec-shaped.** A spec-shaped input has, at minimum: a goal/problem statement, a resolved solution/scope (not just a raw idea), and acceptance criteria. If the input is a raw issue with no resolved scope — a bug title with no proposed fix, a feature idea with no scope boundary — say so explicitly and propose drafting a spec under `specs/milestones/<name>/` before continuing. Do not start implementation on an unscoped issue.
+2. **Check it's spec-shaped.** A spec-shaped input has, at minimum: a goal/problem statement, a resolved solution/scope (not just a raw idea), and acceptance criteria — this applies the same way to an issue as to a committed spec file, per ADR 0043. If the input is underspecified — a bug title with no proposed fix, a feature idea with no scope boundary — say so explicitly and propose resolving the open scope with the user (in chat, or by drafting a spec under `specs/milestones/<name>/` if the gap is a multi-issue milestone-level one) before continuing. Do not start implementation on an unscoped issue.
 
 3. **Resolve every open question before coding.** Scan for unresolved items: explicit "TBD"/"open question"/"unresolved" markers, unchecked design choices, ambiguous acceptance criteria, or anything phrased as a question. For each one:
    - Propose a concrete resolution with reasoning.

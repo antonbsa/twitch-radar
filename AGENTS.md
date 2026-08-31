@@ -12,16 +12,16 @@ Non-decision research policy: [ADR 0039](docs/decisions/0039-adopt-technical-not
 
 The expected path from idea to merged change:
 
-1. **Issue (optional).** GitHub issues may describe work generically — a bug report, a rough feature idea — before it's scoped. Not every change needs one; skip straight to a spec for well-understood work. An issue may also be the input used to draft a spec. When opening an issue via a prompt, it must be assigned a milestone (`gh issue edit --milestone ...` or via `gh issue create`): if the prompt already names one, use it as given; otherwise inspect existing milestones (`gh api repos/{owner}/{repo}/milestones` or the GitHub UI) and suggest the one whose scope fits the issue, or, if none fit, say so and suggest opening a new milestone rather than guessing or leaving it unset.
-2. **Spec.** From there on, work is driven by a spec under `specs/milestones/<name>` (see "Spec Location" below) describing goals, requirements, scope, and validation.
-3. **Decision changes.** If the spec requires an accepted decision, add or update an ADR per [ADR 0001](docs/decisions/0001-keep-project-decisions-in-adrs.md) before broad coding. Non-decision research/conclusions go in a TN instead (see "ADRs vs Technical Notes" below).
-4. **Implementation.** Code the change, committed together with the spec/task updates it completes.
+1. **Issue.** GitHub issues are the primary spec artifact from milestone 1 onward (ADR 0043): a spec-shaped issue has a problem/motivation, a resolved proposed solution, and acceptance criteria — not just a raw title. When opening an issue via a prompt, it must be assigned a milestone (`gh issue edit --milestone ...` or via `gh issue create`): if the prompt already names one, use it as given; otherwise inspect existing milestones (`gh api repos/{owner}/{repo}/milestones` or the GitHub UI) and suggest the one whose scope fits the issue, or, if none fit, say so and suggest opening a new milestone rather than guessing or leaving it unset.
+2. **Spec.** Work is driven directly by that spec-shaped issue, or by a spec-shaped local issue file under `.agents/issues/` if no GitHub issue exists yet. A committed spec document under `specs/milestones/<name>` (see "Spec Location" below) is optional — reach for it only when a milestone-level overview needs to state goals/scope/validation spanning multiple issues at once, not per feature.
+3. **Decision changes.** If the issue/spec requires an accepted decision, add or update an ADR per [ADR 0001](docs/decisions/0001-keep-project-decisions-in-adrs.md) before broad coding. Non-decision research/conclusions go in a TN instead (see "ADRs vs Technical Notes" below).
+4. **Implementation.** Code the change, committed together with any spec/task updates it completes.
 5. **Review and merge.** Open a PR following [creating-pull-requests](.claude/skills/creating-pull-requests) — tests, migrations/config, and specs/ADRs are part of the review, not follow-ups. Apply GitHub labels when opening the PR (`gh pr edit --add-label ...` or via `gh pr create`), not just when explicitly asked: `migration` if it touches `infra/migrations`, `config` if it touches `apps/api/wrangler.jsonc`/`crons.ts`/`env.ts`, plus the applicable default label (`bug`, `enhancement`, `documentation`). These drive the categorized release notes in [.github/release.yml](.github/release.yml) — an unlabeled PR still ships, but silently lands in "Other Changes" instead of the risk-flagged category it belongs in.
 6. **Release.** Merging to `main` only deploys preview. Production ships when a GitHub release is published ([ADR 0041](docs/decisions/0041-release-gated-production-deploys.md)); follow [preparing-a-release](.claude/skills/preparing-a-release).
 
 ## Spec Location
 
-The MVP spec at `specs/mvp/` is closed to new work. From now on, all new specs must live under `specs/milestones/<name>`, one directory per milestone, e.g. milestone 0: `specs/milestones/0-foundations`.
+The MVP spec at `specs/mvp/` is closed to new work. Per ADR 0043, a committed spec document is no longer required per feature — spec-shaped GitHub issues drive milestone 1+ work directly. If a milestone-level overview spanning multiple issues is still useful, it lives under `specs/milestones/<name>`, one directory per milestone, e.g. milestone 0: `specs/milestones/0-foundations`.
 
 ## Scope Boundary
 
