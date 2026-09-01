@@ -9,6 +9,10 @@ description: Use when asked to implement a batch of specs/issues in this repo to
 
 Runs [implementing-a-feature](../implementing-a-feature) for a batch of specs/issues, grouped so each group becomes one implementation in its own isolated git worktree under `.agents/worktrees/`, groups run in parallel. Validates every item's readiness and how it relates to the rest of the batch before creating any worktree, so the batch either proceeds as a whole or pauses on one consolidated set of questions covering both open decisions and the proposed grouping.
 
+## Language
+
+Every message this skill sends directly to the user - step 2's consolidated questions/grouping proposal, step 6's final report, any other status update - is written in the language the user has been using in this conversation; if that can't be identified, default to English. This follows the project-wide chat-language convention in [CLAUDE.md](../../../CLAUDE.md) "Language". It does not extend to anything that becomes a project artifact: dispatch prompts to subagents, code, commit messages, and handoff docs stay in English regardless of the conversation's language, same as that rule already requires.
+
 ## When to use
 
 Given a list of inputs to implement together - any mix of spec paths (`specs/milestones/<name>/*.md`), GitHub issue numbers/URLs, or local issue files (`.agents/issues/*.md`). You don't need to pre-group them yourself - the skill determines which items are independent (one worktree each) and which are coupled enough to need a single shared implementation (one worktree, multiple items; see superpowers:dispatching-parallel-agents for the independence test). Items touching the same file is not disqualifying by itself - each worktree is an isolated copy, so plain file overlap only surfaces as a later merge conflict, which is expected and not blocking; what actually forces grouping is a sequential dependency or two items changing the same flow. For a single item, use `implementing-a-feature` directly instead.
