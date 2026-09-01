@@ -11,7 +11,7 @@ Runs [implementing-a-feature](../implementing-a-feature) for a batch of independ
 
 ## When to use
 
-Given a list of inputs to implement together - any mix of spec paths (`specs/milestones/<name>/*.md`), GitHub issue numbers/URLs, or local issue files (`.agents/issues/*.md`) - where each item is independent (no shared files, no sequential dependency between them; see superpowers:dispatching-parallel-agents for the independence test). For a single item, use `implementing-a-feature` directly instead.
+Given a list of inputs to implement together - any mix of spec paths (`specs/milestones/<name>/*.md`), GitHub issue numbers/URLs, or local issue files (`.agents/issues/*.md`) - where each item is independent of the others (no sequential dependency, no item changing a shared flow that another item also changes; see superpowers:dispatching-parallel-agents for the independence test). Items touching the same file is not disqualifying by itself - each worktree is an isolated copy, so that only surfaces as a merge conflict later, which is expected and not blocking. For a single item, use `implementing-a-feature` directly instead.
 
 ## What to do
 
@@ -23,7 +23,7 @@ Given a list of inputs to implement together - any mix of spec paths (`specs/mil
 
 2. **Gate on the whole batch, not per item.**
    - All `READY` -> continue to step 3 automatically, no pause.
-   - Any `NEEDS_INPUT` -> stop. Present every open question from every flagged item in one message, grouped by item, each with your recommended resolution. Wait until the user has answered every open item across the whole batch - do not dispatch the `READY` items early while others are still pending. If a resolution is itself an accepted decision the code must follow going forward, flag it for an ADR per [ADR 0001](../../../docs/decisions/0001-keep-project-decisions-in-adrs.md), same as `implementing-a-feature` step 3 - most resolutions are plain implementation choices and won't need one. Once every question is answered, continue to step 3 for the full batch.
+   - Any `NEEDS_INPUT` -> stop. Present every open question from every flagged item in one plain chat message (a direct text response), grouped by item, each with your recommended resolution - do not use an interactive question/input tool (e.g. `AskUserQuestion`) for this; the batch can have several open questions across several items and they must all be visible at once as text, not walked through one at a time in a dialog. Wait until the user has answered every open item across the whole batch - do not dispatch the `READY` items early while others are still pending. If a resolution is itself an accepted decision the code must follow going forward, flag it for an ADR per [ADR 0001](../../../docs/decisions/0001-keep-project-decisions-in-adrs.md), same as `implementing-a-feature` step 3 - most resolutions are plain implementation choices and won't need one. Once every question is answered, continue to step 3 for the full batch.
 
 3. **Derive a worktree name per item.** Succinct, kebab-case, descriptive of the implementation itself - no issue number, no generic id (per [CLAUDE.md](../../../CLAUDE.md) "Worktree Configuration"). This name is both the branch name and the worktree directory name.
 
@@ -44,6 +44,8 @@ Given a list of inputs to implement together - any mix of spec paths (`specs/mil
 ## Common mistakes
 
 - Dispatching the `READY` items while `NEEDS_INPUT` items are still waiting on an answer - the gate is on the whole batch, not per item.
+- Using an interactive question tool (e.g. `AskUserQuestion`) to surface the batch's open questions instead of a plain chat response - that hides multiple items' questions behind a one-at-a-time dialog when they need to be visible together as text.
+- Treating two items touching the same file as disqualifying on its own - only a real dependency or a shared-flow change between items blocks batching; a plain file overlap is just a later merge conflict.
 - Treating "decision" as ADR-only - most open decisions flagged in step 1 are plain implementation choices (a library, which callers to migrate); ADR is a conditional flag on top, not the trigger itself.
 - Using the Agent tool's `isolation: "worktree"` for the per-item dispatch - it can't be pointed at `.agents/worktrees/<name>`, which the branch-naming rule requires. Create the worktree yourself first, then dispatch a plain agent into it.
 - Letting a subagent skip the commit ("implementing-a-feature says never touch git") - that rule is overridden here specifically because the work is isolated in its own worktree/branch; the commit is what makes the branch reviewable.
