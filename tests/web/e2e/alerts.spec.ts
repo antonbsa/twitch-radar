@@ -1,8 +1,16 @@
 import { afterAll, beforeAll, describe } from "vitest"
-import { resetState } from "./orchestrator/test-seam-client"
+import {
+  E2E_BROADCASTER_PREFIX,
+  resetState,
+  seedFollowedChannels,
+} from "./orchestrator/test-seam-client"
 import { WEB_URL } from "./setup/browser"
 import { it } from "./setup/fixtures"
 import { expectHidden, expectVisible } from "./setup/assertions"
+
+function broadcasterId(suffix: string): string {
+  return `${E2E_BROADCASTER_PREFIX}alerts_${suffix}`
+}
 
 describe("Alerts view", () => {
   beforeAll(async () => {
@@ -112,5 +120,77 @@ describe("Alerts view", () => {
     await page.getByRole("button", { name: "Remove Minecraft" }).click()
     await expectVisible(page.getByText("No global alerts set."))
     await expectHidden(page.getByText("Minecraft"))
+  })
+
+  it("should show the empty state on the per-channel tab when there are no channel alerts", async ({
+    authenticatedSession,
+  }) => {
+    const { page } = authenticatedSession
+    await page.route("**/api/preferences", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ data: { channel: [], global: [] } }),
+      }),
+    )
+
+    await page.goto(`${WEB_URL}/alerts`)
+    await page.getByRole("tab", { name: "Per Channel" }).click()
+    await expectVisible(page.getByText("No per-channel alerts set."))
+  })
+
+  it("should list a per-channel alert with the broadcaster's display name and remove it", async ({
+    authenticatedSession,
+  }) => {
+    const id = broadcasterId("perchannel")
+    await seedFollowedChannels([
+      {
+        broadcasterUserId: id,
+        broadcasterLogin: "perchannelstreamer",
+        broadcasterDisplayName: "PerChannelStreamer",
+      },
+    ])
+
+    const { page } = authenticatedSession
+    let channelPrefRemoved = false
+
+    await page.route("**/api/preferences", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          data: {
+            channel: channelPrefRemoved
+              ? []
+              : [
+                  {
+                    id: "pref_perchannel",
+                    broadcaster_user_id: id,
+                    category_id: "27471",
+                    category_name: "Minecraft",
+                    created_at: new Date().toISOString(),
+                  },
+                ],
+            global: [],
+          },
+        }),
+      }),
+    )
+    await page.route("**/api/preferences/channel/pref_perchannel", (route) => {
+      channelPrefRemoved = true
+      return route.fulfill({ status: 204, body: "" })
+    })
+
+    await page.goto(`${WEB_URL}/alerts`)
+    await page.getByRole("tab", { name: "Per Channel" }).click()
+
+    await expectVisible(page.getByText("PerChannelStreamer"))
+    await expectVisible(page.getByText("Minecraft"))
+
+    await page
+      .getByRole("button", { name: "Remove Minecraft for PerChannelStreamer" })
+      .click()
+    await expectVisible(page.getByText("No per-channel alerts set."))
+    await expectHidden(page.getByText("PerChannelStreamer"))
   })
 })
