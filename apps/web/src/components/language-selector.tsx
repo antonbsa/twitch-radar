@@ -26,7 +26,7 @@ export function LanguageSelector() {
       >
         <SelectValue />
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent size="lg">
         {SUPPORTED_LANGUAGES.map((lang: Language) => (
           <SelectItem key={lang} value={lang}>
             {t(`account.language_${lang}`)}

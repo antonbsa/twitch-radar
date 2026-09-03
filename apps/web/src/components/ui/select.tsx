@@ -63,12 +63,16 @@ function SelectContent({
   children,
   position = "item-aligned",
   align = "center",
+  size = "default",
   ...props
-}: React.ComponentProps<typeof SelectPrimitive.Content>) {
+}: React.ComponentProps<typeof SelectPrimitive.Content> & {
+  size?: "sm" | "default" | "lg"
+}) {
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
         data-slot="select-content"
+        data-size={size}
         data-align-trigger={position === "item-aligned"}
         className={cn(
           "relative z-50 max-h-(--radix-select-content-available-height) min-w-36 origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 data-[align-trigger=true]:animate-none data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
@@ -121,7 +125,11 @@ function SelectItem({
         // py-2.5 (with text-sm's 20px line-height) lands close to the 44px
         // touch-target minimum used by SelectTrigger's "lg" size above -
         // this is a touch dropdown (3 languages), not a mouse-hover menu.
-        "relative flex w-full cursor-default items-center gap-1.5 rounded-md py-2.5 pr-8 pl-1.5 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
+        // in-data-[size=lg]:text-base matches the "lg" SelectTrigger's text
+        // size - the item text and the trigger's selected-value text must
+        // read as the same size, since SelectContent renders through a
+        // portal and can't rely on inherited font-size from the trigger.
+        "relative flex w-full cursor-default items-center gap-1.5 rounded-md py-2.5 pr-8 pl-1.5 text-sm in-data-[size=lg]:text-base outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
         className,
       )}
       {...props}
