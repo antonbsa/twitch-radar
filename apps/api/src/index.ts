@@ -12,7 +12,7 @@ import { requireAuth } from "./http/middleware/auth"
 import { handleSearchCategories } from "./http/routes/categories"
 import { handleGetFollowedChannels } from "./http/routes/channels"
 import { handleHealth } from "./http/routes/health"
-import { handleGetMe } from "./http/routes/me"
+import { handleGetMe, handleUpdateLanguage } from "./http/routes/me"
 import {
   handleAuthCallback,
   handleAuthStart,
@@ -69,6 +69,7 @@ function buildApp(includeTestSeam: boolean): Hono<HonoEnv> {
   api.get("/auth/twitch/callback", handleAuthCallback)
   api.post("/auth/logout", requireAuth, handleLogout)
   api.get("/me", requireAuth, handleGetMe)
+  api.patch("/me/language", requireAuth, handleUpdateLanguage)
   api.post("/sync/follows", requireAuth, handleSyncFollows)
   api.get("/channels/followed", requireAuth, handleGetFollowedChannels)
   api.get("/categories/search", requireAuth, handleSearchCategories)

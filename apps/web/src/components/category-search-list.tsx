@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useLanguage } from "@/context/language-context"
 import { useCategorySearch } from "@/hooks/use-category-search"
 import type { Category } from "@/types/preference"
 
@@ -15,11 +16,12 @@ export function CategorySearchList({
 }: CategorySearchListProps) {
   const [query, setQuery] = useState("")
   const { data, isFetching, isError, isEnabled } = useCategorySearch(query)
+  const { t } = useLanguage()
 
   return (
     <div className="space-y-2">
       <Input
-        placeholder="Search categories..."
+        placeholder={t("category_search.placeholder")}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         autoFocus
@@ -34,13 +36,13 @@ export function CategorySearchList({
 
       {isEnabled && !isFetching && isError && (
         <p className="px-1 text-sm text-muted-foreground">
-          Failed to search categories.
+          {t("category_search.error")}
         </p>
       )}
 
       {isEnabled && !isFetching && !isError && data?.length === 0 && (
         <p className="px-1 text-sm text-muted-foreground">
-          No categories found.
+          {t("category_search.empty")}
         </p>
       )}
 

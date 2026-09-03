@@ -1,3 +1,5 @@
+import type { Language } from "@/lib/i18n"
+
 export interface User {
   id: string
   twitch_user_id: string
@@ -9,4 +11,6 @@ export interface User {
   // True when the stored Twitch refresh token is dead and the user must
   // reconnect via OAuth (surfaced by GET /api/me, ADR 0036).
   twitch_reconnect_required: boolean
+  // UI/notification language preference (ADR 0044).
+  language: Language
 }
