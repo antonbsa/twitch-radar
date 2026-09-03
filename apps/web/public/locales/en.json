@@ -3,7 +3,7 @@
   "nav.alerts": "Alerts",
   "nav.account": "Account",
 
-  "common.loading": "Loading...",
+  "common.loading": "Loading",
 
   "login.title": "Twitch Radar",
   "login.tagline": "Get notified when channels you follow go live in the categories you care about.",
@@ -36,15 +36,15 @@
 
   "add_global_category.title": "Add Category",
 
-  "category_search.placeholder": "Search categories...",
+  "category_search.placeholder": "Search categories",
   "category_search.error": "Failed to search categories.",
   "category_search.empty": "No categories found.",
 
   "account.title": "Account",
-  "account.connected": "Connected ✓",
+  "account.connected": "Connected",
   "account.notifications": "Notifications",
   "account.status": "Status: {status}",
-  "account.status_checking": "Checking…",
+  "account.status_checking": "Checking",
   "account.status_enabled": "Enabled",
   "account.status_denied": "Denied",
   "account.status_unsupported": "Not supported",

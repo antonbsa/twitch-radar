@@ -24,8 +24,10 @@ components/
   auth-gate.tsx                — AuthGate; single guard for both "authenticated" and "guest" route cases
   bottom-tab-bar.tsx           — persistent 3-tab nav (Channels/Alerts/Account)
   full-screen-loader.tsx       — shared loading state for AuthGate
-  ui/                          — shadcn/ui primitives (Button, Sheet, Input, Badge, Avatar); copied source,
-                                edit directly, do not treat as an upgradeable dependency
+  language-selector.tsx        — Account page's language picker (en / pt-BR / es), built on ui/select.tsx
+                                (ADR 0044)
+  ui/                          — shadcn/ui primitives (Button, Sheet, Input, Badge, Avatar, Select); copied
+                                source, edit directly, do not treat as an upgradeable dependency
 hooks/
   use-session-aware-mutation.ts — useMutation wrapper that marks the session expired on a 401
   use-push-notifications.ts    — push status state machine (checking/unsupported/denied/not-enabled/

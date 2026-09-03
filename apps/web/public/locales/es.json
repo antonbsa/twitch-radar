@@ -3,7 +3,7 @@
   "nav.alerts": "Alertas",
   "nav.account": "Cuenta",
 
-  "common.loading": "Cargando...",
+  "common.loading": "Cargando",
 
   "login.title": "Twitch Radar",
   "login.tagline": "Recibe notificaciones cuando los canales que sigues transmitan en vivo en las categorías que te interesan.",
@@ -36,15 +36,15 @@
 
   "add_global_category.title": "Añadir Categoría",
 
-  "category_search.placeholder": "Buscar categorías...",
+  "category_search.placeholder": "Buscar categorías",
   "category_search.error": "No se pudieron buscar las categorías.",
   "category_search.empty": "No se encontraron categorías.",
 
   "account.title": "Cuenta",
-  "account.connected": "Conectado ✓",
+  "account.connected": "Conectado",
   "account.notifications": "Notificaciones",
   "account.status": "Estado: {status}",
-  "account.status_checking": "Comprobando…",
+  "account.status_checking": "Comprobando",
   "account.status_enabled": "Activado",
   "account.status_denied": "Denegado",
   "account.status_unsupported": "No compatible",

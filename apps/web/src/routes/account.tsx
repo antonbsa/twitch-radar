@@ -2,9 +2,9 @@ import { useState } from "react"
 import { useNavigate } from "react-router"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
+import { LanguageSelector } from "@/components/language-selector"
 import { useAuth } from "@/context/auth-context"
 import { useLanguage } from "@/context/language-context"
-import { SUPPORTED_LANGUAGES, type Language } from "@/lib/i18n"
 import { useSyncFollows } from "@/hooks/use-channels"
 import {
   usePushNotifications,
@@ -28,7 +28,7 @@ function notificationStatusKey(status: PushStatus): string {
 
 export function AccountPage() {
   const { user, reconnectRequired, logout } = useAuth()
-  const { t, language, setLanguage } = useLanguage()
+  const { t } = useLanguage()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const push = usePushNotifications()
   const navigate = useNavigate()
@@ -64,18 +64,7 @@ export function AccountPage() {
 
       <div className="mt-6 space-y-2">
         <p className="text-sm font-medium">{t("account.language")}</p>
-        <div className="flex flex-wrap gap-2">
-          {SUPPORTED_LANGUAGES.map((lang: Language) => (
-            <Button
-              key={lang}
-              variant={lang === language ? "default" : "outline"}
-              size="sm"
-              onClick={() => setLanguage(lang)}
-            >
-              {t(`account.language_${lang}`)}
-            </Button>
-          ))}
-        </div>
+        <LanguageSelector />
       </div>
 
       <div className="mt-6 space-y-2">
