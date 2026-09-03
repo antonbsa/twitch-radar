@@ -16,7 +16,14 @@ export function LanguageSelector() {
       value={language}
       onValueChange={(value) => setLanguage(value as Language)}
     >
-      <SelectTrigger className="w-full" aria-label={t("account.language")}>
+      <SelectTrigger
+        size="lg"
+        // Fixed width sized to the longest option ("Português (Brasil)") so
+        // switching languages doesn't resize the trigger (w-fit would jump
+        // between options), without stretching to the full row like w-full.
+        className="w-56"
+        aria-label={t("account.language")}
+      >
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
