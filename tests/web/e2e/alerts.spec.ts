@@ -101,7 +101,7 @@ describe("Alerts view", () => {
     const dialog = page.getByRole("dialog")
     await expectVisible(dialog)
 
-    await dialog.getByPlaceholder("Search categories...").fill("mine")
+    await dialog.getByPlaceholder("Search categories").fill("mine")
     await dialog.getByRole("button", { name: "Minecraft" }).click()
 
     // The sheet closes on success and the refreshed list shows the new alert.
