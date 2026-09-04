@@ -1,3 +1,5 @@
+import { useState } from "react"
+import { Loader2Icon } from "lucide-react"
 import {
   Sheet,
   SheetContent,
@@ -6,11 +8,39 @@ import {
 } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { formatViewerCount } from "@/lib/format"
+import { cn } from "@/lib/utils"
 import type { FollowedChannel } from "@/types/channel"
 
 interface ChannelDetailModalProps {
   channel: FollowedChannel | null
   onOpenChange: (open: boolean) => void
+}
+
+function ChannelThumbnail({ thumbnailUrl }: { thumbnailUrl: string | null }) {
+  const [loaded, setLoaded] = useState(false)
+
+  if (!thumbnailUrl) {
+    return <div className="aspect-video w-full rounded-md bg-muted" />
+  }
+
+  return (
+    <div className="relative aspect-video w-full overflow-hidden rounded-md bg-muted">
+      {!loaded && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <Loader2Icon className="size-6 animate-spin text-muted-foreground" />
+        </div>
+      )}
+      <img
+        src={thumbnailUrl}
+        alt=""
+        className={cn(
+          "size-full object-cover transition-opacity",
+          loaded ? "opacity-100" : "opacity-0",
+        )}
+        onLoad={() => setLoaded(true)}
+      />
+    </div>
+  )
 }
 
 export function ChannelDetailModal({
@@ -21,7 +51,7 @@ export function ChannelDetailModal({
     <Sheet open={channel !== null} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="max-h-[85vh]"
+        className="max-h-[85vh] rounded-lg border data-[side=bottom]:top-1/2 data-[side=bottom]:bottom-auto data-[side=bottom]:-translate-y-1/2"
         data-testid="channel-detail-modal"
         data-broadcaster-user-id={channel?.broadcaster_user_id}
       >
@@ -29,15 +59,10 @@ export function ChannelDetailModal({
           <SheetTitle>{channel?.broadcaster_display_name}</SheetTitle>
         </SheetHeader>
         <div className="space-y-4 overflow-y-auto px-4 pb-4">
-          {channel?.thumbnail_url ? (
-            <img
-              src={channel.thumbnail_url}
-              alt=""
-              className="aspect-video w-full rounded-md object-cover"
-            />
-          ) : (
-            <div className="aspect-video w-full rounded-md bg-muted" />
-          )}
+          <ChannelThumbnail
+            key={channel?.broadcaster_user_id ?? "none"}
+            thumbnailUrl={channel?.thumbnail_url ?? null}
+          />
 
           {channel?.is_live ? (
             <div className="space-y-1">
