@@ -14,13 +14,15 @@ crons.ts                      — cron expressions for the scheduled jobs, mirro
                                 triggers.crons; own module so tests can import them
 types.ts                      — queue message contracts (TwitchEventQueueMessage is a discriminated
                                 union on eventType, ADR 0032; NotificationJobMessage carries the
-                                {title, body, url} payload, ADR 0034) + EventSub event wire shapes
+                                {titleKey, bodyKey, params, lang, url} payload, ADR 0044) + EventSub
+                                event wire shapes; SUPPORTED_LANGUAGES/Language (ADR 0044)
 db/
   client.ts                   — drizzle factory (no singleton)
   index.ts                    — Database class (wires all repositories)
   schema.ts                   — Drizzle table definitions
   repositories/
-    users.ts                  — UsersRepository
+    users.ts                  — UsersRepository; updateLanguage/findLanguagesByIds back the language
+                                preference (ADR 0044; findLanguagesByIds batches at 100, D1 limit)
     push-subscriptions.ts     — PushSubscriptionsRepository
     twitch-tokens.ts          — TwitchTokensRepository (encrypted access/refresh tokens;
                                 refresh_failed_at flags dead refresh tokens for reconnect, ADR 0036)
@@ -56,7 +58,8 @@ http/
                                 handleCreate/DeleteGlobalPreference; idempotent create,
                                 soft-disable delete, monitoring maintenance inline (ADRs 0029–0030)
     me.ts                     — handleGetMe; adds twitch_reconnect_required (dead/missing refresh
-                                token, ADR 0036) to the user payload
+                                token, ADR 0036) to the user payload; handleUpdateLanguage (PATCH
+                                /me/language) sets the language preference (ADR 0044)
     push-subscriptions.ts     — handleGetVapidPublicKey, handleCreatePushSubscription (idempotent
                                 upsert by endpoint), handleDeletePushSubscription (soft revoke);
                                 lifecycle contract in ADR 0027
@@ -92,7 +95,8 @@ services/
   notifications/
     match.ts                  — matchAndCreateDeliveries (per-channel + follower-scoped global
                                 preference matching, staged pending deliveries + send jobs;
-                                ADRs 0007, 0008, 0034)
+                                ADRs 0007, 0008, 0034); buildPayload emits {titleKey, bodyKey,
+                                params, lang} per recipient, not literal text (ADR 0044)
     deliver.ts                — deliverNotification (jobs-queue consumer: sends to active push
                                 subscriptions, resolves delivery status, revokes 404/410
                                 endpoints; ADRs 0034, 0035)
