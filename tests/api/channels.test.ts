@@ -229,7 +229,7 @@ describe("GET /api/channels/followed", () => {
       category_name: "Minecraft",
       title: "Building stuff",
       thumbnail_url:
-        "https://static-cdn.jtvnw.net/previews-ttv/live_user_streamer-440x248.jpg",
+        "https://static-cdn.jtvnw.net/previews-ttv/live_user_streamer-640x360.jpg",
       viewer_count: 777,
       started_at: "2024-06-01T10:00:00Z",
     })

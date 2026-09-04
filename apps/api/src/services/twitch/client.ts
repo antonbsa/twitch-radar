@@ -59,8 +59,8 @@ export interface TwitchStream {
 // must substitute before the URL is usable.
 export function resolveThumbnailUrl(
   template: string | null | undefined,
-  width = 440,
-  height = 248,
+  width = 640,
+  height = 360,
 ): string | null {
   if (!template) return null
   return template
