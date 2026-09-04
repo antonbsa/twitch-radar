@@ -9,6 +9,7 @@ export interface UpsertChannelStateInput {
   categoryId?: string | null
   categoryName?: string | null
   title?: string | null
+  thumbnailUrl?: string | null
   viewerCount?: number | null
   startedAt?: string | null
   // Twitch's message timestamp when the write comes from an EventSub event;
@@ -25,6 +26,7 @@ export interface ChannelStateRecord {
   category_id: string | null
   category_name: string | null
   title: string | null
+  thumbnail_url: string | null
   viewer_count: number | null
   started_at: string | null
   updated_from_event_at: string | null
@@ -40,11 +42,11 @@ export class ChannelStateRepository {
 
   async upsertAll(inputs: UpsertChannelStateInput[]): Promise<void> {
     if (inputs.length === 0) return
-    // 10 bound params per row (broadcasterUserId, isLive, streamId,
-    // categoryId, categoryName, title, viewerCount, startedAt,
+    // 11 bound params per row (broadcasterUserId, isLive, streamId,
+    // categoryId, categoryName, title, thumbnailUrl, viewerCount, startedAt,
     // updatedFromEventAt, updatedAt); D1 caps bound params at 100 per query,
-    // so 10 rows/batch stays exactly at that limit.
-    const BATCH_SIZE = 10
+    // so 9 rows/batch (99 params) stays safely under that limit.
+    const BATCH_SIZE = 9
     const statements = []
     for (let i = 0; i < inputs.length; i += BATCH_SIZE) {
       const batch = inputs.slice(i, i + BATCH_SIZE)
@@ -59,6 +61,7 @@ export class ChannelStateRepository {
               categoryId: input.categoryId ?? null,
               categoryName: input.categoryName ?? null,
               title: input.title ?? null,
+              thumbnailUrl: input.thumbnailUrl ?? null,
               viewerCount: input.viewerCount ?? null,
               startedAt: input.startedAt ?? null,
               updatedFromEventAt: input.updatedFromEventAt ?? null,
@@ -73,6 +76,7 @@ export class ChannelStateRepository {
               categoryId: sql`excluded.category_id`,
               categoryName: sql`excluded.category_name`,
               title: sql`excluded.title`,
+              thumbnailUrl: sql`excluded.thumbnail_url`,
               viewerCount: sql`excluded.viewer_count`,
               startedAt: sql`excluded.started_at`,
               updatedFromEventAt: sql`excluded.updated_from_event_at`,
@@ -107,6 +111,7 @@ export class ChannelStateRepository {
           category_id: row.categoryId,
           category_name: row.categoryName,
           title: row.title,
+          thumbnail_url: row.thumbnailUrl,
           viewer_count: row.viewerCount,
           started_at: row.startedAt,
           updated_from_event_at: row.updatedFromEventAt,

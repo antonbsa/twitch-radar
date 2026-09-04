@@ -31,6 +31,7 @@ export interface TwitchFollowedStream {
   title: string
   viewer_count: number
   started_at: string
+  thumbnail_url: string
 }
 
 export interface TwitchCategory {
@@ -50,6 +51,21 @@ export interface TwitchStream {
   title: string
   viewer_count: number
   started_at: string
+  thumbnail_url: string
+}
+
+// Twitch's stream thumbnail URLs are templates with literal {width}/{height}
+// placeholders (e.g. ".../live_user_foo-{width}x{height}.jpg") that callers
+// must substitute before the URL is usable.
+export function resolveThumbnailUrl(
+  template: string | null | undefined,
+  width = 440,
+  height = 248,
+): string | null {
+  if (!template) return null
+  return template
+    .replace("{width}", String(width))
+    .replace("{height}", String(height))
 }
 
 // Twitch error bodies are always small JSON in practice; this is a safety

@@ -61,6 +61,7 @@ export interface SeedChannelStateInput {
   categoryId?: string | null
   categoryName?: string | null
   title?: string | null
+  thumbnailUrl?: string | null
   viewerCount?: number | null
   startedAt?: string | null
 }
@@ -182,6 +183,7 @@ export async function handleTestSeed(c: Context<HonoEnv>): Promise<Response> {
         categoryId: state.categoryId ?? null,
         categoryName: state.categoryName ?? null,
         title: state.title ?? null,
+        thumbnailUrl: state.thumbnailUrl ?? null,
         viewerCount: state.viewerCount ?? null,
         startedAt: state.startedAt ?? null,
         now,

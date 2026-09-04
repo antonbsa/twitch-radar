@@ -14,14 +14,20 @@ import type { FollowedChannel } from "@/types/channel"
 interface ChannelRowProps {
   channel: FollowedChannel
   onConfigure: (channel: FollowedChannel) => void
+  onOpenDetail: (channel: FollowedChannel) => void
 }
 
-export function ChannelRow({ channel, onConfigure }: ChannelRowProps) {
+export function ChannelRow({
+  channel,
+  onConfigure,
+  onOpenDetail,
+}: ChannelRowProps) {
   const { t } = useLanguage()
   return (
     <div
       data-testid="channel-row"
       data-broadcaster-user-id={channel.broadcaster_user_id}
+      onClick={() => onOpenDetail(channel)}
       className={cn(
         "flex items-center gap-3 px-4 py-2.5",
         !channel.is_live && "opacity-60",
@@ -70,7 +76,10 @@ export function ChannelRow({ channel, onConfigure }: ChannelRowProps) {
       <Button
         variant="ghost"
         size="icon-sm"
-        onClick={() => onConfigure(channel)}
+        onClick={(e) => {
+          e.stopPropagation()
+          onConfigure(channel)
+        }}
         aria-label={t("channel_row.configure_aria", {
           name: channel.broadcaster_display_name,
         })}
