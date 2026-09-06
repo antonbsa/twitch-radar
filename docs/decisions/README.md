@@ -49,6 +49,8 @@ Other project documents may state goals, requirements, task scope, validation st
 - [0041 - Release-Gated Production Deploys, Automatic Preview Deploys](0041-release-gated-production-deploys.md)
 - [0043 - GitHub Issues As Spec; Drop The Mandatory Per-Feature Spec Document](0043-github-issues-as-spec-drop-mandatory-spec-docs.md)
 - [0044 - I18n Key-Based Catalog And Language Preference](0044-i18n-key-based-catalog-and-language-preference.md)
+- [0045 - Build-Time Exclusion Of Non-Production Test/Dev Code](0045-build-time-exclusion-of-non-production-test-code.md)
+- [0046 - Sandbox Personas For Twitch-Free Dev And Preview Access](0046-sandbox-personas-for-dev-and-preview.md)
 
 ## Proposed ADRs
 
