@@ -2,7 +2,11 @@ import type { AppConfig } from "../../env"
 import type { Database } from "../../db"
 import { logger, serializeError } from "../../logger"
 import { ensureMonitoredBroadcasters } from "../monitoring"
-import { getAllFollowedChannels, getAllFollowedStreams } from "./client"
+import {
+  getAllFollowedChannels,
+  getAllFollowedStreams,
+  resolveThumbnailUrl,
+} from "./client"
 import { getValidAccessToken } from "./token-refresh"
 
 // A user's follow list drives which broadcasters their global preferences
@@ -64,6 +68,7 @@ export async function syncFollowedChannels(
               categoryId: stream.game_id || null,
               categoryName: stream.game_name || null,
               title: stream.title || null,
+              thumbnailUrl: resolveThumbnailUrl(stream.thumbnail_url),
               viewerCount: stream.viewer_count,
               startedAt: stream.started_at,
               now,
@@ -75,6 +80,7 @@ export async function syncFollowedChannels(
               categoryId: null,
               categoryName: null,
               title: null,
+              thumbnailUrl: null,
               viewerCount: null,
               startedAt: null,
               now,

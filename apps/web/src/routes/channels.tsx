@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react"
+import { useSearchParams } from "react-router"
 import { RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ChannelRow } from "@/components/channel-row"
 import { ChannelPreferencesSheet } from "@/components/channel-preferences-sheet"
+import { ChannelDetailModal } from "@/components/channel-detail-modal"
 import { ReconnectRequired } from "@/components/reconnect-required"
 import { useAuth } from "@/context/auth-context"
 import { useLanguage } from "@/context/language-context"
@@ -22,6 +24,11 @@ export function ChannelsPage() {
   const syncFollows = useSyncFollows()
   const [configuringChannel, setConfiguringChannel] =
     useState<FollowedChannel | null>(null)
+  const [detailChannel, setDetailChannel] = useState<FollowedChannel | null>(
+    null,
+  )
+  const [searchParams, setSearchParams] = useSearchParams()
+  const appliedDeepLinkRef = useRef(false)
 
   const { live, offline } = useMemo(() => {
     const list = channels ?? []
@@ -44,6 +51,30 @@ export function ChannelsPage() {
       if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current)
     }
   }, [])
+
+  useEffect(() => {
+    if (appliedDeepLinkRef.current) return
+    if (!channels) return
+
+    const broadcasterId = searchParams.get("broadcaster")
+    if (!broadcasterId) return
+
+    appliedDeepLinkRef.current = true
+
+    const match = channels.find(
+      (channel) => channel.broadcaster_user_id === broadcasterId,
+    )
+    if (match) setDetailChannel(match)
+
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        next.delete("broadcaster")
+        return next
+      },
+      { replace: true },
+    )
+  }, [channels, searchParams, setSearchParams])
 
   useEffect(() => {
     if (syncFollows.status === "success") {
@@ -131,6 +162,7 @@ export function ChannelsPage() {
               key={channel.broadcaster_user_id}
               channel={channel}
               onConfigure={setConfiguringChannel}
+              onOpenDetail={setDetailChannel}
             />
           ))}
         </section>
@@ -146,6 +178,7 @@ export function ChannelsPage() {
               key={channel.broadcaster_user_id}
               channel={channel}
               onConfigure={setConfiguringChannel}
+              onOpenDetail={setDetailChannel}
             />
           ))}
         </section>
@@ -155,6 +188,13 @@ export function ChannelsPage() {
         channel={configuringChannel}
         onOpenChange={(open) => {
           if (!open) setConfiguringChannel(null)
+        }}
+      />
+
+      <ChannelDetailModal
+        channel={detailChannel}
+        onOpenChange={(open) => {
+          if (!open) setDetailChannel(null)
         }}
       />
     </div>
