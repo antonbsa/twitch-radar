@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Loader2Icon } from "lucide-react"
+import { ExternalLinkIcon, Loader2Icon } from "lucide-react"
 import {
   Sheet,
   SheetContent,
@@ -90,6 +90,7 @@ export function ChannelDetailModal({
                 rel="noreferrer"
               >
                 Watch on Twitch
+                <ExternalLinkIcon data-icon="inline-end" />
               </a>
             </Button>
           )}
