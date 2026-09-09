@@ -14,6 +14,27 @@ const DEFAULT_LANGUAGE = "en"
 const FALLBACK_TITLE = "Twitch Radar"
 const FALLBACK_BODY = "A channel you follow has an update."
 
+// WebKit on iOS is known to drop `event.notification.data` by the time
+// notificationclick fires for a web-pushed notification on an installed PWA
+// (the object showNotification() was given doesn't reliably survive to the
+// click event). Cache Storage is unaffected by that bug, so the push handler
+// also stashes the target url there as a fallback notificationclick can read
+// when `data` comes back empty. Single slot is enough: pushes aren't
+// concurrent enough in this app to need one per notification.
+const NOTIFICATION_URL_CACHE = "notification-url-v1"
+const NOTIFICATION_URL_CACHE_KEY = "/__pending-notification-url"
+
+async function rememberNotificationUrl(url) {
+  const cache = await caches.open(NOTIFICATION_URL_CACHE)
+  await cache.put(NOTIFICATION_URL_CACHE_KEY, new Response(url))
+}
+
+async function recallNotificationUrl() {
+  const cache = await caches.open(NOTIFICATION_URL_CACHE)
+  const res = await cache.match(NOTIFICATION_URL_CACHE_KEY)
+  return res ? res.text() : null
+}
+
 function interpolate(template, params) {
   if (!template) return null
   return template.replace(/\{(\w+)\}/g, (match, key) =>
@@ -56,6 +77,7 @@ self.addEventListener("push", (event) => {
         body = resolvedBody || body
       }
 
+      await rememberNotificationUrl(url)
       await self.registration.showNotification(title, {
         body,
         icon: "/icon.svg",
@@ -69,35 +91,33 @@ self.addEventListener("push", (event) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close()
 
-  const targetUrl = new URL(
-    event.notification.data?.url || "/",
-    self.location.origin,
-  ).href
-
   event.waitUntil(
-    self.clients
-      .matchAll({ type: "window", includeUncontrolled: true })
-      .then((windowClients) => {
-        // Prefer focusing an already-open app window (navigating it if it is
-        // on a different route) over spawning a new one.
-        for (const client of windowClients) {
-          if (client.url === targetUrl && "focus" in client) {
-            return client.focus()
-          }
+    (async () => {
+      const url =
+        event.notification.data?.url || (await recallNotificationUrl()) || "/"
+      const targetUrl = new URL(url, self.location.origin).href
+      const windowClients = await self.clients.matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      })
+
+      // Prefer focusing an already-open app window (navigating it if it is
+      // on a different route) over spawning a new one.
+      for (const client of windowClients) {
+        if (client.url === targetUrl && "focus" in client) {
+          return client.focus()
         }
-        const appClient = windowClients.find(
-          (client) =>
-            new URL(client.url).origin === self.location.origin &&
-            "focus" in client,
-        )
-        if (appClient) {
-          return appClient
-            .focus()
-            .then((focused) =>
-              "navigate" in focused ? focused.navigate(targetUrl) : focused,
-            )
-        }
-        return self.clients.openWindow(targetUrl)
-      }),
+      }
+      const appClient = windowClients.find(
+        (client) =>
+          new URL(client.url).origin === self.location.origin &&
+          "focus" in client,
+      )
+      if (appClient) {
+        const focused = await appClient.focus()
+        return "navigate" in focused ? focused.navigate(targetUrl) : focused
+      }
+      return self.clients.openWindow(targetUrl)
+    })(),
   )
 })

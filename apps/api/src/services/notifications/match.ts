@@ -24,13 +24,14 @@ function buildPayload(
   broadcasterName: string,
   categoryName: string,
   lang: Language,
+  broadcasterUserId: string,
 ): NotificationPayload {
   return {
     titleKey: `notification.${trigger}.title`,
     bodyKey: `notification.${trigger}.body`,
     params: { broadcasterName, categoryName },
     lang,
-    url: "/channels",
+    url: `/channels?broadcaster=${broadcasterUserId}`,
   }
 }
 
@@ -120,6 +121,7 @@ export async function matchAndCreateDeliveries(
         broadcasterName,
         categoryName,
         languageByUserId.get(userId) ?? "en",
+        broadcasterUserId,
       )
       await queue.send({ deliveryId: delivery.id, userId, payload })
     }

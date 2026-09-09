@@ -120,6 +120,7 @@ export const channelState = sqliteTable("channel_state", {
   categoryId: text("category_id"),
   categoryName: text("category_name"),
   title: text("title"),
+  thumbnailUrl: text("thumbnail_url"),
   viewerCount: integer("viewer_count"),
   startedAt: text("started_at"),
   updatedFromEventAt: text("updated_from_event_at"),
