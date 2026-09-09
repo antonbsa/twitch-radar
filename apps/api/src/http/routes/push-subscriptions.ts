@@ -1,6 +1,7 @@
 import { z } from "zod"
 import type { Context } from "hono"
 import type { HonoEnv } from "../../env"
+import { logger, serializeError } from "../../logger"
 import { importVapidSigningKey } from "../../services/push/web-push"
 import { ApiError } from "../errors"
 import { jsonResponse } from "../response"
@@ -23,6 +24,11 @@ export async function handleGetVapidPublicKey(
   try {
     await importVapidSigningKey(c.var.config)
   } catch (error) {
+    // ApiError responses are never logged by errorResponse() (only
+    // non-ApiError/unhandled errors are) — log here so this 500's cause
+    // (including the underlying WebCrypto error importVapidSigningKey
+    // attaches via `cause`) isn't silently dropped.
+    logger.error("VAPID key import failed", { ...serializeError(error) })
     throw new ApiError(
       500,
       "vapid_not_configured",

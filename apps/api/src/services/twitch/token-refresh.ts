@@ -110,30 +110,39 @@ export async function refreshExpiringTwitchTokens(
   db: Database,
   config: AppConfig,
 ): Promise<void> {
-  const cutoff = new Date(
-    Date.now() + SCHEDULED_REFRESH_LOOKAHEAD_MS,
-  ).toISOString()
-  const expiring = await db.twitchTokens.findExpiringBefore(
-    cutoff,
-    MAX_SCHEDULED_REFRESHES_PER_RUN,
-  )
-  let succeeded = 0
+  try {
+    const cutoff = new Date(
+      Date.now() + SCHEDULED_REFRESH_LOOKAHEAD_MS,
+    ).toISOString()
+    const expiring = await db.twitchTokens.findExpiringBefore(
+      cutoff,
+      MAX_SCHEDULED_REFRESHES_PER_RUN,
+    )
+    let succeeded = 0
 
-  for (const record of expiring) {
-    try {
-      await refreshAndStoreToken(db, config, record)
-      succeeded += 1
-    } catch (error) {
-      logger.error("Scheduled Twitch token refresh failed", {
-        userId: record.user_id,
-        ...serializeError(error),
-      })
+    for (const record of expiring) {
+      try {
+        await refreshAndStoreToken(db, config, record)
+        succeeded += 1
+      } catch (error) {
+        logger.error("Scheduled Twitch token refresh failed", {
+          userId: record.user_id,
+          ...serializeError(error),
+        })
+      }
     }
-  }
 
-  logger.info("Scheduled Twitch token refresh sweep completed", {
-    attempted: expiring.length,
-    succeeded,
-    failed: expiring.length - succeeded,
-  })
+    logger.info("Scheduled Twitch token refresh sweep completed", {
+      attempted: expiring.length,
+      succeeded,
+      failed: expiring.length - succeeded,
+    })
+  } catch (error) {
+    // Covers a D1 read failure (findExpiringBefore) or anything else thrown
+    // outside the per-record handling above, so it's logged with full detail
+    // instead of escaping as Cloudflare's bare automatic exception capture.
+    logger.error("Scheduled Twitch token refresh sweep failed", {
+      ...serializeError(error),
+    })
+  }
 }
