@@ -7,7 +7,7 @@ import {
 } from "./orchestrator/test-seam-client"
 import { WEB_URL } from "./setup/browser"
 import { it } from "./setup/fixtures"
-import { expectVisible } from "./setup/assertions"
+import { expectHidden, expectVisible } from "./setup/assertions"
 
 function broadcasterId(suffix: string): string {
   return `${E2E_BROADCASTER_PREFIX}channels_${suffix}`
@@ -257,5 +257,200 @@ describe("Channels view", () => {
     const dialog = page.getByRole("dialog")
     await expectVisible(dialog)
     await expectVisible(dialog.getByText("ConfigStreamer"))
+  })
+
+  // These tests assert on individual rows scoped by broadcaster ID rather
+  // than the raw row count — the E2E user's followed-channel list accumulates
+  // across every test in this file (no per-test reset; see the fixture note
+  // in setup/fixtures.ts about each test getting its own session, not its own
+  // data), so a bare count would be flaky depending on run order.
+  describe("search, filter, and sort controls", () => {
+    it("should filter the list by search text matching name or login", async ({
+      authenticatedSession,
+    }) => {
+      const zebra = broadcasterId("search_zebra")
+      const apple = broadcasterId("search_apple")
+
+      await seedFollowedChannels([
+        {
+          broadcasterUserId: zebra,
+          broadcasterLogin: "zebra",
+          broadcasterDisplayName: "SearchZebra",
+        },
+        {
+          broadcasterUserId: apple,
+          broadcasterLogin: "apple",
+          broadcasterDisplayName: "SearchApple",
+        },
+      ])
+      await seedChannelState([
+        { broadcasterUserId: zebra, isLive: false },
+        { broadcasterUserId: apple, isLive: false },
+      ])
+
+      const { page } = authenticatedSession
+      await page.goto(WEB_URL)
+
+      const zebraRow = page.locator(
+        `[data-testid="channel-row"][data-broadcaster-user-id="${zebra}"]`,
+      )
+      const appleRow = page.locator(
+        `[data-testid="channel-row"][data-broadcaster-user-id="${apple}"]`,
+      )
+      await expectVisible(zebraRow)
+      await expectVisible(appleRow)
+
+      await page.getByPlaceholder("Search channels...").fill("zeb")
+      await expectVisible(zebraRow)
+      await expectHidden(appleRow)
+    })
+
+    it("should hide the offline section when 'Live now' is selected", async ({
+      authenticatedSession,
+    }) => {
+      const live = broadcasterId("livefilter_live")
+      const offline = broadcasterId("livefilter_offline")
+
+      await seedFollowedChannels([
+        {
+          broadcasterUserId: live,
+          broadcasterLogin: "livefilterlive",
+          broadcasterDisplayName: "LiveFilterLive",
+        },
+        {
+          broadcasterUserId: offline,
+          broadcasterLogin: "livefilteroffline",
+          broadcasterDisplayName: "LiveFilterOffline",
+        },
+      ])
+      await seedChannelState([
+        { broadcasterUserId: live, isLive: true, viewerCount: 10 },
+        { broadcasterUserId: offline, isLive: false },
+      ])
+
+      const { page } = authenticatedSession
+      await page.goto(WEB_URL)
+
+      const liveRow = page.locator(
+        `[data-testid="channel-row"][data-broadcaster-user-id="${live}"]`,
+      )
+      const offlineRow = page.locator(
+        `[data-testid="channel-row"][data-broadcaster-user-id="${offline}"]`,
+      )
+      await expectVisible(liveRow)
+      await expectVisible(offlineRow)
+
+      // Radix's ToggleGroup (type="single") exposes items with role="radio",
+      // not "button".
+      await page.getByRole("radio", { name: "Live now" }).click()
+      await expectVisible(liveRow)
+      await expectHidden(offlineRow)
+    })
+
+    it("should narrow the live section by the selected category", async ({
+      authenticatedSession,
+    }) => {
+      const chatting = broadcasterId("category_chatting")
+      const music = broadcasterId("category_music")
+
+      await seedFollowedChannels([
+        {
+          broadcasterUserId: chatting,
+          broadcasterLogin: "categorychatting",
+          broadcasterDisplayName: "CategoryChatting",
+        },
+        {
+          broadcasterUserId: music,
+          broadcasterLogin: "categorymusic",
+          broadcasterDisplayName: "CategoryMusic",
+        },
+      ])
+      await seedChannelState([
+        {
+          broadcasterUserId: chatting,
+          isLive: true,
+          categoryName: "Just Chatting",
+          viewerCount: 10,
+        },
+        {
+          broadcasterUserId: music,
+          isLive: true,
+          categoryName: "Music",
+          viewerCount: 20,
+        },
+      ])
+
+      const { page } = authenticatedSession
+      await page.goto(WEB_URL)
+
+      const chattingRow = page.locator(
+        `[data-testid="channel-row"][data-broadcaster-user-id="${chatting}"]`,
+      )
+      const musicRow = page.locator(
+        `[data-testid="channel-row"][data-broadcaster-user-id="${music}"]`,
+      )
+      await expectVisible(chattingRow)
+      await expectVisible(musicRow)
+
+      await page.getByRole("combobox", { name: "Filter by category" }).click()
+      await page.getByRole("option", { name: "Music" }).click()
+
+      await expectVisible(musicRow)
+      await expectHidden(chattingRow)
+    })
+
+    it("should reorder channels alphabetically when 'Name (A-Z)' sort is selected", async ({
+      authenticatedSession,
+    }) => {
+      const highViewer = broadcasterId("sort_high")
+      const lowViewer = broadcasterId("sort_low")
+
+      await seedFollowedChannels([
+        {
+          broadcasterUserId: highViewer,
+          broadcasterLogin: "sorthigh",
+          broadcasterDisplayName: "SortSetZeta",
+        },
+        {
+          broadcasterUserId: lowViewer,
+          broadcasterLogin: "sortlow",
+          broadcasterDisplayName: "SortSetAlpha",
+        },
+      ])
+      await seedChannelState([
+        { broadcasterUserId: highViewer, isLive: true, viewerCount: 5000 },
+        { broadcasterUserId: lowViewer, isLive: true, viewerCount: 100 },
+      ])
+
+      const { page } = authenticatedSession
+      await page.goto(WEB_URL)
+
+      const highRow = page.locator(
+        `[data-testid="channel-row"][data-broadcaster-user-id="${highViewer}"]`,
+      )
+      const lowRow = page.locator(
+        `[data-testid="channel-row"][data-broadcaster-user-id="${lowViewer}"]`,
+      )
+      await expectVisible(highRow)
+      await expectVisible(lowRow)
+
+      async function highIsAboveLow(): Promise<boolean> {
+        const [highBox, lowBox] = await Promise.all([
+          highRow.boundingBox(),
+          lowRow.boundingBox(),
+        ])
+        if (!highBox || !lowBox) return false
+        return highBox.y < lowBox.y
+      }
+
+      // Default sort is by viewers desc: SortSetZeta (5000) above SortSetAlpha (100).
+      await expect.poll(highIsAboveLow).toBe(true)
+
+      await page.getByRole("combobox", { name: "Sort channels" }).click()
+      await page.getByRole("option", { name: "Name (A-Z)" }).click()
+
+      // Alphabetical: SortSetAlpha above SortSetZeta.
+      await expect.poll(highIsAboveLow).toBe(false)
+    })
   })
 })

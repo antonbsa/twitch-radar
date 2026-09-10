@@ -3,10 +3,17 @@ import { RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ChannelRow } from "@/components/channel-row"
+import { ChannelFiltersBar } from "@/components/channel-filters-bar"
 import { ChannelPreferencesSheet } from "@/components/channel-preferences-sheet"
 import { ReconnectRequired } from "@/components/reconnect-required"
 import { useAuth } from "@/context/auth-context"
 import { useFollowedChannels, useSyncFollows } from "@/hooks/use-channels"
+import {
+  applyChannelFilters,
+  DEFAULT_CHANNEL_FILTERS,
+  deriveLiveCategories,
+  type ChannelFilters,
+} from "@/lib/channel-filters"
 import { ApiRequestError } from "@/lib/errors"
 import { cn } from "@/lib/utils"
 import type { FollowedChannel } from "@/types/channel"
@@ -20,14 +27,26 @@ export function ChannelsPage() {
   const syncFollows = useSyncFollows()
   const [configuringChannel, setConfiguringChannel] =
     useState<FollowedChannel | null>(null)
+  const [filters, setFilters] = useState<ChannelFilters>(
+    DEFAULT_CHANNEL_FILTERS,
+  )
 
-  const { live, offline } = useMemo(() => {
-    const list = channels ?? []
-    return {
-      live: list.filter((channel) => channel.is_live),
-      offline: list.filter((channel) => !channel.is_live),
-    }
-  }, [channels])
+  const categories = useMemo(
+    () => deriveLiveCategories(channels ?? []),
+    [channels],
+  )
+
+  const { live, offline } = useMemo(
+    () => applyChannelFilters(channels ?? [], filters),
+    [channels, filters],
+  )
+
+  const hasChannels = (channels?.length ?? 0) > 0
+  const hasVisibleResults = live.length > 0 || offline.length > 0
+
+  function updateFilters(patch: Partial<ChannelFilters>) {
+    setFilters((current) => ({ ...current, ...patch }))
+  }
 
   // Tracked separately from syncFollows.error, which resets to null on every
   // mutate() call — deriving visibility from it directly would blink the label.
@@ -116,6 +135,20 @@ export function ChannelsPage() {
       {!isLoading && !isError && channels && channels.length === 0 && (
         <p className="px-4 py-6 text-sm text-muted-foreground">
           No followed channels yet. Sync to pull your Twitch follows.
+        </p>
+      )}
+
+      {!isLoading && !isError && hasChannels && (
+        <ChannelFiltersBar
+          filters={filters}
+          onChange={updateFilters}
+          categories={categories}
+        />
+      )}
+
+      {!isLoading && !isError && hasChannels && !hasVisibleResults && (
+        <p className="px-4 py-6 text-sm text-muted-foreground">
+          No channels match your filters.
         </p>
       )}
 
