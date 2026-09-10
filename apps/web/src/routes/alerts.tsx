@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { AddGlobalCategorySheet } from "@/components/add-global-category-sheet"
 import { ReconnectRequired } from "@/components/reconnect-required"
 import { useAuth } from "@/context/auth-context"
+import { useLanguage } from "@/context/language-context"
 import {
   usePreferences,
   useRemoveGlobalPreference,
@@ -13,6 +14,7 @@ import {
 export function AlertsPage() {
   const { data: preferences, isLoading, isError } = usePreferences()
   const { reconnectRequired } = useAuth()
+  const { t } = useLanguage()
   const removePreference = useRemoveGlobalPreference()
   const [addSheetOpen, setAddSheetOpen] = useState(false)
 
@@ -21,7 +23,7 @@ export function AlertsPage() {
   return (
     <div>
       <div className="px-4 py-3">
-        <h1 className="text-lg font-semibold">Alerts</h1>
+        <h1 className="text-lg font-semibold">{t("alerts.title")}</h1>
       </div>
 
       <div className="px-4">
@@ -31,7 +33,7 @@ export function AlertsPage() {
           onClick={() => setAddSheetOpen(true)}
         >
           <Plus className="size-4" />
-          Add Category
+          {t("alerts.add_category")}
         </Button>
       </div>
 
@@ -47,13 +49,13 @@ export function AlertsPage() {
 
         {!isLoading && isError && !reconnectRequired && (
           <p className="px-4 py-6 text-sm text-muted-foreground">
-            Failed to load alerts. Try again later.
+            {t("alerts.load_error")}
           </p>
         )}
 
         {!isLoading && !isError && globalPreferences.length === 0 && (
           <p className="px-4 py-6 text-sm text-muted-foreground">
-            No global alerts set.
+            {t("alerts.empty")}
           </p>
         )}
 
@@ -68,7 +70,9 @@ export function AlertsPage() {
               <Button
                 variant="ghost"
                 size="icon-sm"
-                aria-label={`Remove ${pref.category_name}`}
+                aria-label={t("alerts.remove_aria", {
+                  category: pref.category_name,
+                })}
                 onClick={() => removePreference.mutate(pref.id)}
               >
                 <X className="size-4" />

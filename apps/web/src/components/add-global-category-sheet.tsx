@@ -5,6 +5,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { CategorySearchList } from "@/components/category-search-list"
+import { useLanguage } from "@/context/language-context"
 import { useAddGlobalPreference } from "@/hooks/use-preferences"
 import type { Category } from "@/types/preference"
 
@@ -20,6 +21,7 @@ export function AddGlobalCategorySheet({
   disabledCategoryIds,
 }: AddGlobalCategorySheetProps) {
   const addPreference = useAddGlobalPreference()
+  const { t } = useLanguage()
 
   function handleSelect(category: Category) {
     addPreference.mutate(category, {
@@ -31,7 +33,7 @@ export function AddGlobalCategorySheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom">
         <SheetHeader>
-          <SheetTitle>Add Category</SheetTitle>
+          <SheetTitle>{t("add_global_category.title")}</SheetTitle>
         </SheetHeader>
         <div className="px-4 pb-4">
           <CategorySearchList

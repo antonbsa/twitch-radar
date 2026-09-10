@@ -2,7 +2,11 @@ import type { AppConfig } from "../../env"
 import type { Database } from "../../db"
 import { logger, serializeError } from "../../logger"
 import { ensureMonitoredBroadcasters } from "../monitoring"
-import { getAllFollowedChannels, getAllFollowedStreams } from "./client"
+import {
+  getAllFollowedChannels,
+  getAllFollowedStreams,
+  resolveThumbnailUrl,
+} from "./client"
 import { getValidAccessToken } from "./token-refresh"
 
 // A user's follow list drives which broadcasters their global preferences
@@ -64,6 +68,7 @@ export async function syncFollowedChannels(
               categoryId: stream.game_id || null,
               categoryName: stream.game_name || null,
               title: stream.title || null,
+              thumbnailUrl: resolveThumbnailUrl(stream.thumbnail_url),
               viewerCount: stream.viewer_count,
               startedAt: stream.started_at,
               now,
@@ -75,6 +80,7 @@ export async function syncFollowedChannels(
               categoryId: null,
               categoryName: null,
               title: null,
+              thumbnailUrl: null,
               viewerCount: null,
               startedAt: null,
               now,
@@ -116,44 +122,54 @@ export async function syncStaleFollows(
   db: Database,
   config: AppConfig,
 ): Promise<void> {
-  const userIds = await db.globalCategoryPreferences.listUserIdsWithActive()
-  const cutoff = Date.now() - FOLLOW_SYNC_STALE_MS
-  let attempted = 0
-  let succeeded = 0
+  try {
+    const userIds = await db.globalCategoryPreferences.listUserIdsWithActive()
+    const cutoff = Date.now() - FOLLOW_SYNC_STALE_MS
+    let attempted = 0
+    let succeeded = 0
 
-  for (const userId of userIds) {
-    if (attempted >= MAX_FOLLOW_SYNCS_PER_RUN) break
-    const user = await db.users.findById(userId)
-    if (!user) continue
-    if (
-      user.last_follow_sync_at &&
-      Date.parse(user.last_follow_sync_at) > cutoff
-    ) {
-      continue
+    for (const userId of userIds) {
+      if (attempted >= MAX_FOLLOW_SYNCS_PER_RUN) break
+      try {
+        const user = await db.users.findById(userId)
+        if (!user) continue
+        if (
+          user.last_follow_sync_at &&
+          Date.parse(user.last_follow_sync_at) > cutoff
+        ) {
+          continue
+        }
+
+        attempted += 1
+        const accessToken = await getValidAccessToken(db, config, userId)
+        await syncFollowedChannels(
+          db,
+          config,
+          userId,
+          user.twitch_user_id,
+          accessToken,
+        )
+        succeeded += 1
+      } catch (error) {
+        logger.error("Scheduled follow sync failed", {
+          userId,
+          ...serializeError(error),
+        })
+      }
     }
 
-    attempted += 1
-    try {
-      const accessToken = await getValidAccessToken(db, config, userId)
-      await syncFollowedChannels(
-        db,
-        config,
-        userId,
-        user.twitch_user_id,
-        accessToken,
-      )
-      succeeded += 1
-    } catch (error) {
-      logger.error("Scheduled follow sync failed", {
-        userId,
-        ...serializeError(error),
-      })
-    }
+    logger.info("Scheduled follow sync run completed", {
+      attempted,
+      succeeded,
+      failed: attempted - succeeded,
+    })
+  } catch (error) {
+    // Covers a D1 read failure (listUserIdsWithActive) or anything else
+    // thrown outside the per-user handling above, so it's logged with full
+    // detail instead of escaping as Cloudflare's bare automatic exception
+    // capture.
+    logger.error("Scheduled follow sync run failed", {
+      ...serializeError(error),
+    })
   }
-
-  logger.info("Scheduled follow sync run completed", {
-    attempted,
-    succeeded,
-    failed: attempted - succeeded,
-  })
 }

@@ -411,4 +411,103 @@ describe("Channels view", () => {
       await expect.poll(highIsAboveLow).toBe(false)
     })
   })
+
+  it("should open the channel detail modal when clicking a row, showing the snapshot, category, title, viewers, and a Twitch link", async ({
+    authenticatedSession,
+  }) => {
+    const id = broadcasterId("detail")
+    await seedFollowedChannels([
+      {
+        broadcasterUserId: id,
+        broadcasterLogin: "detailstreamer",
+        broadcasterDisplayName: "DetailStreamer",
+      },
+    ])
+    await seedChannelState([
+      {
+        broadcasterUserId: id,
+        isLive: true,
+        categoryName: "Just Chatting",
+        title: "Chatting with viewers",
+        thumbnailUrl: "https://example.com/detailstreamer-thumb.jpg",
+        viewerCount: 1234,
+      },
+    ])
+
+    const { page } = authenticatedSession
+    await page.goto(WEB_URL)
+
+    const row = page.locator(
+      `[data-testid="channel-row"][data-broadcaster-user-id="${id}"]`,
+    )
+    await expectVisible(row)
+    await row.click()
+
+    const modal = page.getByTestId("channel-detail-modal")
+    await expectVisible(modal)
+    await expectVisible(modal.getByText("DetailStreamer"))
+    await expectVisible(modal.getByText("Chatting with viewers"))
+    await expectVisible(modal.getByText("Just Chatting · 1.2K viewers"))
+    await expectVisible(
+      modal.locator(`img[src="https://example.com/detailstreamer-thumb.jpg"]`),
+    )
+
+    const watchLink = modal.getByRole("link", { name: "Watch on Twitch" })
+    await expectVisible(watchLink)
+    expect(await watchLink.getAttribute("href")).toBe(
+      "https://twitch.tv/detailstreamer",
+    )
+    expect(await watchLink.getAttribute("target")).toBe("_blank")
+  })
+
+  it("should open only the preferences sheet, not the detail modal, when clicking the config button", async ({
+    authenticatedSession,
+  }) => {
+    const id = broadcasterId("config-not-detail")
+    await seedFollowedChannels([
+      {
+        broadcasterUserId: id,
+        broadcasterLogin: "confignotdetail",
+        broadcasterDisplayName: "ConfigNotDetail",
+      },
+    ])
+    await seedChannelState([{ broadcasterUserId: id, isLive: false }])
+
+    const { page } = authenticatedSession
+    await page.goto(WEB_URL)
+
+    await page
+      .getByRole("button", { name: "Configure ConfigNotDetail" })
+      .click()
+
+    const dialog = page.getByRole("dialog")
+    await expectVisible(dialog)
+    await expectVisible(dialog.getByText("ConfigNotDetail"))
+    expect(await page.getByTestId("channel-detail-modal").count()).toBe(0)
+  })
+
+  it("should open the detail modal for the ?broadcaster= deep link and clear it from the URL", async ({
+    authenticatedSession,
+  }) => {
+    const id = broadcasterId("deeplink")
+    await seedFollowedChannels([
+      {
+        broadcasterUserId: id,
+        broadcasterLogin: "deeplinkstreamer",
+        broadcasterDisplayName: "DeepLinkStreamer",
+      },
+    ])
+    await seedChannelState([{ broadcasterUserId: id, isLive: false }])
+
+    const { page } = authenticatedSession
+    await page.goto(`${WEB_URL}/channels?broadcaster=${id}`)
+
+    const modal = page.getByTestId("channel-detail-modal")
+    await expectVisible(modal)
+    await expectVisible(modal.getByText("DeepLinkStreamer"))
+
+    await expect
+      .poll(() => new URL(page.url()).searchParams.get("broadcaster"))
+      .toBe(null)
+  })
 })

@@ -27,6 +27,7 @@ async function syncChannels(
     viewer_count: number
     started_at: string
     title: string
+    thumbnail_url?: string
   }> = [],
 ) {
   await orchestrator.mockTwitch.onFollowedChannels(channels)
@@ -210,6 +211,8 @@ describe("GET /api/channels/followed", () => {
           viewer_count: 777,
           started_at: "2024-06-01T10:00:00Z",
           title: "Building stuff",
+          thumbnail_url:
+            "https://static-cdn.jtvnw.net/previews-ttv/live_user_streamer-{width}x{height}.jpg",
         },
       ],
     )
@@ -225,8 +228,31 @@ describe("GET /api/channels/followed", () => {
       category_id: "game_123",
       category_name: "Minecraft",
       title: "Building stuff",
+      thumbnail_url:
+        "https://static-cdn.jtvnw.net/previews-ttv/live_user_streamer-640x360.jpg",
       viewer_count: 777,
       started_at: "2024-06-01T10:00:00Z",
+    })
+  })
+
+  it("should return null thumbnail_url for an offline channel with no prior state", async () => {
+    const { cookie } = await orchestrator.createAuthenticatedSession()
+    await syncChannels(cookie, [
+      {
+        broadcaster_id: "10",
+        broadcaster_login: "offline1",
+        broadcaster_name: "Offline1",
+      },
+    ])
+
+    const res = await fetch(`${orchestrator.baseUrl}/api/channels/followed`, {
+      headers: { Cookie: cookie },
+    })
+    const { data } = (await res.json()) as { data: unknown[] }
+
+    expect(data[0]).toMatchObject({
+      is_live: false,
+      thumbnail_url: null,
     })
   })
 

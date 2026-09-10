@@ -7,6 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useLanguage } from "@/context/language-context"
 import {
   ALL_CATEGORIES,
   type ChannelFilters,
@@ -24,6 +25,8 @@ export function ChannelFiltersBar({
   onChange,
   categories,
 }: ChannelFiltersBarProps) {
+  const { t } = useLanguage()
+
   return (
     <div className="flex items-center gap-2 px-4 pb-2">
       <div className="relative min-w-0 flex-1">
@@ -31,8 +34,8 @@ export function ChannelFiltersBar({
         <Input
           value={filters.search}
           onChange={(e) => onChange({ search: e.target.value })}
-          placeholder="Search channels..."
-          aria-label="Search channels"
+          placeholder={t("channels.search_placeholder")}
+          aria-label={t("channels.search_aria")}
           className="pl-8"
         />
       </div>
@@ -44,13 +47,15 @@ export function ChannelFiltersBar({
         >
           <SelectTrigger
             size="sm"
-            aria-label="Filter by category"
+            aria-label={t("channels.category_filter_aria")}
             className="w-24 shrink-0 sm:w-32"
           >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL_CATEGORIES}>All categories</SelectItem>
+            <SelectItem value={ALL_CATEGORIES}>
+              {t("channels.all_categories")}
+            </SelectItem>
             {categories.map((category) => (
               <SelectItem key={category} value={category}>
                 {category}
@@ -66,14 +71,16 @@ export function ChannelFiltersBar({
       >
         <SelectTrigger
           size="sm"
-          aria-label="Sort channels"
+          aria-label={t("channels.sort_aria")}
           className="w-24 shrink-0 sm:w-32"
         >
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="viewers">Viewers</SelectItem>
-          <SelectItem value="alphabetical">Name (A-Z)</SelectItem>
+          <SelectItem value="viewers">{t("channels.sort_viewers")}</SelectItem>
+          <SelectItem value="alphabetical">
+            {t("channels.sort_alphabetical")}
+          </SelectItem>
         </SelectContent>
       </Select>
     </div>

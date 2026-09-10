@@ -16,10 +16,10 @@ const compat = new FlatCompat({
 export default [
   {
     ignores: [
-      "apps/web/.wrangler/**",
-      "apps/api/.wrangler/**",
+      "**/.wrangler/**",
       "**/node_modules/**",
       "**/dist/**",
+      ".agents/**",
     ],
   },
   ...compat.extends("@rocketseat/eslint-config/react"),

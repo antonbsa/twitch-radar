@@ -1,7 +1,11 @@
 import type { Database } from "../../db"
 import type { ChannelStateChangeRecord } from "../../db/repositories/channel-state-changes"
 import type { NotificationTriggerType } from "../../db/repositories/notification-deliveries"
-import type { NotificationJobMessage, NotificationPayload } from "../../types"
+import type {
+  Language,
+  NotificationJobMessage,
+  NotificationPayload,
+} from "../../types"
 
 // ADR 0008: only these transitions notify. stream_ended never does, and
 // "entered/left desired category" is derived per user right here.
@@ -11,22 +15,23 @@ const TRIGGER_BY_CHANGE_TYPE: Partial<Record<string, NotificationTriggerType>> =
     category_changed: "switched_into_category",
   }
 
+// ADR 0044: the API never builds translated text, only a semantic key pair
+// (resolved against apps/web/public/locales/<lang>.json by the web app and
+// the service worker) plus interpolation params and the recipient's
+// language. Key names reuse the trigger type as the catalog namespace.
 function buildPayload(
   trigger: NotificationTriggerType,
   broadcasterName: string,
   categoryName: string,
+  lang: Language,
+  broadcasterUserId: string,
 ): NotificationPayload {
-  if (trigger === "stream_started_in_category") {
-    return {
-      title: `${broadcasterName} is streaming ${categoryName}`,
-      body: `${broadcasterName} just started streaming a category you follow.`,
-      url: "/channels",
-    }
-  }
   return {
-    title: `${broadcasterName} switched to ${categoryName}`,
-    body: `${broadcasterName} is now streaming a category you follow.`,
-    url: "/channels",
+    titleKey: `notification.${trigger}.title`,
+    bodyKey: `notification.${trigger}.body`,
+    params: { broadcasterName, categoryName },
+    lang,
+    url: `/channels?broadcaster=${broadcasterUserId}`,
   }
 }
 
@@ -84,14 +89,19 @@ export async function matchAndCreateDeliveries(
   const [monitored] = await db.monitoredChannels.findByBroadcasterUserIds([
     broadcasterUserId,
   ])
+  // Fallback to the raw id rather than English prose (ADR 0044): these
+  // values flow into `params` verbatim into every language's template, so a
+  // fake-English fallback here would leak untranslated text.
   const broadcasterName =
     monitored?.broadcaster_display_name ??
     monitored?.broadcaster_login ??
-    "A channel you follow"
-  const payload = buildPayload(
-    trigger,
-    broadcasterName,
-    change.next_category_name ?? "a category you follow",
+    broadcasterUserId
+  const categoryName = change.next_category_name ?? categoryId
+
+  // Payload can no longer be built once and reused for every matched user —
+  // `lang` is per-recipient — so language is batch-loaded up front instead.
+  const languageByUserId = await db.users.findLanguagesByIds(
+    Array.from(matchedUserIds),
   )
 
   const now = new Date().toISOString()
@@ -106,6 +116,13 @@ export async function matchAndCreateDeliveries(
       now,
     })
     if (delivery?.status === "pending") {
+      const payload = buildPayload(
+        trigger,
+        broadcasterName,
+        categoryName,
+        languageByUserId.get(userId) ?? "en",
+        broadcasterUserId,
+      )
       await queue.send({ deliveryId: delivery.id, userId, payload })
     }
   }

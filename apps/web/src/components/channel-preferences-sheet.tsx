@@ -7,6 +7,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { CategorySearchList } from "@/components/category-search-list"
+import { useLanguage } from "@/context/language-context"
 import {
   useAddChannelPreference,
   usePreferences,
@@ -24,6 +25,7 @@ export function ChannelPreferencesSheet({
   onOpenChange,
 }: ChannelPreferencesSheetProps) {
   const { data: preferences, isLoading } = usePreferences()
+  const { t } = useLanguage()
   const addPreference = useAddChannelPreference()
   const removePreference = useRemoveChannelPreference()
 
@@ -54,12 +56,14 @@ export function ChannelPreferencesSheet({
           />
 
           <div>
-            <p className="text-sm font-medium">Saved for this channel</p>
+            <p className="text-sm font-medium">
+              {t("channel_preferences.saved_for_channel")}
+            </p>
             {isLoading ? (
               <Skeleton className="mt-2 h-6 w-24" />
             ) : savedForChannel.length === 0 ? (
               <p className="mt-2 text-sm text-muted-foreground">
-                No preferences saved.
+                {t("channel_preferences.no_preferences")}
               </p>
             ) : (
               <div className="mt-2 flex flex-wrap gap-1.5">
@@ -69,7 +73,9 @@ export function ChannelPreferencesSheet({
                     <button
                       type="button"
                       onClick={() => removePreference.mutate(pref.id)}
-                      aria-label={`Remove ${pref.category_name}`}
+                      aria-label={t("channel_preferences.remove_aria", {
+                        category: pref.category_name,
+                      })}
                     >
                       ✕
                     </button>

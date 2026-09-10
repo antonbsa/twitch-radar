@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react"
+import { useSearchParams } from "react-router"
 import { RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ChannelRow } from "@/components/channel-row"
 import { ChannelFiltersBar } from "@/components/channel-filters-bar"
 import { ChannelPreferencesSheet } from "@/components/channel-preferences-sheet"
+import { ChannelDetailModal } from "@/components/channel-detail-modal"
 import { ReconnectRequired } from "@/components/reconnect-required"
 import { useAuth } from "@/context/auth-context"
+import { useLanguage } from "@/context/language-context"
 import { useFollowedChannels, useSyncFollows } from "@/hooks/use-channels"
 import {
   applyChannelFilters,
@@ -24,12 +27,18 @@ const SYNC_RATE_LIMIT_LABEL_HOLD_MS = 2500
 export function ChannelsPage() {
   const { data: channels, isLoading, isError } = useFollowedChannels()
   const { reconnectRequired } = useAuth()
+  const { t } = useLanguage()
   const syncFollows = useSyncFollows()
   const [configuringChannel, setConfiguringChannel] =
     useState<FollowedChannel | null>(null)
   const [filters, setFilters] = useState<ChannelFilters>(
     DEFAULT_CHANNEL_FILTERS,
   )
+  const [detailChannel, setDetailChannel] = useState<FollowedChannel | null>(
+    null,
+  )
+  const [searchParams, setSearchParams] = useSearchParams()
+  const appliedDeepLinkRef = useRef(false)
 
   const categories = useMemo(
     () => deriveLiveCategories(channels ?? []),
@@ -63,6 +72,30 @@ export function ChannelsPage() {
   }, [])
 
   useEffect(() => {
+    if (appliedDeepLinkRef.current) return
+    if (!channels) return
+
+    const broadcasterId = searchParams.get("broadcaster")
+    if (!broadcasterId) return
+
+    appliedDeepLinkRef.current = true
+
+    const match = channels.find(
+      (channel) => channel.broadcaster_user_id === broadcasterId,
+    )
+    if (match) setDetailChannel(match)
+
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        next.delete("broadcaster")
+        return next
+      },
+      { replace: true },
+    )
+  }, [channels, searchParams, setSearchParams])
+
+  useEffect(() => {
     if (syncFollows.status === "success") {
       setSyncRateLimited(false)
       if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current)
@@ -85,7 +118,7 @@ export function ChannelsPage() {
   return (
     <div>
       <div className="flex items-center justify-between px-4 py-3">
-        <h1 className="text-lg font-semibold">Channels</h1>
+        <h1 className="text-lg font-semibold">{t("channels.title")}</h1>
         <div className="flex items-center gap-2">
           {syncRateLimited && (
             <span
@@ -96,7 +129,7 @@ export function ChannelsPage() {
                   : "opacity-100 duration-200",
               )}
             >
-              Synced recently. Try again in a bit
+              {t("channels.sync_rate_limited")}
             </span>
           )}
           <Button
@@ -111,7 +144,7 @@ export function ChannelsPage() {
                 syncFollows.isPending && "animate-spin",
               )}
             />
-            Sync
+            {t("channels.sync")}
           </Button>
         </div>
       </div>
@@ -128,13 +161,13 @@ export function ChannelsPage() {
 
       {!isLoading && isError && !reconnectRequired && (
         <p className="px-4 py-6 text-sm text-muted-foreground">
-          Failed to load channels. Try syncing or reload the page.
+          {t("channels.load_error")}
         </p>
       )}
 
       {!isLoading && !isError && channels && channels.length === 0 && (
         <p className="px-4 py-6 text-sm text-muted-foreground">
-          No followed channels yet. Sync to pull your Twitch follows.
+          {t("channels.empty")}
         </p>
       )}
 
@@ -148,20 +181,21 @@ export function ChannelsPage() {
 
       {!isLoading && !isError && hasChannels && !hasVisibleResults && (
         <p className="px-4 py-6 text-sm text-muted-foreground">
-          No channels match your filters.
+          {t("channels.no_matches")}
         </p>
       )}
 
       {!isLoading && !isError && live.length > 0 && (
         <section>
           <h2 className="px-4 pt-2 pb-1 text-xs font-semibold text-muted-foreground uppercase">
-            Live
+            {t("channels.live")}
           </h2>
           {live.map((channel) => (
             <ChannelRow
               key={channel.broadcaster_user_id}
               channel={channel}
               onConfigure={setConfiguringChannel}
+              onOpenDetail={setDetailChannel}
             />
           ))}
         </section>
@@ -170,13 +204,14 @@ export function ChannelsPage() {
       {!isLoading && !isError && offline.length > 0 && (
         <section>
           <h2 className="px-4 pt-4 pb-1 text-xs font-semibold text-muted-foreground uppercase">
-            Offline
+            {t("channels.offline")}
           </h2>
           {offline.map((channel) => (
             <ChannelRow
               key={channel.broadcaster_user_id}
               channel={channel}
               onConfigure={setConfiguringChannel}
+              onOpenDetail={setDetailChannel}
             />
           ))}
         </section>
@@ -186,6 +221,13 @@ export function ChannelsPage() {
         channel={configuringChannel}
         onOpenChange={(open) => {
           if (!open) setConfiguringChannel(null)
+        }}
+      />
+
+      <ChannelDetailModal
+        channel={detailChannel}
+        onOpenChange={(open) => {
+          if (!open) setDetailChannel(null)
         }}
       />
     </div>

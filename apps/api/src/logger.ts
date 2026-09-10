@@ -107,18 +107,19 @@ export interface SerializedError {
   cause?: string
   status?: unknown
   code?: unknown
+  body?: string
 }
 
 /**
  * Shared shape for logging a caught error, used at every catch-site log call
  * instead of the lossy `error instanceof Error ? error.message : String(error)`
  * inline pattern — that pattern drops `stack`/`cause` and any extra fields
- * (e.g. `TwitchApiError.status`) the thrown value carries.
+ * (e.g. `TwitchApiError.status`/`.body`) the thrown value carries.
  *
- * Deliberately checks for `status`/`code` via `in` rather than importing
- * `TwitchApiError` — keeps this module free of a dependency on the Twitch
- * client and also picks up `status`/`code` from any other error shape the
- * app introduces later.
+ * Deliberately checks for `status`/`code`/`body` via `in` rather than
+ * importing `TwitchApiError` — keeps this module free of a dependency on the
+ * Twitch client and also picks up these fields from any other error shape
+ * the app introduces later.
  */
 export function serializeError(err: unknown): SerializedError {
   const result: SerializedError = {
@@ -133,6 +134,12 @@ export function serializeError(err: unknown): SerializedError {
   if (typeof err === "object" && err !== null) {
     if ("status" in err) result.status = (err as Record<string, unknown>).status
     if ("code" in err) result.code = (err as Record<string, unknown>).code
+    if ("body" in err) {
+      result.body = String((err as Record<string, unknown>).body).slice(
+        0,
+        MAX_SERIALIZED_FIELD_LENGTH,
+      )
+    }
   }
   return result
 }

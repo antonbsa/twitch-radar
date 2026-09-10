@@ -1,0 +1,1 @@
+ALTER TABLE `channel_state` ADD `thumbnail_url` text;

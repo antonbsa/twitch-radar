@@ -15,6 +15,9 @@ export const users = sqliteTable("users", {
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
   lastFollowSyncAt: text("last_follow_sync_at"),
+  // UI/notification language preference (ADR 0044): "en" | "pt-BR" | "es",
+  // validated at the API layer (zod), not a DB CHECK constraint.
+  language: text("language").notNull().default("en"),
 })
 
 export const twitchTokens = sqliteTable(
@@ -117,6 +120,7 @@ export const channelState = sqliteTable("channel_state", {
   categoryId: text("category_id"),
   categoryName: text("category_name"),
   title: text("title"),
+  thumbnailUrl: text("thumbnail_url"),
   viewerCount: integer("viewer_count"),
   startedAt: text("started_at"),
   updatedFromEventAt: text("updated_from_event_at"),
