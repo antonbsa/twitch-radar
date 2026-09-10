@@ -1,25 +1,22 @@
 import type { FollowedChannel } from "@/types/channel"
 
 export type ChannelSort = "viewers" | "alphabetical"
-export type LiveFilter = "all" | "live"
 
 export const ALL_CATEGORIES = "all" as const
 
 export interface ChannelFilters {
   search: string
-  liveFilter: LiveFilter
   category: string
   sort: ChannelSort
 }
 
 export const DEFAULT_CHANNEL_FILTERS: ChannelFilters = {
   search: "",
-  liveFilter: "all",
   category: ALL_CATEGORIES,
   sort: "viewers",
 }
 
-/** Distinct category names present across the given channels' live state, in first-seen order. */
+/** Distinct category names present across the given channels' live state, alphabetically sorted. */
 export function deriveLiveCategories(channels: FollowedChannel[]): string[] {
   const seen = new Set<string>()
   for (const channel of channels) {
@@ -27,7 +24,7 @@ export function deriveLiveCategories(channels: FollowedChannel[]): string[] {
       seen.add(channel.category_name)
     }
   }
-  return Array.from(seen)
+  return Array.from(seen).sort((a, b) => a.localeCompare(b))
 }
 
 function matchesSearch(channel: FollowedChannel, search: string): boolean {
@@ -78,10 +75,7 @@ export function applyChannelFilters(
     return channel.category_name === filters.category
   })
 
-  const offline =
-    filters.liveFilter === "live"
-      ? []
-      : searched.filter((channel) => !channel.is_live)
+  const offline = searched.filter((channel) => !channel.is_live)
 
   return {
     live: sortLive(live, filters.sort),

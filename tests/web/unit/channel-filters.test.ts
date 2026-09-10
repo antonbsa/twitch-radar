@@ -25,22 +25,22 @@ function channel(overrides: Partial<FollowedChannel> = {}): FollowedChannel {
 }
 
 describe("deriveLiveCategories", () => {
-  it("should return distinct category names from live channels only", () => {
+  it("should return distinct category names from live channels only, alphabetically sorted", () => {
     const channels = [
       channel({
         broadcaster_user_id: "1",
         is_live: true,
-        category_name: "Just Chatting",
+        category_name: "Music",
       }),
       channel({
         broadcaster_user_id: "2",
         is_live: true,
-        category_name: "Music",
+        category_name: "Just Chatting",
       }),
       channel({
         broadcaster_user_id: "3",
         is_live: true,
-        category_name: "Just Chatting",
+        category_name: "Music",
       }),
       channel({
         broadcaster_user_id: "4",
@@ -104,18 +104,6 @@ describe("applyChannelFilters", () => {
     })
     expect(result.offline.map((c) => c.broadcaster_user_id)).toEqual(["zebra"])
     expect(result.live).toEqual([])
-  })
-
-  it("should hide the offline section when liveFilter is 'live'", () => {
-    const result = applyChannelFilters(channels, {
-      ...DEFAULT_CHANNEL_FILTERS,
-      liveFilter: "live",
-    })
-    expect(result.offline).toEqual([])
-    expect(result.live.map((c) => c.broadcaster_user_id)).toEqual([
-      "high",
-      "low",
-    ])
   })
 
   it("should narrow the live section by category without affecting offline", () => {

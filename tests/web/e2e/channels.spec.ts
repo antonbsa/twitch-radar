@@ -305,48 +305,6 @@ describe("Channels view", () => {
       await expectHidden(appleRow)
     })
 
-    it("should hide the offline section when 'Live now' is selected", async ({
-      authenticatedSession,
-    }) => {
-      const live = broadcasterId("livefilter_live")
-      const offline = broadcasterId("livefilter_offline")
-
-      await seedFollowedChannels([
-        {
-          broadcasterUserId: live,
-          broadcasterLogin: "livefilterlive",
-          broadcasterDisplayName: "LiveFilterLive",
-        },
-        {
-          broadcasterUserId: offline,
-          broadcasterLogin: "livefilteroffline",
-          broadcasterDisplayName: "LiveFilterOffline",
-        },
-      ])
-      await seedChannelState([
-        { broadcasterUserId: live, isLive: true, viewerCount: 10 },
-        { broadcasterUserId: offline, isLive: false },
-      ])
-
-      const { page } = authenticatedSession
-      await page.goto(WEB_URL)
-
-      const liveRow = page.locator(
-        `[data-testid="channel-row"][data-broadcaster-user-id="${live}"]`,
-      )
-      const offlineRow = page.locator(
-        `[data-testid="channel-row"][data-broadcaster-user-id="${offline}"]`,
-      )
-      await expectVisible(liveRow)
-      await expectVisible(offlineRow)
-
-      // Radix's ToggleGroup (type="single") exposes items with role="radio",
-      // not "button".
-      await page.getByRole("radio", { name: "Live now" }).click()
-      await expectVisible(liveRow)
-      await expectHidden(offlineRow)
-    })
-
     it("should narrow the live section by the selected category", async ({
       authenticatedSession,
     }) => {
