@@ -1,17 +1,19 @@
-import { useState } from "react"
-import { Plus, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { useMemo, useState } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AddGlobalCategorySheet } from "@/components/add-global-category-sheet"
+import { ChannelAlertsCard } from "@/components/channel-alerts-card"
+import { ChannelPreferencesSheet } from "@/components/channel-preferences-sheet"
+import { GlobalAlertsCard } from "@/components/global-alerts-card"
 import { ReconnectRequired } from "@/components/reconnect-required"
 import { useAuth } from "@/context/auth-context"
 import { useFollowedChannels } from "@/hooks/use-channels"
+import { buildChannelAlertGroups } from "@/lib/alert-groups"
 import {
   usePreferences,
   useRemoveChannelPreference,
   useRemoveGlobalPreference,
 } from "@/hooks/use-preferences"
+import type { FollowedChannel } from "@/types/channel"
 
 export function AlertsPage() {
   const { data: preferences, isLoading, isError } = usePreferences()
@@ -23,159 +25,118 @@ export function AlertsPage() {
   const { reconnectRequired } = useAuth()
   const removeGlobalPreference = useRemoveGlobalPreference()
   const removeChannelPreference = useRemoveChannelPreference()
-  const [addSheetOpen, setAddSheetOpen] = useState(false)
+  const [addGlobalOpen, setAddGlobalOpen] = useState(false)
+  const [configuringChannel, setConfiguringChannel] =
+    useState<FollowedChannel | null>(null)
 
   const globalPreferences = preferences?.global ?? []
   const channelPreferences = preferences?.channel ?? []
 
-  const channelById = new Map(
-    (channels ?? []).map((channel) => [channel.broadcaster_user_id, channel]),
+  const groups = useMemo(
+    () =>
+      buildChannelAlertGroups(
+        channelPreferences,
+        channels ?? [],
+        globalPreferences.map((pref) => pref.category_id),
+      ),
+    [channelPreferences, channels, globalPreferences],
   )
 
-  // The channel panel needs both preferences and the followed-channel list
-  // (to resolve display names), so it waits on and reports errors from both.
-  const channelPanelLoading = isLoading || isChannelsLoading
-  const channelPanelError = isError || isChannelsError
+  // The per-channel section needs both preferences and the followed-channel
+  // list (to resolve display names), so it waits on and reports errors
+  // from both.
+  const channelSectionLoading = isLoading || isChannelsLoading
+  const channelSectionError = isError || isChannelsError
+
+  function openChannelSheet(broadcasterUserId: string) {
+    const channel = (channels ?? []).find(
+      (c) => c.broadcaster_user_id === broadcasterUserId,
+    )
+    if (channel) setConfiguringChannel(channel)
+  }
 
   return (
-    <div>
+    <div className="pb-4">
       <div className="px-4 py-3">
         <h1 className="text-lg font-semibold">Alerts</h1>
       </div>
 
-      <Tabs defaultValue="global" className="gap-0">
+      <h2 className="px-4 pt-1 pb-2 text-xs font-semibold text-muted-foreground uppercase">
+        All channels
+      </h2>
+
+      {isLoading && (
         <div className="px-4">
-          <TabsList className="w-full">
-            <TabsTrigger value="global">Global</TabsTrigger>
-            <TabsTrigger value="channel">Per Channel</TabsTrigger>
-          </TabsList>
+          <Skeleton className="h-20 w-full" />
         </div>
+      )}
 
-        <TabsContent value="global">
-          <div className="px-4 pt-3">
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => setAddSheetOpen(true)}
-            >
-              <Plus className="size-4" />
-              Add Category
-            </Button>
-          </div>
+      {!isLoading && isError && reconnectRequired && <ReconnectRequired />}
 
-          <div className="mt-3">
-            {isLoading && (
-              <div className="space-y-1 px-4">
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-              </div>
-            )}
+      {!isLoading && isError && !reconnectRequired && (
+        <p className="px-4 py-6 text-sm text-muted-foreground">
+          Failed to load alerts. Try again later.
+        </p>
+      )}
 
-            {!isLoading && isError && reconnectRequired && (
-              <ReconnectRequired />
-            )}
+      {!isLoading && !isError && (
+        <GlobalAlertsCard
+          preferences={globalPreferences}
+          onAdd={() => setAddGlobalOpen(true)}
+          onRemove={(id) => removeGlobalPreference.mutate(id)}
+        />
+      )}
 
-            {!isLoading && isError && !reconnectRequired && (
-              <p className="px-4 py-6 text-sm text-muted-foreground">
-                Failed to load alerts. Try again later.
-              </p>
-            )}
+      <h2 className="px-4 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase">
+        Per channel
+      </h2>
 
-            {!isLoading && !isError && globalPreferences.length === 0 && (
-              <p className="px-4 py-6 text-sm text-muted-foreground">
-                No global alerts set.
-              </p>
-            )}
+      {channelSectionLoading && (
+        <div className="space-y-2 px-4">
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-16 w-full" />
+        </div>
+      )}
 
-            {!isLoading &&
-              !isError &&
-              globalPreferences.map((pref) => (
-                <div
-                  key={pref.id}
-                  className="flex items-center justify-between border-b border-border px-4 py-3"
-                >
-                  <span className="text-sm">{pref.category_name}</span>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label={`Remove ${pref.category_name}`}
-                    onClick={() => removeGlobalPreference.mutate(pref.id)}
-                  >
-                    <X className="size-4" />
-                  </Button>
-                </div>
-              ))}
-          </div>
-        </TabsContent>
+      {!channelSectionLoading &&
+        channelSectionError &&
+        !reconnectRequired &&
+        !isError && (
+          <p className="px-4 py-6 text-sm text-muted-foreground">
+            Failed to load alerts. Try again later.
+          </p>
+        )}
 
-        <TabsContent value="channel">
-          <div className="mt-3">
-            {channelPanelLoading && (
-              <div className="space-y-1 px-4">
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-              </div>
-            )}
+      {!channelSectionLoading &&
+        !channelSectionError &&
+        groups.length === 0 && (
+          <p className="px-4 py-6 text-sm text-muted-foreground">
+            No per-channel alerts set.
+          </p>
+        )}
 
-            {!channelPanelLoading && channelPanelError && reconnectRequired && (
-              <ReconnectRequired />
-            )}
-
-            {!channelPanelLoading &&
-              channelPanelError &&
-              !reconnectRequired && (
-                <p className="px-4 py-6 text-sm text-muted-foreground">
-                  Failed to load alerts. Try again later.
-                </p>
-              )}
-
-            {!channelPanelLoading &&
-              !channelPanelError &&
-              channelPreferences.length === 0 && (
-                <p className="px-4 py-6 text-sm text-muted-foreground">
-                  No per-channel alerts set.
-                </p>
-              )}
-
-            {!channelPanelLoading &&
-              !channelPanelError &&
-              channelPreferences.map((pref) => {
-                const channel = channelById.get(pref.broadcaster_user_id)
-                const channelName =
-                  channel?.broadcaster_display_name ?? pref.broadcaster_user_id
-
-                return (
-                  <div
-                    key={pref.id}
-                    className="flex items-center justify-between border-b border-border px-4 py-3"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">
-                        {channelName}
-                      </p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {pref.category_name}
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      aria-label={`Remove ${pref.category_name} for ${channelName}`}
-                      onClick={() => removeChannelPreference.mutate(pref.id)}
-                    >
-                      <X className="size-4" />
-                    </Button>
-                  </div>
-                )
-              })}
-          </div>
-        </TabsContent>
-      </Tabs>
+      {!channelSectionLoading &&
+        !channelSectionError &&
+        groups.map((group) => (
+          <ChannelAlertsCard
+            key={group.broadcasterUserId}
+            group={group}
+            onAdd={openChannelSheet}
+            onRemove={(id) => removeChannelPreference.mutate(id)}
+          />
+        ))}
 
       <AddGlobalCategorySheet
-        open={addSheetOpen}
-        onOpenChange={setAddSheetOpen}
+        open={addGlobalOpen}
+        onOpenChange={setAddGlobalOpen}
         disabledCategoryIds={globalPreferences.map((pref) => pref.category_id)}
+      />
+
+      <ChannelPreferencesSheet
+        channel={configuringChannel}
+        onOpenChange={(open) => {
+          if (!open) setConfiguringChannel(null)
+        }}
       />
     </div>
   )

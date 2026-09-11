@@ -1,7 +1,8 @@
-import { afterAll, beforeAll, describe } from "vitest"
+import { afterAll, beforeAll, describe, expect } from "vitest"
 import {
   E2E_BROADCASTER_PREFIX,
   resetState,
+  seedChannelState,
   seedFollowedChannels,
 } from "./orchestrator/test-seam-client"
 import { WEB_URL } from "./setup/browser"
@@ -71,7 +72,7 @@ describe("Alerts view", () => {
     )
 
     await page.goto(`${WEB_URL}/alerts`)
-    await page.getByRole("button", { name: "Add Category" }).click()
+    await page.getByRole("button", { name: "Add global category" }).click()
 
     const dialog = page.getByRole("dialog")
     await expectVisible(dialog)
@@ -105,7 +106,7 @@ describe("Alerts view", () => {
     await page.goto(`${WEB_URL}/alerts`)
     await expectVisible(page.getByText("No global alerts set."))
 
-    await page.getByRole("button", { name: "Add Category" }).click()
+    await page.getByRole("button", { name: "Add global category" }).click()
     const dialog = page.getByRole("dialog")
     await expectVisible(dialog)
 
@@ -122,7 +123,7 @@ describe("Alerts view", () => {
     await expectHidden(page.getByText("Minecraft"))
   })
 
-  it("should show the empty state on the per-channel tab when there are no channel alerts", async ({
+  it("should show both section empty states without any tab navigation", async ({
     authenticatedSession,
   }) => {
     const { page } = authenticatedSession
@@ -135,24 +136,28 @@ describe("Alerts view", () => {
     )
 
     await page.goto(`${WEB_URL}/alerts`)
-    await page.getByRole("tab", { name: "Per Channel" }).click()
+
+    await expectVisible(page.getByRole("heading", { name: "All channels" }))
+    await expectVisible(page.getByText("No global alerts set."))
+    await expectVisible(page.getByRole("heading", { name: "Per channel" }))
     await expectVisible(page.getByText("No per-channel alerts set."))
+    expect(await page.getByRole("tab").count()).toBe(0)
   })
 
-  it("should list a per-channel alert with the broadcaster's display name and remove it", async ({
+  it("should group a channel's categories into one card and remove one of them", async ({
     authenticatedSession,
   }) => {
-    const id = broadcasterId("perchannel")
+    const id = broadcasterId("grouped")
     await seedFollowedChannels([
       {
         broadcasterUserId: id,
-        broadcasterLogin: "perchannelstreamer",
-        broadcasterDisplayName: "PerChannelStreamer",
+        broadcasterLogin: "groupedstreamer",
+        broadcasterDisplayName: "GroupedStreamer",
       },
     ])
 
     const { page } = authenticatedSession
-    let channelPrefRemoved = false
+    let gtaRemoved = false
 
     await page.route("**/api/preferences", (route) =>
       route.fulfill({
@@ -160,37 +165,164 @@ describe("Alerts view", () => {
         contentType: "application/json",
         body: JSON.stringify({
           data: {
-            channel: channelPrefRemoved
-              ? []
-              : [
-                  {
-                    id: "pref_perchannel",
-                    broadcaster_user_id: id,
-                    category_id: "27471",
-                    category_name: "Minecraft",
-                    created_at: new Date().toISOString(),
-                  },
-                ],
+            channel: [
+              {
+                id: "pref_minecraft",
+                broadcaster_user_id: id,
+                category_id: "27471",
+                category_name: "Minecraft",
+                created_at: new Date().toISOString(),
+              },
+              ...(gtaRemoved
+                ? []
+                : [
+                    {
+                      id: "pref_gta",
+                      broadcaster_user_id: id,
+                      category_id: "32982",
+                      category_name: "GTA V",
+                      created_at: new Date().toISOString(),
+                    },
+                  ]),
+            ],
             global: [],
           },
         }),
       }),
     )
-    await page.route("**/api/preferences/channel/pref_perchannel", (route) => {
-      channelPrefRemoved = true
+    await page.route("**/api/preferences/channel/pref_gta", (route) => {
+      gtaRemoved = true
       return route.fulfill({ status: 204, body: "" })
     })
 
     await page.goto(`${WEB_URL}/alerts`)
-    await page.getByRole("tab", { name: "Per Channel" }).click()
 
-    await expectVisible(page.getByText("PerChannelStreamer"))
+    // One card, one name, both categories.
+    await expectVisible(page.getByText("GroupedStreamer"))
+    expect(await page.getByText("GroupedStreamer").count()).toBe(1)
+    await expectVisible(page.getByText("GTA V"))
     await expectVisible(page.getByText("Minecraft"))
 
     await page
-      .getByRole("button", { name: "Remove Minecraft for PerChannelStreamer" })
+      .getByRole("button", { name: "Remove GTA V for GroupedStreamer" })
       .click()
-    await expectVisible(page.getByText("No per-channel alerts set."))
-    await expectHidden(page.getByText("PerChannelStreamer"))
+
+    await expectHidden(page.getByText("GTA V"))
+    await expectVisible(page.getByText("Minecraft"))
+    await expectVisible(page.getByText("GroupedStreamer"))
+  })
+
+  it("should mark a per-channel category that an active global preference also covers", async ({
+    authenticatedSession,
+  }) => {
+    const id = broadcasterId("overlap")
+    await seedFollowedChannels([
+      {
+        broadcasterUserId: id,
+        broadcasterLogin: "overlapstreamer",
+        broadcasterDisplayName: "OverlapStreamer",
+      },
+    ])
+
+    const { page } = authenticatedSession
+    await page.route("**/api/preferences", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          data: {
+            channel: [
+              {
+                id: "pref_overlap",
+                broadcaster_user_id: id,
+                category_id: "27471",
+                category_name: "Minecraft",
+                created_at: new Date().toISOString(),
+              },
+            ],
+            global: [
+              {
+                id: "glob_overlap",
+                category_id: "27471",
+                category_name: "Minecraft",
+                created_at: new Date().toISOString(),
+              },
+            ],
+          },
+        }),
+      }),
+    )
+
+    await page.goto(`${WEB_URL}/alerts`)
+
+    await expectVisible(page.getByText("Also in All channels"))
+    // Still removable despite the marker.
+    await expectVisible(
+      page.getByRole("button", {
+        name: "Remove Minecraft for OverlapStreamer",
+      }),
+    )
+  })
+
+  it("should sort live channels above offline ones", async ({
+    authenticatedSession,
+  }) => {
+    const liveId = broadcasterId("sortlive")
+    const offlineId = broadcasterId("sortoffline")
+    await seedFollowedChannels([
+      {
+        broadcasterUserId: offlineId,
+        broadcasterLogin: "aaaoffline",
+        broadcasterDisplayName: "AaaOffline",
+      },
+      {
+        broadcasterUserId: liveId,
+        broadcasterLogin: "zzzlive",
+        broadcasterDisplayName: "ZzzLive",
+      },
+    ])
+    await seedChannelState([
+      { broadcasterUserId: offlineId, isLive: false },
+      { broadcasterUserId: liveId, isLive: true, viewerCount: 100 },
+    ])
+
+    const { page } = authenticatedSession
+    await page.route("**/api/preferences", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          data: {
+            channel: [
+              {
+                id: "pref_offline",
+                broadcaster_user_id: offlineId,
+                category_id: "27471",
+                category_name: "Minecraft",
+                created_at: new Date().toISOString(),
+              },
+              {
+                id: "pref_live",
+                broadcaster_user_id: liveId,
+                category_id: "27471",
+                category_name: "Minecraft",
+                created_at: new Date().toISOString(),
+              },
+            ],
+            global: [],
+          },
+        }),
+      }),
+    )
+
+    await page.goto(`${WEB_URL}/alerts`)
+    await expectVisible(page.getByText("ZzzLive"))
+
+    const names = await page
+      .locator('[data-testid="channel-alerts-card"]')
+      .evaluateAll((cards) =>
+        cards.map((card) => card.getAttribute("data-display-name")),
+      )
+    expect(names).toEqual(["ZzzLive", "AaaOffline"])
   })
 })
