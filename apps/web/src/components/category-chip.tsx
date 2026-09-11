@@ -33,7 +33,7 @@ export function CategoryChip({
         aria-label={removeLabel}
         className="text-muted-foreground hover:text-foreground"
       >
-        <X />
+        <X className="size-3" />
       </button>
     </Badge>
   )
