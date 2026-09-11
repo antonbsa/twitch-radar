@@ -44,6 +44,9 @@ export function ChannelPreferencesSheet({
             disabledCategoryIds={savedForChannel.map(
               (pref) => pref.category_id,
             )}
+            globalCategoryIds={(preferences?.global ?? []).map(
+              (pref) => pref.category_id,
+            )}
             onSelect={(category) => {
               if (!channel) return
               addPreference.mutate({

@@ -325,4 +325,70 @@ describe("Alerts view", () => {
       )
     expect(names).toEqual(["ZzzLive", "AaaOffline"])
   })
+
+  it("should label a globally-covered category in search without disabling it", async ({
+    authenticatedSession,
+  }) => {
+    const id = broadcasterId("searchlabel")
+    await seedFollowedChannels([
+      {
+        broadcasterUserId: id,
+        broadcasterLogin: "labelstreamer",
+        broadcasterDisplayName: "LabelStreamer",
+      },
+    ])
+
+    const { page } = authenticatedSession
+    await page.route("**/api/categories/search*", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          data: [{ id: "27471", name: "Minecraft", box_art_url: null }],
+        }),
+      }),
+    )
+    await page.route("**/api/preferences", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          data: {
+            channel: [
+              {
+                id: "pref_other",
+                broadcaster_user_id: id,
+                category_id: "32982",
+                category_name: "GTA V",
+                created_at: new Date().toISOString(),
+              },
+            ],
+            global: [
+              {
+                id: "glob_mc",
+                category_id: "27471",
+                category_name: "Minecraft",
+                created_at: new Date().toISOString(),
+              },
+            ],
+          },
+        }),
+      }),
+    )
+
+    await page.goto(`${WEB_URL}/alerts`)
+    await page
+      .getByRole("button", { name: "Add category for LabelStreamer" })
+      .click()
+
+    const dialog = page.getByRole("dialog")
+    await expectVisible(dialog)
+    await dialog.getByPlaceholder("Search categories...").fill("mine")
+
+    const result = dialog.getByRole("button", { name: /Minecraft/ })
+    await expectVisible(result)
+    await expectVisible(dialog.getByText("already in All channels"))
+    // Labelled, but still selectable — pinning per-channel is deliberate.
+    expect(await result.isEnabled()).toBe(true)
+  })
 })
