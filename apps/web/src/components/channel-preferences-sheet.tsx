@@ -4,9 +4,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { CategorySearchList } from "@/components/category-search-list"
+import { CategoryChip } from "@/components/category-chip"
 import {
   useAddChannelPreference,
   usePreferences,
@@ -64,16 +64,12 @@ export function ChannelPreferencesSheet({
             ) : (
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {savedForChannel.map((pref) => (
-                  <Badge key={pref.id} variant="secondary" className="gap-1">
-                    {pref.category_name}
-                    <button
-                      type="button"
-                      onClick={() => removePreference.mutate(pref.id)}
-                      aria-label={`Remove ${pref.category_name}`}
-                    >
-                      ✕
-                    </button>
-                  </Badge>
+                  <CategoryChip
+                    key={pref.id}
+                    label={pref.category_name}
+                    onRemove={() => removePreference.mutate(pref.id)}
+                    removeLabel={`Remove ${pref.category_name}`}
+                  />
                 ))}
               </div>
             )}

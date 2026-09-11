@@ -16,6 +16,8 @@ routes/
   channels.tsx, alerts.tsx,   — tab views (T-004); account.tsx also owns the push notification
   account.tsx                   permission/subscription UI (T-005)
 components/
+  category-chip.tsx            — removable category chip; optional Globe marker for a per-channel
+                                 preference an active global preference also covers
   auth-gate.tsx                — AuthGate; single guard for both "authenticated" and "guest" route cases
   bottom-tab-bar.tsx           — persistent 3-tab nav (Channels/Alerts/Account)
   full-screen-loader.tsx       — shared loading state for AuthGate
