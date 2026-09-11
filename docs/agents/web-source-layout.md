@@ -29,6 +29,8 @@ hooks/
 lib/
   api.ts                       — fetch wrapper (api.get/api.post/api.delete), same-origin via Vite dev proxy
   errors.ts                    — ApiRequestError/ApiErrorBody, matches the API's ADR 0009 error envelope
+  alert-groups.ts              — pure grouping/ordering of per-channel preferences into one entry
+                                 per broadcaster, flagging categories an active global also covers
   push.ts                      — Push API helpers: support detection, SW registration, subscribe,
                                 localStorage subscription-id cache, urlBase64ToUint8Array
   utils.ts                     — shadcn's `cn()` helper
