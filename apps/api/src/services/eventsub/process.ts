@@ -9,7 +9,7 @@ import type {
   TwitchEventQueueMessage,
 } from "../../types"
 import { getAppAccessToken } from "../twitch/app-token"
-import { getStreamsByUserIds } from "../twitch/client"
+import { getStreamsByUserIds, resolveThumbnailUrl } from "../twitch/client"
 
 // Twitch sends "" for an unset category; store it as null.
 function normalizeCategory(value: string | null | undefined): string | null {
@@ -100,6 +100,10 @@ async function processStreamOnline(
       stream?.game_name ?? previous?.category_name,
     ),
     title: stream?.title || previous?.title || null,
+    thumbnailUrl:
+      resolveThumbnailUrl(stream?.thumbnail_url) ??
+      previous?.thumbnail_url ??
+      null,
     viewerCount: stream?.viewer_count ?? null,
     startedAt: stream?.started_at ?? event.started_at,
   }
@@ -155,6 +159,7 @@ async function processStreamOffline(
       categoryId: previous?.category_id ?? null,
       categoryName: previous?.category_name ?? null,
       title: previous?.title ?? null,
+      thumbnailUrl: previous?.thumbnail_url ?? null,
       viewerCount: null,
       startedAt: null,
       updatedFromEventAt: message.messageTimestamp,
@@ -205,6 +210,7 @@ async function processChannelUpdate(
       categoryId: nextCategoryId,
       categoryName: nextCategoryName,
       title: event.title || null,
+      thumbnailUrl: previous?.thumbnail_url ?? null,
       viewerCount: previous?.viewer_count ?? null,
       startedAt: previous?.started_at ?? null,
       updatedFromEventAt: message.messageTimestamp,

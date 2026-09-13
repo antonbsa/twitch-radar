@@ -1,17 +1,19 @@
 import { NavLink } from "react-router"
 import { Radio, Bell, User } from "lucide-react"
+import { useLanguage } from "@/context/language-context"
 import { cn } from "@/lib/utils"
 
 const tabs = [
-  { to: "/channels", label: "Channels", icon: Radio },
-  { to: "/alerts", label: "Alerts", icon: Bell },
-  { to: "/account", label: "Account", icon: User },
+  { to: "/channels", labelKey: "nav.channels", icon: Radio },
+  { to: "/alerts", labelKey: "nav.alerts", icon: Bell },
+  { to: "/account", labelKey: "nav.account", icon: User },
 ]
 
 export function BottomTabBar() {
+  const { t } = useLanguage()
   return (
     <nav className="fixed inset-x-0 bottom-0 z-10 flex border-t border-border bg-background">
-      {tabs.map(({ to, label, icon: Icon }) => (
+      {tabs.map(({ to, labelKey, icon: Icon }) => (
         <NavLink
           key={to}
           to={to}
@@ -23,7 +25,7 @@ export function BottomTabBar() {
           }
         >
           <Icon className="size-5" />
-          {label}
+          {t(labelKey)}
         </NavLink>
       ))}
     </nav>

@@ -9,6 +9,7 @@ import { ChannelPreferencesSheet } from "@/components/channel-preferences-sheet"
 import { GlobalAlertsCard } from "@/components/global-alerts-card"
 import { ReconnectRequired } from "@/components/reconnect-required"
 import { useAuth } from "@/context/auth-context"
+import { useLanguage } from "@/context/language-context"
 import { useFollowedChannels } from "@/hooks/use-channels"
 import { buildChannelAlertGroups } from "@/lib/alert-groups"
 import {
@@ -26,6 +27,7 @@ export function AlertsPage() {
     isError: isChannelsError,
   } = useFollowedChannels()
   const { reconnectRequired } = useAuth()
+  const { t } = useLanguage()
   const removeGlobalPreference = useRemoveGlobalPreference()
   const removeChannelPreference = useRemoveChannelPreference()
   const [addGlobalOpen, setAddGlobalOpen] = useState(false)
@@ -62,7 +64,7 @@ export function AlertsPage() {
   return (
     <div className="pb-4">
       <div className="px-4 py-3">
-        <h1 className="text-lg font-semibold">Alerts</h1>
+        <h1 className="text-lg font-semibold">{t("alerts.title")}</h1>
       </div>
 
       <h2 className="px-4 pt-1 pb-2 text-xs font-semibold text-muted-foreground uppercase">
@@ -79,7 +81,7 @@ export function AlertsPage() {
 
       {!isLoading && isError && !reconnectRequired && (
         <p className="px-4 py-6 text-sm text-muted-foreground">
-          Failed to load alerts. Try again later.
+          {t("alerts.load_error")}
         </p>
       )}
 
@@ -107,7 +109,7 @@ export function AlertsPage() {
         !reconnectRequired &&
         !isError && (
           <p className="px-4 py-6 text-sm text-muted-foreground">
-            Failed to load alerts. Try again later.
+            {t("alerts.load_error")}
           </p>
         )}
 

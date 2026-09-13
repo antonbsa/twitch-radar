@@ -44,6 +44,24 @@ export async function reconcileEventsubSubscriptions(
   config: AppConfig,
   kv: KVNamespace,
 ): Promise<void> {
+  try {
+    await reconcile(db, config, kv)
+  } catch (error) {
+    // Covers anything thrown outside the per-subscription `deleteRemote`
+    // handling below — e.g. getAppAccessToken/getAllEventsubSubscriptions
+    // failing, or a D1 write — so it's logged with full detail instead of
+    // escaping as Cloudflare's bare automatic exception capture.
+    logger.error("EventSub reconciliation run failed", {
+      ...serializeError(error),
+    })
+  }
+}
+
+async function reconcile(
+  db: Database,
+  config: AppConfig,
+  kv: KVNamespace,
+): Promise<void> {
   const appAccessToken = await getAppAccessToken(kv, config)
   const callbackUrl = eventsubCallbackUrl(config)
 

@@ -1,6 +1,7 @@
 import { Globe } from "lucide-react"
 import { AddCategoryChip } from "@/components/add-category-chip"
 import { CategoryChip } from "@/components/category-chip"
+import { useLanguage } from "@/context/language-context"
 import type { GlobalPreference } from "@/types/preference"
 
 interface GlobalAlertsCardProps {
@@ -14,6 +15,8 @@ export function GlobalAlertsCard({
   onAdd,
   onRemove,
 }: GlobalAlertsCardProps) {
+  const { t } = useLanguage()
+
   return (
     <div className="mx-4 rounded-lg border border-primary/40 bg-card">
       <div className="flex items-center gap-2 px-3 py-2.5">
@@ -25,7 +28,7 @@ export function GlobalAlertsCard({
 
       {preferences.length === 0 && (
         <p className="px-3 pb-1 text-sm text-muted-foreground">
-          No global alerts set.
+          {t("alerts.empty")}
         </p>
       )}
 
@@ -35,10 +38,16 @@ export function GlobalAlertsCard({
             key={pref.id}
             label={pref.category_name}
             onRemove={() => onRemove(pref.id)}
-            removeLabel={`Remove ${pref.category_name}`}
+            removeLabel={t("alerts.remove_aria", {
+              category: pref.category_name,
+            })}
           />
         ))}
-        <AddCategoryChip onClick={onAdd} label="Add global category" />
+        <AddCategoryChip
+          onClick={onAdd}
+          label="Add global category"
+          visibleLabel={t("alerts.add_category")}
+        />
       </div>
     </div>
   )

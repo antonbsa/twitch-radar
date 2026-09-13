@@ -22,48 +22,59 @@ export async function createPendingEventsubSubscriptions(
   config: AppConfig,
   kv: KVNamespace,
 ): Promise<void> {
-  const pending =
-    await db.eventsubSubscriptions.findPending(MAX_CREATES_PER_RUN)
-  if (pending.length === 0) return
+  try {
+    const pending =
+      await db.eventsubSubscriptions.findPending(MAX_CREATES_PER_RUN)
+    if (pending.length === 0) return
 
-  const appAccessToken = await getAppAccessToken(kv, config)
-  const now = new Date().toISOString()
-  let succeeded = 0
+    const appAccessToken = await getAppAccessToken(kv, config)
+    const now = new Date().toISOString()
+    let succeeded = 0
 
-  for (const row of pending) {
-    try {
-      const created = await createEventsubSubscription(
-        config.twitchClientId,
-        appAccessToken,
-        {
-          type: row.event_type,
-          version: row.event_version,
+    for (const row of pending) {
+      try {
+        const created = await createEventsubSubscription(
+          config.twitchClientId,
+          appAccessToken,
+          {
+            type: row.event_type,
+            version: row.event_version,
+            broadcasterUserId: row.broadcaster_user_id,
+            callbackUrl: row.callback_url,
+            secret: config.eventsubWebhookSecret,
+          },
+          config.twitchApiBaseUrl,
+        )
+        await db.eventsubSubscriptions.markCreated(
+          row.id,
+          created.id,
+          created.status,
+          now,
+        )
+        succeeded += 1
+      } catch (error) {
+        logger.error("EventSub subscription create failed", {
+          subscriptionId: row.id,
           broadcasterUserId: row.broadcaster_user_id,
-          callbackUrl: row.callback_url,
-          secret: config.eventsubWebhookSecret,
-        },
-        config.twitchApiBaseUrl,
-      )
-      await db.eventsubSubscriptions.markCreated(
-        row.id,
-        created.id,
-        created.status,
-        now,
-      )
-      succeeded += 1
-    } catch (error) {
-      logger.error("EventSub subscription create failed", {
-        subscriptionId: row.id,
-        broadcasterUserId: row.broadcaster_user_id,
-        eventType: row.event_type,
-        ...serializeError(error),
-      })
+          eventType: row.event_type,
+          ...serializeError(error),
+        })
+      }
     }
-  }
 
-  logger.info("Pending EventSub subscription creation run completed", {
-    attempted: pending.length,
-    succeeded,
-    failed: pending.length - succeeded,
-  })
+    logger.info("Pending EventSub subscription creation run completed", {
+      attempted: pending.length,
+      succeeded,
+      failed: pending.length - succeeded,
+    })
+  } catch (error) {
+    // Anything thrown here (e.g. getAppAccessToken failing because a rotated
+    // TWITCH_CLIENT_SECRET no longer matches Twitch's) would otherwise escape
+    // this job uncaught, past the per-row handling above, and surface only as
+    // Cloudflare's bare automatic exception capture instead of our structured
+    // log.
+    logger.error("Pending EventSub subscription creation run failed", {
+      ...serializeError(error),
+    })
+  }
 }

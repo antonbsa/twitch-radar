@@ -12,7 +12,7 @@ import { requireAuth } from "./http/middleware/auth"
 import { handleSearchCategories } from "./http/routes/categories"
 import { handleGetFollowedChannels } from "./http/routes/channels"
 import { handleHealth } from "./http/routes/health"
-import { handleGetMe } from "./http/routes/me"
+import { handleGetMe, handleUpdateLanguage } from "./http/routes/me"
 import {
   handleAuthCallback,
   handleAuthStart,
@@ -69,6 +69,7 @@ function buildApp(includeTestSeam: boolean): Hono<HonoEnv> {
   api.get("/auth/twitch/callback", handleAuthCallback)
   api.post("/auth/logout", requireAuth, handleLogout)
   api.get("/me", requireAuth, handleGetMe)
+  api.patch("/me/language", requireAuth, handleUpdateLanguage)
   api.post("/sync/follows", requireAuth, handleSyncFollows)
   api.get("/channels/followed", requireAuth, handleGetFollowedChannels)
   api.get("/categories/search", requireAuth, handleSearchCategories)
@@ -216,19 +217,39 @@ export default {
   // each in isolation via `/__scheduled?cron=...`. The default branch keeps
   // the minutely pending-subscription creation (ADR 0031).
   async scheduled(controller: ScheduledController, env: Env): Promise<void> {
-    const config = parseEnv(env)
-    logger.configure(config.environment)
-    const db = new Database(env.DB)
+    // Each job function below already has its own top-level try/catch, so
+    // this only remains a backstop for failures before dispatch (e.g.
+    // parseEnv rejecting a malformed binding) — without it, such an error
+    // would escape as Cloudflare's bare automatic exception capture instead
+    // of our structured log.
+    try {
+      const config = parseEnv(env)
+      logger.configure(config.environment)
+      const db = new Database(env.DB)
 
-    switch (controller.cron) {
-      case CRON_EVENTSUB_RECONCILE:
-        return reconcileEventsubSubscriptions(db, config, env.KV_APP_CACHE)
-      case CRON_TOKEN_REFRESH:
-        return refreshExpiringTwitchTokens(db, config)
-      case CRON_FOLLOW_SYNC:
-        return syncStaleFollows(db, config)
-      default:
-        return createPendingEventsubSubscriptions(db, config, env.KV_APP_CACHE)
+      switch (controller.cron) {
+        case CRON_EVENTSUB_RECONCILE:
+          return await reconcileEventsubSubscriptions(
+            db,
+            config,
+            env.KV_APP_CACHE,
+          )
+        case CRON_TOKEN_REFRESH:
+          return await refreshExpiringTwitchTokens(db, config)
+        case CRON_FOLLOW_SYNC:
+          return await syncStaleFollows(db, config)
+        default:
+          return await createPendingEventsubSubscriptions(
+            db,
+            config,
+            env.KV_APP_CACHE,
+          )
+      }
+    } catch (error) {
+      logger.error("Scheduled job failed", {
+        cron: controller.cron,
+        ...serializeError(error),
+      })
     }
   },
 } satisfies ExportedHandler<Env>

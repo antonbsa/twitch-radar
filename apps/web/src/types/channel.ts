@@ -11,4 +11,5 @@ export interface FollowedChannel {
   title: string | null
   viewer_count: number | null
   started_at: string | null
+  thumbnail_url: string | null
 }

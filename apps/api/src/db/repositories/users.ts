@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm"
+import { eq, inArray } from "drizzle-orm"
 import { nanoid } from "nanoid"
-import type { User } from "../../types"
+import type { Language, User } from "../../types"
 import type { AppDatabase } from "../client"
 import { users, type UserRow } from "../schema"
 
@@ -95,6 +95,40 @@ export class UsersRepository {
       .where(eq(users.id, id))
       .run()
   }
+
+  /** Sets the user's UI/notification language preference (ADR 0044). */
+  async updateLanguage(
+    id: string,
+    language: Language,
+    now: string,
+  ): Promise<void> {
+    await this.db
+      .update(users)
+      .set({ language, updatedAt: now })
+      .where(eq(users.id, id))
+      .run()
+  }
+
+  /**
+   * Batch language lookup for notification matching (ADR 0044), where the
+   * matched-user set can exceed D1's 100-bound-parameter limit per query.
+   * Users missing from the result (should not happen — the column has a
+   * NOT NULL default) are the caller's responsibility to default to "en".
+   */
+  async findLanguagesByIds(ids: string[]): Promise<Map<string, Language>> {
+    const result = new Map<string, Language>()
+    if (ids.length === 0) return result
+    const BATCH_SIZE = 100
+    for (let i = 0; i < ids.length; i += BATCH_SIZE) {
+      const rows = await this.db
+        .select({ id: users.id, language: users.language })
+        .from(users)
+        .where(inArray(users.id, ids.slice(i, i + BATCH_SIZE)))
+        .all()
+      for (const row of rows) result.set(row.id, row.language as Language)
+    }
+    return result
+  }
 }
 
 function toUser(row: UserRow): User {
@@ -106,5 +140,6 @@ function toUser(row: UserRow): User {
     created_at: row.createdAt,
     updated_at: row.updatedAt,
     last_follow_sync_at: row.lastFollowSyncAt,
+    language: row.language as Language,
   }
 }

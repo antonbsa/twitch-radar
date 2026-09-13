@@ -2,30 +2,33 @@ import { useState } from "react"
 import { useNavigate } from "react-router"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
+import { LanguageSelector } from "@/components/language-selector"
 import { useAuth } from "@/context/auth-context"
+import { useLanguage } from "@/context/language-context"
 import { useSyncFollows } from "@/hooks/use-channels"
 import {
   usePushNotifications,
   type PushStatus,
 } from "@/hooks/use-push-notifications"
 
-function notificationStatusLabel(status: PushStatus): string {
+function notificationStatusKey(status: PushStatus): string {
   switch (status) {
     case "checking":
-      return "Checking…"
+      return "account.status_checking"
     case "enabled":
-      return "Enabled"
+      return "account.status_enabled"
     case "denied":
-      return "Denied"
+      return "account.status_denied"
     case "unsupported":
-      return "Not supported"
+      return "account.status_unsupported"
     default:
-      return "Not enabled"
+      return "account.status_not_enabled"
   }
 }
 
 export function AccountPage() {
   const { user, reconnectRequired, logout } = useAuth()
+  const { t } = useLanguage()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const push = usePushNotifications()
   const navigate = useNavigate()
@@ -43,7 +46,7 @@ export function AccountPage() {
 
   return (
     <div className="p-4">
-      <h1 className="text-lg font-semibold">Account</h1>
+      <h1 className="text-lg font-semibold">{t("account.title")}</h1>
 
       <div className="mt-4 flex items-center gap-3">
         <Avatar size="lg">
@@ -53,14 +56,23 @@ export function AccountPage() {
         </Avatar>
         <div>
           <p className="text-sm font-medium">{user?.twitch_display_name}</p>
-          <p className="text-xs text-muted-foreground">Connected ✓</p>
+          <p className="text-xs text-muted-foreground">
+            {t("account.connected")}
+          </p>
         </div>
       </div>
 
       <div className="mt-6 space-y-2">
-        <p className="text-sm font-medium">Notifications</p>
+        <p className="text-sm font-medium">{t("account.language")}</p>
+        <LanguageSelector />
+      </div>
+
+      <div className="mt-6 space-y-2">
+        <p className="text-sm font-medium">{t("account.notifications")}</p>
         <p className="text-sm text-muted-foreground">
-          Status: {notificationStatusLabel(push.status)}
+          {t("account.status", {
+            status: t(notificationStatusKey(push.status)),
+          })}
         </p>
         {push.status === "not-enabled" && (
           <Button
@@ -69,7 +81,7 @@ export function AccountPage() {
             disabled={push.isPending}
             onClick={push.enable}
           >
-            Enable Notifications
+            {t("account.enable_notifications")}
           </Button>
         )}
         {push.status === "enabled" && (
@@ -79,15 +91,17 @@ export function AccountPage() {
             disabled={push.isPending}
             onClick={push.disable}
           >
-            Disable on this device
+            {t("account.disable_notifications")}
           </Button>
         )}
         {push.status === "denied" && (
           <p className="text-xs text-muted-foreground">
-            Go to browser settings to enable.
+            {t("account.denied_hint")}
           </p>
         )}
-        {push.error && <p className="text-xs text-destructive">{push.error}</p>}
+        {push.error && (
+          <p className="text-xs text-destructive">{t(push.error)}</p>
+        )}
       </div>
 
       <Button
@@ -96,12 +110,12 @@ export function AccountPage() {
         disabled={syncFollows.isPending}
         onClick={() => syncFollows.mutate()}
       >
-        Sync Channels
+        {t("account.sync_channels")}
       </Button>
 
       {reconnectRequired && (
         <Button className="mt-3 w-full" asChild>
-          <a href="/api/auth/twitch/start">Reconnect Twitch</a>
+          <a href="/api/auth/twitch/start">{t("account.reconnect_twitch")}</a>
         </Button>
       )}
 
@@ -111,7 +125,7 @@ export function AccountPage() {
         disabled={isLoggingOut}
         onClick={handleLogout}
       >
-        Log Out
+        {t("account.log_out")}
       </Button>
     </div>
   )

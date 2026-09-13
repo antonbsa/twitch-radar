@@ -110,7 +110,7 @@ describe("Alerts view", () => {
     const dialog = page.getByRole("dialog")
     await expectVisible(dialog)
 
-    await dialog.getByPlaceholder("Search categories...").fill("mine")
+    await dialog.getByPlaceholder("Search categories").fill("mine")
     await dialog.getByRole("button", { name: "Minecraft" }).click()
 
     // The sheet closes on success and the refreshed list shows the new alert.
@@ -392,7 +392,7 @@ describe("Alerts view", () => {
 
     const dialog = page.getByRole("dialog")
     await expectVisible(dialog)
-    await dialog.getByPlaceholder("Search categories...").fill("mine")
+    await dialog.getByPlaceholder("Search categories").fill("mine")
 
     const result = dialog.getByRole("button", { name: /Minecraft/ })
     await expectVisible(result)
@@ -481,9 +481,9 @@ describe("Alerts view", () => {
     // plays its close animation both dialogs are briefly in the DOM, and a
     // two-element match is a strict-mode violation, not a pass.
     await expectHidden(page.getByPlaceholder("Search channels..."))
-    await expectVisible(page.getByPlaceholder("Search categories..."))
+    await expectVisible(page.getByPlaceholder("Search categories"))
 
-    await page.getByPlaceholder("Search categories...").fill("mine")
+    await page.getByPlaceholder("Search categories").fill("mine")
     await page.getByRole("button", { name: "Minecraft" }).click()
 
     const card = page.locator(

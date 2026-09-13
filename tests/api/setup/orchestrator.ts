@@ -93,6 +93,7 @@ const mockTwitch = {
       viewer_count: number
       started_at: string
       title: string
+      thumbnail_url?: string
     }>,
   ) {
     return this.queue("/helix/streams/followed", {
@@ -123,6 +124,7 @@ const mockTwitch = {
       viewer_count: number
       started_at: string
       title: string
+      thumbnail_url?: string
     }>,
   ) {
     // The "?" keeps this pattern from also matching /helix/streams/followed

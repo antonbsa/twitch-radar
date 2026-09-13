@@ -13,6 +13,7 @@ interface FollowedChannelItem {
   category_id: string | null
   category_name: string | null
   title: string | null
+  thumbnail_url: string | null
   viewer_count: number | null
   started_at: string | null
 }
@@ -45,6 +46,7 @@ export async function handleGetFollowedChannels(
       category_id: state?.category_id ?? null,
       category_name: state?.category_name ?? null,
       title: state?.title ?? null,
+      thumbnail_url: state?.thumbnail_url ?? null,
       viewer_count: state?.viewer_count ?? null,
       started_at: state?.started_at ?? null,
     }

@@ -1,0 +1,74 @@
+{
+  "nav.channels": "Channels",
+  "nav.alerts": "Alerts",
+  "nav.account": "Account",
+
+  "common.loading": "Loading",
+
+  "login.title": "Twitch Radar",
+  "login.tagline": "Get notified when channels you follow go live in the categories you care about.",
+  "login.declined": "Login was cancelled - try again.",
+  "login.connect": "Connect with Twitch",
+
+  "channels.title": "Channels",
+  "channels.sync": "Sync",
+  "channels.sync_rate_limited": "Synced recently. Try again in a bit",
+  "channels.load_error": "Failed to load channels. Try syncing or reload the page.",
+  "channels.empty": "No followed channels yet. Sync to pull your Twitch follows.",
+  "channels.live": "Live",
+  "channels.offline": "Offline",
+
+  "channel_row.offline": "Offline",
+  "channel_row.no_category": "No category",
+  "channel_row.viewers_count": "{count} viewers",
+  "channel_row.live_for": "In {category} for {duration}",
+  "channel_row.configure_aria": "Configure {name}",
+
+  "channel_preferences.saved_for_channel": "Saved for this channel",
+  "channel_preferences.no_preferences": "No preferences saved.",
+  "channel_preferences.remove_aria": "Remove {category}",
+
+  "alerts.title": "Alerts",
+  "alerts.add_category": "Add Category",
+  "alerts.load_error": "Failed to load alerts. Try again later.",
+  "alerts.empty": "No global alerts set.",
+  "alerts.remove_aria": "Remove {category}",
+
+  "add_global_category.title": "Add Category",
+
+  "category_search.placeholder": "Search categories",
+  "category_search.error": "Failed to search categories.",
+  "category_search.empty": "No categories found.",
+
+  "account.title": "Account",
+  "account.connected": "Connected",
+  "account.notifications": "Notifications",
+  "account.status": "Status: {status}",
+  "account.status_checking": "Checking",
+  "account.status_enabled": "Enabled",
+  "account.status_denied": "Denied",
+  "account.status_unsupported": "Not supported",
+  "account.status_not_enabled": "Not enabled",
+  "account.enable_notifications": "Enable Notifications",
+  "account.disable_notifications": "Disable on this device",
+  "account.denied_hint": "Go to browser settings to enable.",
+  "account.sync_channels": "Sync Channels",
+  "account.reconnect_twitch": "Reconnect Twitch",
+  "account.log_out": "Log Out",
+  "account.language": "Language",
+  "account.language_en": "English",
+  "account.language_pt-BR": "Português (Brasil)",
+  "account.language_es": "Español",
+
+  "push.permission_not_granted": "Notification permission was not granted.",
+  "push.enable_error": "Could not enable notifications. Try again.",
+  "push.disable_error": "Could not disable notifications. Try again.",
+
+  "reconnect.message": "Your Twitch connection needs to be renewed.",
+  "reconnect.cta": "Reconnect Twitch",
+
+  "notification.stream_started_in_category.title": "{broadcasterName} is streaming {categoryName}",
+  "notification.stream_started_in_category.body": "{broadcasterName} just started streaming a category you follow.",
+  "notification.switched_into_category.title": "{broadcasterName} switched to {categoryName}",
+  "notification.switched_into_category.body": "{broadcasterName} is now streaming a category you follow."
+}

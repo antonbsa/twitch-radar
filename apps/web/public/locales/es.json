@@ -1,0 +1,74 @@
+{
+  "nav.channels": "Canales",
+  "nav.alerts": "Alertas",
+  "nav.account": "Cuenta",
+
+  "common.loading": "Cargando",
+
+  "login.title": "Twitch Radar",
+  "login.tagline": "Recibe notificaciones cuando los canales que sigues transmitan en vivo en las categorías que te interesan.",
+  "login.declined": "El inicio de sesión fue cancelado - inténtalo de nuevo.",
+  "login.connect": "Conectar con Twitch",
+
+  "channels.title": "Canales",
+  "channels.sync": "Sincronizar",
+  "channels.sync_rate_limited": "Sincronizado recientemente. Inténtalo de nuevo en un momento",
+  "channels.load_error": "No se pudieron cargar los canales. Intenta sincronizar o recargar la página.",
+  "channels.empty": "Aún no sigues ningún canal. Sincroniza para importar tus canales de Twitch.",
+  "channels.live": "En vivo",
+  "channels.offline": "Sin conexión",
+
+  "channel_row.offline": "Sin conexión",
+  "channel_row.no_category": "Sin categoría",
+  "channel_row.viewers_count": "{count} espectadores",
+  "channel_row.live_for": "En {category} desde hace {duration}",
+  "channel_row.configure_aria": "Configurar {name}",
+
+  "channel_preferences.saved_for_channel": "Guardado para este canal",
+  "channel_preferences.no_preferences": "No hay preferencias guardadas.",
+  "channel_preferences.remove_aria": "Eliminar {category}",
+
+  "alerts.title": "Alertas",
+  "alerts.add_category": "Añadir Categoría",
+  "alerts.load_error": "No se pudieron cargar las alertas. Inténtalo de nuevo más tarde.",
+  "alerts.empty": "No hay alertas globales configuradas.",
+  "alerts.remove_aria": "Eliminar {category}",
+
+  "add_global_category.title": "Añadir Categoría",
+
+  "category_search.placeholder": "Buscar categorías",
+  "category_search.error": "No se pudieron buscar las categorías.",
+  "category_search.empty": "No se encontraron categorías.",
+
+  "account.title": "Cuenta",
+  "account.connected": "Conectado",
+  "account.notifications": "Notificaciones",
+  "account.status": "Estado: {status}",
+  "account.status_checking": "Comprobando",
+  "account.status_enabled": "Activado",
+  "account.status_denied": "Denegado",
+  "account.status_unsupported": "No compatible",
+  "account.status_not_enabled": "No activado",
+  "account.enable_notifications": "Activar Notificaciones",
+  "account.disable_notifications": "Desactivar en este dispositivo",
+  "account.denied_hint": "Ve a la configuración del navegador para activarlo.",
+  "account.sync_channels": "Sincronizar Canales",
+  "account.reconnect_twitch": "Reconectar Twitch",
+  "account.log_out": "Cerrar sesión",
+  "account.language": "Idioma",
+  "account.language_en": "English",
+  "account.language_pt-BR": "Português (Brasil)",
+  "account.language_es": "Español",
+
+  "push.permission_not_granted": "No se concedió el permiso de notificación.",
+  "push.enable_error": "No se pudieron activar las notificaciones. Inténtalo de nuevo.",
+  "push.disable_error": "No se pudieron desactivar las notificaciones. Inténtalo de nuevo.",
+
+  "reconnect.message": "Tu conexión con Twitch necesita renovarse.",
+  "reconnect.cta": "Reconectar Twitch",
+
+  "notification.stream_started_in_category.title": "{broadcasterName} está transmitiendo {categoryName}",
+  "notification.stream_started_in_category.body": "{broadcasterName} acaba de empezar a transmitir una categoría que sigues.",
+  "notification.switched_into_category.title": "{broadcasterName} cambió a {categoryName}",
+  "notification.switched_into_category.body": "{broadcasterName} ahora está transmitiendo una categoría que sigues."
+}

@@ -67,13 +67,11 @@ export function usePushNotifications() {
     onSuccess: (next) => {
       setStatus(next)
       // "denied" needs no extra error — the UI already explains that state.
-      setError(
-        next === "not-enabled"
-          ? "Notification permission was not granted."
-          : null,
-      )
+      // A catalog key, not literal text — the caller (AccountPage) resolves
+      // it via useLanguage().t() (ADR 0044); this hook stays language-agnostic.
+      setError(next === "not-enabled" ? "push.permission_not_granted" : null)
     },
-    onError: () => setError("Could not enable notifications. Try again."),
+    onError: () => setError("push.enable_error"),
   })
 
   const disableMutation = useSessionAwareMutation({
@@ -105,7 +103,7 @@ export function usePushNotifications() {
       setStatus("not-enabled")
       setError(null)
     },
-    onError: () => setError("Could not disable notifications. Try again."),
+    onError: () => setError("push.disable_error"),
   })
 
   return {

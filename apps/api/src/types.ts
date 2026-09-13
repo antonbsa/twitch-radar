@@ -43,11 +43,21 @@ export type TwitchEventQueueMessage = TwitchEventQueueMessageBase &
     | { eventType: "channel.update"; event: ChannelUpdateEventPayload }
   )
 
+// Language preference values (ADR 0044): stored on users.language, validated
+// at the API layer via zod, mirrored on the web side (apps/web/src/types/user.ts).
+export const SUPPORTED_LANGUAGES = ["en", "pt-BR", "es"] as const
+export type Language = (typeof SUPPORTED_LANGUAGES)[number]
+
 // Web Push payload contract shared with the service worker
-// (apps/web/public/service-worker.js, architecture spec).
+// (apps/web/public/service-worker.js, ADR 0044). The service worker resolves
+// titleKey/bodyKey against the shared locale catalog (apps/web/public/locales)
+// in the recipient's `lang`, interpolating `params` into the resolved
+// template. The API never embeds translated text, only semantic keys.
 export interface NotificationPayload {
-  title: string
-  body: string
+  titleKey: string
+  bodyKey: string
+  params: Record<string, string>
+  lang: Language
   url: string
 }
 
@@ -69,6 +79,7 @@ export interface User {
   created_at: string
   updated_at: string
   last_follow_sync_at: string | null
+  language: Language
 }
 
 export interface PushSubscriptionRecord {
