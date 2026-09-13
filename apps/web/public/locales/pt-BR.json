@@ -18,7 +18,7 @@
   "channels.live": "Ao vivo",
   "channels.offline": "Offline",
   "channels.no_matches": "Nenhum canal corresponde aos seus filtros.",
-  "channels.search_placeholder": "Buscar canais...",
+  "channels.search_placeholder": "Buscar",
   "channels.search_aria": "Buscar canais",
   "channels.clear_search_aria": "Limpar busca",
   "channels.category_filter_aria": "Filtrar por categoria",

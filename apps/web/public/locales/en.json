@@ -18,7 +18,7 @@
   "channels.live": "Live",
   "channels.offline": "Offline",
   "channels.no_matches": "No channels match your filters.",
-  "channels.search_placeholder": "Search channels...",
+  "channels.search_placeholder": "Search",
   "channels.search_aria": "Search channels",
   "channels.clear_search_aria": "Clear search",
   "channels.category_filter_aria": "Filter by category",

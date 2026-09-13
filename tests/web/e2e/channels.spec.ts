@@ -300,7 +300,7 @@ describe("Channels view", () => {
       await expectVisible(zebraRow)
       await expectVisible(appleRow)
 
-      const searchInput = page.getByPlaceholder("Search channels...")
+      const searchInput = page.getByPlaceholder("Search")
       const clearButton = page.getByRole("button", { name: "Clear search" })
 
       await expectHidden(clearButton)
