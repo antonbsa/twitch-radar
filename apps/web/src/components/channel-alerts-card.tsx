@@ -6,6 +6,7 @@ import {
 } from "@/components/ui/avatar"
 import { AddCategoryChip } from "@/components/add-category-chip"
 import { CategoryChip } from "@/components/category-chip"
+import { useLanguage } from "@/context/language-context"
 import type { ChannelAlertGroup } from "@/lib/alert-groups"
 
 interface ChannelAlertsCardProps {
@@ -24,6 +25,7 @@ export function ChannelAlertsCard({
   onArmChip,
 }: ChannelAlertsCardProps) {
   const hasGlobalOverlap = group.categories.some((c) => c.alsoGlobal)
+  const { t } = useLanguage()
 
   return (
     <div
@@ -66,6 +68,7 @@ export function ChannelAlertsCard({
           <AddCategoryChip
             onClick={() => onAdd(group.broadcasterUserId)}
             label={`Add category for ${group.displayName}`}
+            visibleLabel={t("alerts.add_category")}
           />
         )}
       </div>
