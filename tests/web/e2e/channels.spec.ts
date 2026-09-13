@@ -300,9 +300,21 @@ describe("Channels view", () => {
       await expectVisible(zebraRow)
       await expectVisible(appleRow)
 
-      await page.getByPlaceholder("Search channels...").fill("zeb")
+      const searchInput = page.getByPlaceholder("Search channels...")
+      const clearButton = page.getByRole("button", { name: "Clear search" })
+
+      await expectHidden(clearButton)
+
+      await searchInput.fill("zeb")
       await expectVisible(zebraRow)
       await expectHidden(appleRow)
+      await expectVisible(clearButton)
+
+      await clearButton.click()
+      expect(await searchInput.inputValue()).toBe("")
+      await expectVisible(zebraRow)
+      await expectVisible(appleRow)
+      await expectHidden(clearButton)
     })
 
     it("should narrow the live section by the selected category", async ({
@@ -350,11 +362,93 @@ describe("Channels view", () => {
       await expectVisible(chattingRow)
       await expectVisible(musicRow)
 
-      await page.getByRole("combobox", { name: "Filter by category" }).click()
-      await page.getByRole("option", { name: "Music" }).click()
+      await page.getByRole("button", { name: "Filter by category" }).click()
+      await page.getByRole("menuitemcheckbox", { name: "Music" }).click()
 
       await expectVisible(musicRow)
       await expectHidden(chattingRow)
+    })
+
+    it("should narrow the live section to any of multiple selected categories", async ({
+      authenticatedSession,
+    }) => {
+      const chatting = broadcasterId("multicategory_chatting")
+      const music = broadcasterId("multicategory_music")
+      const art = broadcasterId("multicategory_art")
+
+      await seedFollowedChannels([
+        {
+          broadcasterUserId: chatting,
+          broadcasterLogin: "multicategorychatting",
+          broadcasterDisplayName: "MultiCategoryChatting",
+        },
+        {
+          broadcasterUserId: music,
+          broadcasterLogin: "multicategorymusic",
+          broadcasterDisplayName: "MultiCategoryMusic",
+        },
+        {
+          broadcasterUserId: art,
+          broadcasterLogin: "multicategoryart",
+          broadcasterDisplayName: "MultiCategoryArt",
+        },
+      ])
+      await seedChannelState([
+        {
+          broadcasterUserId: chatting,
+          isLive: true,
+          categoryName: "Just Chatting",
+          viewerCount: 10,
+        },
+        {
+          broadcasterUserId: music,
+          isLive: true,
+          categoryName: "Music",
+          viewerCount: 20,
+        },
+        {
+          broadcasterUserId: art,
+          isLive: true,
+          categoryName: "Art",
+          viewerCount: 30,
+        },
+      ])
+
+      const { page } = authenticatedSession
+      await page.goto(WEB_URL)
+
+      const chattingRow = page.locator(
+        `[data-testid="channel-row"][data-broadcaster-user-id="${chatting}"]`,
+      )
+      const musicRow = page.locator(
+        `[data-testid="channel-row"][data-broadcaster-user-id="${music}"]`,
+      )
+      const artRow = page.locator(
+        `[data-testid="channel-row"][data-broadcaster-user-id="${art}"]`,
+      )
+      await expectVisible(chattingRow)
+      await expectVisible(musicRow)
+      await expectVisible(artRow)
+
+      await page.getByRole("button", { name: "Filter by category" }).click()
+      await page.getByRole("menuitemcheckbox", { name: "Music" }).click()
+      await page.getByRole("menuitemcheckbox", { name: "Art" }).click()
+      await page.keyboard.press("Escape")
+
+      await expectVisible(musicRow)
+      await expectVisible(artRow)
+      await expectHidden(chattingRow)
+
+      // Re-opening and checking "All categories" clears the selection.
+      await page.getByRole("button", { name: "Filter by category" }).click()
+      await page
+        .getByRole("menuitemcheckbox", { name: "All categories" })
+        .click()
+      await page.keyboard.press("Escape")
+
+      await expectVisible(chattingRow)
+      await expectVisible(musicRow)
+      await expectVisible(artRow)
     })
 
     it("should reorder channels alphabetically when 'Name (A-Z)' sort is selected", async ({

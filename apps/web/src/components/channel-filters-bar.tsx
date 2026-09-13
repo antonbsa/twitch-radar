@@ -1,5 +1,13 @@
-import { Search } from "lucide-react"
+import { ChevronDownIcon, Search, X } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
   Select,
   SelectContent,
@@ -8,11 +16,13 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useLanguage } from "@/context/language-context"
-import {
-  ALL_CATEGORIES,
-  type ChannelFilters,
-  type ChannelSort,
-} from "@/lib/channel-filters"
+import type { ChannelFilters, ChannelSort } from "@/lib/channel-filters"
+
+// Matches SelectTrigger's default-size look (apps/web/src/components/ui/select.tsx)
+// so the category filter, the sort select, and the search input all render at
+// the same height.
+const CATEGORY_TRIGGER_CLASSNAME =
+  "flex h-8 w-24 min-w-0 shrink-0 items-center justify-between gap-1.5 rounded-lg border border-input bg-transparent py-2 pr-2 pl-2.5 text-sm whitespace-nowrap transition-colors outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30 dark:hover:bg-input/50 sm:w-32"
 
 interface ChannelFiltersBarProps {
   filters: ChannelFilters
@@ -27,6 +37,22 @@ export function ChannelFiltersBar({
 }: ChannelFiltersBarProps) {
   const { t } = useLanguage()
 
+  function toggleCategory(category: string) {
+    const next = filters.categories.includes(category)
+      ? filters.categories.filter((c) => c !== category)
+      : [...filters.categories, category]
+    onChange({ categories: next })
+  }
+
+  const categorySummary =
+    filters.categories.length === 0
+      ? t("channels.all_categories")
+      : filters.categories.length === 1
+        ? filters.categories[0]
+        : t("channels.categories_selected_count", {
+            count: String(filters.categories.length),
+          })
+
   return (
     <div className="flex items-center gap-2 px-4 pb-2">
       <div className="relative min-w-0 flex-1">
@@ -36,33 +62,52 @@ export function ChannelFiltersBar({
           onChange={(e) => onChange({ search: e.target.value })}
           placeholder={t("channels.search_placeholder")}
           aria-label={t("channels.search_aria")}
-          className="pl-8"
+          className="pr-8 pl-8"
         />
+        {filters.search.length > 0 && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-xs"
+            onClick={() => onChange({ search: "" })}
+            aria-label={t("channels.clear_search_aria")}
+            className="absolute top-1/2 right-1 -translate-y-1/2"
+          >
+            <X />
+          </Button>
+        )}
       </div>
 
       {categories.length > 0 && (
-        <Select
-          value={filters.category}
-          onValueChange={(value) => onChange({ category: value })}
-        >
-          <SelectTrigger
-            size="sm"
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            className={CATEGORY_TRIGGER_CLASSNAME}
             aria-label={t("channels.category_filter_aria")}
-            className="w-24 shrink-0 sm:w-32"
           >
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL_CATEGORIES}>
+            <span className="min-w-0 truncate">{categorySummary}</span>
+            <ChevronDownIcon className="size-4 shrink-0 text-muted-foreground" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuCheckboxItem
+              checked={filters.categories.length === 0}
+              onCheckedChange={() => onChange({ categories: [] })}
+              onSelect={(e) => e.preventDefault()}
+            >
               {t("channels.all_categories")}
-            </SelectItem>
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuSeparator />
             {categories.map((category) => (
-              <SelectItem key={category} value={category}>
+              <DropdownMenuCheckboxItem
+                key={category}
+                checked={filters.categories.includes(category)}
+                onCheckedChange={() => toggleCategory(category)}
+                onSelect={(e) => e.preventDefault()}
+              >
                 {category}
-              </SelectItem>
+              </DropdownMenuCheckboxItem>
             ))}
-          </SelectContent>
-        </Select>
+          </DropdownMenuContent>
+        </DropdownMenu>
       )}
 
       <Select
@@ -70,7 +115,6 @@ export function ChannelFiltersBar({
         onValueChange={(value) => onChange({ sort: value as ChannelSort })}
       >
         <SelectTrigger
-          size="sm"
           aria-label={t("channels.sort_aria")}
           className="w-24 shrink-0 sm:w-32"
         >

@@ -106,15 +106,26 @@ describe("applyChannelFilters", () => {
     expect(result.live).toEqual([])
   })
 
-  it("should narrow the live section by category without affecting offline", () => {
+  it("should narrow the live section to a single selected category without affecting offline", () => {
     const result = applyChannelFilters(channels, {
       ...DEFAULT_CHANNEL_FILTERS,
-      category: "Music",
+      categories: ["Music"],
     })
     expect(result.live.map((c) => c.broadcaster_user_id)).toEqual(["low"])
     expect(result.offline.map((c) => c.broadcaster_user_id)).toEqual([
       "apple",
       "zebra",
+    ])
+  })
+
+  it("should narrow the live section to any of multiple selected categories", () => {
+    const result = applyChannelFilters(channels, {
+      ...DEFAULT_CHANNEL_FILTERS,
+      categories: ["Music", "Just Chatting"],
+    })
+    expect(result.live.map((c) => c.broadcaster_user_id)).toEqual([
+      "high",
+      "low",
     ])
   })
 

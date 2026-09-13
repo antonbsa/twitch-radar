@@ -2,17 +2,16 @@ import type { FollowedChannel } from "@/types/channel"
 
 export type ChannelSort = "viewers" | "alphabetical"
 
-export const ALL_CATEGORIES = "all" as const
-
 export interface ChannelFilters {
   search: string
-  category: string
+  // Empty means no category restriction (all categories) - the default.
+  categories: string[]
   sort: ChannelSort
 }
 
 export const DEFAULT_CHANNEL_FILTERS: ChannelFilters = {
   search: "",
-  category: ALL_CATEGORIES,
+  categories: [],
   sort: "viewers",
 }
 
@@ -71,8 +70,11 @@ export function applyChannelFilters(
 
   const live = searched.filter((channel) => {
     if (!channel.is_live) return false
-    if (filters.category === ALL_CATEGORIES) return true
-    return channel.category_name === filters.category
+    if (filters.categories.length === 0) return true
+    return (
+      channel.category_name !== null &&
+      filters.categories.includes(channel.category_name)
+    )
   })
 
   const offline = searched.filter((channel) => !channel.is_live)
