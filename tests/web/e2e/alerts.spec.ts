@@ -405,11 +405,55 @@ describe("Alerts view", () => {
     ])
 
     const { page } = authenticatedSession
+    let categoryAdded = false
+
     await page.route("**/api/preferences", (route) =>
       route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify({ data: { channel: [], global: [] } }),
+        body: JSON.stringify({
+          data: {
+            channel: categoryAdded
+              ? [
+                  {
+                    id: "pref_minecraft",
+                    broadcaster_user_id: id,
+                    category_id: "27471",
+                    category_name: "Minecraft",
+                    created_at: new Date().toISOString(),
+                  },
+                ]
+              : [],
+            global: [],
+          },
+        }),
+      }),
+    )
+    await page.route("**/api/preferences/channel", (route) => {
+      categoryAdded = true
+      return route.fulfill({
+        status: 201,
+        contentType: "application/json",
+        body: JSON.stringify({
+          data: {
+            id: "pref_minecraft",
+            user_id: "e2e-user",
+            broadcaster_user_id: id,
+            category_id: "27471",
+            category_name: "Minecraft",
+            created_at: new Date().toISOString(),
+            disabled_at: null,
+          },
+        }),
+      })
+    })
+    await page.route("**/api/categories/search*", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          data: [{ id: "27471", name: "Minecraft", box_art_url: null }],
+        }),
       }),
     )
 
@@ -429,5 +473,14 @@ describe("Alerts view", () => {
     // two-element match is a strict-mode violation, not a pass.
     await expectHidden(page.getByPlaceholder("Search channels..."))
     await expectVisible(page.getByPlaceholder("Search categories..."))
+
+    await page.getByPlaceholder("Search categories...").fill("mine")
+    await page.getByRole("button", { name: "Minecraft" }).click()
+
+    const card = page.locator(
+      '[data-testid="channel-alerts-card"][data-display-name="FreshStreamer"]',
+    )
+    await expectVisible(card)
+    await expectVisible(card.getByText("Minecraft"))
   })
 })
