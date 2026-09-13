@@ -1,11 +1,6 @@
-import { useEffect, useRef, useState } from "react"
 import { Globe, X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-
-// How long an armed (unconfirmed) removal stays highlighted before silently
-// resetting, so a chip never gets stuck waiting for a second click.
-const CONFIRM_RESET_MS = 3000
 
 interface CategoryChipProps {
   label: string
@@ -15,6 +10,10 @@ interface CategoryChipProps {
    * preference that outlives the global one.
    */
   alsoGlobal?: boolean
+  /** Whether this chip is the one currently armed for click-to-confirm removal. */
+  armed: boolean
+  /** Arms this chip. The owner clears any other armed chip first. */
+  onArm: () => void
   onRemove: () => void
   removeLabel: string
 }
@@ -22,29 +21,17 @@ interface CategoryChipProps {
 export function CategoryChip({
   label,
   alsoGlobal = false,
+  armed,
+  onArm,
   onRemove,
   removeLabel,
 }: CategoryChipProps) {
-  const [confirming, setConfirming] = useState(false)
-  const resetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  useEffect(() => {
-    return () => {
-      if (resetTimeoutRef.current) clearTimeout(resetTimeoutRef.current)
-    }
-  }, [])
-
   function handleClick() {
-    if (confirming) {
-      if (resetTimeoutRef.current) clearTimeout(resetTimeoutRef.current)
+    if (armed) {
       onRemove()
       return
     }
-    setConfirming(true)
-    resetTimeoutRef.current = setTimeout(
-      () => setConfirming(false),
-      CONFIRM_RESET_MS,
-    )
+    onArm()
   }
 
   return (
@@ -54,7 +41,7 @@ export function CategoryChip({
       className={cn(
         "h-6 cursor-pointer gap-1.5 px-2.5",
         alsoGlobal && "border-dashed",
-        confirming
+        armed
           ? "border-destructive text-destructive"
           : alsoGlobal && "border-primary/60",
       )}
@@ -63,7 +50,7 @@ export function CategoryChip({
         type="button"
         onClick={handleClick}
         aria-label={removeLabel}
-        data-confirming={confirming || undefined}
+        data-confirming={armed || undefined}
       >
         {alsoGlobal && (
           <Globe aria-hidden="true" className="size-3 text-primary" />

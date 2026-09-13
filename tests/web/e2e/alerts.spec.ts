@@ -492,4 +492,79 @@ describe("Alerts view", () => {
     await expectVisible(card)
     await expectVisible(card.getByText("Minecraft"))
   })
+
+  it("should only ever arm one chip for removal at a time, across both sections", async ({
+    authenticatedSession,
+  }) => {
+    const id = broadcasterId("singlearm")
+    await seedFollowedChannels([
+      {
+        broadcasterUserId: id,
+        broadcasterLogin: "singlearmstreamer",
+        broadcasterDisplayName: "SingleArmStreamer",
+      },
+    ])
+
+    const { page } = authenticatedSession
+    let gtaRemoved = false
+
+    await page.route("**/api/preferences", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          data: {
+            channel: gtaRemoved
+              ? []
+              : [
+                  {
+                    id: "pref_singlearm",
+                    broadcaster_user_id: id,
+                    category_id: "32982",
+                    category_name: "GTA V",
+                    created_at: new Date().toISOString(),
+                  },
+                ],
+            global: [
+              {
+                id: "glob_singlearm",
+                category_id: "509658",
+                category_name: "Just Chatting",
+                created_at: new Date().toISOString(),
+              },
+            ],
+          },
+        }),
+      }),
+    )
+    await page.route("**/api/preferences/channel/pref_singlearm", (route) => {
+      gtaRemoved = true
+      return route.fulfill({ status: 204, body: "" })
+    })
+
+    await page.goto(`${WEB_URL}/alerts`)
+
+    const globalChip = page.getByRole("button", {
+      name: "Remove Just Chatting",
+    })
+    const channelChip = page.getByRole("button", {
+      name: "Remove GTA V for SingleArmStreamer",
+    })
+
+    await globalChip.click()
+    await expectVisible(page.locator('[data-confirming="true"]'))
+    expect(await page.locator('[data-confirming="true"]').count()).toBe(1)
+
+    // Arming the per-channel chip disarms the global one — only one chip is
+    // ever armed across the whole page, not one per section.
+    await channelChip.click()
+    expect(await page.locator('[data-confirming="true"]').count()).toBe(1)
+    expect(await channelChip.getAttribute("data-confirming")).toBe("true")
+    expect(await globalChip.getAttribute("data-confirming")).toBeNull()
+
+    // The newly-armed chip still confirms normally on a second click.
+    await channelChip.click()
+    await expectHidden(page.getByText("GTA V"))
+    await expectVisible(page.getByText("Just Chatting"))
+  })
 })

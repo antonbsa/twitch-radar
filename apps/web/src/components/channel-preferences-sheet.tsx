@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { CategorySearchList } from "@/components/category-search-list"
 import { CategoryChip } from "@/components/category-chip"
 import { useLanguage } from "@/context/language-context"
+import { useArmedChip } from "@/hooks/use-armed-chip"
 import {
   useAddChannelPreference,
   usePreferences,
@@ -28,6 +29,7 @@ export function ChannelPreferencesSheet({
   const { t } = useLanguage()
   const addPreference = useAddChannelPreference()
   const removePreference = useRemoveChannelPreference()
+  const { armedId: armedChipId, arm: armChip } = useArmedChip()
 
   const savedForChannel = channel
     ? (preferences?.channel ?? []).filter(
@@ -74,6 +76,8 @@ export function ChannelPreferencesSheet({
                   <CategoryChip
                     key={pref.id}
                     label={pref.category_name}
+                    armed={armedChipId === pref.id}
+                    onArm={() => armChip(pref.id)}
                     onRemove={() => removePreference.mutate(pref.id)}
                     removeLabel={t("channel_preferences.remove_aria", {
                       category: pref.category_name,

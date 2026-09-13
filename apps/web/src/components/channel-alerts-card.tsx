@@ -12,12 +12,16 @@ interface ChannelAlertsCardProps {
   group: ChannelAlertGroup
   onAdd: (broadcasterUserId: string) => void
   onRemove: (preferenceId: string) => void
+  armedChipId: string | null
+  onArmChip: (preferenceId: string) => void
 }
 
 export function ChannelAlertsCard({
   group,
   onAdd,
   onRemove,
+  armedChipId,
+  onArmChip,
 }: ChannelAlertsCardProps) {
   const hasGlobalOverlap = group.categories.some((c) => c.alsoGlobal)
 
@@ -50,6 +54,8 @@ export function ChannelAlertsCard({
             key={category.preferenceId}
             label={category.categoryName}
             alsoGlobal={category.alsoGlobal}
+            armed={armedChipId === category.preferenceId}
+            onArm={() => onArmChip(category.preferenceId)}
             onRemove={() => onRemove(category.preferenceId)}
             removeLabel={`Remove ${category.categoryName} for ${group.displayName}`}
           />

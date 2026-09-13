@@ -10,6 +10,7 @@ import { GlobalAlertsCard } from "@/components/global-alerts-card"
 import { ReconnectRequired } from "@/components/reconnect-required"
 import { useAuth } from "@/context/auth-context"
 import { useLanguage } from "@/context/language-context"
+import { useArmedChip } from "@/hooks/use-armed-chip"
 import { useFollowedChannels } from "@/hooks/use-channels"
 import { buildChannelAlertGroups } from "@/lib/alert-groups"
 import {
@@ -34,6 +35,7 @@ export function AlertsPage() {
   const [addChannelOpen, setAddChannelOpen] = useState(false)
   const [configuringChannel, setConfiguringChannel] =
     useState<FollowedChannel | null>(null)
+  const { armedId: armedChipId, arm: armChip } = useArmedChip()
 
   const globalPreferences = preferences?.global ?? []
   const channelPreferences = preferences?.channel ?? []
@@ -90,6 +92,8 @@ export function AlertsPage() {
           preferences={globalPreferences}
           onAdd={() => setAddGlobalOpen(true)}
           onRemove={(id) => removeGlobalPreference.mutate(id)}
+          armedChipId={armedChipId}
+          onArmChip={armChip}
         />
       )}
 
@@ -129,6 +133,8 @@ export function AlertsPage() {
             group={group}
             onAdd={openChannelSheet}
             onRemove={(id) => removeChannelPreference.mutate(id)}
+            armedChipId={armedChipId}
+            onArmChip={armChip}
           />
         ))}
 

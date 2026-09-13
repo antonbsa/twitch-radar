@@ -8,12 +8,16 @@ interface GlobalAlertsCardProps {
   preferences: GlobalPreference[]
   onAdd: () => void
   onRemove: (preferenceId: string) => void
+  armedChipId: string | null
+  onArmChip: (preferenceId: string) => void
 }
 
 export function GlobalAlertsCard({
   preferences,
   onAdd,
   onRemove,
+  armedChipId,
+  onArmChip,
 }: GlobalAlertsCardProps) {
   const { t } = useLanguage()
 
@@ -37,6 +41,8 @@ export function GlobalAlertsCard({
           <CategoryChip
             key={pref.id}
             label={pref.category_name}
+            armed={armedChipId === pref.id}
+            onArm={() => onArmChip(pref.id)}
             onRemove={() => onRemove(pref.id)}
             removeLabel={t("alerts.remove_aria", {
               category: pref.category_name,
