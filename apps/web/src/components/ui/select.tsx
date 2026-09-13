@@ -32,10 +32,13 @@ function SelectValue({
 function SelectTrigger({
   className,
   size = "default",
+  showIcon = true,
   children,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Trigger> & {
   size?: "sm" | "default" | "lg"
+  /** Hide the chevron icon when the trigger already conveys expandability */
+  showIcon?: boolean
 }) {
   return (
     <SelectPrimitive.Trigger
@@ -51,9 +54,11 @@ function SelectTrigger({
       {...props}
     >
       {children}
-      <SelectPrimitive.Icon asChild>
-        <ChevronDownIcon className="pointer-events-none size-4 text-muted-foreground" />
-      </SelectPrimitive.Icon>
+      {showIcon && (
+        <SelectPrimitive.Icon asChild>
+          <ChevronDownIcon className="pointer-events-none size-4 text-muted-foreground" />
+        </SelectPrimitive.Icon>
+      )}
     </SelectPrimitive.Trigger>
   )
 }

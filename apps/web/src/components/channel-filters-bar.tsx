@@ -1,4 +1,10 @@
-import { ChevronDownIcon, Search, X } from "lucide-react"
+import {
+  ArrowDown10,
+  ArrowDownAZ,
+  ChevronDownIcon,
+  Search,
+  X,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -124,10 +130,18 @@ export function ChannelFiltersBar({
       >
         <SelectTrigger
           size="lg"
+          showIcon={false}
           aria-label={t("channels.sort_aria")}
-          className="w-28 shrink-0 sm:w-36"
+          // Icon-only to maximize space for search input on narrow screens
+          className="w-11 shrink-0 justify-center"
         >
-          <SelectValue />
+          <SelectValue>
+            {filters.sort === "viewers" ? (
+              <ArrowDown10 className="size-5 text-muted-foreground" />
+            ) : (
+              <ArrowDownAZ className="size-5 text-muted-foreground" />
+            )}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent size="lg">
           <SelectItem value="viewers">{t("channels.sort_viewers")}</SelectItem>
