@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select"
 import { useLanguage } from "@/context/language-context"
 import type { ChannelFilters, ChannelSort } from "@/lib/channel-filters"
+import { cn } from "@/lib/utils"
 
 // Matches SelectTrigger's default-size look (apps/web/src/components/ui/select.tsx)
 // so the category filter, the sort select, and the search input all render at
@@ -64,18 +65,25 @@ export function ChannelFiltersBar({
           aria-label={t("channels.search_aria")}
           className="pr-8 pl-8"
         />
-        {filters.search.length > 0 && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-xs"
-            onClick={() => onChange({ search: "" })}
-            aria-label={t("channels.clear_search_aria")}
-            className="absolute top-1/2 right-1 -translate-y-1/2"
-          >
-            <X />
-          </Button>
-        )}
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-xs"
+          onClick={() => onChange({ search: "" })}
+          aria-label={t("channels.clear_search_aria")}
+          // inset-y-0 + my-auto centers without translate, avoiding conflicts
+          // with Button's active:translate-y-px press effect. visibility
+          // toggles discrete state so transitions feel smooth and the button
+          // becomes non-interactive when hidden.
+          className={cn(
+            "absolute inset-y-0 right-1 my-auto cursor-pointer transition-[opacity,visibility] duration-250",
+            filters.search.length > 0
+              ? "visible opacity-100"
+              : "invisible opacity-0",
+          )}
+        >
+          <X />
+        </Button>
       </div>
 
       {categories.length > 0 && (
