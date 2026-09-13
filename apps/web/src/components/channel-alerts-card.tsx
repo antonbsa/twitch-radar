@@ -1,11 +1,10 @@
-import { Plus } from "lucide-react"
 import {
   Avatar,
   AvatarBadge,
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
+import { AddCategoryChip } from "@/components/add-category-chip"
 import { CategoryChip } from "@/components/category-chip"
 import type { ChannelAlertGroup } from "@/lib/alert-groups"
 
@@ -43,19 +42,6 @@ export function ChannelAlertsCard({
             </p>
           )}
         </div>
-
-        {/* An unsynced channel has no FollowedChannel record, so the
-            preference sheet has nothing to open with. */}
-        {!group.isUnsynced && (
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => onAdd(group.broadcasterUserId)}
-            aria-label={`Add category for ${group.displayName}`}
-          >
-            <Plus className="size-4" />
-          </Button>
-        )}
       </div>
 
       <div className="flex flex-wrap gap-1.5 px-3 pb-2">
@@ -68,6 +54,14 @@ export function ChannelAlertsCard({
             removeLabel={`Remove ${category.categoryName} for ${group.displayName}`}
           />
         ))}
+        {/* An unsynced channel has no FollowedChannel record, so the
+            preference sheet has nothing to open with. */}
+        {!group.isUnsynced && (
+          <AddCategoryChip
+            onClick={() => onAdd(group.broadcasterUserId)}
+            label={`Add category for ${group.displayName}`}
+          />
+        )}
       </div>
 
       {hasGlobalOverlap && (

@@ -118,7 +118,14 @@ describe("Alerts view", () => {
     await expectVisible(page.getByText("Minecraft"))
     await expectHidden(page.getByText("No global alerts set."))
 
-    await page.getByRole("button", { name: "Remove Minecraft" }).click()
+    const removeButton = page.getByRole("button", { name: "Remove Minecraft" })
+    await removeButton.click()
+    // First click only arms the chip — a second click is required to
+    // actually remove it.
+    await expectVisible(page.locator('[data-confirming="true"]'))
+    await expectVisible(page.getByText("Minecraft"))
+
+    await removeButton.click()
     await expectVisible(page.getByText("No global alerts set."))
     await expectHidden(page.getByText("Minecraft"))
   })
@@ -203,9 +210,11 @@ describe("Alerts view", () => {
     await expectVisible(page.getByText("GTA V"))
     await expectVisible(page.getByText("Minecraft"))
 
-    await page
-      .getByRole("button", { name: "Remove GTA V for GroupedStreamer" })
-      .click()
+    const removeGta = page.getByRole("button", {
+      name: "Remove GTA V for GroupedStreamer",
+    })
+    await removeGta.click()
+    await removeGta.click()
 
     await expectHidden(page.getByText("GTA V"))
     await expectVisible(page.getByText("Minecraft"))

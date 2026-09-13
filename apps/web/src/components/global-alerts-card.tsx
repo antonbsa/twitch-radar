@@ -1,5 +1,5 @@
-import { Globe, Plus } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Globe } from "lucide-react"
+import { AddCategoryChip } from "@/components/add-category-chip"
 import { CategoryChip } from "@/components/category-chip"
 import type { GlobalPreference } from "@/types/preference"
 
@@ -21,32 +21,25 @@ export function GlobalAlertsCard({
           <Globe className="size-3.5 text-primary" />
         </span>
         <p className="flex-1 text-sm font-medium">Applies to every channel</p>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          onClick={onAdd}
-          aria-label="Add global category"
-        >
-          <Plus className="size-4" />
-        </Button>
       </div>
 
-      {preferences.length === 0 ? (
-        <p className="px-3 pb-3 text-sm text-muted-foreground">
+      {preferences.length === 0 && (
+        <p className="px-3 pb-1 text-sm text-muted-foreground">
           No global alerts set.
         </p>
-      ) : (
-        <div className="flex flex-wrap gap-1.5 px-3 pb-3">
-          {preferences.map((pref) => (
-            <CategoryChip
-              key={pref.id}
-              label={pref.category_name}
-              onRemove={() => onRemove(pref.id)}
-              removeLabel={`Remove ${pref.category_name}`}
-            />
-          ))}
-        </div>
       )}
+
+      <div className="flex flex-wrap gap-1.5 px-3 pb-3">
+        {preferences.map((pref) => (
+          <CategoryChip
+            key={pref.id}
+            label={pref.category_name}
+            onRemove={() => onRemove(pref.id)}
+            removeLabel={`Remove ${pref.category_name}`}
+          />
+        ))}
+        <AddCategoryChip onClick={onAdd} label="Add global category" />
+      </div>
     </div>
   )
 }

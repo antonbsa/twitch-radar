@@ -16,11 +16,14 @@ routes/
   channels.tsx, alerts.tsx,   — tab views (T-004); account.tsx also owns the push notification
   account.tsx                   permission/subscription UI (T-005)
 components/
-  category-chip.tsx            — removable category chip; optional Globe marker for a per-channel
-                                 preference an active global preference also covers
-  global-alerts-card.tsx       — "All channels" card: global preferences as chips plus its add button
+  category-chip.tsx            — removable category chip; click-to-arm/click-to-confirm removal
+                                 (auto-resets), optional Globe marker for a per-channel preference an
+                                 active global preference also covers
+  add-category-chip.tsx        — dashed "+" chip appended to the end of a category list, styled like
+                                 the chips around it rather than as a separate header control
+  global-alerts-card.tsx       — "All channels" card: global preferences as chips plus its add-chip
   channel-alerts-card.tsx      — one channel's alert card: avatar/name/live dot, its category chips,
-                                 and the "Also in All channels" legend
+                                 its add-chip, and the "Also in All channels" legend
   auth-gate.tsx                — AuthGate; single guard for both "authenticated" and "guest" route cases
   bottom-tab-bar.tsx           — persistent 3-tab nav (Channels/Alerts/Account)
   full-screen-loader.tsx       — shared loading state for AuthGate
