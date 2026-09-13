@@ -24,6 +24,8 @@ components/
   auth-gate.tsx                — AuthGate; single guard for both "authenticated" and "guest" route cases
   bottom-tab-bar.tsx           — persistent 3-tab nav (Channels/Alerts/Account)
   full-screen-loader.tsx       — shared loading state for AuthGate
+  add-channel-sheet.tsx        — channel picker that hands off to channel-preferences-sheet, for
+                                 configuring a channel with no preferences yet
   ui/                          — shadcn/ui primitives (Button, Sheet, Input, Badge, Avatar); copied source,
                                 edit directly, do not treat as an upgradeable dependency
 hooks/

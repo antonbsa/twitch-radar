@@ -391,4 +391,43 @@ describe("Alerts view", () => {
     // Labelled, but still selectable — pinning per-channel is deliberate.
     expect(await result.isEnabled()).toBe(true)
   })
+
+  it("should add a category to a channel that has no preferences yet", async ({
+    authenticatedSession,
+  }) => {
+    const id = broadcasterId("newchannel")
+    await seedFollowedChannels([
+      {
+        broadcasterUserId: id,
+        broadcasterLogin: "freshstreamer",
+        broadcasterDisplayName: "FreshStreamer",
+      },
+    ])
+
+    const { page } = authenticatedSession
+    await page.route("**/api/preferences", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ data: { channel: [], global: [] } }),
+      }),
+    )
+
+    await page.goto(`${WEB_URL}/alerts`)
+    await expectVisible(page.getByText("No per-channel alerts set."))
+
+    await page.getByRole("button", { name: "Add channel" }).click()
+    const picker = page.getByRole("dialog")
+    await expectVisible(picker)
+    await expectVisible(picker.getByText("Add channel"))
+
+    await picker.getByRole("button", { name: "FreshStreamer" }).click()
+
+    // The picker hands off to the per-channel sheet. Assert on each sheet's
+    // own placeholder rather than on `getByRole("dialog")`: while the picker
+    // plays its close animation both dialogs are briefly in the DOM, and a
+    // two-element match is a strict-mode violation, not a pass.
+    await expectHidden(page.getByPlaceholder("Search channels..."))
+    await expectVisible(page.getByPlaceholder("Search categories..."))
+  })
 })

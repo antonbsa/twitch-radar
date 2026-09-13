@@ -1,5 +1,8 @@
 import { useMemo, useState } from "react"
+import { Plus } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Button } from "@/components/ui/button"
+import { AddChannelSheet } from "@/components/add-channel-sheet"
 import { AddGlobalCategorySheet } from "@/components/add-global-category-sheet"
 import { ChannelAlertsCard } from "@/components/channel-alerts-card"
 import { ChannelPreferencesSheet } from "@/components/channel-preferences-sheet"
@@ -26,6 +29,7 @@ export function AlertsPage() {
   const removeGlobalPreference = useRemoveGlobalPreference()
   const removeChannelPreference = useRemoveChannelPreference()
   const [addGlobalOpen, setAddGlobalOpen] = useState(false)
+  const [addChannelOpen, setAddChannelOpen] = useState(false)
   const [configuringChannel, setConfiguringChannel] =
     useState<FollowedChannel | null>(null)
 
@@ -126,6 +130,19 @@ export function AlertsPage() {
           />
         ))}
 
+      {!channelSectionLoading && !channelSectionError && (
+        <div className="px-4 pt-2">
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => setAddChannelOpen(true)}
+          >
+            <Plus className="size-4" />
+            Add channel
+          </Button>
+        </div>
+      )}
+
       <AddGlobalCategorySheet
         open={addGlobalOpen}
         onOpenChange={setAddGlobalOpen}
@@ -136,6 +153,16 @@ export function AlertsPage() {
         channel={configuringChannel}
         onOpenChange={(open) => {
           if (!open) setConfiguringChannel(null)
+        }}
+      />
+
+      <AddChannelSheet
+        open={addChannelOpen}
+        onOpenChange={setAddChannelOpen}
+        channels={channels ?? []}
+        onSelect={(channel) => {
+          setAddChannelOpen(false)
+          setConfiguringChannel(channel)
         }}
       />
     </div>
