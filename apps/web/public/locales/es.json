@@ -25,7 +25,7 @@
   "channels.all_categories": "Todas las categorías",
   "channels.categories_selected_count": "{count} categorías",
   "channels.sort_aria": "Ordenar canales",
-  "channels.sort_viewers": "Espectadores",
+  "channels.sort_viewers": "Espectadores (Mayor a Menor)",
   "channels.sort_alphabetical": "Nombre (A-Z)",
 
   "channel_row.offline": "Sin conexión",

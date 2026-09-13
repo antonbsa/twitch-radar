@@ -25,7 +25,7 @@
   "channels.all_categories": "Todas as categorias",
   "channels.categories_selected_count": "{count} categorias",
   "channels.sort_aria": "Ordenar canais",
-  "channels.sort_viewers": "Visualizações",
+  "channels.sort_viewers": "Visualizações (Maior para Menor)",
   "channels.sort_alphabetical": "Nome (A-Z)",
 
   "channel_row.offline": "Offline",

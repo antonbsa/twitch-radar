@@ -25,7 +25,7 @@
   "channels.all_categories": "All categories",
   "channels.categories_selected_count": "{count} categories",
   "channels.sort_aria": "Sort channels",
-  "channels.sort_viewers": "Viewers",
+  "channels.sort_viewers": "Viewers (High to Low)",
   "channels.sort_alphabetical": "Name (A-Z)",
 
   "channel_row.offline": "Offline",
