@@ -19,11 +19,9 @@ import { useLanguage } from "@/context/language-context"
 import type { ChannelFilters, ChannelSort } from "@/lib/channel-filters"
 import { cn } from "@/lib/utils"
 
-// Matches SelectTrigger's default-size look (apps/web/src/components/ui/select.tsx)
-// so the category filter, the sort select, and the search input all render at
-// the same height.
+// Aligns category filter, sort select, and search input to 44px touch-target height
 const CATEGORY_TRIGGER_CLASSNAME =
-  "flex h-8 w-24 min-w-0 shrink-0 items-center justify-between gap-1.5 rounded-lg border border-input bg-transparent py-2 pr-2 pl-2.5 text-sm whitespace-nowrap transition-colors outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30 dark:hover:bg-input/50 sm:w-32"
+  "flex h-11 w-28 min-w-0 shrink-0 items-center justify-between gap-1.5 rounded-lg border border-input bg-transparent px-3 text-base whitespace-nowrap transition-colors outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30 dark:hover:bg-input/50 sm:w-36"
 
 interface ChannelFiltersBarProps {
   filters: ChannelFilters
@@ -57,18 +55,20 @@ export function ChannelFiltersBar({
   return (
     <div className="flex items-center gap-2 px-4 pb-2">
       <div className="relative min-w-0 flex-1">
-        <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
+        <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           value={filters.search}
           onChange={(e) => onChange({ search: e.target.value })}
           placeholder={t("channels.search_placeholder")}
           aria-label={t("channels.search_aria")}
-          className="pr-8 pl-8"
+          // h-11/text-base matches SelectTrigger's "lg" size (see
+          // CATEGORY_TRIGGER_CLASSNAME above) for the 44px touch target.
+          className="h-11 pr-10 pl-10 text-base"
         />
         <Button
           type="button"
           variant="ghost"
-          size="icon-xs"
+          size="icon-sm"
           onClick={() => onChange({ search: "" })}
           aria-label={t("channels.clear_search_aria")}
           // inset-y-0 + my-auto centers without translate, avoiding conflicts
@@ -76,7 +76,7 @@ export function ChannelFiltersBar({
           // toggles discrete state so transitions feel smooth and the button
           // becomes non-interactive when hidden.
           className={cn(
-            "absolute inset-y-0 right-1 my-auto cursor-pointer transition-[opacity,visibility] duration-250",
+            "absolute inset-y-0 right-1.5 my-auto cursor-pointer transition-[opacity,visibility] duration-250",
             filters.search.length > 0
               ? "visible opacity-100"
               : "invisible opacity-0",
@@ -123,12 +123,13 @@ export function ChannelFiltersBar({
         onValueChange={(value) => onChange({ sort: value as ChannelSort })}
       >
         <SelectTrigger
+          size="lg"
           aria-label={t("channels.sort_aria")}
-          className="w-24 shrink-0 sm:w-32"
+          className="w-28 shrink-0 sm:w-36"
         >
           <SelectValue />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent size="lg">
           <SelectItem value="viewers">{t("channels.sort_viewers")}</SelectItem>
           <SelectItem value="alphabetical">
             {t("channels.sort_alphabetical")}
