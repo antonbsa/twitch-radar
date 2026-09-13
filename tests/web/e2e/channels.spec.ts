@@ -483,7 +483,10 @@ describe("Channels view", () => {
       const menu = page.getByRole("menu")
       await expectVisible(menu)
 
-      await row.click()
+      // force: true - Radix menu sets pointer-events to "none", making the row
+      // appear unclickable to Playwright's static hit-test, but it becomes
+      // clickable dynamically when pointerdown dismisses the menu first.
+      await row.click({ force: true })
 
       await expectHidden(menu)
       expect(await page.getByTestId("channel-detail-modal").count()).toBe(0)
