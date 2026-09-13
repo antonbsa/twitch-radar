@@ -1,7 +1,7 @@
 import * as React from "react"
 import { Select as SelectPrimitive } from "radix-ui"
 
-import { cn } from "@/lib/utils"
+import { cn, preventOutsideClickThrough } from "@/lib/utils"
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react"
 
 function Select({
@@ -64,6 +64,7 @@ function SelectContent({
   position = "item-aligned",
   align = "center",
   size = "default",
+  onPointerDownOutside,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Content> & {
   size?: "sm" | "default" | "lg"
@@ -82,6 +83,10 @@ function SelectContent({
         )}
         position={position}
         align={align}
+        onPointerDownOutside={(event) => {
+          onPointerDownOutside?.(event)
+          preventOutsideClickThrough(event)
+        }}
         {...props}
       >
         <SelectScrollUpButton />

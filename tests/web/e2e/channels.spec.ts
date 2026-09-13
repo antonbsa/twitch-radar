@@ -451,6 +451,44 @@ describe("Channels view", () => {
       await expectVisible(artRow)
     })
 
+    it("should only close the category dropdown, not act on the row underneath, when clicking outside it on a channel row", async ({
+      authenticatedSession,
+    }) => {
+      const id = broadcasterId("dropdown_outside_click")
+      await seedFollowedChannels([
+        {
+          broadcasterUserId: id,
+          broadcasterLogin: "dropdownoutsideclick",
+          broadcasterDisplayName: "DropdownOutsideClick",
+        },
+      ])
+      await seedChannelState([
+        {
+          broadcasterUserId: id,
+          isLive: true,
+          categoryName: "Just Chatting",
+          viewerCount: 10,
+        },
+      ])
+
+      const { page } = authenticatedSession
+      await page.goto(WEB_URL)
+
+      const row = page.locator(
+        `[data-testid="channel-row"][data-broadcaster-user-id="${id}"]`,
+      )
+      await expectVisible(row)
+
+      await page.getByRole("button", { name: "Filter by category" }).click()
+      const menu = page.getByRole("menu")
+      await expectVisible(menu)
+
+      await row.click()
+
+      await expectHidden(menu)
+      expect(await page.getByTestId("channel-detail-modal").count()).toBe(0)
+    })
+
     it("should reorder channels alphabetically when 'Name (A-Z)' sort is selected", async ({
       authenticatedSession,
     }) => {
