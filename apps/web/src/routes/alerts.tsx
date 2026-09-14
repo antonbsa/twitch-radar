@@ -81,7 +81,9 @@ export function AlertsPage() {
         <h1 className="text-lg font-semibold">{t("alerts.title")}</h1>
       </div>
 
-      <h2 className="px-4 pt-1 pb-2 text-base font-semibold">All channels</h2>
+      <h2 className="px-4 pt-1 pb-2 text-base font-semibold">
+        {t("alerts.all_channels_title")}
+      </h2>
 
       {isLoading && (
         <div className="px-4">
@@ -108,7 +110,9 @@ export function AlertsPage() {
       )}
 
       <div className="flex items-center gap-2 px-4 pt-6 pb-2">
-        <h2 className="text-base font-semibold">Per channel</h2>
+        <h2 className="text-base font-semibold">
+          {t("alerts.per_channel_title")}
+        </h2>
 
         {channelSectionReady && groups.length > 0 && (
           <div className="relative min-w-0 flex-1">
@@ -145,7 +149,7 @@ export function AlertsPage() {
             variant="outline"
             size="icon"
             onClick={() => setAddChannelOpen(true)}
-            aria-label={t("alerts.add_channel_aria")}
+            aria-label={t("alerts.add_channel")}
             className="h-11 w-11 shrink-0 cursor-pointer"
           >
             <Plus className="size-5" />
@@ -171,7 +175,7 @@ export function AlertsPage() {
 
       {channelSectionReady && groups.length === 0 && (
         <p className="px-4 py-6 text-sm text-muted-foreground">
-          No per-channel alerts set.
+          {t("alerts.channel_empty")}
         </p>
       )}
 

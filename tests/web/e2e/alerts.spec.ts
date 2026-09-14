@@ -476,11 +476,8 @@ describe("Alerts view", () => {
 
     await picker.getByRole("button", { name: "FreshStreamer" }).click()
 
-    // The picker hands off to the per-channel sheet. Assert on each sheet's
-    // own placeholder rather than on `getByRole("dialog")`: while the picker
-    // plays its close animation both dialogs are briefly in the DOM, and a
-    // two-element match is a strict-mode violation, not a pass.
-    await expectHidden(page.getByPlaceholder("Search channels..."))
+    // Both dialogs briefly exist during close animation, so assert on unique content
+    await expectHidden(page.getByText("Add channel"))
     await expectVisible(page.getByPlaceholder("Search categories"))
 
     await page.getByPlaceholder("Search categories").fill("mine")

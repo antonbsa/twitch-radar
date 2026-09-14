@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/sheet"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useLanguage } from "@/context/language-context"
 import type { FollowedChannel } from "@/types/channel"
 
 interface AddChannelSheetProps {
@@ -23,6 +24,7 @@ export function AddChannelSheet({
   onSelect,
 }: AddChannelSheetProps) {
   const [query, setQuery] = useState("")
+  const { t } = useLanguage()
 
   // Channels that already have a card are deliberately not filtered out:
   // picking one opens its sheet, the same result as tapping its own "+".
@@ -46,11 +48,12 @@ export function AddChannelSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="max-h-[85vh]">
         <SheetHeader>
-          <SheetTitle>Add channel</SheetTitle>
+          <SheetTitle>{t("alerts.add_channel")}</SheetTitle>
         </SheetHeader>
         <div className="space-y-2 overflow-y-auto px-4 pb-4">
           <Input
-            placeholder="Search channels..."
+            placeholder={t("alerts.channel_search_placeholder")}
+            aria-label={t("alerts.channel_picker_search_aria")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             autoFocus
@@ -58,7 +61,7 @@ export function AddChannelSheet({
 
           {matches.length === 0 ? (
             <p className="px-1 text-sm text-muted-foreground">
-              No channels found.
+              {t("alerts.no_channels_found")}
             </p>
           ) : (
             <ul className="max-h-64 overflow-y-auto rounded-lg border border-border">

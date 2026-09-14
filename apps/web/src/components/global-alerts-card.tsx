@@ -27,7 +27,9 @@ export function GlobalAlertsCard({
         <span className="flex size-6 items-center justify-center rounded-md bg-primary/20">
           <Globe className="size-3.5 text-primary" />
         </span>
-        <p className="flex-1 text-sm font-medium">Applies to every channel</p>
+        <p className="flex-1 text-sm font-medium">
+          {t("alerts.all_channels_subtitle")}
+        </p>
       </div>
 
       {preferences.length === 0 && (
@@ -51,7 +53,7 @@ export function GlobalAlertsCard({
         ))}
         <AddCategoryChip
           onClick={onAdd}
-          label="Add global category"
+          label={t("alerts.add_global_category_aria")}
           visibleLabel={t("alerts.add_category")}
         />
       </div>

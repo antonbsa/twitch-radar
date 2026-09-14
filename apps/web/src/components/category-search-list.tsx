@@ -71,7 +71,7 @@ export function CategorySearchList({
                   {isGlobal && (
                     <span className="flex shrink-0 items-center gap-1 rounded-full border border-primary/40 px-2 py-0.5 text-xs text-primary">
                       <Globe className="size-3" />
-                      already in All channels
+                      {t("category_search.already_global")}
                     </span>
                   )}
                 </button>

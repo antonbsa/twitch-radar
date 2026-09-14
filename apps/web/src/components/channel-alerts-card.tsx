@@ -44,7 +44,7 @@ export function ChannelAlertsCard({
           <p className="truncate text-sm font-medium">{group.displayName}</p>
           {group.isUnsynced && (
             <p className="truncate text-xs text-muted-foreground">
-              Channel not synced
+              {t("alerts.channel_not_synced")}
             </p>
           )}
         </div>
@@ -59,7 +59,10 @@ export function ChannelAlertsCard({
             armed={armedChipId === category.preferenceId}
             onArm={() => onArmChip(category.preferenceId)}
             onRemove={() => onRemove(category.preferenceId)}
-            removeLabel={`Remove ${category.categoryName} for ${group.displayName}`}
+            removeLabel={t("alerts.remove_for_channel_aria", {
+              category: category.categoryName,
+              channel: group.displayName,
+            })}
           />
         ))}
         {/* An unsynced channel has no FollowedChannel record, so the
@@ -67,7 +70,9 @@ export function ChannelAlertsCard({
         {!group.isUnsynced && (
           <AddCategoryChip
             onClick={() => onAdd(group.broadcasterUserId)}
-            label={`Add category for ${group.displayName}`}
+            label={t("alerts.add_category_for_channel_aria", {
+              channel: group.displayName,
+            })}
             visibleLabel={t("alerts.add_category")}
           />
         )}
@@ -75,7 +80,7 @@ export function ChannelAlertsCard({
 
       {hasGlobalOverlap && (
         <p className="px-3 pb-2.5 text-xs text-muted-foreground">
-          Also in All channels
+          {t("alerts.also_in_all_channels")}
         </p>
       )}
     </div>
