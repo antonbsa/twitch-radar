@@ -81,7 +81,7 @@ export function AlertsPage() {
         <h1 className="text-lg font-semibold">{t("alerts.title")}</h1>
       </div>
 
-      <h2 className="px-4 pt-1 pb-2 text-base font-semibold">
+      <h2 className="px-4 pt-1 pb-2 text-base font-semibold text-muted-foreground">
         {t("alerts.all_channels_title")}
       </h2>
 
@@ -109,52 +109,56 @@ export function AlertsPage() {
         />
       )}
 
-      <div className="flex items-center gap-2 px-4 pt-6 pb-2">
-        <h2 className="text-base font-semibold">
+      <div className="flex items-center justify-between gap-2 px-4 pt-6 pb-2">
+        <h2 className="text-base font-semibold text-muted-foreground">
           {t("alerts.per_channel_title")}
         </h2>
 
-        {channelSectionReady && groups.length > 0 && (
-          <div className="relative min-w-0 flex-1">
-            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={channelSearch}
-              onChange={(e) => setChannelSearch(e.target.value)}
-              placeholder={t("alerts.channel_search_placeholder")}
-              aria-label={t("alerts.channel_search_aria")}
-              // h-11/text-base matches the 44px touch-target size used by the
-              // Channels page's filters bar (see ChannelFiltersBar).
-              className="h-11 pr-10 pl-10 text-base"
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              onClick={() => setChannelSearch("")}
-              aria-label={t("alerts.clear_channel_search_aria")}
-              className={cn(
-                "absolute inset-y-0 right-1.5 my-auto cursor-pointer transition-[opacity,visibility] duration-250",
-                channelSearch.length > 0
-                  ? "visible opacity-100"
-                  : "invisible opacity-0",
-              )}
-            >
-              <X />
-            </Button>
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {channelSectionReady && groups.length > 0 && (
+            <div className="relative w-36 sm:w-48">
+              <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={channelSearch}
+                onChange={(e) => setChannelSearch(e.target.value)}
+                placeholder={t("alerts.channel_search_placeholder")}
+                aria-label={t("alerts.channel_search_aria")}
+                // h-11/text-base matches the 44px touch-target size used by
+                // the Channels page's filters bar (see ChannelFiltersBar).
+                // Fixed width rather than flex-1: this row doesn't need the
+                // search to claim the whole line.
+                className="h-11 w-full pr-10 pl-10 text-base"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => setChannelSearch("")}
+                aria-label={t("alerts.clear_channel_search_aria")}
+                className={cn(
+                  "absolute inset-y-0 right-1.5 my-auto cursor-pointer transition-[opacity,visibility] duration-250",
+                  channelSearch.length > 0
+                    ? "visible opacity-100"
+                    : "invisible opacity-0",
+                )}
+              >
+                <X />
+              </Button>
+            </div>
+          )}
 
-        {channelSectionReady && (
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setAddChannelOpen(true)}
-            aria-label={t("alerts.add_channel")}
-            className="h-11 w-11 shrink-0 cursor-pointer"
-          >
-            <Plus className="size-5" />
-          </Button>
-        )}
+          {channelSectionReady && (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setAddChannelOpen(true)}
+              aria-label={t("alerts.add_channel")}
+              className="h-11 w-11 shrink-0 cursor-pointer"
+            >
+              <Plus className="size-5" />
+            </Button>
+          )}
+        </div>
       </div>
 
       {channelSectionLoading && (
