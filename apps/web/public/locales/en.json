@@ -43,6 +43,11 @@
   "alerts.load_error": "Failed to load alerts. Try again later.",
   "alerts.empty": "No global alerts set.",
   "alerts.remove_aria": "Remove {category}",
+  "alerts.channel_search_placeholder": "Search",
+  "alerts.channel_search_aria": "Search channels",
+  "alerts.clear_channel_search_aria": "Clear search",
+  "alerts.no_channel_matches": "No channels match your search.",
+  "alerts.add_channel_aria": "Add channel",
 
   "add_global_category.title": "Add Category",
 

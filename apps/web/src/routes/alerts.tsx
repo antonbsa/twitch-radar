@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react"
-import { Plus } from "lucide-react"
+import { Plus, Search, X } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { AddChannelSheet } from "@/components/add-channel-sheet"
 import { AddGlobalCategorySheet } from "@/components/add-global-category-sheet"
 import { ChannelAlertsCard } from "@/components/channel-alerts-card"
@@ -12,7 +13,11 @@ import { useAuth } from "@/context/auth-context"
 import { useLanguage } from "@/context/language-context"
 import { useArmedChip } from "@/hooks/use-armed-chip"
 import { useFollowedChannels } from "@/hooks/use-channels"
-import { buildChannelAlertGroups } from "@/lib/alert-groups"
+import {
+  buildChannelAlertGroups,
+  filterChannelAlertGroups,
+} from "@/lib/alert-groups"
+import { cn } from "@/lib/utils"
 import {
   usePreferences,
   useRemoveChannelPreference,
@@ -33,6 +38,7 @@ export function AlertsPage() {
   const removeChannelPreference = useRemoveChannelPreference()
   const [addGlobalOpen, setAddGlobalOpen] = useState(false)
   const [addChannelOpen, setAddChannelOpen] = useState(false)
+  const [channelSearch, setChannelSearch] = useState("")
   const [configuringChannel, setConfiguringChannel] =
     useState<FollowedChannel | null>(null)
   const { armedId: armedChipId, arm: armChip } = useArmedChip()
@@ -50,11 +56,17 @@ export function AlertsPage() {
     [channelPreferences, channels, globalPreferences],
   )
 
+  const filteredGroups = useMemo(
+    () => filterChannelAlertGroups(groups, channelSearch),
+    [groups, channelSearch],
+  )
+
   // The per-channel section needs both preferences and the followed-channel
   // list (to resolve display names), so it waits on and reports errors
   // from both.
   const channelSectionLoading = isLoading || isChannelsLoading
   const channelSectionError = isError || isChannelsError
+  const channelSectionReady = !channelSectionLoading && !channelSectionError
 
   function openChannelSheet(broadcasterUserId: string) {
     const channel = (channels ?? []).find(
@@ -69,9 +81,7 @@ export function AlertsPage() {
         <h1 className="text-lg font-semibold">{t("alerts.title")}</h1>
       </div>
 
-      <h2 className="px-4 pt-1 pb-2 text-xs font-semibold text-muted-foreground uppercase">
-        All channels
-      </h2>
+      <h2 className="px-4 pt-1 pb-2 text-base font-semibold">All channels</h2>
 
       {isLoading && (
         <div className="px-4">
@@ -97,9 +107,51 @@ export function AlertsPage() {
         />
       )}
 
-      <h2 className="px-4 pt-6 pb-2 text-xs font-semibold text-muted-foreground uppercase">
-        Per channel
-      </h2>
+      <div className="flex items-center gap-2 px-4 pt-6 pb-2">
+        <h2 className="text-base font-semibold">Per channel</h2>
+
+        {channelSectionReady && groups.length > 0 && (
+          <div className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={channelSearch}
+              onChange={(e) => setChannelSearch(e.target.value)}
+              placeholder={t("alerts.channel_search_placeholder")}
+              aria-label={t("alerts.channel_search_aria")}
+              // h-11/text-base matches the 44px touch-target size used by the
+              // Channels page's filters bar (see ChannelFiltersBar).
+              className="h-11 pr-10 pl-10 text-base"
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => setChannelSearch("")}
+              aria-label={t("alerts.clear_channel_search_aria")}
+              className={cn(
+                "absolute inset-y-0 right-1.5 my-auto cursor-pointer transition-[opacity,visibility] duration-250",
+                channelSearch.length > 0
+                  ? "visible opacity-100"
+                  : "invisible opacity-0",
+              )}
+            >
+              <X />
+            </Button>
+          </div>
+        )}
+
+        {channelSectionReady && (
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setAddChannelOpen(true)}
+            aria-label={t("alerts.add_channel_aria")}
+            className="h-11 w-11 shrink-0 cursor-pointer"
+          >
+            <Plus className="size-5" />
+          </Button>
+        )}
+      </div>
 
       {channelSectionLoading && (
         <div className="space-y-2 px-4">
@@ -117,17 +169,22 @@ export function AlertsPage() {
           </p>
         )}
 
-      {!channelSectionLoading &&
-        !channelSectionError &&
-        groups.length === 0 && (
+      {channelSectionReady && groups.length === 0 && (
+        <p className="px-4 py-6 text-sm text-muted-foreground">
+          No per-channel alerts set.
+        </p>
+      )}
+
+      {channelSectionReady &&
+        groups.length > 0 &&
+        filteredGroups.length === 0 && (
           <p className="px-4 py-6 text-sm text-muted-foreground">
-            No per-channel alerts set.
+            {t("alerts.no_channel_matches")}
           </p>
         )}
 
-      {!channelSectionLoading &&
-        !channelSectionError &&
-        groups.map((group) => (
+      {channelSectionReady &&
+        filteredGroups.map((group) => (
           <ChannelAlertsCard
             key={group.broadcasterUserId}
             group={group}
@@ -137,19 +194,6 @@ export function AlertsPage() {
             onArmChip={armChip}
           />
         ))}
-
-      {!channelSectionLoading && !channelSectionError && (
-        <div className="px-4 pt-2">
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={() => setAddChannelOpen(true)}
-          >
-            <Plus className="size-4" />
-            Add channel
-          </Button>
-        </div>
-      )}
 
       <AddGlobalCategorySheet
         open={addGlobalOpen}

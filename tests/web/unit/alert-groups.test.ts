@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest"
-import { buildChannelAlertGroups } from "../../../apps/web/src/lib/alert-groups"
+import {
+  buildChannelAlertGroups,
+  filterChannelAlertGroups,
+  type ChannelAlertGroup,
+} from "../../../apps/web/src/lib/alert-groups"
 import type { ChannelPreference } from "../../../apps/web/src/types/preference"
 import type { FollowedChannel } from "../../../apps/web/src/types/channel"
 
@@ -276,5 +280,49 @@ describe("buildChannelAlertGroups", () => {
         ["c1"],
       ),
     ).toEqual([])
+  })
+})
+
+function group(
+  overrides: Partial<ChannelAlertGroup> & { displayName: string },
+): ChannelAlertGroup {
+  return {
+    broadcasterUserId: overrides.displayName,
+    profileImageUrl: null,
+    isLive: false,
+    viewerCount: null,
+    isUnsynced: false,
+    categories: [],
+    ...overrides,
+  }
+}
+
+describe("filterChannelAlertGroups", () => {
+  it("should return every group unchanged for an empty query", () => {
+    const groups = [
+      group({ displayName: "Alanzoka" }),
+      group({ displayName: "Gaules" }),
+    ]
+    expect(filterChannelAlertGroups(groups, "")).toEqual(groups)
+  })
+
+  it("should return every group unchanged for a whitespace-only query", () => {
+    const groups = [group({ displayName: "Alanzoka" })]
+    expect(filterChannelAlertGroups(groups, "   ")).toEqual(groups)
+  })
+
+  it("should match a case-insensitive substring of the display name", () => {
+    const groups = [
+      group({ displayName: "Alanzoka" }),
+      group({ displayName: "Gaules" }),
+    ]
+    expect(
+      filterChannelAlertGroups(groups, "ALAN").map((g) => g.displayName),
+    ).toEqual(["Alanzoka"])
+  })
+
+  it("should return an empty array when nothing matches", () => {
+    const groups = [group({ displayName: "Alanzoka" })]
+    expect(filterChannelAlertGroups(groups, "xyz")).toEqual([])
   })
 })

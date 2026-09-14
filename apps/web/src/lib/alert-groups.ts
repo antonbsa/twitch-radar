@@ -80,6 +80,22 @@ export function buildChannelAlertGroups(
   return [...groups.values()].sort(compareGroups)
 }
 
+/**
+ * Filters already-built channel alert groups by a case-insensitive substring
+ * match against display name, mirroring `channel-filters.ts`'s
+ * `matchesSearch`. An empty/whitespace-only query matches everything.
+ */
+export function filterChannelAlertGroups(
+  groups: ChannelAlertGroup[],
+  search: string,
+): ChannelAlertGroup[] {
+  const query = search.trim().toLowerCase()
+  if (query === "") return groups
+  return groups.filter((group) =>
+    group.displayName.toLowerCase().includes(query),
+  )
+}
+
 function rank(group: ChannelAlertGroup): number {
   if (group.isUnsynced) return 2
   return group.isLive ? 0 : 1

@@ -567,4 +567,133 @@ describe("Alerts view", () => {
     await expectHidden(page.getByText("GTA V"))
     await expectVisible(page.getByText("Just Chatting"))
   })
+
+  it("should filter per-channel cards by the channel search input", async ({
+    authenticatedSession,
+  }) => {
+    const matchId = broadcasterId("searchmatch")
+    const otherId = broadcasterId("searchother")
+    await seedFollowedChannels([
+      {
+        broadcasterUserId: matchId,
+        broadcasterLogin: "alanzoka",
+        broadcasterDisplayName: "Alanzoka",
+      },
+      {
+        broadcasterUserId: otherId,
+        broadcasterLogin: "gaules",
+        broadcasterDisplayName: "Gaules",
+      },
+    ])
+
+    const { page } = authenticatedSession
+    await page.route("**/api/preferences", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          data: {
+            channel: [
+              {
+                id: "pref_search_match",
+                broadcaster_user_id: matchId,
+                category_id: "27471",
+                category_name: "Minecraft",
+                created_at: new Date().toISOString(),
+              },
+              {
+                id: "pref_search_other",
+                broadcaster_user_id: otherId,
+                category_id: "32982",
+                category_name: "GTA V",
+                created_at: new Date().toISOString(),
+              },
+            ],
+            global: [],
+          },
+        }),
+      }),
+    )
+
+    await page.goto(`${WEB_URL}/alerts`)
+    await expectVisible(page.getByText("Alanzoka"))
+    await expectVisible(page.getByText("Gaules"))
+
+    const search = page.getByRole("textbox", { name: "Search channels" })
+    await search.fill("alan")
+    await expectVisible(page.getByText("Alanzoka"))
+    await expectHidden(page.getByText("Gaules"))
+
+    // The clear button appears once there's text, and restores the full list.
+    await page.getByRole("button", { name: "Clear search" }).click()
+    await expectVisible(page.getByText("Alanzoka"))
+    await expectVisible(page.getByText("Gaules"))
+  })
+
+  it("should show a no-matches message when the channel search matches nothing", async ({
+    authenticatedSession,
+  }) => {
+    const id = broadcasterId("searchnomatch")
+    await seedFollowedChannels([
+      {
+        broadcasterUserId: id,
+        broadcasterLogin: "nomatchstreamer",
+        broadcasterDisplayName: "NoMatchStreamer",
+      },
+    ])
+
+    const { page } = authenticatedSession
+    await page.route("**/api/preferences", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          data: {
+            channel: [
+              {
+                id: "pref_nomatch",
+                broadcaster_user_id: id,
+                category_id: "27471",
+                category_name: "Minecraft",
+                created_at: new Date().toISOString(),
+              },
+            ],
+            global: [],
+          },
+        }),
+      }),
+    )
+
+    await page.goto(`${WEB_URL}/alerts`)
+    await expectVisible(page.getByText("NoMatchStreamer"))
+
+    const search = page.getByRole("textbox", { name: "Search channels" })
+    await search.fill("zzz-does-not-exist")
+
+    await expectHidden(page.getByText("NoMatchStreamer"))
+    await expectVisible(page.getByText("No channels match your search."))
+    // Distinct from the zero-preferences empty state.
+    await expectHidden(page.getByText("No per-channel alerts set."))
+  })
+
+  it("should not show the channel search input when there are no per-channel alerts yet", async ({
+    authenticatedSession,
+  }) => {
+    const { page } = authenticatedSession
+    await page.route("**/api/preferences", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ data: { channel: [], global: [] } }),
+      }),
+    )
+
+    await page.goto(`${WEB_URL}/alerts`)
+    await expectVisible(page.getByText("No per-channel alerts set."))
+    expect(
+      await page.getByRole("textbox", { name: "Search channels" }).count(),
+    ).toBe(0)
+    // The add-channel affordance stays available even with nothing configured.
+    await expectVisible(page.getByRole("button", { name: "Add channel" }))
+  })
 })

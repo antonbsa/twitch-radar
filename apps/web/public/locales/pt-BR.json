@@ -43,6 +43,11 @@
   "alerts.load_error": "Falha ao carregar os alertas. Tente novamente mais tarde.",
   "alerts.empty": "Nenhum alerta global definido.",
   "alerts.remove_aria": "Remover {category}",
+  "alerts.channel_search_placeholder": "Buscar",
+  "alerts.channel_search_aria": "Buscar canais",
+  "alerts.clear_channel_search_aria": "Limpar busca",
+  "alerts.no_channel_matches": "Nenhum canal corresponde à sua busca.",
+  "alerts.add_channel_aria": "Adicionar canal",
 
   "add_global_category.title": "Adicionar Categoria",
 
