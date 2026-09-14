@@ -25,9 +25,9 @@ import { useLanguage } from "@/context/language-context"
 import type { ChannelFilters, ChannelSort } from "@/lib/channel-filters"
 import { cn } from "@/lib/utils"
 
-// Aligns category filter, sort select, and search input to 44px touch-target height
+// 44px touch-target height; responsive width (narrow on mobile, full label width at md+)
 const CATEGORY_TRIGGER_CLASSNAME =
-  "flex h-11 w-28 min-w-0 shrink-0 items-center justify-between gap-1.5 rounded-lg border border-input bg-transparent px-3 text-base whitespace-nowrap transition-colors outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30 dark:hover:bg-input/50 sm:w-36"
+  "flex h-11 w-28 min-w-0 shrink-0 items-center justify-between gap-1.5 rounded-lg border border-input bg-transparent px-3 text-base whitespace-nowrap transition-colors outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30 dark:hover:bg-input/50 sm:w-36 md:w-fit"
 
 interface ChannelFiltersBarProps {
   filters: ChannelFilters
