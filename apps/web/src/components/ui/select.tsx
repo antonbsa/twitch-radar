@@ -1,7 +1,7 @@
 import * as React from "react"
 import { Select as SelectPrimitive } from "radix-ui"
 
-import { cn } from "@/lib/utils"
+import { cn, preventOutsideClickThrough } from "@/lib/utils"
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react"
 
 function Select({
@@ -32,10 +32,13 @@ function SelectValue({
 function SelectTrigger({
   className,
   size = "default",
+  showIcon = true,
   children,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Trigger> & {
   size?: "sm" | "default" | "lg"
+  /** Hide the chevron icon when the trigger already conveys expandability */
+  showIcon?: boolean
 }) {
   return (
     <SelectPrimitive.Trigger
@@ -45,15 +48,17 @@ function SelectTrigger({
         // data-[size=lg] targets the WCAG 2.5.5 / Apple HIG 44px touch-target
         // minimum for the mobile PWA (also Tailwind's h-11) - default/sm are
         // desktop-oriented shadcn defaults, too small to tap reliably.
-        "flex w-fit items-center justify-between gap-1.5 rounded-lg border border-input bg-transparent py-2 pr-2 pl-2.5 text-sm whitespace-nowrap transition-colors outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 data-placeholder:text-muted-foreground data-[size=default]:h-8 data-[size=lg]:h-11 data-[size=lg]:px-3 data-[size=lg]:text-base data-[size=sm]:h-7 data-[size=sm]:rounded-[min(var(--radius-md),10px)] *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 dark:bg-input/30 dark:hover:bg-input/50 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "flex w-fit min-w-0 items-center justify-between gap-1.5 rounded-lg border border-input bg-transparent py-2 pr-2 pl-2.5 text-sm whitespace-nowrap transition-colors outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 data-placeholder:text-muted-foreground data-[size=default]:h-8 data-[size=lg]:h-11 data-[size=lg]:px-3 data-[size=lg]:text-base data-[size=sm]:h-7 data-[size=sm]:rounded-[min(var(--radius-md),10px)] *:data-[slot=select-value]:block *:data-[slot=select-value]:min-w-0 *:data-[slot=select-value]:truncate dark:bg-input/30 dark:hover:bg-input/50 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className,
       )}
       {...props}
     >
       {children}
-      <SelectPrimitive.Icon asChild>
-        <ChevronDownIcon className="pointer-events-none size-4 text-muted-foreground" />
-      </SelectPrimitive.Icon>
+      {showIcon && (
+        <SelectPrimitive.Icon asChild>
+          <ChevronDownIcon className="pointer-events-none size-4 text-muted-foreground" />
+        </SelectPrimitive.Icon>
+      )}
     </SelectPrimitive.Trigger>
   )
 }
@@ -64,6 +69,7 @@ function SelectContent({
   position = "item-aligned",
   align = "center",
   size = "default",
+  onPointerDownOutside,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Content> & {
   size?: "sm" | "default" | "lg"
@@ -82,6 +88,10 @@ function SelectContent({
         )}
         position={position}
         align={align}
+        onPointerDownOutside={(event) => {
+          onPointerDownOutside?.(event)
+          preventOutsideClickThrough(event)
+        }}
         {...props}
       >
         <SelectScrollUpButton />
@@ -129,7 +139,7 @@ function SelectItem({
         // size - the item text and the trigger's selected-value text must
         // read as the same size, since SelectContent renders through a
         // portal and can't rely on inherited font-size from the trigger.
-        "relative flex w-full cursor-default items-center gap-1.5 rounded-md py-2.5 pr-8 pl-1.5 text-sm in-data-[size=lg]:text-base outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
+        "relative flex w-full cursor-pointer items-center gap-1.5 rounded-md py-2.5 pr-8 pl-1.5 text-sm in-data-[size=lg]:text-base outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 data-disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
         className,
       )}
       {...props}
