@@ -1,0 +1,88 @@
+import {
+  Avatar,
+  AvatarBadge,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar"
+import { AddCategoryChip } from "@/components/add-category-chip"
+import { CategoryChip } from "@/components/category-chip"
+import { useLanguage } from "@/context/language-context"
+import type { ChannelAlertGroup } from "@/lib/alert-groups"
+
+interface ChannelAlertsCardProps {
+  group: ChannelAlertGroup
+  onAdd: (broadcasterUserId: string) => void
+  onRemove: (preferenceId: string) => void
+  armedChipId: string | null
+  onArmChip: (preferenceId: string) => void
+}
+
+export function ChannelAlertsCard({
+  group,
+  onAdd,
+  onRemove,
+  armedChipId,
+  onArmChip,
+}: ChannelAlertsCardProps) {
+  const hasGlobalOverlap = group.categories.some((c) => c.alsoGlobal)
+  const { t } = useLanguage()
+
+  return (
+    <div
+      data-testid="channel-alerts-card"
+      data-display-name={group.displayName}
+      className="mx-4 mb-2 rounded-lg border border-border bg-card"
+    >
+      <div className="flex items-center gap-2 px-3 py-2.5">
+        <Avatar size="sm">
+          <AvatarImage src={group.profileImageUrl ?? undefined} alt="" />
+          <AvatarFallback>{group.displayName[0]?.toUpperCase()}</AvatarFallback>
+          {group.isLive && <AvatarBadge className="bg-red-500" />}
+        </Avatar>
+
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium">{group.displayName}</p>
+          {group.isUnsynced && (
+            <p className="truncate text-xs text-muted-foreground">
+              {t("alerts.channel_not_synced")}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-1.5 px-3 pb-2">
+        {group.categories.map((category) => (
+          <CategoryChip
+            key={category.preferenceId}
+            label={category.categoryName}
+            alsoGlobal={category.alsoGlobal}
+            armed={armedChipId === category.preferenceId}
+            onArm={() => onArmChip(category.preferenceId)}
+            onRemove={() => onRemove(category.preferenceId)}
+            removeLabel={t("alerts.remove_for_channel_aria", {
+              category: category.categoryName,
+              channel: group.displayName,
+            })}
+          />
+        ))}
+        {/* An unsynced channel has no FollowedChannel record, so the
+            preference sheet has nothing to open with. */}
+        {!group.isUnsynced && (
+          <AddCategoryChip
+            onClick={() => onAdd(group.broadcasterUserId)}
+            label={t("alerts.add_category_for_channel_aria", {
+              channel: group.displayName,
+            })}
+            visibleLabel={t("alerts.add_category")}
+          />
+        )}
+      </div>
+
+      {hasGlobalOverlap && (
+        <p className="px-3 pb-2.5 text-xs text-muted-foreground">
+          {t("alerts.also_in_all_channels")}
+        </p>
+      )}
+    </div>
+  )
+}
