@@ -39,7 +39,7 @@
   "channel_preferences.remove_aria": "Remover {category}",
 
   "alerts.title": "Alertas",
-  "alerts.all_channels_title": "Todos os canais",
+  "alerts.global_title": "Global",
   "alerts.all_channels_subtitle": "Vale para todos os canais",
   "alerts.add_category": "Adicionar Categoria",
   "alerts.add_global_category_aria": "Adicionar categoria global",

@@ -144,7 +144,7 @@ describe("Alerts view", () => {
 
     await page.goto(`${WEB_URL}/alerts`)
 
-    await expectVisible(page.getByRole("heading", { name: "All channels" }))
+    await expectVisible(page.getByRole("heading", { name: "Global" }))
     await expectVisible(page.getByText("No global alerts set."))
     await expectVisible(page.getByRole("heading", { name: "Per channel" }))
     await expectVisible(page.getByText("No per-channel alerts set."))

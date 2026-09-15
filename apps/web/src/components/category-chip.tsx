@@ -39,7 +39,7 @@ export function CategoryChip({
       asChild
       variant={alsoGlobal ? "outline" : "secondary"}
       className={cn(
-        "h-6 cursor-pointer gap-1.5 px-2.5",
+        "h-8 cursor-pointer gap-1.5 px-2.5",
         alsoGlobal && "border-dashed",
         armed
           ? "border-destructive text-destructive"

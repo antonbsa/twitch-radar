@@ -82,7 +82,7 @@ export function AlertsPage() {
       </div>
 
       <h2 className="px-4 pt-1 pb-2 text-base font-semibold text-muted-foreground">
-        {t("alerts.all_channels_title")}
+        {t("alerts.global_title")}
       </h2>
 
       {isLoading && (
