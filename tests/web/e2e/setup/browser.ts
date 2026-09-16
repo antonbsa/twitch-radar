@@ -5,9 +5,10 @@ import {
   type Page,
 } from "playwright"
 import { SESSION_COOKIE_NAME } from "../../../../apps/api/src/services/session"
+import { E2E_WEB_URL } from "./ports"
 
 export const MOBILE_VIEWPORT = { width: 390, height: 844 }
-export const WEB_URL = "http://localhost:5173"
+export const WEB_URL = E2E_WEB_URL
 
 export interface BrowserSession {
   browser: Browser

@@ -31,8 +31,11 @@ export default defineConfig(() => {
         // which proxies it again — an infinite self-loop that silently
         // drops the request (observed as OAuth's `code`/`state` query
         // params vanishing by the time they reach the callback handler).
+        //
+        // API_DEV_PORT overrides the target port so the e2e tier can run
+        // its own wrangler instance without colliding with `npm run dev`.
         "/api": {
-          target: "http://localhost:8787",
+          target: `http://localhost:${process.env.API_DEV_PORT ?? "8787"}`,
           changeOrigin: true,
         },
       },
