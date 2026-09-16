@@ -84,7 +84,9 @@ export function ChannelPreferencesSheet({
                 )
               }}
             >
-              Notify for &quot;{liveCategorySuggestion.name}&quot;
+              {t("channel_preferences.notify_for_category", {
+                category: liveCategorySuggestion.name,
+              })}
             </Button>
           )}
 

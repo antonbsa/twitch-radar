@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button"
+import { useLanguage } from "@/context/language-context"
 import type { PushStatus } from "@/hooks/use-push-notifications"
 
 interface EnablePushBannerProps {
@@ -23,6 +24,8 @@ export function EnablePushBanner({
   onEnable,
   onDismiss,
 }: EnablePushBannerProps) {
+  const { t } = useLanguage()
+
   if (
     status === "enabled" ||
     status === "unsupported" ||
@@ -35,8 +38,8 @@ export function EnablePushBanner({
     <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/50 px-3 py-2">
       <p className="text-sm text-muted-foreground">
         {status === "denied"
-          ? "Notifications are blocked. Go to browser settings to enable."
-          : "Enable notifications so you don't miss this alert."}
+          ? t("push.banner_blocked")
+          : t("push.banner_prompt")}
       </p>
       <div className="flex shrink-0 items-center gap-1">
         {status === "not-enabled" && (
@@ -47,13 +50,13 @@ export function EnablePushBanner({
             disabled={isPending}
             onClick={onEnable}
           >
-            Enable
+            {t("push.banner_enable_cta")}
           </Button>
         )}
         <button
           type="button"
           onClick={onDismiss}
-          aria-label="Dismiss notification prompt"
+          aria-label={t("push.banner_dismiss_aria")}
           className="p-1 text-muted-foreground hover:text-foreground"
         >
           ✕

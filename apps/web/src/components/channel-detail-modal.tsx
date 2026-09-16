@@ -7,6 +7,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
+import { useLanguage } from "@/context/language-context"
 import { formatViewerCount } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import type { FollowedChannel } from "@/types/channel"
@@ -47,6 +48,8 @@ export function ChannelDetailModal({
   channel,
   onOpenChange,
 }: ChannelDetailModalProps) {
+  const { t } = useLanguage()
+
   return (
     <Sheet open={channel !== null} onOpenChange={onOpenChange}>
       <SheetContent
@@ -70,12 +73,16 @@ export function ChannelDetailModal({
                 <p className="text-sm font-medium">{channel.title}</p>
               )}
               <p className="text-xs text-muted-foreground">
-                {channel.category_name ?? "No category"} ·{" "}
-                {formatViewerCount(channel.viewer_count ?? 0)} viewers
+                {channel.category_name ?? t("channel_row.no_category")} ·{" "}
+                {t("channel_row.viewers_count", {
+                  count: formatViewerCount(channel.viewer_count ?? 0),
+                })}
               </p>
             </div>
           ) : (
-            <p className="text-xs text-muted-foreground">Offline</p>
+            <p className="text-xs text-muted-foreground">
+              {t("channel_row.offline")}
+            </p>
           )}
 
           {channel && (
@@ -89,7 +96,7 @@ export function ChannelDetailModal({
                 target="_blank"
                 rel="noreferrer"
               >
-                Watch on Twitch
+                {t("channel_detail.watch_on_twitch")}
                 <ExternalLinkIcon data-icon="inline-end" />
               </a>
             </Button>
