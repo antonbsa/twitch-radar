@@ -10,10 +10,11 @@ import {
   waitForReadyOrExit,
 } from "../../../shared/setup/process-lifecycle"
 import { generateTestVapidKeys } from "../../../shared/setup/vapid"
+import { E2E_API_PORT, E2E_API_URL, E2E_WEB_PORT, E2E_WEB_URL } from "./ports"
 
 const REPO_ROOT = resolve(fileURLToPath(import.meta.url), "../../../../..")
-const API_HEALTH_URL = "http://localhost:8787/health"
-const WEB_URL = "http://localhost:5173/"
+const API_HEALTH_URL = `${E2E_API_URL}/health`
+const WEB_URL = `${E2E_WEB_URL}/`
 
 export default async function globalSetup() {
   // Failure screenshots (see setup/fixtures.ts) accumulate across runs
@@ -34,7 +35,7 @@ export default async function globalSetup() {
       "wrangler",
       "dev",
       "--port",
-      "8787",
+      String(E2E_API_PORT),
       // .env.development — its placeholders cover every required var (see
       // AGENTS.md "Env Vars: Single Source Of Truth"). .env.local exists to
       // override real OAuth secrets for `npm run dev`; tests never do a real
@@ -55,12 +56,17 @@ export default async function globalSetup() {
       `VAPID_PRIVATE_KEY:${vapidKeys.privateKey}`,
       "--var",
       "TWITCH_CLIENT_SECRET:test-client-secret",
+      // Match this tier's own vite port instead of npm run dev's.
+      "--var",
+      `PUBLIC_URL:${E2E_WEB_URL}`,
     ],
     { cwd: resolve(REPO_ROOT, "apps/api"), detached: true },
   )
+  // vite.config.ts's proxy reads API_DEV_PORT to target this wrangler.
+  process.env.API_DEV_PORT = String(E2E_API_PORT)
   const { child: web, readOutput: readWebOutput } = spawnCapturing(
     "npx",
-    ["vite", "--port", "5173", "--strictPort"],
+    ["vite", "--port", String(E2E_WEB_PORT), "--strictPort"],
     { cwd: resolve(REPO_ROOT, "apps/web"), detached: true },
   )
 

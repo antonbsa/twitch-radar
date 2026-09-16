@@ -1,5 +1,6 @@
 import { defineConfig } from "vitest/config"
 import { loadDevVars } from "./dev-env"
+import { E2E_WEB_URL } from "./tests/web/e2e/setup/ports"
 
 export default defineConfig({
   test: {
@@ -10,6 +11,10 @@ export default defineConfig({
     fileParallelism: false,
     testTimeout: 30_000,
     hookTimeout: 30_000,
-    env: loadDevVars(),
+    env: {
+      ...loadDevVars(),
+      // Match this tier's own vite port; test-seam-client.ts reads it.
+      PUBLIC_URL: E2E_WEB_URL,
+    },
   },
 })
