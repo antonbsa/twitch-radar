@@ -4,6 +4,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
+import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { CategorySearchList } from "@/components/category-search-list"
 import { CategoryChip } from "@/components/category-chip"
@@ -37,6 +38,13 @@ export function ChannelPreferencesSheet({
       )
     : []
 
+  const liveCategorySuggestion =
+    channel?.is_live && channel.category_id && channel.category_name
+      ? savedForChannel.some((pref) => pref.category_id === channel.category_id)
+        ? null
+        : { id: channel.category_id, name: channel.category_name }
+      : null
+
   return (
     <Sheet open={channel !== null} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="max-h-[85vh]">
@@ -44,6 +52,24 @@ export function ChannelPreferencesSheet({
           <SheetTitle>{channel?.broadcaster_display_name}</SheetTitle>
         </SheetHeader>
         <div className="space-y-4 overflow-y-auto px-4 pb-4">
+          {liveCategorySuggestion && (
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled={addPreference.isPending}
+              onClick={() => {
+                if (!channel) return
+                addPreference.mutate({
+                  broadcasterUserId: channel.broadcaster_user_id,
+                  category: liveCategorySuggestion,
+                })
+              }}
+            >
+              Notify for &quot;{liveCategorySuggestion.name}&quot;
+            </Button>
+          )}
+
           <CategorySearchList
             disabledCategoryIds={savedForChannel.map(
               (pref) => pref.category_id,

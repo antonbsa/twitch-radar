@@ -4,6 +4,7 @@ import {
   resetState,
   seedChannelState,
   seedFollowedChannels,
+  seedPreferences,
 } from "./orchestrator/test-seam-client"
 import { WEB_URL } from "./setup/browser"
 import { it } from "./setup/fixtures"
@@ -644,5 +645,115 @@ describe("Channels view", () => {
     await expect
       .poll(() => new URL(page.url()).searchParams.get("broadcaster"))
       .toBe(null)
+  })
+
+  it("should offer a one-tap suggestion to notify for a live channel's current category", async ({
+    authenticatedSession,
+  }) => {
+    const id = broadcasterId("suggest")
+    await seedFollowedChannels([
+      {
+        broadcasterUserId: id,
+        broadcasterLogin: "suggeststreamer",
+        broadcasterDisplayName: "SuggestStreamer",
+      },
+    ])
+    await seedChannelState([
+      {
+        broadcasterUserId: id,
+        isLive: true,
+        categoryId: "509658",
+        categoryName: "Just Chatting",
+        viewerCount: 10,
+      },
+    ])
+
+    const { page } = authenticatedSession
+    await page.goto(WEB_URL)
+    await page
+      .getByRole("button", { name: "Configure SuggestStreamer" })
+      .click()
+    const dialog = page.getByRole("dialog")
+    await expectVisible(dialog)
+
+    const suggestion = dialog.getByRole("button", {
+      name: 'Notify for "Just Chatting"',
+    })
+    await expectVisible(suggestion)
+
+    await suggestion.click()
+
+    // Saved: the chip drops away and the category shows up in "Saved for
+    // this channel" — the same row a manual search-and-add would produce.
+    await expectHidden(suggestion)
+    await expectVisible(dialog.getByText("Just Chatting"))
+  })
+
+  it("should not offer the live-category suggestion for an offline channel", async ({
+    authenticatedSession,
+  }) => {
+    const id = broadcasterId("suggest_offline")
+    await seedFollowedChannels([
+      {
+        broadcasterUserId: id,
+        broadcasterLogin: "offlinestreamer",
+        broadcasterDisplayName: "OfflineStreamer",
+      },
+    ])
+    await seedChannelState([{ broadcasterUserId: id, isLive: false }])
+
+    const { page } = authenticatedSession
+    await page.goto(WEB_URL)
+    await page
+      .getByRole("button", { name: "Configure OfflineStreamer" })
+      .click()
+    const dialog = page.getByRole("dialog")
+    await expectVisible(dialog)
+
+    await expect(
+      dialog.getByRole("button", { name: /^Notify for/ }).count(),
+    ).resolves.toBe(0)
+  })
+
+  it("should not offer the live-category suggestion once that category is already saved", async ({
+    authenticatedSession,
+  }) => {
+    const id = broadcasterId("suggest_saved")
+    await seedFollowedChannels([
+      {
+        broadcasterUserId: id,
+        broadcasterLogin: "savedstreamer",
+        broadcasterDisplayName: "SavedStreamer",
+      },
+    ])
+    await seedChannelState([
+      {
+        broadcasterUserId: id,
+        isLive: true,
+        categoryId: "509658",
+        categoryName: "Just Chatting",
+        viewerCount: 10,
+      },
+    ])
+    await seedPreferences({
+      channel: [
+        {
+          broadcasterUserId: id,
+          categoryId: "509658",
+          categoryName: "Just Chatting",
+        },
+      ],
+    })
+
+    const { page } = authenticatedSession
+    await page.goto(WEB_URL)
+    await page.getByRole("button", { name: "Configure SavedStreamer" }).click()
+    const dialog = page.getByRole("dialog")
+    await expectVisible(dialog)
+    await expectVisible(dialog.getByText("Just Chatting"))
+
+    await expect(
+      dialog.getByRole("button", { name: /^Notify for/ }).count(),
+    ).resolves.toBe(0)
   })
 })
