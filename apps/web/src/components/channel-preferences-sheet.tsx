@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react"
 import {
   Sheet,
   SheetContent,
@@ -8,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { CategorySearchList } from "@/components/category-search-list"
 import { CategoryChip } from "@/components/category-chip"
+import { EnablePushBanner } from "@/components/enable-push-banner"
 import { useLanguage } from "@/context/language-context"
 import { useArmedChip } from "@/hooks/use-armed-chip"
 import {
@@ -15,6 +17,7 @@ import {
   usePreferences,
   useRemoveChannelPreference,
 } from "@/hooks/use-preferences"
+import { usePushNotifications } from "@/hooks/use-push-notifications"
 import type { FollowedChannel } from "@/types/channel"
 
 interface ChannelPreferencesSheetProps {
@@ -31,6 +34,18 @@ export function ChannelPreferencesSheet({
   const addPreference = useAddChannelPreference()
   const removePreference = useRemoveChannelPreference()
   const { armedId: armedChipId, arm: armChip } = useArmedChip()
+  const push = usePushNotifications()
+  const [showPushPrompt, setShowPushPrompt] = useState(false)
+
+  // Reset the prompt each time the sheet closes so it doesn't carry a
+  // dismissed/shown state into the next channel opened.
+  useEffect(() => {
+    if (channel === null) setShowPushPrompt(false)
+  }, [channel])
+
+  function handlePreferenceAdded() {
+    if (push.status !== "enabled") setShowPushPrompt(true)
+  }
 
   const savedForChannel = channel
     ? (preferences?.channel ?? []).filter(
@@ -60,14 +75,26 @@ export function ChannelPreferencesSheet({
               disabled={addPreference.isPending}
               onClick={() => {
                 if (!channel) return
-                addPreference.mutate({
-                  broadcasterUserId: channel.broadcaster_user_id,
-                  category: liveCategorySuggestion,
-                })
+                addPreference.mutate(
+                  {
+                    broadcasterUserId: channel.broadcaster_user_id,
+                    category: liveCategorySuggestion,
+                  },
+                  { onSuccess: handlePreferenceAdded },
+                )
               }}
             >
               Notify for &quot;{liveCategorySuggestion.name}&quot;
             </Button>
+          )}
+
+          {showPushPrompt && (
+            <EnablePushBanner
+              status={push.status}
+              isPending={push.isPending}
+              onEnable={push.enable}
+              onDismiss={() => setShowPushPrompt(false)}
+            />
           )}
 
           <CategorySearchList
@@ -79,10 +106,13 @@ export function ChannelPreferencesSheet({
             )}
             onSelect={(category) => {
               if (!channel) return
-              addPreference.mutate({
-                broadcasterUserId: channel.broadcaster_user_id,
-                category,
-              })
+              addPreference.mutate(
+                {
+                  broadcasterUserId: channel.broadcaster_user_id,
+                  category,
+                },
+                { onSuccess: handlePreferenceAdded },
+              )
             }}
           />
 

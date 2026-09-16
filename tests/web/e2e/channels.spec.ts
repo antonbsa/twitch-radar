@@ -9,6 +9,7 @@ import {
 import { WEB_URL } from "./setup/browser"
 import { it } from "./setup/fixtures"
 import { expectHidden, expectVisible } from "./setup/assertions"
+import { mockPushEnvironment } from "./setup/push-mocks"
 
 function broadcasterId(suffix: string): string {
   return `${E2E_BROADCASTER_PREFIX}channels_${suffix}`
@@ -755,5 +756,42 @@ describe("Channels view", () => {
     await expect(
       dialog.getByRole("button", { name: /^Notify for/ }).count(),
     ).resolves.toBe(0)
+  })
+
+  it("should offer to enable push after using the live-category suggestion while not enabled", async ({
+    authenticatedSession,
+  }) => {
+    const id = broadcasterId("suggest_push")
+    await mockPushEnvironment(authenticatedSession.page)
+    await seedFollowedChannels([
+      {
+        broadcasterUserId: id,
+        broadcasterLogin: "pushstreamer",
+        broadcasterDisplayName: "PushStreamer",
+      },
+    ])
+    await seedChannelState([
+      {
+        broadcasterUserId: id,
+        isLive: true,
+        categoryId: "509658",
+        categoryName: "Just Chatting",
+        viewerCount: 10,
+      },
+    ])
+
+    const { page } = authenticatedSession
+    await page.goto(WEB_URL)
+    await page.getByRole("button", { name: "Configure PushStreamer" }).click()
+    const dialog = page.getByRole("dialog")
+    await expectVisible(dialog)
+
+    await dialog
+      .getByRole("button", { name: 'Notify for "Just Chatting"' })
+      .click()
+
+    await expectVisible(
+      dialog.getByText("Enable notifications so you don't miss this alert."),
+    )
   })
 })
