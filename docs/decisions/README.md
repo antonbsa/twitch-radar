@@ -52,6 +52,7 @@ Other project documents may state goals, requirements, task scope, validation st
 - [0045 - Build-Time Exclusion Of Non-Production Test/Dev Code](0045-build-time-exclusion-of-non-production-test-code.md)
 - [0046 - Sandbox Personas For Twitch-Free Dev And Preview Access](0046-sandbox-personas-for-dev-and-preview.md)
 - [0047 - Error Alerting Via The Sentry SDK And A Direct Slack Webhook](0047-error-alerting-via-sentry-and-slack-webhook.md)
+- [0048 - Notification Snooze Reminders](0048-notification-snooze-reminders.md)
 
 ## Proposed ADRs
 
