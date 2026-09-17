@@ -7,6 +7,8 @@ import {
 import { CategorySearchList } from "@/components/category-search-list"
 import { useLanguage } from "@/context/language-context"
 import { useAddGlobalPreference } from "@/hooks/use-preferences"
+import { usePushNotifications } from "@/hooks/use-push-notifications"
+import { showEnablePushToast } from "@/lib/push-toast"
 import type { Category } from "@/types/preference"
 
 interface AddGlobalCategorySheetProps {
@@ -22,10 +24,14 @@ export function AddGlobalCategorySheet({
 }: AddGlobalCategorySheetProps) {
   const addPreference = useAddGlobalPreference()
   const { t } = useLanguage()
+  const push = usePushNotifications()
 
   function handleSelect(category: Category) {
     addPreference.mutate(category, {
-      onSuccess: () => onOpenChange(false),
+      onSuccess: () => {
+        onOpenChange(false)
+        showEnablePushToast({ status: push.status, enable: push.enable, t })
+      },
     })
   }
 
@@ -35,7 +41,7 @@ export function AddGlobalCategorySheet({
         <SheetHeader>
           <SheetTitle>{t("add_global_category.title")}</SheetTitle>
         </SheetHeader>
-        <div className="px-4 pb-4">
+        <div className="space-y-4 px-4 pb-4">
           <CategorySearchList
             disabledCategoryIds={disabledCategoryIds}
             onSelect={handleSelect}

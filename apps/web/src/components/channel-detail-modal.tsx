@@ -1,5 +1,10 @@
 import { useState } from "react"
-import { ExternalLinkIcon, Loader2Icon } from "lucide-react"
+import {
+  BellCheckIcon,
+  BellIcon,
+  ExternalLinkIcon,
+  Loader2Icon,
+} from "lucide-react"
 import {
   Sheet,
   SheetContent,
@@ -7,7 +12,14 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
+import { useLanguage } from "@/context/language-context"
+import {
+  useAddChannelPreference,
+  usePreferences,
+} from "@/hooks/use-preferences"
+import { usePushNotifications } from "@/hooks/use-push-notifications"
 import { formatViewerCount } from "@/lib/format"
+import { showEnablePushToast } from "@/lib/push-toast"
 import { cn } from "@/lib/utils"
 import type { FollowedChannel } from "@/types/channel"
 
@@ -47,6 +59,38 @@ export function ChannelDetailModal({
   channel,
   onOpenChange,
 }: ChannelDetailModalProps) {
+  const { t } = useLanguage()
+  const { data: preferences } = usePreferences()
+  const addPreference = useAddChannelPreference()
+  const push = usePushNotifications()
+
+  const liveCategory =
+    channel?.is_live && channel.category_id && channel.category_name
+      ? { id: channel.category_id, name: channel.category_name }
+      : null
+
+  const isNotifyingForCategory =
+    liveCategory !== null &&
+    (preferences?.channel ?? []).some(
+      (pref) =>
+        pref.broadcaster_user_id === channel?.broadcaster_user_id &&
+        pref.category_id === liveCategory.id,
+    )
+
+  function handleNotifyForCategory() {
+    if (!channel || !liveCategory) return
+    addPreference.mutate(
+      {
+        broadcasterUserId: channel.broadcaster_user_id,
+        category: liveCategory,
+      },
+      {
+        onSuccess: () =>
+          showEnablePushToast({ status: push.status, enable: push.enable, t }),
+      },
+    )
+  }
+
   return (
     <Sheet open={channel !== null} onOpenChange={onOpenChange}>
       <SheetContent
@@ -54,9 +98,61 @@ export function ChannelDetailModal({
         className="max-h-[85vh] rounded-lg border data-[side=bottom]:top-1/2 data-[side=bottom]:bottom-auto data-[side=bottom]:-translate-y-1/2 data-[side=bottom]:sm:mx-auto data-[side=bottom]:sm:max-w-136"
         data-testid="channel-detail-modal"
         data-broadcaster-user-id={channel?.broadcaster_user_id}
+        onPointerDownOutside={(event) => {
+          // Keep the sheet open when the toast portal is clicked so the
+          // Notifying state remains visible after enabling push.
+          const target = event.detail.originalEvent.target as Node | null
+          if (
+            target instanceof Element &&
+            target.closest("[data-sonner-toaster]")
+          ) {
+            event.preventDefault()
+          }
+        }}
       >
-        <SheetHeader>
+        <SheetHeader className="pb-0">
           <SheetTitle>{channel?.broadcaster_display_name}</SheetTitle>
+          {channel?.is_live ? (
+            <div className="flex items-center justify-between gap-2">
+              <p className="truncate text-xs text-muted-foreground">
+                {channel.category_name ?? t("channel_row.no_category")} ·{" "}
+                {t("channel_row.viewers_count", {
+                  count: formatViewerCount(channel.viewer_count ?? 0),
+                })}
+              </p>
+              {liveCategory &&
+                (isNotifyingForCategory ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="lg"
+                    disabled
+                    className="shrink-0 gap-1.5"
+                  >
+                    <BellCheckIcon />
+                    {t("channel_detail.notifying_for_category")}
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="lg"
+                    className="shrink-0 cursor-pointer gap-1.5"
+                    disabled={addPreference.isPending}
+                    onClick={handleNotifyForCategory}
+                  >
+                    <BellIcon />
+                    {t("channel_preferences.notify_for_category")}
+                  </Button>
+                ))}
+            </div>
+          ) : (
+            channel && (
+              <p className="text-xs text-muted-foreground">
+                {t("channel_row.offline")}
+              </p>
+            )
+          )}
         </SheetHeader>
         <div className="space-y-4 overflow-y-auto px-4 pb-4">
           <ChannelThumbnail
@@ -64,32 +160,22 @@ export function ChannelDetailModal({
             thumbnailUrl={channel?.thumbnail_url ?? null}
           />
 
-          {channel?.is_live ? (
-            <div className="space-y-1">
-              {channel.title && (
-                <p className="text-sm font-medium">{channel.title}</p>
-              )}
-              <p className="text-xs text-muted-foreground">
-                {channel.category_name ?? "No category"} ·{" "}
-                {formatViewerCount(channel.viewer_count ?? 0)} viewers
-              </p>
-            </div>
-          ) : (
-            <p className="text-xs text-muted-foreground">Offline</p>
+          {channel?.is_live && channel.title && (
+            <p className="text-sm font-medium">{channel.title}</p>
           )}
 
           {channel && (
             <Button
               size="lg"
               asChild
-              className="w-full sm:mx-auto sm:flex sm:w-fit sm:max-w-xs"
+              className="w-full cursor-pointer sm:mx-auto sm:flex sm:w-fit sm:max-w-xs"
             >
               <a
                 href={`https://twitch.tv/${channel.broadcaster_login}`}
                 target="_blank"
                 rel="noreferrer"
               >
-                Watch on Twitch
+                {t("channel_detail.watch_on_twitch")}
                 <ExternalLinkIcon data-icon="inline-end" />
               </a>
             </Button>

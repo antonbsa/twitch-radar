@@ -4,10 +4,12 @@ import {
   resetState,
   seedChannelState,
   seedFollowedChannels,
+  seedPreferences,
 } from "./orchestrator/test-seam-client"
 import { WEB_URL } from "./setup/browser"
 import { it } from "./setup/fixtures"
 import { expectHidden, expectVisible } from "./setup/assertions"
+import { mockPushEnvironment } from "./setup/push-mocks"
 
 function broadcasterId(suffix: string): string {
   return `${E2E_BROADCASTER_PREFIX}channels_${suffix}`
@@ -644,5 +646,159 @@ describe("Channels view", () => {
     await expect
       .poll(() => new URL(page.url()).searchParams.get("broadcaster"))
       .toBe(null)
+  })
+
+  it("should offer a one-tap suggestion to notify for a live channel's current category", async ({
+    authenticatedSession,
+  }) => {
+    const id = broadcasterId("suggest")
+    await seedFollowedChannels([
+      {
+        broadcasterUserId: id,
+        broadcasterLogin: "suggeststreamer",
+        broadcasterDisplayName: "SuggestStreamer",
+      },
+    ])
+    await seedChannelState([
+      {
+        broadcasterUserId: id,
+        isLive: true,
+        categoryId: "509658",
+        categoryName: "Just Chatting",
+        viewerCount: 10,
+      },
+    ])
+
+    const { page } = authenticatedSession
+    await page.goto(WEB_URL)
+    const row = page.locator(
+      `[data-testid="channel-row"][data-broadcaster-user-id="${id}"]`,
+    )
+    await row.click()
+    const modal = page.getByTestId("channel-detail-modal")
+    await expectVisible(modal)
+
+    const suggestion = modal.getByRole("button", { name: "Notify me" })
+    await expectVisible(suggestion)
+
+    await suggestion.click()
+
+    // Saved: the button flips to the checked "already notifying" state.
+    await expectHidden(suggestion)
+    await expectVisible(modal.getByRole("button", { name: "Notifying" }))
+  })
+
+  it("should not offer the live-category suggestion for an offline channel", async ({
+    authenticatedSession,
+  }) => {
+    const id = broadcasterId("suggest_offline")
+    await seedFollowedChannels([
+      {
+        broadcasterUserId: id,
+        broadcasterLogin: "offlinestreamer",
+        broadcasterDisplayName: "OfflineStreamer",
+      },
+    ])
+    await seedChannelState([{ broadcasterUserId: id, isLive: false }])
+
+    const { page } = authenticatedSession
+    await page.goto(WEB_URL)
+    const row = page.locator(
+      `[data-testid="channel-row"][data-broadcaster-user-id="${id}"]`,
+    )
+    await row.click()
+    const modal = page.getByTestId("channel-detail-modal")
+    await expectVisible(modal)
+
+    await expect(
+      modal.getByRole("button", { name: "Notify me" }).count(),
+    ).resolves.toBe(0)
+    await expect(
+      modal.getByRole("button", { name: "Notifying" }).count(),
+    ).resolves.toBe(0)
+  })
+
+  it("should not offer the live-category suggestion once that category is already saved", async ({
+    authenticatedSession,
+  }) => {
+    const id = broadcasterId("suggest_saved")
+    await seedFollowedChannels([
+      {
+        broadcasterUserId: id,
+        broadcasterLogin: "savedstreamer",
+        broadcasterDisplayName: "SavedStreamer",
+      },
+    ])
+    await seedChannelState([
+      {
+        broadcasterUserId: id,
+        isLive: true,
+        categoryId: "509658",
+        categoryName: "Just Chatting",
+        viewerCount: 10,
+      },
+    ])
+    await seedPreferences({
+      channel: [
+        {
+          broadcasterUserId: id,
+          categoryId: "509658",
+          categoryName: "Just Chatting",
+        },
+      ],
+    })
+
+    const { page } = authenticatedSession
+    await page.goto(WEB_URL)
+    const row = page.locator(
+      `[data-testid="channel-row"][data-broadcaster-user-id="${id}"]`,
+    )
+    await row.click()
+    const modal = page.getByTestId("channel-detail-modal")
+    await expectVisible(modal)
+
+    await expect(
+      modal.getByRole("button", { name: "Notify me" }).count(),
+    ).resolves.toBe(0)
+    await expectVisible(modal.getByRole("button", { name: "Notifying" }))
+  })
+
+  it("should offer to enable push after using the live-category suggestion while not enabled", async ({
+    authenticatedSession,
+  }) => {
+    const id = broadcasterId("suggest_push")
+    await mockPushEnvironment(authenticatedSession.page)
+    await seedFollowedChannels([
+      {
+        broadcasterUserId: id,
+        broadcasterLogin: "pushstreamer",
+        broadcasterDisplayName: "PushStreamer",
+      },
+    ])
+    await seedChannelState([
+      {
+        broadcasterUserId: id,
+        isLive: true,
+        categoryId: "509658",
+        categoryName: "Just Chatting",
+        viewerCount: 10,
+      },
+    ])
+
+    const { page } = authenticatedSession
+    await page.goto(WEB_URL)
+    const row = page.locator(
+      `[data-testid="channel-row"][data-broadcaster-user-id="${id}"]`,
+    )
+    await row.click()
+    const modal = page.getByTestId("channel-detail-modal")
+    await expectVisible(modal)
+
+    await modal.getByRole("button", { name: "Notify me" }).click()
+
+    // The push prompt is a toast, rendered outside the modal.
+    await expectVisible(
+      page.getByText("Enable notifications so you don't miss this alert."),
+    )
   })
 })

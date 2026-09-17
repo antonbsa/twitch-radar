@@ -4,6 +4,7 @@
   "nav.account": "Account",
 
   "common.loading": "Loading",
+  "common.close": "Close",
 
   "login.title": "Twitch Radar",
   "login.tagline": "Get notified when channels you follow go live in the categories you care about.",
@@ -37,6 +38,7 @@
   "channel_preferences.saved_for_channel": "Saved for this channel",
   "channel_preferences.no_preferences": "No preferences saved.",
   "channel_preferences.remove_aria": "Remove {category}",
+  "channel_preferences.notify_for_category": "Notify me",
 
   "alerts.title": "Alerts",
   "alerts.global_title": "Global",
@@ -67,6 +69,9 @@
   "category_search.empty": "No categories found.",
   "category_search.already_global": "already in All channels",
 
+  "channel_detail.watch_on_twitch": "Watch on Twitch",
+  "channel_detail.notifying_for_category": "Notifying",
+
   "account.title": "Account",
   "account.connected": "Connected",
   "account.notifications": "Notifications",
@@ -90,6 +95,9 @@
   "push.permission_not_granted": "Notification permission was not granted.",
   "push.enable_error": "Could not enable notifications. Try again.",
   "push.disable_error": "Could not disable notifications. Try again.",
+  "push.banner_blocked": "Notifications are blocked. Go to browser settings to enable.",
+  "push.banner_prompt": "Enable notifications so you don't miss this alert.",
+  "push.banner_enable_cta": "Enable",
 
   "reconnect.message": "Your Twitch connection needs to be renewed.",
   "reconnect.cta": "Reconnect Twitch",

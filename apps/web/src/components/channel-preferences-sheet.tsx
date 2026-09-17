@@ -14,6 +14,8 @@ import {
   usePreferences,
   useRemoveChannelPreference,
 } from "@/hooks/use-preferences"
+import { usePushNotifications } from "@/hooks/use-push-notifications"
+import { showEnablePushToast } from "@/lib/push-toast"
 import type { FollowedChannel } from "@/types/channel"
 
 interface ChannelPreferencesSheetProps {
@@ -30,6 +32,11 @@ export function ChannelPreferencesSheet({
   const addPreference = useAddChannelPreference()
   const removePreference = useRemoveChannelPreference()
   const { armedId: armedChipId, arm: armChip } = useArmedChip()
+  const push = usePushNotifications()
+
+  function handlePreferenceAdded() {
+    showEnablePushToast({ status: push.status, enable: push.enable, t })
+  }
 
   const savedForChannel = channel
     ? (preferences?.channel ?? []).filter(
@@ -53,10 +60,13 @@ export function ChannelPreferencesSheet({
             )}
             onSelect={(category) => {
               if (!channel) return
-              addPreference.mutate({
-                broadcasterUserId: channel.broadcaster_user_id,
-                category,
-              })
+              addPreference.mutate(
+                {
+                  broadcasterUserId: channel.broadcaster_user_id,
+                  category,
+                },
+                { onSuccess: handlePreferenceAdded },
+              )
             }}
           />
 

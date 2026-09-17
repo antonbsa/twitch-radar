@@ -4,6 +4,7 @@
   "nav.account": "Conta",
 
   "common.loading": "Carregando",
+  "common.close": "Fechar",
 
   "login.title": "Twitch Radar",
   "login.tagline": "Receba notificações quando os canais que você segue entrarem ao vivo nas categorias que você acompanha.",
@@ -37,6 +38,7 @@
   "channel_preferences.saved_for_channel": "Salvo para este canal",
   "channel_preferences.no_preferences": "Nenhuma preferência salva.",
   "channel_preferences.remove_aria": "Remover {category}",
+  "channel_preferences.notify_for_category": "Notificar-me",
 
   "alerts.title": "Alertas",
   "alerts.global_title": "Global",
@@ -67,6 +69,9 @@
   "category_search.empty": "Nenhuma categoria encontrada.",
   "category_search.already_global": "já em Todos os canais",
 
+  "channel_detail.watch_on_twitch": "Assistir na Twitch",
+  "channel_detail.notifying_for_category": "Notificando",
+
   "account.title": "Conta",
   "account.connected": "Conectado",
   "account.notifications": "Notificações",
@@ -90,6 +95,9 @@
   "push.permission_not_granted": "A permissão de notificação não foi concedida.",
   "push.enable_error": "Não foi possível ativar as notificações. Tente novamente.",
   "push.disable_error": "Não foi possível desativar as notificações. Tente novamente.",
+  "push.banner_blocked": "As notificações estão bloqueadas. Acesse as configurações do navegador para ativá-las.",
+  "push.banner_prompt": "Ative as notificações para não perder este alerta.",
+  "push.banner_enable_cta": "Ativar",
 
   "reconnect.message": "Sua conexão com a Twitch precisa ser renovada.",
   "reconnect.cta": "Reconectar Twitch",
