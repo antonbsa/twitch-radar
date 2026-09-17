@@ -230,6 +230,31 @@ export const notificationDeliveries = sqliteTable(
   ],
 )
 
+export const notificationSnoozes = sqliteTable(
+  "notification_snoozes",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id),
+    broadcasterUserId: text("broadcaster_user_id").notNull(),
+    categoryId: text("category_id").notNull(),
+    originalDeliveryId: text("original_delivery_id")
+      .notNull()
+      .references(() => notificationDeliveries.id),
+    fireAt: text("fire_at").notNull(),
+    status: text("status").notNull(),
+    createdAt: text("created_at").notNull(),
+  },
+  (table) => [
+    index("idx_notification_snoozes_status_fire_at").on(
+      table.status,
+      table.fireAt,
+    ),
+    index("idx_notification_snoozes_user_id").on(table.userId),
+  ],
+)
+
 export const schema = {
   users,
   twitchTokens,
@@ -242,6 +267,7 @@ export const schema = {
   channelCategoryPreferences,
   globalCategoryPreferences,
   notificationDeliveries,
+  notificationSnoozes,
 }
 
 export type UserRow = typeof users.$inferSelect

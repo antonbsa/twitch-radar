@@ -105,5 +105,8 @@
   "notification.stream_started_in_category.title": "{broadcasterName} está transmitindo {categoryName}",
   "notification.stream_started_in_category.body": "{broadcasterName} acabou de começar a transmitir uma categoria que você segue.",
   "notification.switched_into_category.title": "{broadcasterName} mudou para {categoryName}",
-  "notification.switched_into_category.body": "{broadcasterName} agora está transmitindo uma categoria que você segue."
+  "notification.switched_into_category.body": "{broadcasterName} agora está transmitindo uma categoria que você segue.",
+  "notification.snooze_reminder.title": "{broadcasterName} ainda está transmitindo {categoryName}",
+  "notification.snooze_reminder.body": "Lembrete: {broadcasterName} ainda está transmitindo uma categoria que você segue.",
+  "notification.snooze_action": "Lembrar em 15m"
 }

@@ -19,13 +19,19 @@ const TRIGGER_BY_CHANGE_TYPE: Partial<Record<string, NotificationTriggerType>> =
 // (resolved against apps/web/public/locales/<lang>.json by the web app and
 // the service worker) plus interpolation params and the recipient's
 // language. Key names reuse the trigger type as the catalog namespace.
+// `deliveryId` is filled in per user once the delivery row exists (ADR
+// 0048) — the shared key/params/lang/url are the same for every matched
+// user, but each gets its own delivery id, so the payload can't be
+// finalized until then.
+type PayloadBase = Omit<NotificationPayload, "deliveryId">
+
 function buildPayload(
   trigger: NotificationTriggerType,
   broadcasterName: string,
   categoryName: string,
   lang: Language,
   broadcasterUserId: string,
-): NotificationPayload {
+): PayloadBase {
   return {
     titleKey: `notification.${trigger}.title`,
     bodyKey: `notification.${trigger}.body`,
@@ -116,13 +122,17 @@ export async function matchAndCreateDeliveries(
       now,
     })
     if (delivery?.status === "pending") {
-      const payload = buildPayload(
+      const payloadBase = buildPayload(
         trigger,
         broadcasterName,
         categoryName,
         languageByUserId.get(userId) ?? "en",
         broadcasterUserId,
       )
+      const payload: NotificationPayload = {
+        ...payloadBase,
+        deliveryId: delivery.id,
+      }
       await queue.send({ deliveryId: delivery.id, userId, payload })
     }
   }

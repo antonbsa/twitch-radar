@@ -9,13 +9,16 @@ index.ts                      — Hono app, middleware, sub-router, ExportedHand
                                 ack/retry): TWITCH_EVENTS_QUEUE → state processing + notification
                                 matching, NOTIFICATION_JOBS_QUEUE → Web Push sends; scheduled()
                                 dispatches on controller.cron (ADR 0036) — default minutely branch
-                                creates pending EventSub subscriptions (ADR 0031)
+                                creates pending EventSub subscriptions (ADR 0031) and sweeps
+                                notification_snoozes (ADR 0048, piggybacked due to the cron trigger
+                                account cap)
 crons.ts                      — cron expressions for the scheduled jobs, mirrored in wrangler.jsonc's
                                 triggers.crons; own module so tests can import them
 types.ts                      — queue message contracts (TwitchEventQueueMessage is a discriminated
                                 union on eventType, ADR 0032; NotificationJobMessage carries the
-                                {titleKey, bodyKey, params, lang, url} payload, ADR 0044) + EventSub
-                                event wire shapes; SUPPORTED_LANGUAGES/Language (ADR 0044)
+                                {titleKey, bodyKey, params, lang, url, deliveryId} payload, ADRs
+                                0034/0044/0048) + EventSub event wire shapes; SUPPORTED_LANGUAGES/
+                                Language (ADR 0044)
 db/
   client.ts                   — drizzle factory (no singleton)
   index.ts                    — Database class (wires all repositories)
@@ -29,7 +32,11 @@ db/
     notification-deliveries.ts — NotificationDeliveriesRepository; insertPendingIfNew dedupes on the
                                 (user, broadcaster, category, trigger, stream) unique index and
                                 returns the row owning the key; statuses pending → sent/failed/
-                                skipped (ADRs 0008, 0034)
+                                skipped (ADRs 0008, 0034); trigger_type includes snooze_reminder
+                                (ADR 0048)
+    notification-snoozes.ts   — NotificationSnoozesRepository; create/findDue/markFired/markExpired
+                                back the snooze sweep; findPendingByOriginalDeliveryId makes the
+                                snooze endpoint idempotent (ADR 0048)
     followed-channels.ts      — FollowedChannelsRepository
     channel-state.ts          — ChannelStateRepository; inArray queries batch at 100 (D1 limit);
                                 updated_from_event_at backs the stale-event guard (ADR 0033)
@@ -60,6 +67,9 @@ http/
     me.ts                     — handleGetMe; adds twitch_reconnect_required (dead/missing refresh
                                 token, ADR 0036) to the user payload; handleUpdateLanguage (PATCH
                                 /me/language) sets the language preference (ADR 0044)
+    notifications.ts          — handleSnoozeNotification (POST /notifications/:deliveryId/snooze;
+                                idempotent, only a `sent` delivery owned by the caller is snoozable;
+                                ADR 0048)
     push-subscriptions.ts     — handleGetVapidPublicKey, handleCreatePushSubscription (idempotent
                                 upsert by endpoint), handleDeletePushSubscription (soft revoke);
                                 lifecycle contract in ADR 0027
@@ -100,6 +110,10 @@ services/
     deliver.ts                — deliverNotification (jobs-queue consumer: sends to active push
                                 subscriptions, resolves delivery status, revokes 404/410
                                 endpoints; ADRs 0034, 0035)
+    snooze-sweep.ts            — sweepNotificationSnoozes (dispatched from index.ts's default/
+                                minutely cron branch, not its own schedule — see ADR 0044 on the
+                                cron trigger account cap; re-checks channel_state before re-sending
+                                via the same delivery pipeline, or marks the snooze expired)
   push/
     web-push.ts               — sendWebPush (RFC 8291 aes128gcm encryption + RFC 8292 VAPID on
                                 WebCrypto — the web-push npm package needs Node APIs the Worker

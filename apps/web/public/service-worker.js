@@ -13,6 +13,7 @@
 const DEFAULT_LANGUAGE = "en"
 const FALLBACK_TITLE = "Twitch Radar"
 const FALLBACK_BODY = "A channel you follow has an update."
+const FALLBACK_SNOOZE_ACTION_TITLE = "Remind me in 15m"
 
 // WebKit on iOS is known to drop `event.notification.data` by the time
 // notificationclick fires for a web-pushed notification on an installed PWA
@@ -64,8 +65,12 @@ self.addEventListener("push", (event) => {
       }
 
       const url = payload?.url || "/"
+      // ADR 0048: carried through to notification.data so notificationclick
+      // can snooze this specific delivery without a separate lookup.
+      const deliveryId = payload?.deliveryId || null
       let title = FALLBACK_TITLE
       let body = FALLBACK_BODY
+      let snoozeActionTitle = FALLBACK_SNOOZE_ACTION_TITLE
 
       if (payload?.titleKey && payload?.bodyKey) {
         const catalog = await loadCatalog(payload.lang || DEFAULT_LANGUAGE)
@@ -75,6 +80,9 @@ self.addEventListener("push", (event) => {
           catalog && interpolate(catalog[payload.bodyKey], payload.params)
         title = resolvedTitle || title
         body = resolvedBody || body
+        snoozeActionTitle =
+          (catalog && catalog["notification.snooze_action"]) ||
+          snoozeActionTitle
       }
 
       await rememberNotificationUrl(url)
@@ -82,7 +90,10 @@ self.addEventListener("push", (event) => {
         body,
         icon: "/icon.svg",
         badge: "/icon.svg",
-        data: { url },
+        data: { url, deliveryId },
+        actions: deliveryId
+          ? [{ action: "snooze", title: snoozeActionTitle }]
+          : [],
       })
     })(),
   )
@@ -90,6 +101,23 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close()
+
+  // Snooze action (ADR 0048): fire-and-forget the reminder request instead
+  // of focusing/opening a window — the user dismissed this one on purpose.
+  if (event.action === "snooze") {
+    const deliveryId = event.notification.data?.deliveryId
+    if (deliveryId) {
+      event.waitUntil(
+        fetch(`/api/notifications/${deliveryId}/snooze`, {
+          method: "POST",
+        }).catch(() => {
+          // Best-effort: if this fails, no reminder fires. There is no
+          // notification left to retry from.
+        }),
+      )
+    }
+    return
+  }
 
   event.waitUntil(
     (async () => {

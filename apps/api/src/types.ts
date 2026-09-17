@@ -53,12 +53,16 @@ export type Language = (typeof SUPPORTED_LANGUAGES)[number]
 // titleKey/bodyKey against the shared locale catalog (apps/web/public/locales)
 // in the recipient's `lang`, interpolating `params` into the resolved
 // template. The API never embeds translated text, only semantic keys.
+// `deliveryId` (ADR 0048) rides along so the service worker's
+// notificationclick handler can call the snooze endpoint against the
+// delivery the user is reacting to.
 export interface NotificationPayload {
   titleKey: string
   bodyKey: string
   params: Record<string, string>
   lang: Language
   url: string
+  deliveryId: string
 }
 
 // Queue payload contract for NOTIFICATION_JOBS_QUEUE (ADR 0034). The payload
