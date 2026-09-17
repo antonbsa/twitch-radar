@@ -1,5 +1,10 @@
 import { useState } from "react"
-import { CheckIcon, ExternalLinkIcon, Loader2Icon } from "lucide-react"
+import {
+  BellCheckIcon,
+  BellIcon,
+  ExternalLinkIcon,
+  Loader2Icon,
+} from "lucide-react"
 import {
   Sheet,
   SheetContent,
@@ -124,7 +129,7 @@ export function ChannelDetailModal({
                     disabled
                     className="shrink-0 gap-1.5"
                   >
-                    <CheckIcon />
+                    <BellCheckIcon />
                     {t("channel_detail.notifying_for_category")}
                   </Button>
                 ) : (
@@ -132,13 +137,12 @@ export function ChannelDetailModal({
                     type="button"
                     variant="secondary"
                     size="lg"
-                    className="shrink-0 cursor-pointer"
+                    className="shrink-0 cursor-pointer gap-1.5"
                     disabled={addPreference.isPending}
                     onClick={handleNotifyForCategory}
                   >
-                    {t("channel_preferences.notify_for_category", {
-                      category: liveCategory.name,
-                    })}
+                    <BellIcon />
+                    {t("channel_preferences.notify_for_category")}
                   </Button>
                 ))}
             </div>

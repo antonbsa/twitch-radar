@@ -38,7 +38,7 @@
   "channel_preferences.saved_for_channel": "Guardado para este canal",
   "channel_preferences.no_preferences": "No hay preferencias guardadas.",
   "channel_preferences.remove_aria": "Eliminar {category}",
-  "channel_preferences.notify_for_category": "Notificar por \"{category}\"",
+  "channel_preferences.notify_for_category": "Notificarme",
 
   "alerts.title": "Alertas",
   "alerts.global_title": "Global",
