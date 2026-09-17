@@ -678,9 +678,7 @@ describe("Channels view", () => {
     const modal = page.getByTestId("channel-detail-modal")
     await expectVisible(modal)
 
-    const suggestion = modal.getByRole("button", {
-      name: 'Notify for "Just Chatting"',
-    })
+    const suggestion = modal.getByRole("button", { name: "Notify me" })
     await expectVisible(suggestion)
 
     await suggestion.click()
@@ -713,7 +711,7 @@ describe("Channels view", () => {
     await expectVisible(modal)
 
     await expect(
-      modal.getByRole("button", { name: /^Notify for/ }).count(),
+      modal.getByRole("button", { name: "Notify me" }).count(),
     ).resolves.toBe(0)
     await expect(
       modal.getByRole("button", { name: "Notifying" }).count(),
@@ -760,7 +758,7 @@ describe("Channels view", () => {
     await expectVisible(modal)
 
     await expect(
-      modal.getByRole("button", { name: /^Notify for/ }).count(),
+      modal.getByRole("button", { name: "Notify me" }).count(),
     ).resolves.toBe(0)
     await expectVisible(modal.getByRole("button", { name: "Notifying" }))
   })
@@ -796,9 +794,7 @@ describe("Channels view", () => {
     const modal = page.getByTestId("channel-detail-modal")
     await expectVisible(modal)
 
-    await modal
-      .getByRole("button", { name: 'Notify for "Just Chatting"' })
-      .click()
+    await modal.getByRole("button", { name: "Notify me" }).click()
 
     // The push prompt is a toast, rendered outside the modal.
     await expectVisible(
