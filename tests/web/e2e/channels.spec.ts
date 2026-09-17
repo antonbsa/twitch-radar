@@ -671,23 +671,23 @@ describe("Channels view", () => {
 
     const { page } = authenticatedSession
     await page.goto(WEB_URL)
-    await page
-      .getByRole("button", { name: "Configure SuggestStreamer" })
-      .click()
-    const dialog = page.getByRole("dialog")
-    await expectVisible(dialog)
+    const row = page.locator(
+      `[data-testid="channel-row"][data-broadcaster-user-id="${id}"]`,
+    )
+    await row.click()
+    const modal = page.getByTestId("channel-detail-modal")
+    await expectVisible(modal)
 
-    const suggestion = dialog.getByRole("button", {
+    const suggestion = modal.getByRole("button", {
       name: 'Notify for "Just Chatting"',
     })
     await expectVisible(suggestion)
 
     await suggestion.click()
 
-    // Saved: the chip drops away and the category shows up in "Saved for
-    // this channel" — the same row a manual search-and-add would produce.
+    // Saved: the button flips to the checked "already notifying" state.
     await expectHidden(suggestion)
-    await expectVisible(dialog.getByText("Just Chatting"))
+    await expectVisible(modal.getByRole("button", { name: "Notifying" }))
   })
 
   it("should not offer the live-category suggestion for an offline channel", async ({
@@ -705,14 +705,18 @@ describe("Channels view", () => {
 
     const { page } = authenticatedSession
     await page.goto(WEB_URL)
-    await page
-      .getByRole("button", { name: "Configure OfflineStreamer" })
-      .click()
-    const dialog = page.getByRole("dialog")
-    await expectVisible(dialog)
+    const row = page.locator(
+      `[data-testid="channel-row"][data-broadcaster-user-id="${id}"]`,
+    )
+    await row.click()
+    const modal = page.getByTestId("channel-detail-modal")
+    await expectVisible(modal)
 
     await expect(
-      dialog.getByRole("button", { name: /^Notify for/ }).count(),
+      modal.getByRole("button", { name: /^Notify for/ }).count(),
+    ).resolves.toBe(0)
+    await expect(
+      modal.getByRole("button", { name: "Notifying" }).count(),
     ).resolves.toBe(0)
   })
 
@@ -748,14 +752,17 @@ describe("Channels view", () => {
 
     const { page } = authenticatedSession
     await page.goto(WEB_URL)
-    await page.getByRole("button", { name: "Configure SavedStreamer" }).click()
-    const dialog = page.getByRole("dialog")
-    await expectVisible(dialog)
-    await expectVisible(dialog.getByText("Just Chatting"))
+    const row = page.locator(
+      `[data-testid="channel-row"][data-broadcaster-user-id="${id}"]`,
+    )
+    await row.click()
+    const modal = page.getByTestId("channel-detail-modal")
+    await expectVisible(modal)
 
     await expect(
-      dialog.getByRole("button", { name: /^Notify for/ }).count(),
+      modal.getByRole("button", { name: /^Notify for/ }).count(),
     ).resolves.toBe(0)
+    await expectVisible(modal.getByRole("button", { name: "Notifying" }))
   })
 
   it("should offer to enable push after using the live-category suggestion while not enabled", async ({
@@ -782,16 +789,20 @@ describe("Channels view", () => {
 
     const { page } = authenticatedSession
     await page.goto(WEB_URL)
-    await page.getByRole("button", { name: "Configure PushStreamer" }).click()
-    const dialog = page.getByRole("dialog")
-    await expectVisible(dialog)
+    const row = page.locator(
+      `[data-testid="channel-row"][data-broadcaster-user-id="${id}"]`,
+    )
+    await row.click()
+    const modal = page.getByTestId("channel-detail-modal")
+    await expectVisible(modal)
 
-    await dialog
+    await modal
       .getByRole("button", { name: 'Notify for "Just Chatting"' })
       .click()
 
+    // The push prompt is a toast, rendered outside the modal.
     await expectVisible(
-      dialog.getByText("Enable notifications so you don't miss this alert."),
+      page.getByText("Enable notifications so you don't miss this alert."),
     )
   })
 })

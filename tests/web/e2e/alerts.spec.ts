@@ -122,24 +122,13 @@ describe("Alerts view", () => {
     await dialog.getByPlaceholder("Search categories").fill("mine")
     await dialog.getByRole("button", { name: "Minecraft" }).click()
 
-    // Push isn't enabled in this test, so the sheet stays open with the
-    // enable-push prompt instead of auto-closing (#29) — dismiss it and
-    // close manually to get back to the refreshed list.
-    await expectVisible(
-      dialog.getByText("Enable notifications so you don't miss this alert."),
-    )
-    await dialog
-      .getByRole("button", { name: "Dismiss notification prompt" })
-      .click()
-    await expectHidden(
-      dialog.getByText("Enable notifications so you don't miss this alert."),
-    )
-
-    await page
-      .locator('[data-slot="sheet-overlay"]')
-      .click({ position: { x: 5, y: 5 } })
+    // The sheet closes on success and the refreshed list shows the new
+    // alert; push isn't enabled in this test, so an enable-push toast also
+    // surfaces (rendered outside the sheet, so it doesn't need to stay open).
     await expectHidden(dialog)
-
+    await expectVisible(
+      page.getByText("Enable notifications so you don't miss this alert."),
+    )
     await expectVisible(page.getByText("Minecraft"))
     await expectHidden(page.getByText("No global alerts set."))
 
@@ -153,6 +142,98 @@ describe("Alerts view", () => {
     await removeButton.click()
     await expectVisible(page.getByText("No global alerts set."))
     await expectHidden(page.getByText("Minecraft"))
+  })
+
+  // These two run before any test below seeds followed channels: adding a
+  // global preference re-evaluates monitoring for every followed broadcaster
+  // (ADR 0007), and with the E2E user's follows piling up across this
+  // no-per-test-reset describe block, that real Twitch round-trip starts
+  // failing once enough test-fixture broadcasters exist.
+  it("should show an enable-push toast after adding a category while not enabled", async ({
+    authenticatedSession,
+  }) => {
+    const { page } = authenticatedSession
+    await mockPushEnvironment(page)
+    await page.route("**/api/categories/search*", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          data: [{ id: "509658", name: "Just Chatting", box_art_url: null }],
+        }),
+      }),
+    )
+
+    await page.goto(`${WEB_URL}/alerts`)
+    await page.getByRole("button", { name: "Add global category" }).click()
+    const dialog = page.getByRole("dialog")
+    await expectVisible(dialog)
+
+    await dialog.getByPlaceholder("Search categories").fill("just")
+    await dialog.getByRole("button", { name: "Just Chatting" }).click()
+
+    // The sheet closes on success as before (#29) — the push prompt is a
+    // toast, rendered outside the sheet, so it doesn't need to stay open.
+    await expectHidden(dialog)
+    const prompt = page.getByText(
+      "Enable notifications so you don't miss this alert.",
+    )
+    await expectVisible(prompt)
+    await page.getByRole("button", { name: "Enable" }).click()
+
+    // Clean up so this test's state doesn't leak into the next one (this
+    // describe block only resets in beforeAll/afterAll, not between tests).
+    const removeButton = page.getByRole("button", {
+      name: "Remove Just Chatting",
+    })
+    await removeButton.click()
+    await removeButton.click()
+    await expectHidden(page.getByText("Just Chatting"))
+  })
+
+  it("should not prompt to enable push when it is already enabled", async ({
+    authenticatedSession,
+  }) => {
+    const { page } = authenticatedSession
+    await mockPushEnvironment(page)
+    // A different category than the previous test's, so this test doesn't
+    // depend on that test's cleanup having run first.
+    await page.route("**/api/categories/search*", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          data: [{ id: "26936", name: "Music", box_art_url: null }],
+        }),
+      }),
+    )
+
+    // Enable push for real via the Account tab before exercising the flow
+    // under test, so the add-category mutation below sees status "enabled".
+    // Switch tabs via the in-app nav (client-side route change), not
+    // page.goto — a real browser navigation re-runs the mocked Push API's
+    // init script from scratch, resetting its in-memory subscription and
+    // making push look "not enabled" again on the next page.
+    await page.goto(`${WEB_URL}/account`)
+    await page.getByRole("button", { name: "Enable Notifications" }).click()
+    await expectVisible(page.getByText("Status: Enabled"))
+
+    await page.getByRole("link", { name: "Alerts" }).click()
+    await page.getByRole("button", { name: "Add global category" }).click()
+    const dialog = page.getByRole("dialog")
+    await expectVisible(dialog)
+
+    await dialog.getByPlaceholder("Search categories").fill("music")
+    await dialog.getByRole("button", { name: "Music" }).click()
+
+    // No prompt — the sheet closes on success exactly as before #29.
+    await expectHidden(dialog)
+    await expectVisible(page.getByText("Music"))
+    expect(
+      await page
+        .getByText("Enable notifications so you don't miss this alert.")
+        .count(),
+    ).toBe(0)
   })
 
   it("should show both section empty states without any tab navigation", async ({
@@ -717,91 +798,5 @@ describe("Alerts view", () => {
     ).toBe(0)
     // The add-channel affordance stays available even with nothing configured.
     await expectVisible(page.getByRole("button", { name: "Add channel" }))
-  })
-
-  it("should offer to enable push after adding a category while not enabled, hiding the prompt once enabled", async ({
-    authenticatedSession,
-  }) => {
-    const { page } = authenticatedSession
-    await mockPushEnvironment(page)
-    await page.route("**/api/categories/search*", (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          data: [{ id: "509658", name: "Just Chatting", box_art_url: null }],
-        }),
-      }),
-    )
-
-    await page.goto(`${WEB_URL}/alerts`)
-    await page.getByRole("button", { name: "Add global category" }).click()
-    const dialog = page.getByRole("dialog")
-    await expectVisible(dialog)
-
-    await dialog.getByPlaceholder("Search categories").fill("just")
-    await dialog.getByRole("button", { name: "Just Chatting" }).click()
-
-    const prompt = dialog.getByText(
-      "Enable notifications so you don't miss this alert.",
-    )
-    await expectVisible(prompt)
-
-    await dialog.getByRole("button", { name: "Enable" }).click()
-    await expectHidden(prompt)
-
-    // Enabling doesn't auto-close the sheet — close manually and remove the
-    // preference so this test's state doesn't leak into the next one (this
-    // describe block only resets in beforeAll/afterAll, not between tests).
-    await page
-      .locator('[data-slot="sheet-overlay"]')
-      .click({ position: { x: 5, y: 5 } })
-    await expectHidden(dialog)
-    const removeButton = page.getByRole("button", {
-      name: "Remove Just Chatting",
-    })
-    await removeButton.click()
-    await removeButton.click()
-    await expectHidden(page.getByText("Just Chatting"))
-  })
-
-  it("should not prompt to enable push when it is already enabled", async ({
-    authenticatedSession,
-  }) => {
-    const { page } = authenticatedSession
-    await mockPushEnvironment(page)
-    // A different category than the previous test's, so this test doesn't
-    // depend on that test's cleanup having run first.
-    await page.route("**/api/categories/search*", (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          data: [{ id: "26936", name: "Music", box_art_url: null }],
-        }),
-      }),
-    )
-
-    // Enable push for real via the Account tab before exercising the flow
-    // under test, so the add-category mutation below sees status "enabled".
-    // Switch tabs via the in-app nav (client-side route change), not
-    // page.goto — a real browser navigation re-runs the mocked Push API's
-    // init script from scratch, resetting its in-memory subscription and
-    // making push look "not enabled" again on the next page.
-    await page.goto(`${WEB_URL}/account`)
-    await page.getByRole("button", { name: "Enable Notifications" }).click()
-    await expectVisible(page.getByText("Status: Enabled"))
-
-    await page.getByRole("link", { name: "Alerts" }).click()
-    await page.getByRole("button", { name: "Add global category" }).click()
-    const dialog = page.getByRole("dialog")
-    await expectVisible(dialog)
-
-    await dialog.getByPlaceholder("Search categories").fill("music")
-    await dialog.getByRole("button", { name: "Music" }).click()
-
-    // No prompt — the sheet closes on success exactly as before #29.
-    await expectHidden(dialog)
-    await expectVisible(page.getByText("Music"))
   })
 })

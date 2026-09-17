@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { ExternalLinkIcon, Loader2Icon } from "lucide-react"
+import { CheckIcon, ExternalLinkIcon, Loader2Icon } from "lucide-react"
 import {
   Sheet,
   SheetContent,
@@ -8,7 +8,13 @@ import {
 } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/context/language-context"
+import {
+  useAddChannelPreference,
+  usePreferences,
+} from "@/hooks/use-preferences"
+import { usePushNotifications } from "@/hooks/use-push-notifications"
 import { formatViewerCount } from "@/lib/format"
+import { showEnablePushToast } from "@/lib/push-toast"
 import { cn } from "@/lib/utils"
 import type { FollowedChannel } from "@/types/channel"
 
@@ -49,6 +55,36 @@ export function ChannelDetailModal({
   onOpenChange,
 }: ChannelDetailModalProps) {
   const { t } = useLanguage()
+  const { data: preferences } = usePreferences()
+  const addPreference = useAddChannelPreference()
+  const push = usePushNotifications()
+
+  const liveCategory =
+    channel?.is_live && channel.category_id && channel.category_name
+      ? { id: channel.category_id, name: channel.category_name }
+      : null
+
+  const isNotifyingForCategory =
+    liveCategory !== null &&
+    (preferences?.channel ?? []).some(
+      (pref) =>
+        pref.broadcaster_user_id === channel?.broadcaster_user_id &&
+        pref.category_id === liveCategory.id,
+    )
+
+  function handleNotifyForCategory() {
+    if (!channel || !liveCategory) return
+    addPreference.mutate(
+      {
+        broadcasterUserId: channel.broadcaster_user_id,
+        category: liveCategory,
+      },
+      {
+        onSuccess: () =>
+          showEnablePushToast({ status: push.status, enable: push.enable, t }),
+      },
+    )
+  }
 
   return (
     <Sheet open={channel !== null} onOpenChange={onOpenChange}>
@@ -72,12 +108,40 @@ export function ChannelDetailModal({
               {channel.title && (
                 <p className="text-sm font-medium">{channel.title}</p>
               )}
-              <p className="text-xs text-muted-foreground">
-                {channel.category_name ?? t("channel_row.no_category")} ·{" "}
-                {t("channel_row.viewers_count", {
-                  count: formatViewerCount(channel.viewer_count ?? 0),
-                })}
-              </p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="truncate text-xs text-muted-foreground">
+                  {channel.category_name ?? t("channel_row.no_category")} ·{" "}
+                  {t("channel_row.viewers_count", {
+                    count: formatViewerCount(channel.viewer_count ?? 0),
+                  })}
+                </p>
+                {liveCategory &&
+                  (isNotifyingForCategory ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      disabled
+                      className="shrink-0 gap-1.5"
+                    >
+                      <CheckIcon className="size-3.5" />
+                      {t("channel_detail.notifying_for_category")}
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="shrink-0"
+                      disabled={addPreference.isPending}
+                      onClick={handleNotifyForCategory}
+                    >
+                      {t("channel_preferences.notify_for_category", {
+                        category: liveCategory.name,
+                      })}
+                    </Button>
+                  ))}
+              </div>
             </div>
           ) : (
             <p className="text-xs text-muted-foreground">

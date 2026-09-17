@@ -1,6 +1,7 @@
 import { useEffect } from "react"
 import { Navigate, Route, Routes } from "react-router"
 import { AuthGate } from "@/components/auth-gate"
+import { Toaster } from "@/components/ui/sonner"
 import { AuthenticatedLayout } from "@/layouts/authenticated-layout"
 import { useAuth } from "@/context/auth-context"
 import { useLanguage } from "@/context/language-context"
@@ -25,28 +26,31 @@ export function App() {
   useSyncLanguageWithUser()
 
   return (
-    <Routes>
-      <Route path="/" element={<Navigate to="/channels" replace />} />
-      <Route
-        path="/login"
-        element={
-          <AuthGate when="guest" redirectTo="/channels">
-            <LoginPage />
-          </AuthGate>
-        }
-      />
-      <Route
-        element={
-          <AuthGate when="authenticated" redirectTo="/login">
-            <AuthenticatedLayout />
-          </AuthGate>
-        }
-      >
-        <Route path="/channels" element={<ChannelsPage />} />
-        <Route path="/alerts" element={<AlertsPage />} />
-        <Route path="/account" element={<AccountPage />} />
-      </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <>
+      <Toaster />
+      <Routes>
+        <Route path="/" element={<Navigate to="/channels" replace />} />
+        <Route
+          path="/login"
+          element={
+            <AuthGate when="guest" redirectTo="/channels">
+              <LoginPage />
+            </AuthGate>
+          }
+        />
+        <Route
+          element={
+            <AuthGate when="authenticated" redirectTo="/login">
+              <AuthenticatedLayout />
+            </AuthGate>
+          }
+        >
+          <Route path="/channels" element={<ChannelsPage />} />
+          <Route path="/alerts" element={<AlertsPage />} />
+          <Route path="/account" element={<AccountPage />} />
+        </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
   )
 }

@@ -70,6 +70,7 @@
   "category_search.already_global": "already in All channels",
 
   "channel_detail.watch_on_twitch": "Watch on Twitch",
+  "channel_detail.notifying_for_category": "Notifying",
 
   "account.title": "Account",
   "account.connected": "Connected",
@@ -97,7 +98,6 @@
   "push.banner_blocked": "Notifications are blocked. Go to browser settings to enable.",
   "push.banner_prompt": "Enable notifications so you don't miss this alert.",
   "push.banner_enable_cta": "Enable",
-  "push.banner_dismiss_aria": "Dismiss notification prompt",
 
   "reconnect.message": "Your Twitch connection needs to be renewed.",
   "reconnect.cta": "Reconnect Twitch",
