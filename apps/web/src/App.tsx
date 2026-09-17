@@ -27,7 +27,7 @@ export function App() {
 
   return (
     <>
-      <Toaster />
+      <Toaster position="top-right" closeButton />
       <Routes>
         <Route path="/" element={<Navigate to="/channels" replace />} />
         <Route

@@ -81,7 +81,15 @@ export function ChannelDetailModal({
       },
       {
         onSuccess: () =>
-          showEnablePushToast({ status: push.status, enable: push.enable, t }),
+          showEnablePushToast({
+            status: push.status,
+            // Closing the modal prevents the toast from competing with it.
+            enable: () => {
+              onOpenChange(false)
+              push.enable()
+            },
+            t,
+          }),
       },
     )
   }
@@ -94,8 +102,50 @@ export function ChannelDetailModal({
         data-testid="channel-detail-modal"
         data-broadcaster-user-id={channel?.broadcaster_user_id}
       >
-        <SheetHeader>
+        <SheetHeader className="pb-0">
           <SheetTitle>{channel?.broadcaster_display_name}</SheetTitle>
+          {channel?.is_live ? (
+            <div className="flex items-center justify-between gap-2">
+              <p className="truncate text-xs text-muted-foreground">
+                {channel.category_name ?? t("channel_row.no_category")} ·{" "}
+                {t("channel_row.viewers_count", {
+                  count: formatViewerCount(channel.viewer_count ?? 0),
+                })}
+              </p>
+              {liveCategory &&
+                (isNotifyingForCategory ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="lg"
+                    disabled
+                    className="shrink-0 gap-1.5"
+                  >
+                    <CheckIcon />
+                    {t("channel_detail.notifying_for_category")}
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="lg"
+                    className="shrink-0 cursor-pointer"
+                    disabled={addPreference.isPending}
+                    onClick={handleNotifyForCategory}
+                  >
+                    {t("channel_preferences.notify_for_category", {
+                      category: liveCategory.name,
+                    })}
+                  </Button>
+                ))}
+            </div>
+          ) : (
+            channel && (
+              <p className="text-xs text-muted-foreground">
+                {t("channel_row.offline")}
+              </p>
+            )
+          )}
         </SheetHeader>
         <div className="space-y-4 overflow-y-auto px-4 pb-4">
           <ChannelThumbnail
@@ -103,57 +153,15 @@ export function ChannelDetailModal({
             thumbnailUrl={channel?.thumbnail_url ?? null}
           />
 
-          {channel?.is_live ? (
-            <div className="space-y-1">
-              {channel.title && (
-                <p className="text-sm font-medium">{channel.title}</p>
-              )}
-              <div className="flex items-center justify-between gap-2">
-                <p className="truncate text-xs text-muted-foreground">
-                  {channel.category_name ?? t("channel_row.no_category")} ·{" "}
-                  {t("channel_row.viewers_count", {
-                    count: formatViewerCount(channel.viewer_count ?? 0),
-                  })}
-                </p>
-                {liveCategory &&
-                  (isNotifyingForCategory ? (
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      disabled
-                      className="shrink-0 gap-1.5"
-                    >
-                      <CheckIcon className="size-3.5" />
-                      {t("channel_detail.notifying_for_category")}
-                    </Button>
-                  ) : (
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      className="shrink-0"
-                      disabled={addPreference.isPending}
-                      onClick={handleNotifyForCategory}
-                    >
-                      {t("channel_preferences.notify_for_category", {
-                        category: liveCategory.name,
-                      })}
-                    </Button>
-                  ))}
-              </div>
-            </div>
-          ) : (
-            <p className="text-xs text-muted-foreground">
-              {t("channel_row.offline")}
-            </p>
+          {channel?.is_live && channel.title && (
+            <p className="text-sm font-medium">{channel.title}</p>
           )}
 
           {channel && (
             <Button
               size="lg"
               asChild
-              className="w-full sm:mx-auto sm:flex sm:w-fit sm:max-w-xs"
+              className="w-full cursor-pointer sm:mx-auto sm:flex sm:w-fit sm:max-w-xs"
             >
               <a
                 href={`https://twitch.tv/${channel.broadcaster_login}`}

@@ -34,10 +34,14 @@ export function showEnablePushToast({
     return
   }
 
-  toast(t("push.banner_prompt"), {
+  const id = toast(t("push.banner_prompt"), {
+    duration: Infinity,
     action: {
       label: t("push.banner_enable_cta"),
-      onClick: enable,
+      onClick: () => {
+        enable()
+        toast.dismiss(id)
+      },
     },
   })
 }
