@@ -81,15 +81,7 @@ export function ChannelDetailModal({
       },
       {
         onSuccess: () =>
-          showEnablePushToast({
-            status: push.status,
-            // Closing the modal prevents the toast from competing with it.
-            enable: () => {
-              onOpenChange(false)
-              push.enable()
-            },
-            t,
-          }),
+          showEnablePushToast({ status: push.status, enable: push.enable, t }),
       },
     )
   }
@@ -101,6 +93,17 @@ export function ChannelDetailModal({
         className="max-h-[85vh] rounded-lg border data-[side=bottom]:top-1/2 data-[side=bottom]:bottom-auto data-[side=bottom]:-translate-y-1/2 data-[side=bottom]:sm:mx-auto data-[side=bottom]:sm:max-w-136"
         data-testid="channel-detail-modal"
         data-broadcaster-user-id={channel?.broadcaster_user_id}
+        onPointerDownOutside={(event) => {
+          // Keep the sheet open when the toast portal is clicked so the
+          // Notifying state remains visible after enabling push.
+          const target = event.detail.originalEvent.target as Node | null
+          if (
+            target instanceof Element &&
+            target.closest("[data-sonner-toaster]")
+          ) {
+            event.preventDefault()
+          }
+        }}
       >
         <SheetHeader className="pb-0">
           <SheetTitle>{channel?.broadcaster_display_name}</SheetTitle>

@@ -28,6 +28,10 @@ const Toaster = ({ ...props }: ToasterProps) => {
           "--normal-text": "var(--popover-foreground)",
           "--normal-border": "var(--border)",
           "--border-radius": "var(--radius)",
+          // Radix disables pointer events on <body> while a modal is open.
+          // Sonner renders in a sibling portal, so it inherits that behavior.
+          // Re-enable pointer events so toasts remain interactive above the modal.
+          pointerEvents: "auto",
         } as React.CSSProperties
       }
       toastOptions={{
