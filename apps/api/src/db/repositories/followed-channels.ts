@@ -152,6 +152,35 @@ export class FollowedChannelsRepository {
     return result
   }
 
+  /**
+   * Most recent `last_synced_at` across a user's followed channels, or null
+   * if they have none yet. Used to derive the sync cooldown (ADR 0032) from
+   * D1 instead of a dedicated KV write per sync.
+   */
+  async findMostRecentSyncedAt(userId: string): Promise<string | null> {
+    const row = await this.db
+      .select({
+        lastSyncedAt: sql<string | null>`max(${followedChannels.lastSyncedAt})`,
+      })
+      .from(followedChannels)
+      .where(eq(followedChannels.userId, userId))
+      .get()
+    return row?.lastSyncedAt ?? null
+  }
+
+  /**
+   * Test-seam helper: backdates a user's followed-channel rows so a
+   * subsequent sync isn't rejected by the cooldown derived from
+   * `last_synced_at`.
+   */
+  async backdateLastSyncedAt(userId: string, timestamp: string): Promise<void> {
+    await this.db
+      .update(followedChannels)
+      .set({ lastSyncedAt: timestamp })
+      .where(eq(followedChannels.userId, userId))
+      .run()
+  }
+
   async findByUserId(userId: string): Promise<FollowedChannelRecord[]> {
     const rows = await this.db
       .select()
