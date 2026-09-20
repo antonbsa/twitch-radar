@@ -65,7 +65,8 @@ http/
                                 lifecycle contract in ADR 0027
     sync.ts                   — handleSyncFollows
     webhooks.ts               — handleEventsubWebhook (HMAC verify against raw body, challenge/
-                                revocation handling, KV message-id dedupe, enqueue; ADR 0032)
+                                revocation handling, enqueue; dedup is solely the consumer's D1
+                                check on eventsub_message_id, ADR 0032)
     _tests.ts                  — handleTestReset, handleTestSeed, handleTestInspect (reads
                                 broadcaster-keyed monitoring state); test-seam shared by both test
                                 tiers (tests/api and tests/web/e2e via tests/shared/seam-client.ts).
