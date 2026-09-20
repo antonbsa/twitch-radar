@@ -56,12 +56,20 @@ export async function sweepNotificationSnoozes(
     const [monitored] = await db.monitoredChannels.findByBroadcasterUserIds([
       snooze.broadcaster_user_id,
     ])
-    // Fallback to the raw id rather than English prose (ADR 0044): these
-    // values flow into `params` verbatim into every language's template, so
-    // a fake-English fallback here would leak untranslated text.
+    // Snoozes need no preference row, so fall back to the user's followed
+    // channel record, then to the raw broadcaster id to avoid leaking
+    // English text into non-English templates.
+    const followed = monitored
+      ? null
+      : await db.followedChannels.findOne(
+          snooze.user_id,
+          snooze.broadcaster_user_id,
+        )
     const broadcasterName =
       monitored?.broadcaster_display_name ??
       monitored?.broadcaster_login ??
+      followed?.broadcaster_display_name ??
+      followed?.broadcaster_login ??
       snooze.broadcaster_user_id
     const categoryName = channelState.category_name ?? snooze.category_id
 
@@ -85,7 +93,8 @@ export async function sweepNotificationSnoozes(
           params: { broadcasterName, categoryName },
           lang: languageByUserId.get(snooze.user_id) ?? "en",
           url: `/channels?broadcaster=${snooze.broadcaster_user_id}`,
-          deliveryId: delivery.id,
+          broadcasterUserId: snooze.broadcaster_user_id,
+          categoryId: snooze.category_id,
         },
       })
     }

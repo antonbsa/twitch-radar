@@ -51,41 +51,18 @@ async function mockStreamOnlineLookups() {
   await orchestrator.mockTwitch.onStreams([STREAM])
 }
 
-/**
- * Seeds an authenticated user with a channel preference matching
- * BROADCASTER_ID/MINECRAFT, drives a real stream.online webhook through to a
- * `sent` delivery, and returns that delivery's id plus the session cookie —
- * the fixture the snooze endpoint/sweep tests build on.
- */
-async function seedSentDelivery(pushPath: string) {
-  const { cookie } = await orchestrator.createAuthenticatedSession()
-  await orchestrator.seed({
-    preferences: {
-      channel: [
-        {
-          broadcasterUserId: BROADCASTER_ID,
-          categoryId: MINECRAFT.id,
-          categoryName: MINECRAFT.name,
-        },
-      ],
-    },
-    pushSubscriptions: [{ endpoint: orchestrator.pushEndpoint(pushPath) }],
+function postSnooze(
+  cookie: string,
+  overrides: { broadcasterUserId?: string; categoryId?: string } = {},
+) {
+  return fetch(`${orchestrator.baseUrl}/api/notifications/snooze`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Cookie: cookie },
+    body: JSON.stringify({
+      broadcaster_user_id: overrides.broadcasterUserId ?? BROADCASTER_ID,
+      category_id: overrides.categoryId ?? MINECRAFT.id,
+    }),
   })
-  await orchestrator.seedChannelState([
-    { broadcasterUserId: BROADCASTER_ID, isLive: false },
-  ])
-  await mockStreamOnlineLookups()
-  await orchestrator.mockTwitch.onPush(pushPath)
-
-  await sendEventsubWebhook("stream.online", { event: streamOnlineEvent() })
-  const state = await orchestrator.waitForInspect(
-    [BROADCASTER_ID],
-    (s) => s.notificationDeliveries.some((d) => d.status === "sent"),
-    { userId: E2E_USER_ID },
-  )
-  const delivery = state.notificationDeliveries.find((d) => d.status === "sent")
-  if (!delivery) throw new Error("Expected a sent delivery to seed from")
-  return { deliveryId: delivery.id, cookie }
 }
 
 beforeEach(async () => {
@@ -498,18 +475,14 @@ describe("notification matching and delivery", () => {
 })
 
 describe("notification snoozing", () => {
-  it("should schedule a 15-minute snooze for a sent delivery", async () => {
-    const { deliveryId, cookie } = await seedSentDelivery("/push/snooze1")
+  it("should schedule a 15-minute reminder for a broadcaster/category", async () => {
+    const { cookie } = await orchestrator.createAuthenticatedSession()
 
     const before = Date.now()
-    const res = await fetch(
-      `${orchestrator.baseUrl}/api/notifications/${deliveryId}/snooze`,
-      { method: "POST", headers: { Cookie: cookie } },
-    )
+    const res = await postSnooze(cookie)
     expect(res.status).toBe(201)
     const body = (await res.json()) as {
       data: {
-        original_delivery_id: string
         broadcaster_user_id: string
         category_id: string
         status: string
@@ -517,7 +490,6 @@ describe("notification snoozing", () => {
       }
     }
     expect(body.data).toMatchObject({
-      original_delivery_id: deliveryId,
       broadcaster_user_id: BROADCASTER_ID,
       category_id: MINECRAFT.id,
       status: "pending",
@@ -527,20 +499,14 @@ describe("notification snoozing", () => {
     expect(fireAtMs).toBeLessThan(Date.now() + 16 * 60 * 1000)
   })
 
-  it("should return the existing pending snooze on a repeated request", async () => {
-    const { deliveryId, cookie } = await seedSentDelivery("/push/snooze2")
+  it("should return the existing pending reminder on a repeated request", async () => {
+    const { cookie } = await orchestrator.createAuthenticatedSession()
 
-    const first = await fetch(
-      `${orchestrator.baseUrl}/api/notifications/${deliveryId}/snooze`,
-      { method: "POST", headers: { Cookie: cookie } },
-    )
+    const first = await postSnooze(cookie)
     expect(first.status).toBe(201)
     const firstBody = (await first.json()) as { data: { id: string } }
 
-    const second = await fetch(
-      `${orchestrator.baseUrl}/api/notifications/${deliveryId}/snooze`,
-      { method: "POST", headers: { Cookie: cookie } },
-    )
+    const second = await postSnooze(cookie)
     expect(second.status).toBe(200)
     const secondBody = (await second.json()) as { data: { id: string } }
     expect(secondBody.data.id).toBe(firstBody.data.id)
@@ -549,48 +515,29 @@ describe("notification snoozing", () => {
     expect(state.notificationSnoozes).toHaveLength(1)
   })
 
-  it("should 404 when the delivery belongs to a different user", async () => {
-    const { deliveryId } = await seedSentDelivery("/push/snooze3")
-    const other = await orchestrator.createAuthenticatedSession({
+  it("should schedule separate reminders for different users", async () => {
+    const { cookie: cookieA } = await orchestrator.createAuthenticatedSession()
+    const { cookie: cookieB } = await orchestrator.createAuthenticatedSession({
       id: "usr_other_snooze",
       twitchUserId: "twitch_other_snooze",
     })
 
-    const res = await fetch(
-      `${orchestrator.baseUrl}/api/notifications/${deliveryId}/snooze`,
-      { method: "POST", headers: { Cookie: other.cookie } },
-    )
-    expect(res.status).toBe(404)
+    expect((await postSnooze(cookieA)).status).toBe(201)
+    expect((await postSnooze(cookieB)).status).toBe(201)
+
+    const state = await orchestrator.inspect([BROADCASTER_ID])
+    expect(state.notificationSnoozes).toHaveLength(2)
   })
 
-  it("should reject snoozing a delivery that was never sent", async () => {
+  it("should reject a payload missing category_id", async () => {
     const { cookie } = await orchestrator.createAuthenticatedSession()
-    await orchestrator.seed({
-      preferences: {
-        channel: [
-          {
-            broadcasterUserId: BROADCASTER_ID,
-            categoryId: MINECRAFT.id,
-            categoryName: MINECRAFT.name,
-          },
-        ],
-      },
-      // No push subscriptions seeded — the delivery resolves to `skipped`.
-    })
-    await orchestrator.seedChannelState([
-      { broadcasterUserId: BROADCASTER_ID, isLive: false },
-    ])
-    await mockStreamOnlineLookups()
-
-    await sendEventsubWebhook("stream.online", { event: streamOnlineEvent() })
-    const state = await orchestrator.waitForInspect([BROADCASTER_ID], (s) =>
-      s.notificationDeliveries.some((d) => d.status === "skipped"),
-    )
-    const deliveryId = state.notificationDeliveries[0].id
-
     const res = await fetch(
-      `${orchestrator.baseUrl}/api/notifications/${deliveryId}/snooze`,
-      { method: "POST", headers: { Cookie: cookie } },
+      `${orchestrator.baseUrl}/api/notifications/snooze`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Cookie: cookie },
+        body: JSON.stringify({ broadcaster_user_id: BROADCASTER_ID }),
+      },
     )
     expect(res.status).toBe(400)
   })
@@ -598,14 +545,17 @@ describe("notification snoozing", () => {
 
 describe("notification snooze sweep", () => {
   it("should re-send when the channel is still in the snoozed category", async () => {
-    const { deliveryId } = await seedSentDelivery("/push/snooze-sweep1")
-    // The re-send goes through the same per-user push path as the original.
+    await orchestrator.createAuthenticatedSession()
+    await orchestrator.seed({
+      pushSubscriptions: [
+        { endpoint: orchestrator.pushEndpoint("/push/snooze-sweep1") },
+      ],
+    })
     await orchestrator.mockTwitch.onPush("/push/snooze-sweep1")
     await orchestrator.seedNotificationSnoozes([
       {
         broadcasterUserId: BROADCASTER_ID,
         categoryId: MINECRAFT.id,
-        originalDeliveryId: deliveryId,
         fireAt: new Date(Date.now() - 1000).toISOString(),
       },
     ])
@@ -643,12 +593,11 @@ describe("notification snooze sweep", () => {
   })
 
   it("should expire the snooze when the channel left the category", async () => {
-    const { deliveryId } = await seedSentDelivery("/push/snooze-sweep2")
+    await orchestrator.createAuthenticatedSession()
     await orchestrator.seedNotificationSnoozes([
       {
         broadcasterUserId: BROADCASTER_ID,
         categoryId: MINECRAFT.id,
-        originalDeliveryId: deliveryId,
         fireAt: new Date(Date.now() - 1000).toISOString(),
       },
     ])
@@ -677,12 +626,11 @@ describe("notification snooze sweep", () => {
   })
 
   it("should expire the snooze when the stream ended", async () => {
-    const { deliveryId } = await seedSentDelivery("/push/snooze-sweep3")
+    await orchestrator.createAuthenticatedSession()
     await orchestrator.seedNotificationSnoozes([
       {
         broadcasterUserId: BROADCASTER_ID,
         categoryId: MINECRAFT.id,
-        originalDeliveryId: deliveryId,
         fireAt: new Date(Date.now() - 1000).toISOString(),
       },
     ])

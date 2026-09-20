@@ -65,9 +65,10 @@ self.addEventListener("push", (event) => {
       }
 
       const url = payload?.url || "/"
-      // ADR 0048: carried through to notification.data so notificationclick
-      // can snooze this specific delivery without a separate lookup.
-      const deliveryId = payload?.deliveryId || null
+      // ADR 0048: pass broadcaster/category through notification.data so
+      // notificationclick can snooze without a separate lookup.
+      const broadcasterUserId = payload?.broadcasterUserId || null
+      const categoryId = payload?.categoryId || null
       let title = FALLBACK_TITLE
       let body = FALLBACK_BODY
       let snoozeActionTitle = FALLBACK_SNOOZE_ACTION_TITLE
@@ -85,13 +86,15 @@ self.addEventListener("push", (event) => {
           snoozeActionTitle
       }
 
+      const canSnooze = Boolean(broadcasterUserId && categoryId)
+
       await rememberNotificationUrl(url)
       await self.registration.showNotification(title, {
         body,
         icon: "/icon.svg",
         badge: "/icon.svg",
-        data: { url, deliveryId },
-        actions: deliveryId
+        data: { url, broadcasterUserId, categoryId },
+        actions: canSnooze
           ? [{ action: "snooze", title: snoozeActionTitle }]
           : [],
       })
@@ -105,11 +108,16 @@ self.addEventListener("notificationclick", (event) => {
   // Snooze action (ADR 0048): fire-and-forget the reminder request instead
   // of focusing/opening a window — the user dismissed this one on purpose.
   if (event.action === "snooze") {
-    const deliveryId = event.notification.data?.deliveryId
-    if (deliveryId) {
+    const { broadcasterUserId, categoryId } = event.notification.data ?? {}
+    if (broadcasterUserId && categoryId) {
       event.waitUntil(
-        fetch(`/api/notifications/${deliveryId}/snooze`, {
+        fetch("/api/notifications/snooze", {
           method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            broadcaster_user_id: broadcasterUserId,
+            category_id: categoryId,
+          }),
         }).catch(() => {
           // Best-effort: if this fails, no reminder fires. There is no
           // notification left to retry from.

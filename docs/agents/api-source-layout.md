@@ -16,9 +16,9 @@ crons.ts                      — cron expressions for the scheduled jobs, mirro
                                 triggers.crons; own module so tests can import them
 types.ts                      — queue message contracts (TwitchEventQueueMessage is a discriminated
                                 union on eventType, ADR 0032; NotificationJobMessage carries the
-                                {titleKey, bodyKey, params, lang, url, deliveryId} payload, ADRs
-                                0034/0044/0048) + EventSub event wire shapes; SUPPORTED_LANGUAGES/
-                                Language (ADR 0044)
+                                {titleKey, bodyKey, params, lang, url, broadcasterUserId, categoryId}
+                                payload, ADRs 0034/0044/0048) + EventSub event wire shapes;
+                                SUPPORTED_LANGUAGES/Language (ADR 0044)
 db/
   client.ts                   — drizzle factory (no singleton)
   index.ts                    — Database class (wires all repositories)
@@ -35,8 +35,8 @@ db/
                                 skipped (ADRs 0008, 0034); trigger_type includes snooze_reminder
                                 (ADR 0048)
     notification-snoozes.ts   — NotificationSnoozesRepository; create/findDue/markFired/markExpired
-                                back the snooze sweep; findPendingByOriginalDeliveryId makes the
-                                snooze endpoint idempotent (ADR 0048)
+                                back the snooze sweep; findPendingByUserBroadcasterCategory makes the
+                                snooze endpoint idempotent per user/broadcaster/category (ADR 0048)
     followed-channels.ts      — FollowedChannelsRepository
     channel-state.ts          — ChannelStateRepository; inArray queries batch at 100 (D1 limit);
                                 updated_from_event_at backs the stale-event guard (ADR 0033)
@@ -67,9 +67,9 @@ http/
     me.ts                     — handleGetMe; adds twitch_reconnect_required (dead/missing refresh
                                 token, ADR 0036) to the user payload; handleUpdateLanguage (PATCH
                                 /me/language) sets the language preference (ADR 0044)
-    notifications.ts          — handleSnoozeNotification (POST /notifications/:deliveryId/snooze;
-                                idempotent, only a `sent` delivery owned by the caller is snoozable;
-                                ADR 0048)
+    notifications.ts          — handleCreateNotificationSnooze (POST /notifications/snooze, body
+                                {broadcaster_user_id, category_id}; idempotent per user/broadcaster/
+                                category, not tied to any notification_deliveries row; ADR 0048)
     push-subscriptions.ts     — handleGetVapidPublicKey, handleCreatePushSubscription (idempotent
                                 upsert by endpoint), handleDeletePushSubscription (soft revoke);
                                 lifecycle contract in ADR 0027

@@ -12,7 +12,6 @@ export interface InsertNotificationSnoozeInput {
   userId: string
   broadcasterUserId: string
   categoryId: string
-  originalDeliveryId: string
   fireAt: string
   now: string
 }
@@ -22,7 +21,6 @@ export interface NotificationSnoozeRecord {
   user_id: string
   broadcaster_user_id: string
   category_id: string
-  original_delivery_id: string
   fire_at: string
   status: string
   created_at: string
@@ -36,7 +34,6 @@ function toRecord(
     user_id: row.userId,
     broadcaster_user_id: row.broadcasterUserId,
     category_id: row.categoryId,
-    original_delivery_id: row.originalDeliveryId,
     fire_at: row.fireAt,
     status: row.status,
     created_at: row.createdAt,
@@ -58,7 +55,6 @@ export class NotificationSnoozesRepository {
       userId: input.userId,
       broadcasterUserId: input.broadcasterUserId,
       categoryId: input.categoryId,
-      originalDeliveryId: input.originalDeliveryId,
       fireAt: input.fireAt,
       status: "pending" as const,
       createdAt: input.now,
@@ -68,19 +64,23 @@ export class NotificationSnoozesRepository {
   }
 
   /**
-   * The `pending` snooze already scheduled for this delivery, if any — the
-   * snooze endpoint uses this to make a repeated click idempotent instead of
-   * stacking reminders (ADR 0048).
+   * The `pending` reminder already scheduled for this user/broadcaster/
+   * category, if any — the snooze endpoint uses this to make a repeated
+   * request idempotent instead of stacking reminders (ADR 0048).
    */
-  async findPendingByOriginalDeliveryId(
-    originalDeliveryId: string,
+  async findPendingByUserBroadcasterCategory(
+    userId: string,
+    broadcasterUserId: string,
+    categoryId: string,
   ): Promise<NotificationSnoozeRecord | null> {
     const row = await this.db
       .select()
       .from(notificationSnoozes)
       .where(
         and(
-          eq(notificationSnoozes.originalDeliveryId, originalDeliveryId),
+          eq(notificationSnoozes.userId, userId),
+          eq(notificationSnoozes.broadcasterUserId, broadcasterUserId),
+          eq(notificationSnoozes.categoryId, categoryId),
           eq(notificationSnoozes.status, "pending"),
         ),
       )

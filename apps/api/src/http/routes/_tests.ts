@@ -105,7 +105,6 @@ export interface SeedNotificationSnoozeInput {
   userId?: string
   broadcasterUserId: string
   categoryId: string
-  originalDeliveryId: string
   fireAt: string
   // Defaults to "pending" — tests exercising the sweep set this via fireAt
   // in the past rather than the status directly; "fired"/"expired" let a
@@ -287,7 +286,6 @@ export async function handleTestSeed(c: Context<HonoEnv>): Promise<Response> {
         userId: snooze.userId ?? userId,
         broadcasterUserId: snooze.broadcasterUserId,
         categoryId: snooze.categoryId,
-        originalDeliveryId: snooze.originalDeliveryId,
         fireAt: snooze.fireAt,
         now,
       })

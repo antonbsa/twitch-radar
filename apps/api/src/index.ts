@@ -18,7 +18,7 @@ import {
   handleAuthStart,
   handleLogout,
 } from "./http/routes/auth"
-import { handleSnoozeNotification } from "./http/routes/notifications"
+import { handleCreateNotificationSnooze } from "./http/routes/notifications"
 import {
   handleCreatePushSubscription,
   handleDeletePushSubscription,
@@ -88,11 +88,7 @@ function buildApp(includeTestSeam: boolean): Hono<HonoEnv> {
     requireAuth,
     handleDeleteGlobalPreference,
   )
-  api.post(
-    "/notifications/:deliveryId/snooze",
-    requireAuth,
-    handleSnoozeNotification,
-  )
+  api.post("/notifications/snooze", requireAuth, handleCreateNotificationSnooze)
   // Called by Twitch, not by users — authenticates via HMAC signature.
   api.post("/webhooks/twitch/eventsub", handleEventsubWebhook)
   api.get("/push/vapid-public-key", requireAuth, handleGetVapidPublicKey)

@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "c7f87cce-acd2-433f-b0b8-b4191d8ae624",
+  "id": "91f8e1fa-81a4-498b-b1c4-e104b5d6af0c",
   "prevId": "c0fb6349-5ede-45a0-bacd-4111800bfb80",
   "tables": {
     "channel_category_preferences": {
@@ -811,13 +811,6 @@
           "notNull": true,
           "autoincrement": false
         },
-        "original_delivery_id": {
-          "name": "original_delivery_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
         "fire_at": {
           "name": "fire_at",
           "type": "text",
@@ -849,10 +842,12 @@
           ],
           "isUnique": false
         },
-        "idx_notification_snoozes_user_id": {
-          "name": "idx_notification_snoozes_user_id",
+        "idx_notification_snoozes_user_broadcaster_category": {
+          "name": "idx_notification_snoozes_user_broadcaster_category",
           "columns": [
-            "user_id"
+            "user_id",
+            "broadcaster_user_id",
+            "category_id"
           ],
           "isUnique": false
         }
@@ -864,19 +859,6 @@
           "tableTo": "users",
           "columnsFrom": [
             "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "notification_snoozes_original_delivery_id_notification_deliveries_id_fk": {
-          "name": "notification_snoozes_original_delivery_id_notification_deliveries_id_fk",
-          "tableFrom": "notification_snoozes",
-          "tableTo": "notification_deliveries",
-          "columnsFrom": [
-            "original_delivery_id"
           ],
           "columnsTo": [
             "id"

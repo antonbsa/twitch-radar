@@ -1,3 +1,4 @@
+import { z } from "zod"
 import type { Context } from "hono"
 import type { HonoEnv } from "../../env"
 import { ApiError } from "../errors"
@@ -5,35 +6,32 @@ import { jsonResponse } from "../response"
 
 const SNOOZE_DURATION_MS = 15 * 60 * 1000
 
+const CreateSnoozeSchema = z.object({
+  broadcaster_user_id: z.string().min(1),
+  category_id: z.string().min(1),
+})
+
 /**
- * Schedules a snooze reminder for a delivered notification (ADR 0048): the
- * user asked to be reminded again in 15 minutes instead of dismissing. Only
- * the delivery's own user may snooze it, and only a delivery that actually
- * reached a device (`sent`) is snoozable. Idempotent — a repeated click
- * against a delivery that already has a pending snooze returns that row
- * instead of scheduling a second reminder.
+ * Creates a reminder for a broadcaster/category. Repeated requests while a
+ * matching pending snooze exists return that existing row instead of creating
+ * another one.
  */
-export async function handleSnoozeNotification(
+export async function handleCreateNotificationSnooze(
   c: Context<HonoEnv>,
 ): Promise<Response> {
-  const deliveryId = c.req.param("deliveryId")
-  const delivery = deliveryId
-    ? await c.var.db.notificationDeliveries.findById(deliveryId)
-    : null
-  if (!delivery || delivery.user_id !== c.var.userId) {
-    throw new ApiError(404, "not_found", "Notification delivery not found")
+  const body = await c.req.json().catch(() => null)
+  const parsed = CreateSnoozeSchema.safeParse(body)
+  if (!parsed.success) {
+    throw new ApiError(400, "invalid_request", "Invalid snooze payload")
   }
-  if (delivery.status !== "sent") {
-    throw new ApiError(
-      400,
-      "invalid_request",
-      "Only a sent notification can be snoozed",
-    )
-  }
+  const { broadcaster_user_id: broadcasterUserId, category_id: categoryId } =
+    parsed.data
 
   const existing =
-    await c.var.db.notificationSnoozes.findPendingByOriginalDeliveryId(
-      delivery.id,
+    await c.var.db.notificationSnoozes.findPendingByUserBroadcasterCategory(
+      c.var.userId,
+      broadcasterUserId,
+      categoryId,
     )
   if (existing) {
     return jsonResponse({ data: existing })
@@ -42,9 +40,8 @@ export async function handleSnoozeNotification(
   const now = new Date()
   const record = await c.var.db.notificationSnoozes.create({
     userId: c.var.userId,
-    broadcasterUserId: delivery.broadcaster_user_id,
-    categoryId: delivery.category_id,
-    originalDeliveryId: delivery.id,
+    broadcasterUserId,
+    categoryId,
     fireAt: new Date(now.getTime() + SNOOZE_DURATION_MS).toISOString(),
     now: now.toISOString(),
   })

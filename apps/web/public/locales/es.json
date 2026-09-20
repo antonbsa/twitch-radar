@@ -71,6 +71,9 @@
 
   "channel_detail.watch_on_twitch": "Ver en Twitch",
   "channel_detail.notifying_for_category": "Notificando",
+  "channel_detail.snooze_action": "Recordarme en 15m",
+  "channel_detail.snooze_done": "Recordatorio activado",
+  "channel_detail.snooze_error": "No se pudo activar el recordatorio. Inténtalo de nuevo.",
 
   "account.title": "Cuenta",
   "account.connected": "Conectado",

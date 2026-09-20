@@ -71,6 +71,9 @@
 
   "channel_detail.watch_on_twitch": "Watch on Twitch",
   "channel_detail.notifying_for_category": "Notifying",
+  "channel_detail.snooze_action": "Remind me in 15m",
+  "channel_detail.snooze_done": "Reminder set",
+  "channel_detail.snooze_error": "Could not set the reminder. Try again.",
 
   "account.title": "Account",
   "account.connected": "Connected",

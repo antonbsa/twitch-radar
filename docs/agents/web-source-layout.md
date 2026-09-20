@@ -34,6 +34,11 @@ components/
   full-screen-loader.tsx       — shared loading state for AuthGate
   add-channel-sheet.tsx        — channel picker that hands off to channel-preferences-sheet, for
                                  configuring a channel with no preferences yet
+  channel-detail-modal.tsx     — channel detail sheet (thumbnail, title, notify-for-category, Watch on
+                                 Twitch); renders a secondary "Remind me in 15m" button next to Watch
+                                 on Twitch whenever the channel is currently live (same condition as
+                                 notify-for-category) — POSTs broadcaster_user_id/category_id to
+                                 /notifications/snooze, independent of any notification (ADR 0048)
   language-selector.tsx        — Account page's language picker (en / pt-BR / es), built on ui/select.tsx
                                 (ADR 0044)
   ui/                          — shadcn/ui primitives (Button, Sheet, Input, Badge, Avatar, Select); copied
@@ -42,6 +47,8 @@ hooks/
   use-session-aware-mutation.ts — useMutation wrapper that marks the session expired on a 401
   use-push-notifications.ts    — push status state machine (checking/unsupported/denied/not-enabled/
                                 enabled) + enable/disable flows (T-005, ADR 0027)
+  use-notifications.ts         — useSnoozeNotification; POSTs /notifications/snooze with
+                                {broadcasterUserId, categoryId} (ADR 0048)
   use-channels.ts, use-preferences.ts, use-category-search.ts, use-debounced-value.ts
 lib/
   api.ts                       — fetch wrapper (api.get/api.post/api.patch/api.delete), same-origin
