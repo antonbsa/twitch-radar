@@ -3,9 +3,11 @@ import { nanoid } from "nanoid"
 import type { AppDatabase } from "../client"
 import { notificationDeliveries } from "../schema"
 
-// ADR 0008 trigger types for category notifications.
+// ADR 0008 trigger types for category notifications; snooze_reminder is a
+// user-requested re-send of a snoozed delivery (ADR 0048) — a distinct
+// trigger keeps it out of the original delivery's dedupe key.
 export type NotificationTriggerType =
-  "stream_started_in_category" | "switched_into_category"
+  "stream_started_in_category" | "switched_into_category" | "snooze_reminder"
 
 // Lifecycle: pending → sent | failed | skipped (ADR 0034).
 export type NotificationDeliveryStatus =

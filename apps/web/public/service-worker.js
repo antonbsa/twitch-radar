@@ -13,6 +13,7 @@
 const DEFAULT_LANGUAGE = "en"
 const FALLBACK_TITLE = "Twitch Radar"
 const FALLBACK_BODY = "A channel you follow has an update."
+const FALLBACK_SNOOZE_ACTION_TITLE = "Remind me in 15m"
 
 // WebKit on iOS is known to drop `event.notification.data` by the time
 // notificationclick fires for a web-pushed notification on an installed PWA
@@ -64,8 +65,13 @@ self.addEventListener("push", (event) => {
       }
 
       const url = payload?.url || "/"
+      // ADR 0048: pass broadcaster/category through notification.data so
+      // notificationclick can snooze without a separate lookup.
+      const broadcasterUserId = payload?.broadcasterUserId || null
+      const categoryId = payload?.categoryId || null
       let title = FALLBACK_TITLE
       let body = FALLBACK_BODY
+      let snoozeActionTitle = FALLBACK_SNOOZE_ACTION_TITLE
 
       if (payload?.titleKey && payload?.bodyKey) {
         const catalog = await loadCatalog(payload.lang || DEFAULT_LANGUAGE)
@@ -75,14 +81,22 @@ self.addEventListener("push", (event) => {
           catalog && interpolate(catalog[payload.bodyKey], payload.params)
         title = resolvedTitle || title
         body = resolvedBody || body
+        snoozeActionTitle =
+          (catalog && catalog["notification.snooze_action"]) ||
+          snoozeActionTitle
       }
+
+      const canSnooze = Boolean(broadcasterUserId && categoryId)
 
       await rememberNotificationUrl(url)
       await self.registration.showNotification(title, {
         body,
         icon: "/icon.svg",
         badge: "/icon.svg",
-        data: { url },
+        data: { url, broadcasterUserId, categoryId },
+        actions: canSnooze
+          ? [{ action: "snooze", title: snoozeActionTitle }]
+          : [],
       })
     })(),
   )
@@ -90,6 +104,28 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close()
+
+  // Snooze action (ADR 0048): fire-and-forget the reminder request instead
+  // of focusing/opening a window — the user dismissed this one on purpose.
+  if (event.action === "snooze") {
+    const { broadcasterUserId, categoryId } = event.notification.data ?? {}
+    if (broadcasterUserId && categoryId) {
+      event.waitUntil(
+        fetch("/api/notifications/snooze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            broadcaster_user_id: broadcasterUserId,
+            category_id: categoryId,
+          }),
+        }).catch(() => {
+          // Best-effort: if this fails, no reminder fires. There is no
+          // notification left to retry from.
+        }),
+      )
+    }
+    return
+  }
 
   event.waitUntil(
     (async () => {

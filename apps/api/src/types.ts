@@ -48,17 +48,17 @@ export type TwitchEventQueueMessage = TwitchEventQueueMessageBase &
 export const SUPPORTED_LANGUAGES = ["en", "pt-BR", "es"] as const
 export type Language = (typeof SUPPORTED_LANGUAGES)[number]
 
-// Web Push payload contract shared with the service worker
-// (apps/web/public/service-worker.js, ADR 0044). The service worker resolves
-// titleKey/bodyKey against the shared locale catalog (apps/web/public/locales)
-// in the recipient's `lang`, interpolating `params` into the resolved
-// template. The API never embeds translated text, only semantic keys.
+// Shared web-push payload contract. The service worker resolves the title/body
+// keys using the recipient locale and includes broadcaster/category identifiers
+// so a notification click can schedule a reminder without referencing a delivery.
 export interface NotificationPayload {
   titleKey: string
   bodyKey: string
   params: Record<string, string>
   lang: Language
   url: string
+  broadcasterUserId: string
+  categoryId: string
 }
 
 // Queue payload contract for NOTIFICATION_JOBS_QUEUE (ADR 0034). The payload

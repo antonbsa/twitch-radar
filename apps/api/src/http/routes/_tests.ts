@@ -12,6 +12,7 @@ import {
   globalCategoryPreferences,
   monitoredChannels,
   notificationDeliveries,
+  notificationSnoozes,
   pushSubscriptions,
   twitchTokens,
   users,
@@ -99,6 +100,17 @@ export interface SeedPushSubscriptionInput {
   revoked?: boolean
 }
 
+export interface SeedNotificationSnoozeInput {
+  userId?: string
+  broadcasterUserId: string
+  categoryId: string
+  fireAt: string
+  // Defaults to "pending" — tests exercising the sweep set this via fireAt
+  // in the past rather than the status directly; "fired"/"expired" let a
+  // test seed a snooze already past its lifecycle without running the sweep.
+  status?: "pending" | "fired" | "expired"
+}
+
 export interface SeedRequestBody {
   user?: SeedUserInput
   followedChannels?: SeedFollowedChannelInput[]
@@ -107,6 +119,7 @@ export interface SeedRequestBody {
   eventsubSubscriptions?: SeedEventsubSubscriptionInput[]
   monitoredChannels?: SeedMonitoredChannelInput[]
   pushSubscriptions?: SeedPushSubscriptionInput[]
+  notificationSnoozes?: SeedNotificationSnoozeInput[]
 }
 
 export interface SeedResponse {
@@ -266,6 +279,23 @@ export async function handleTestSeed(c: Context<HonoEnv>): Promise<Response> {
     }
   }
 
+  if (body.notificationSnoozes?.length) {
+    for (const snooze of body.notificationSnoozes) {
+      const record = await c.var.db.notificationSnoozes.create({
+        userId: snooze.userId ?? userId,
+        broadcasterUserId: snooze.broadcasterUserId,
+        categoryId: snooze.categoryId,
+        fireAt: snooze.fireAt,
+        now,
+      })
+      if (snooze.status === "fired") {
+        await c.var.db.notificationSnoozes.markFired(record.id)
+      } else if (snooze.status === "expired") {
+        await c.var.db.notificationSnoozes.markExpired(record.id)
+      }
+    }
+  }
+
   return jsonResponse({ userId, session } satisfies SeedResponse)
 }
 
@@ -301,6 +331,7 @@ export interface ResetRequestBody {
 }
 
 const ALL_TABLES = [
+  "notification_snoozes",
   "notification_deliveries",
   "global_category_preferences",
   "channel_category_preferences",
@@ -347,6 +378,10 @@ export async function handleTestReset(c: Context<HonoEnv>): Promise<Response> {
   // FK-dependent tables first, then users, then the broadcaster-keyed tables
   // (channel_state is monitored globally across users, see ADR 0007, so it's
   // scoped by the E2E_BROADCASTER_PREFIX convention instead of a user id).
+  await db
+    .delete(notificationSnoozes)
+    .where(eq(notificationSnoozes.userId, E2E_USER_ID))
+    .run()
   await db
     .delete(notificationDeliveries)
     .where(eq(notificationDeliveries.userId, E2E_USER_ID))
@@ -420,17 +455,25 @@ export async function handleTestInspect(
   const body = await readJsonBody<InspectRequestBody>(c)
   const ids = body.broadcasterUserIds ?? []
 
-  const [monitored, eventsub, state, stateChanges, deliveries, pushSubs] =
-    await Promise.all([
-      c.var.db.monitoredChannels.findByBroadcasterUserIds(ids),
-      c.var.db.eventsubSubscriptions.findByBroadcasterUserIds(ids),
-      c.var.db.channelState.findByBroadcasterUserIds(ids),
-      c.var.db.channelStateChanges.findByBroadcasterUserIds(ids),
-      c.var.db.notificationDeliveries.findByBroadcasterUserIds(ids),
-      body.userId
-        ? c.var.db.pushSubscriptions.listByUserId(body.userId)
-        : Promise.resolve([]),
-    ])
+  const [
+    monitored,
+    eventsub,
+    state,
+    stateChanges,
+    deliveries,
+    snoozes,
+    pushSubs,
+  ] = await Promise.all([
+    c.var.db.monitoredChannels.findByBroadcasterUserIds(ids),
+    c.var.db.eventsubSubscriptions.findByBroadcasterUserIds(ids),
+    c.var.db.channelState.findByBroadcasterUserIds(ids),
+    c.var.db.channelStateChanges.findByBroadcasterUserIds(ids),
+    c.var.db.notificationDeliveries.findByBroadcasterUserIds(ids),
+    c.var.db.notificationSnoozes.findByBroadcasterUserIds(ids),
+    body.userId
+      ? c.var.db.pushSubscriptions.listByUserId(body.userId)
+      : Promise.resolve([]),
+  ])
 
   return jsonResponse({
     monitoredChannels: monitored,
@@ -438,6 +481,7 @@ export async function handleTestInspect(
     channelState: state,
     channelStateChanges: stateChanges,
     notificationDeliveries: deliveries,
+    notificationSnoozes: snoozes,
     pushSubscriptions: pushSubs,
   })
 }

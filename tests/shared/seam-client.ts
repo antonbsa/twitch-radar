@@ -5,6 +5,7 @@ import type {
   SeedEventsubSubscriptionInput,
   SeedFollowedChannelInput,
   SeedMonitoredChannelInput,
+  SeedNotificationSnoozeInput,
   SeedPreferencesInput,
   SeedPushSubscriptionInput,
   SeedRequestBody,
@@ -16,6 +17,7 @@ import type { ChannelStateChangeRecord } from "../../apps/api/src/db/repositorie
 import type { EventsubSubscriptionRecord } from "../../apps/api/src/db/repositories/eventsub-subscriptions"
 import type { MonitoredChannelRecord } from "../../apps/api/src/db/repositories/monitored-channels"
 import type { NotificationDeliveryRecord } from "../../apps/api/src/db/repositories/notification-deliveries"
+import type { NotificationSnoozeRecord } from "../../apps/api/src/db/repositories/notification-snoozes"
 import type { PushSubscriptionRecord } from "../../apps/api/src/types"
 
 export {
@@ -28,6 +30,7 @@ export type {
   SeedEventsubSubscriptionInput,
   SeedFollowedChannelInput,
   SeedMonitoredChannelInput,
+  SeedNotificationSnoozeInput,
   SeedPreferencesInput,
   SeedPushSubscriptionInput,
   SeedRequestBody,
@@ -40,6 +43,7 @@ export interface InspectResponse {
   channelState: ChannelStateRecord[]
   channelStateChanges: ChannelStateChangeRecord[]
   notificationDeliveries: NotificationDeliveryRecord[]
+  notificationSnoozes: NotificationSnoozeRecord[]
   // Only populated when the inspect call passes a userId.
   pushSubscriptions: PushSubscriptionRecord[]
 }
@@ -139,6 +143,12 @@ export function createSeamClient({ baseUrl }: SeamClientOptions) {
       subscriptions: SeedEventsubSubscriptionInput[],
     ): Promise<void> {
       await seed({ eventsubSubscriptions: subscriptions })
+    },
+
+    async seedNotificationSnoozes(
+      snoozes: SeedNotificationSnoozeInput[],
+    ): Promise<void> {
+      await seed({ notificationSnoozes: snoozes })
     },
 
     /** Reads broadcaster-keyed monitoring state the public API never exposes. */

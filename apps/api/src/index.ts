@@ -19,6 +19,10 @@ import {
   handleLogout,
 } from "./http/routes/auth"
 import {
+  handleCreateNotificationSnooze,
+  handleListNotificationSnoozes,
+} from "./http/routes/notifications"
+import {
   handleCreatePushSubscription,
   handleDeletePushSubscription,
   handleGetVapidPublicKey,
@@ -37,6 +41,7 @@ import { processTwitchEventMessage } from "./services/eventsub/process"
 import { reconcileEventsubSubscriptions } from "./services/eventsub/reconcile"
 import { matchAndCreateDeliveries } from "./services/notifications/match"
 import { deliverNotification } from "./services/notifications/deliver"
+import { sweepNotificationSnoozes } from "./services/notifications/snooze-sweep"
 import { refreshExpiringTwitchTokens } from "./services/twitch/token-refresh"
 import { syncStaleFollows } from "./services/twitch/sync"
 import type { NotificationJobMessage, TwitchEventQueueMessage } from "./types"
@@ -86,6 +91,8 @@ function buildApp(includeTestSeam: boolean): Hono<HonoEnv> {
     requireAuth,
     handleDeleteGlobalPreference,
   )
+  api.post("/notifications/snooze", requireAuth, handleCreateNotificationSnooze)
+  api.get("/notifications/snoozes", requireAuth, handleListNotificationSnoozes)
   // Called by Twitch, not by users — authenticates via HMAC signature.
   api.post("/webhooks/twitch/eventsub", handleEventsubWebhook)
   api.get("/push/vapid-public-key", requireAuth, handleGetVapidPublicKey)
@@ -215,7 +222,11 @@ export default {
   // Cron fan-out (ADR 0036): each schedule owns one job so a slow or failing
   // job can't starve the others' subrequest budget, and tests can trigger
   // each in isolation via `/__scheduled?cron=...`. The default branch keeps
-  // the minutely pending-subscription creation (ADR 0031).
+  // the minutely pending-subscription creation (ADR 0031) and also runs the
+  // notification snooze sweep (ADR 0048): the account-wide cron trigger cap
+  // (5, already fully consumed by production + preview) leaves no free slot
+  // for the sweep's own schedule, and it wants a minutely cadence anyway to
+  // keep the 15-minute snooze window tight.
   async scheduled(controller: ScheduledController, env: Env): Promise<void> {
     // Each job function below already has its own top-level try/catch, so
     // this only remains a backstop for failures before dispatch (e.g.
@@ -239,11 +250,8 @@ export default {
         case CRON_FOLLOW_SYNC:
           return await syncStaleFollows(db, config)
         default:
-          return await createPendingEventsubSubscriptions(
-            db,
-            config,
-            env.KV_APP_CACHE,
-          )
+          await createPendingEventsubSubscriptions(db, config, env.KV_APP_CACHE)
+          return await sweepNotificationSnoozes(db, env.NOTIFICATION_JOBS_QUEUE)
       }
     } catch (error) {
       logger.error("Scheduled job failed", {

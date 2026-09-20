@@ -70,6 +70,10 @@
 
   "channel_detail.watch_on_twitch": "Ver en Twitch",
   "channel_detail.notifying_for_category": "Notificando",
+  "channel_detail.snooze_action": "Recordarme en 15m",
+  "channel_detail.snooze_done": "Recordatorio activado",
+  "channel_detail.snooze_error": "No se pudo activar el recordatorio. Inténtalo de nuevo.",
+  "channel_detail.snooze_toast": "Serás notificado en 15 min si {channelName} sigue transmitiendo {categoryName}.",
 
   "account.title": "Cuenta",
   "account.connected": "Conectado",
@@ -104,5 +108,8 @@
   "notification.stream_started_in_category.title": "{broadcasterName} está transmitiendo {categoryName}",
   "notification.stream_started_in_category.body": "{broadcasterName} acaba de empezar a transmitir una categoría que sigues.",
   "notification.switched_into_category.title": "{broadcasterName} cambió a {categoryName}",
-  "notification.switched_into_category.body": "{broadcasterName} ahora está transmitiendo una categoría que sigues."
+  "notification.switched_into_category.body": "{broadcasterName} ahora está transmitiendo una categoría que sigues.",
+  "notification.snooze_reminder.title": "{broadcasterName} sigue transmitiendo {categoryName}",
+  "notification.snooze_reminder.body": "Recordatorio: {broadcasterName} sigue transmitiendo una categoría que sigues.",
+  "notification.snooze_action": "Recordarme en 15m"
 }

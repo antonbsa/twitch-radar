@@ -15,16 +15,16 @@ const TRIGGER_BY_CHANGE_TYPE: Partial<Record<string, NotificationTriggerType>> =
     category_changed: "switched_into_category",
   }
 
-// ADR 0044: the API never builds translated text, only a semantic key pair
-// (resolved against apps/web/public/locales/<lang>.json by the web app and
-// the service worker) plus interpolation params and the recipient's
-// language. Key names reuse the trigger type as the catalog namespace.
+// ADR 0044: payloads carry only i18n keys, params, and the recipient's
+// language; broadcaster/category IDs ride along so snoozing can schedule a
+// reminder without referencing a specific delivery (ADR 0048).
 function buildPayload(
   trigger: NotificationTriggerType,
   broadcasterName: string,
   categoryName: string,
   lang: Language,
   broadcasterUserId: string,
+  categoryId: string,
 ): NotificationPayload {
   return {
     titleKey: `notification.${trigger}.title`,
@@ -32,6 +32,8 @@ function buildPayload(
     params: { broadcasterName, categoryName },
     lang,
     url: `/channels?broadcaster=${broadcasterUserId}`,
+    broadcasterUserId,
+    categoryId,
   }
 }
 
@@ -122,6 +124,7 @@ export async function matchAndCreateDeliveries(
         categoryName,
         languageByUserId.get(userId) ?? "en",
         broadcasterUserId,
+        categoryId,
       )
       await queue.send({ deliveryId: delivery.id, userId, payload })
     }

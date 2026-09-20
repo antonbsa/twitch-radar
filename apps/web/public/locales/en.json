@@ -70,6 +70,10 @@
 
   "channel_detail.watch_on_twitch": "Watch on Twitch",
   "channel_detail.notifying_for_category": "Notifying",
+  "channel_detail.snooze_action": "Remind me in 15m",
+  "channel_detail.snooze_done": "Reminder set",
+  "channel_detail.snooze_error": "Could not set the reminder. Try again.",
+  "channel_detail.snooze_toast": "You'll be notified in 15m if {channelName} is still streaming {categoryName}.",
 
   "account.title": "Account",
   "account.connected": "Connected",
@@ -104,5 +108,8 @@
   "notification.stream_started_in_category.title": "{broadcasterName} is streaming {categoryName}",
   "notification.stream_started_in_category.body": "{broadcasterName} just started streaming a category you follow.",
   "notification.switched_into_category.title": "{broadcasterName} switched to {categoryName}",
-  "notification.switched_into_category.body": "{broadcasterName} is now streaming a category you follow."
+  "notification.switched_into_category.body": "{broadcasterName} is now streaming a category you follow.",
+  "notification.snooze_reminder.title": "{broadcasterName} is still streaming {categoryName}",
+  "notification.snooze_reminder.body": "Reminder: {broadcasterName} is still streaming a category you follow.",
+  "notification.snooze_action": "Remind me in 15m"
 }

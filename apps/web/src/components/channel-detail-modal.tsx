@@ -1,10 +1,13 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
+  AlarmClockCheckIcon,
+  AlarmClockIcon,
   BellCheckIcon,
   BellIcon,
   ExternalLinkIcon,
   Loader2Icon,
 } from "lucide-react"
+import { toast } from "sonner"
 import {
   Sheet,
   SheetContent,
@@ -13,6 +16,11 @@ import {
 } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/context/language-context"
+import {
+  useNotificationSnoozes,
+  useSnoozeNotification,
+} from "@/hooks/use-notifications"
+import { interpolateNodes } from "@/lib/i18n-react"
 import {
   useAddChannelPreference,
   usePreferences,
@@ -59,15 +67,34 @@ export function ChannelDetailModal({
   channel,
   onOpenChange,
 }: ChannelDetailModalProps) {
-  const { t } = useLanguage()
+  const { t, tRaw } = useLanguage()
   const { data: preferences } = usePreferences()
   const addPreference = useAddChannelPreference()
   const push = usePushNotifications()
+  const snoozeNotification = useSnoozeNotification()
+  const { data: pendingSnoozes } = useNotificationSnoozes()
+
+  // Each open is a fresh channel — drop any pending/success/error state left
+  // over from a previous one before it's shown for a new broadcaster.
+  const resetSnooze = snoozeNotification.reset
+  useEffect(() => {
+    resetSnooze()
+  }, [channel?.broadcaster_user_id, resetSnooze])
 
   const liveCategory =
     channel?.is_live && channel.category_id && channel.category_name
       ? { id: channel.category_id, name: channel.category_name }
       : null
+
+  // Only one pending reminder per broadcaster/category is allowed.
+  const hasPendingSnooze =
+    liveCategory !== null &&
+    (pendingSnoozes ?? []).some(
+      (snooze) =>
+        snooze.broadcaster_user_id === channel?.broadcaster_user_id &&
+        snooze.category_id === liveCategory.id,
+    )
+  const isSnoozed = snoozeNotification.isSuccess || hasPendingSnooze
 
   const isNotifyingForCategory =
     liveCategory !== null &&
@@ -165,20 +192,79 @@ export function ChannelDetailModal({
           )}
 
           {channel && (
-            <Button
-              size="lg"
-              asChild
-              className="w-full cursor-pointer sm:mx-auto sm:flex sm:w-fit sm:max-w-xs"
-            >
-              <a
-                href={`https://twitch.tv/${channel.broadcaster_login}`}
-                target="_blank"
-                rel="noreferrer"
+            <div className="flex flex-col gap-2 sm:mx-auto sm:flex-row sm:justify-center">
+              {liveCategory &&
+                (isSnoozed ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="lg"
+                    disabled
+                    className="w-full gap-1.5 sm:w-fit sm:max-w-xs"
+                  >
+                    <AlarmClockCheckIcon />
+                    {t("channel_detail.snooze_done")}
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="lg"
+                    disabled={snoozeNotification.isPending}
+                    className="w-full cursor-pointer gap-1.5 sm:w-fit sm:max-w-xs"
+                    onClick={() =>
+                      snoozeNotification.mutate(
+                        {
+                          broadcasterUserId: channel.broadcaster_user_id,
+                          categoryId: liveCategory.id,
+                        },
+                        {
+                          onSuccess: () =>
+                            toast(
+                              interpolateNodes(
+                                tRaw("channel_detail.snooze_toast"),
+                                {
+                                  channelName: (
+                                    <strong>
+                                      {channel.broadcaster_display_name}
+                                    </strong>
+                                  ),
+                                  categoryName: (
+                                    <strong>{liveCategory.name}</strong>
+                                  ),
+                                },
+                              ),
+                            ),
+                        },
+                      )
+                    }
+                  >
+                    <AlarmClockIcon />
+                    {t("channel_detail.snooze_action")}
+                  </Button>
+                ))}
+
+              <Button
+                size="lg"
+                asChild
+                className="w-full cursor-pointer sm:w-fit sm:max-w-xs"
               >
-                {t("channel_detail.watch_on_twitch")}
-                <ExternalLinkIcon data-icon="inline-end" />
-              </a>
-            </Button>
+                <a
+                  href={`https://twitch.tv/${channel.broadcaster_login}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {t("channel_detail.watch_on_twitch")}
+                  <ExternalLinkIcon data-icon="inline-end" />
+                </a>
+              </Button>
+            </div>
+          )}
+
+          {snoozeNotification.isError && (
+            <p className="text-center text-xs text-destructive">
+              {t("channel_detail.snooze_error")}
+            </p>
           )}
         </div>
       </SheetContent>
