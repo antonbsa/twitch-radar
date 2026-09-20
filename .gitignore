@@ -6,5 +6,6 @@ dist/
 .agents/
 *.tsbuildinfo
 test-results/
+tests/web/e2e/scratch/
 wrangler.generated-*.jsonc
 .claude/settings.local.json
