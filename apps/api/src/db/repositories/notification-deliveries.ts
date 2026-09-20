@@ -74,6 +74,18 @@ export class NotificationDeliveriesRepository {
   async insertPendingIfNew(
     input: InsertNotificationDeliveryInput,
   ): Promise<NotificationDeliveryRecord | null> {
+    // SQLite treats NULLs in a unique index as distinct, so a null stream_id
+    // would bypass the dedupe check. Current callers always pass a real
+    // stream_id, so this guard fails loudly instead of silently allowing a
+    // duplicate pending delivery.
+    if (input.streamId === null) {
+      throw new Error(
+        `insertPendingIfNew: streamId is required to guarantee dedupe (would ` +
+          `use key userId=${input.userId}, broadcasterUserId=${input.broadcasterUserId}, ` +
+          `categoryId=${input.categoryId}, triggerType=${input.triggerType})`,
+      )
+    }
+
     await this.db
       .insert(notificationDeliveries)
       .values({

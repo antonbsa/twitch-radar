@@ -76,9 +76,10 @@ http/
     push-subscriptions.ts     — handleGetVapidPublicKey, handleCreatePushSubscription (idempotent
                                 upsert by endpoint), handleDeletePushSubscription (soft revoke);
                                 lifecycle contract in ADR 0027
-    sync.ts                   — handleSyncFollows; 429 sync_rate_limited via services/sync-cooldown.ts
+    sync.ts                   — handleSyncFollows
     webhooks.ts               — handleEventsubWebhook (HMAC verify against raw body, challenge/
-                                revocation handling, KV message-id dedupe, enqueue; ADR 0032)
+                                revocation handling, enqueue; dedup is solely the consumer's D1
+                                check on eventsub_message_id, ADR 0032)
     _tests.ts                  — handleTestReset, handleTestSeed, handleTestInspect (reads
                                 broadcaster-keyed monitoring state); test-seam shared by both test
                                 tiers (tests/api and tests/web/e2e via tests/shared/seam-client.ts).
@@ -88,9 +89,6 @@ services/
   crypto.ts                   — encryptToken, decryptToken (AES-256-GCM via Web Crypto)
   session.ts                  — createSession, getSession, deleteSession, deleteSessionsForUser,
                                 OAuth state helpers
-  sync-cooldown.ts            — getSyncCooldownRemaining/startSyncCooldown/clearSyncCooldown; KV
-                                TTL'd per-user cooldown key (60s) guarding POST /sync/follows
-                                against repeat clicks, same idiom as session.ts
   monitoring.ts               — ensureMonitoredBroadcasters (upsert monitored_channels, stage
                                 pending eventsub rows, fill-only channel_state seeding),
                                 cleanupMonitoringForBroadcasters (ADR 0030), and

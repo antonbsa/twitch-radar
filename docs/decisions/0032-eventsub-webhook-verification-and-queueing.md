@@ -14,15 +14,15 @@ ADR 0004 requires the webhook handler to verify HMAC signatures against the raw 
 - **Message types** (`Twitch-Eventsub-Message-Type`):
   - `webhook_callback_verification` → respond `200 text/plain` with the raw `challenge` string, and mark the local subscription row `enabled` (ADR 0031).
   - `revocation` → record Twitch's status + `revoked_at` on the local row, respond `204`.
-  - `notification` → dedupe, enqueue, respond `204`. Notifications for event types this app never subscribes to are acknowledged with `204` (and logged) without enqueueing, so Twitch doesn't retry them.
+  - `notification` → enqueue unconditionally, respond `204`. Notifications for event types this app never subscribes to are acknowledged with `204` (and logged) without enqueueing, so Twitch doesn't retry them.
   - unknown types → `204`, logged.
-- **Dedupe at the webhook is best-effort:** KV key `eventsub:msg:<message id>` with a 10-minute TTL, checked before enqueue and written after. It exists to spare the queue from Twitch's retries; the _hard_ idempotency guarantee is the consumer's unique `channel_state_changes.eventsub_message_id` (ADR 0033), because KV is eventually consistent across edges.
+- **Dedupe is solely the consumer's D1 check:** the webhook enqueues every verified `notification` without a dedupe step of its own. The _hard_ idempotency guarantee is, and always was, the consumer's unique `channel_state_changes.eventsub_message_id` lookup (`findByEventsubMessageId` + no-op `insertIfNew`, ADR 0033). An earlier version of this ADR also required a best-effort webhook-level dedupe (KV key `eventsub:msg:<message id>`, 10-minute TTL) checked before enqueue. That layer was removed (issue #76): it was redundant with the D1 guarantee that already held, it did not even reliably avoid a duplicate enqueue because KV is eventually consistent across edges, and its one `KV_APP_CACHE.put` per notification was the single largest contributor to the account's KV free-tier write quota (channel.update firing repeatedly during a live stream, doubled across the production and preview deployments).
 - **Queue payload** (`TWITCH_EVENTS_QUEUE`, typed as `TwitchEventQueueMessage`): `{ messageId, eventType, messageTimestamp, receivedAt, event }` — a discriminated union on `eventType` carrying the parsed `event` object. `messageId` is the idempotency key; `messageTimestamp` (the Twitch header) drives stale-event ordering. The `subscription` envelope is not forwarded; nothing downstream needs it.
 - **Ack semantics:** the events queue consumer acks/retries per message (not per batch), and its `max_batch_timeout` is 1 second — alerts are time-sensitive, so events are not held back waiting for a fuller batch.
 
 ## Consequences
 
 - The route performs no authentication middleware; the HMAC signature is the authentication.
-- All state mutation happens in the consumer; the webhook path does only verification, one KV read/write, and one queue send, keeping the response inside Twitch's timeout comfortably.
-- A duplicate delivered to a different edge than the original can slip past the KV check and be enqueued twice; the consumer-level guard makes that harmless.
+- All state mutation happens in the consumer; the webhook path does only verification and one queue send, keeping the response inside Twitch's timeout comfortably and touching no KV binding at all.
+- A duplicate Twitch delivery (retry or cross-edge redelivery) now always costs an extra queue message instead of being cut at the edge; the consumer-level guard makes that harmless, and the Queues free tier (1M operations/month) absorbs it as a rounding error at current volume.
 - Signed-but-malformed JSON returns `400 invalid_request`; Twitch treats non-2xx as a delivery failure and retries, which is the correct behavior if that ever happens.

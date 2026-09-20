@@ -13,7 +13,6 @@
 
   "channels.title": "Channels",
   "channels.sync": "Sync",
-  "channels.sync_rate_limited": "Synced recently. Try again in a bit",
   "channels.load_error": "Failed to load channels. Try syncing or reload the page.",
   "channels.empty": "No followed channels yet. Sync to pull your Twitch follows.",
   "channels.live": "Live",

@@ -243,7 +243,6 @@ export const orchestrator = {
   seedChannelState: seam.seedChannelState,
   seedEventsubSubscriptions: seam.seedEventsubSubscriptions,
   seedNotificationSnoozes: seam.seedNotificationSnoozes,
-  clearSyncCooldown: seam.clearSyncCooldown,
   inspect: (broadcasterUserIds: string[], userId?: string) =>
     seam.inspect(broadcasterUserIds, userId),
   runScheduled,
