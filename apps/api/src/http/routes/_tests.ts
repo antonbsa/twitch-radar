@@ -293,10 +293,6 @@ function generateAuthSecret(): string {
 
 export interface ResetRequestBody {
   sessionId?: string
-  // Backdates a user's followed-channel last_synced_at rows so a subsequent
-  // sync isn't rejected by the cooldown derived from it (ADR 0032) - for
-  // tests that need consecutive syncs within the same cooldown window.
-  cooldownUserId?: string
   // "e2e" (default) removes only the E2E user's rows and E2E-prefixed
   // broadcaster state, preserving any manually-created data in the same DB.
   // "all" wipes every table; it exists for the API test tier, which runs
@@ -327,25 +323,12 @@ async function deleteAllSessions(kv: KVNamespace): Promise<void> {
   } while (cursor)
 }
 
-// Deliberately before any real sync could have happened, so a subsequent
-// sync's cooldown check (last_synced_at within SYNC_COOLDOWN_TTL_S) never
-// trips regardless of that constant's value.
-const SYNC_COOLDOWN_BACKDATE_ISO = new Date(0).toISOString()
-
 export async function handleTestReset(c: Context<HonoEnv>): Promise<Response> {
   const body = await readJsonBody<ResetRequestBody>(c)
 
   // Revoking a single session (simulating mid-session expiry) never touches D1.
   if (body.sessionId) {
     await deleteSession(c.env.KV_APP_CACHE, body.sessionId)
-    return new Response(null, { status: 204 })
-  }
-
-  if (body.cooldownUserId) {
-    await c.var.db.followedChannels.backdateLastSyncedAt(
-      body.cooldownUserId,
-      SYNC_COOLDOWN_BACKDATE_ISO,
-    )
     return new Response(null, { status: 204 })
   }
 

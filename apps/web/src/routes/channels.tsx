@@ -17,12 +17,8 @@ import {
   deriveLiveCategories,
   type ChannelFilters,
 } from "@/lib/channel-filters"
-import { ApiRequestError } from "@/lib/errors"
 import { cn } from "@/lib/utils"
 import type { FollowedChannel } from "@/types/channel"
-
-// How long the rate-limit label stays fully visible before it starts fading out.
-const SYNC_RATE_LIMIT_LABEL_HOLD_MS = 2500
 
 export function ChannelsPage() {
   const { data: channels, isLoading, isError } = useFollowedChannels()
@@ -57,20 +53,6 @@ export function ChannelsPage() {
     setFilters((current) => ({ ...current, ...patch }))
   }
 
-  // Tracked separately from syncFollows.error, which resets to null on every
-  // mutate() call — deriving visibility from it directly would blink the label.
-  const [syncRateLimited, setSyncRateLimited] = useState(false)
-  // Whether the label is fading/faded out. Retriggering while still false
-  // (label fully visible) is a no-op, so the fade-in only replays once faded.
-  const [labelFaded, setLabelFaded] = useState(false)
-  const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  useEffect(() => {
-    return () => {
-      if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current)
-    }
-  }, [])
-
   useEffect(() => {
     if (appliedDeepLinkRef.current) return
     if (!channels) return
@@ -95,43 +77,11 @@ export function ChannelsPage() {
     )
   }, [channels, searchParams, setSearchParams])
 
-  useEffect(() => {
-    if (syncFollows.status === "success") {
-      setSyncRateLimited(false)
-      if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current)
-    } else if (syncFollows.status === "error") {
-      const isRateLimited =
-        syncFollows.error instanceof ApiRequestError &&
-        syncFollows.error.code === "sync_rate_limited"
-      setSyncRateLimited(isRateLimited)
-      if (isRateLimited) {
-        setLabelFaded(false)
-        if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current)
-        hideTimeoutRef.current = setTimeout(
-          () => setLabelFaded(true),
-          SYNC_RATE_LIMIT_LABEL_HOLD_MS,
-        )
-      }
-    }
-  }, [syncFollows.status, syncFollows.error])
-
   return (
     <div>
       <div className="flex items-center justify-between px-4 py-3">
         <h1 className="text-lg font-semibold">{t("channels.title")}</h1>
         <div className="flex items-center gap-2">
-          {syncRateLimited && (
-            <span
-              className={cn(
-                "text-xs text-muted-foreground transition-opacity",
-                labelFaded
-                  ? "opacity-0 duration-800"
-                  : "opacity-100 duration-200",
-              )}
-            >
-              {t("channels.sync_rate_limited")}
-            </span>
-          )}
           <Button
             variant="outline"
             size="sm"
