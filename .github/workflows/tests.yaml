@@ -8,6 +8,8 @@ on:
       - "**/*.md"
       - "docs/**"
       - "specs/**"
+      - ".claude/**"
+      - ".gitignore"
   push:
     branches:
       - main
@@ -15,11 +17,13 @@ on:
       - "**/*.md"
       - "docs/**"
       - "specs/**"
+      - ".claude/**"
+      - ".gitignore"
 
 jobs:
   api:
     name: API tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - name: Set up Node.js
@@ -34,7 +38,7 @@ jobs:
 
   e2e:
     name: E2E tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - name: Set up Node.js
