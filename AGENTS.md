@@ -50,11 +50,57 @@ When to suggest writing a TN: after a research/debate thread converges on a conc
 
 How: copy [docs/notes/TEMPLATE.md](docs/notes/TEMPLATE.md) to `docs/notes/NNNN-kebab-case-title.md` (next sequence number, independent from ADR numbers), fill it in, and add it to the index in [docs/notes/README.md](docs/notes/README.md). If the conclusion later becomes something the project acts on, write an ADR referencing the TN and mark the TN as superseded by it.
 
+## Follow-up Changes
+
+A follow-up request against work already in progress or recently implemented - a fix requested after `implementing-a-feature`, a correction asked for directly in chat, a code review comment applied by hand - isn't just a patch to apply and forget. Before finishing a follow-up, classify each item:
+
+- **One-off correction**: fixes this specific instance, doesn't generalize. Apply it and move on.
+- **Pattern or convention change**: the fix implies a different approach that should apply project-wide going forward (a naming convention, a code-style rule, a different way of structuring a certain kind of component/handler, a workflow adjustment) - not just this instance.
+
+For anything in the second category, propose persisting it as a standing rule and wait for explicit confirmation before writing it down - don't persist silently, and don't skip proposing it just because the request came from chat rather than a skill. If confirmed, the convention belongs in this file (`AGENTS.md`), in the section matching its topic, or in a subagent's own instructions if it's scoped to that agent's domain (`apps/api`, `apps/web`, infra) - not in an ADR (that's for accepted product/architecture decisions, not process/style convention, per [ADR 0001](docs/decisions/0001-keep-project-decisions-in-adrs.md)) and not under `.agents/` (gitignored scratch space, not project state - see "`.agents/` Directory Scope" below).
+
+This applies regardless of how the follow-up was requested - it is not a step specific to `implementing-a-feature`, `implementation-round`, or any single skill.
+
 ## Language
 
 Chat responses (the conversational reply to the user) follow the language the user is writing in for that turn - reply in Portuguese if the user writes in Portuguese, in English if they write in English, etc.
 
 Everything that becomes part of the codebase or project artifacts is always written in English, regardless of the chat language: code, identifiers, comments, commit messages, document content, and issue/PR titles and descriptions.
+
+## Code Comments
+
+Comments are for the future reader - human or agent - who already has the code in front of them. Don't repeat what the code says.
+
+Write a comment when:
+
+- the "why" isn't derivable from the code itself (a business rule, a third-party bug/limitation, a performance trade-off, a legal/legacy constraint)
+- there's a pitfall: something that looks safe to simplify but breaks if changed
+- an invariant or precondition isn't expressed by the type/signature
+- it points to an external reference worth following: an ADR, issue, RFC, or API doc
+
+Don't write:
+
+- narration of control flow ("now we iterate over the list", "first we validate...")
+- change history ("changed from X to Y", "used to be a callback")
+- discarded-alternative rationale in prose - that belongs in the commit message or PR description, not the file
+- decorative section banners, or a TODO with no linked issue
+- a restatement of an already-self-explanatory function/variable name
+
+Where design rationale lives depends on how durable it is:
+
+- Alternatives considered and why they were dropped for _this specific change_: the commit message or PR description - they carry context, a date, and an author.
+- A decision the codebase is expected to keep following: an ADR under `docs/decisions/` (per ADR 0001), referenced inline with a one-line pointer (e.g. `// ... (ADR 0033)`) rather than restated in prose.
+
+An outdated narrative comment is worse than no comment - it actively misleads, for a human and an agent grepping for context alike.
+
+Format:
+
+- JSDoc on a function whose contract isn't obvious from its signature: purpose, side effects, and behavior that the types don't already express. Include `@param`/`@returns` only when a parameter or the return value carries meaning the signature alone doesn't (a unit, an encoding, a sentinel value) - skip them when they'd just restate the name and type. Reserve JSDoc for functions where the complexity or contract actually warrants it; a small, low-usage helper with an obvious signature doesn't need one.
+- Inline: 1-2 lines, directly above the relevant line.
+
+When touching existing code, preserve "why" comments that still hold. If the code a comment describes changed, update or remove the comment - never let it drift. Note in your summary when you remove a pre-existing comment.
+
+If a block needs long prose to explain itself, prefer extracting a function with a descriptive name instead.
 
 ## Markdown Prose Formatting
 
@@ -79,6 +125,8 @@ Use `docs:` for documentation-only changes under `docs/`, `specs/`, and `AGENTS.
 
 When completing work that actually changed project files, include one suggested commit message at the end of the final response. While iterating on the same uncommitted work, update that single suggestion so it reflects the full accumulated change set. Do not replace it with a different message that only describes the latest iteration. Suggest a new separate commit message only after a commit has been made, or when the user explicitly starts separate work that should be committed independently. Do not include a commit message suggestion for planning, explanation, review, or advice-only responses with no file changes. The suggestion must follow these commit message rules.
 
+Include the `Co-Authored-By` trailer (per the attribution instructions given in-session) only when the agent decided and wrote the change end-to-end with no direct dictation from the user - e.g. autonomous follow-through inside a skill like `implementation-round`. Omit it when the user reviewed the change directly or gave the specific implementation instruction that produced it - the common case in an interactive session - since that work isn't independently agent-authored.
+
 ## API Source Layout (`apps/api/src/`)
 
 File map for the Worker backend: [docs/agents/api-source-layout.md](docs/agents/api-source-layout.md). Read it when working inside `apps/api/src`.
@@ -86,6 +134,14 @@ File map for the Worker backend: [docs/agents/api-source-layout.md](docs/agents/
 ## Web Source Layout (`apps/web/src/`)
 
 File map for the React/Vite PWA frontend: [docs/agents/web-source-layout.md](docs/agents/web-source-layout.md). Read it when working inside `apps/web/src`.
+
+## Internationalization (i18n)
+
+All user-visible frontend text goes through the i18n catalog (ADR 0044) - never a hardcoded string in JSX, a `placeholder`/`aria-label`/`title` attribute, or a toast/error message shown to the user. Add a key to `apps/web/public/locales/en.json` and resolve it via `useLanguage().t()` (or `interpolateNodes` from `lib/i18n-react.tsx` when the text needs embedded JSX, e.g. bolding a name).
+
+The three catalogs (`en.json`, `es.json`, `pt-BR.json`) are kept in lockstep - a key added to `en.json` without matching entries in the other two is a silent bug (the string falls back to the raw key or the `en` text for those locales), not a partial rollout to fix later.
+
+This extends past the React app: the service worker (`apps/web/public/service-worker.js`) and the backend (`NotificationJobMessage`'s `{titleKey, bodyKey, params, lang}`, ADR 0044) also pass around catalog keys, not literal text - a hook or handler that resolves user-facing text should return a key for its caller to look up, not the resolved string, unless it's the one place actually rendering it.
 
 ## DB Access Pattern
 
@@ -133,6 +189,38 @@ for (let i = 0; i < ids.length; i += BATCH_SIZE) {
 
 SQLite in tests has no such limit, so unbatched queries pass locally and only fail in production.
 
+## D1 Debug Queries
+
+For a debugging question ("check whether X row exists", "what's the current state of Y") don't tell the user to run a query - run it yourself and report the result. The local dev D1 database is reachable from the repo root:
+
+```bash
+cd apps/api && npx wrangler d1 execute twitch-radar-dev --local --command "SELECT * FROM notification_snoozes WHERE user_id = '...'"
+```
+
+Table names are the `sqliteTable("...", ...)` calls in [apps/api/src/db/schema.ts](apps/api/src/db/schema.ts) - check there rather than guessing a table name from a repository or type name, since not every one maps 1:1 (e.g. the `channelStateChanges` repository backs `channel_state_changes`, but check schema.ts instead of assuming a pattern holds for a table you haven't looked up yet).
+
+Read-only queries (`SELECT`) run without asking. A query that mutates data (`INSERT`, `UPDATE`, `DELETE`, `DROP`, or anything altering schema/rows - including "seed a test row" or "reset this field to test X") requires explicit confirmation first, every time, even against local dev state - say what the query does and what it targets before running it.
+
+Never target `twitch-radar-dev` without `--local`, and never run `wrangler d1 execute` against a remote/production database from an agent session.
+
+## Migration Collision on Rebase
+
+`wrangler d1 migrations apply` tracks what's applied by **filename**, in a `d1_migrations` table - not by content. If two branches each generate a migration with the same number (e.g. both produce `0006_*.sql`), only one can keep that number once both land on `main`; the other must be regenerated with the next free number during rebase.
+
+Only one branch should generate a migration at a time. If a branch's migration would collide with one that landed on `main` first, rebase onto `main`, delete that branch's own `.sql` file and its `meta/<n>_snapshot.json`, and run `migrations:create` again on top of the now-merged baseline - this is the only way to keep the snapshot chain correct. Don't hand-renumber the file or edit the journal to "fix" the collision.
+
+`npm run db:check -w @twitch-radar/api` (`drizzle-kit check`) detects this exact numbering/journal collision - run it after any rebase that touched `infra/migrations`, and treat a failure as this problem, not a flaky check.
+
+If your local D1 already has the old filename recorded as applied before you catch the collision, `db:setup` will try to re-run the migration under its new name and fail (typically `duplicate column name: ... : SQLITE_ERROR`, or the equivalent for whatever the migration added). Fix locally without losing dev data by repointing the tracking row at the new filename:
+
+```bash
+cd apps/api
+npx wrangler d1 execute twitch-radar-dev --local \
+  --command "UPDATE d1_migrations SET name = '<new_filename>.sql' WHERE name = '<old_filename>.sql'"
+```
+
+Then `npm run db:setup` should report "No migrations to apply!" (or apply only the genuinely new ones). If reconciling isn't worth it, deleting `apps/api/.wrangler/state/v3/d1` and rerunning `npm run db:setup` also works, but wipes local sessions and synced channel data.
+
 ## Test Tiers
 
 Two independent tiers, each a plain `vitest run` whose `globalSetup` boots and tears down everything it needs (see ADR 0025):
@@ -143,6 +231,19 @@ Two independent tiers, each a plain `vitest run` whose `globalSetup` boots and t
 Both tiers' `global-setup.ts` share their spawn/readiness/teardown plumbing via `tests/shared/setup/process-lifecycle.ts` — add new process-orchestration logic there, not duplicated per tier. Spawned dev-server output is captured, not printed, so a healthy run shows only vitest's own test output; on a setup failure or an unexpected mid-run exit, the captured output is printed and the run fails immediately (`process.exit(1)`) instead of hanging or timing out test by test.
 
 CI (`.github/workflows/tests.yaml`) runs `api` and `e2e` as separate jobs so the Playwright browser install (`npx playwright install --with-deps chromium`) only happens for the e2e job.
+
+## Test Execution Scope
+
+Both test tiers are already enforced by CI on every push/PR (`.github/workflows/tests.yaml`) - re-running a full tier is not what confirms a change is ready to ship, and each run pays the tier's full `globalSetup` cost (`wrangler dev`, and for `tests/web/e2e`, Playwright too). Don't run a full tier after every small edit.
+
+- During a small iteration (a single fix, a tweak to one file): run only the test(s) related to what changed, filtered by file and/or name:
+  ```bash
+  npx vitest run --config vitest.config.ts tests/api/notifications.test.ts -t "snooze"
+  npx vitest run --config vitest.e2e.config.ts tests/web/e2e/alerts.spec.ts
+  ```
+  Filtering by name/file cuts test count but not the tier's setup cost - it's for fast feedback on the specific behavior you're touching, not a cheap substitute for the full suite.
+- After a large chunk of work lands (the first full pass at a feature/refactor, or any change with a wide blast radius): run the full relevant tier(s) once.
+- Before opening a PR: don't re-run the suites just for that - CI already will, and it was very likely already run at the "large chunk of work" checkpoint above. Follow `creating-pull-requests` for how to represent verification status; don't re-run tests as a checklist formality.
 
 ## Lint Config
 
