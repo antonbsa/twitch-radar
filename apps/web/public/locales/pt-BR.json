@@ -74,7 +74,7 @@
   "channel_detail.snooze_action": "Lembrar em 15m",
   "channel_detail.snooze_done": "Lembrete ativado",
   "channel_detail.snooze_error": "Não foi possível ativar o lembrete. Tente novamente.",
-  "channel_detail.snooze_toast": "Você será notificado em 15 min caso este canal ainda esteja transmitindo {categoryName}.",
+  "channel_detail.snooze_toast": "Você será notificado em 15 min caso {channelName} ainda esteja transmitindo {categoryName}.",
 
   "account.title": "Conta",
   "account.connected": "Conectado",

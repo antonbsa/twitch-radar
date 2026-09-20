@@ -21,6 +21,10 @@ import {
 interface LanguageContextValue {
   language: Language
   t: (key: string, params?: Record<string, string>) => string
+  // Raw, uninterpolated template for a key — for callers that need to
+  // render params as JSX (e.g. bolding a name) via `interpolateNodes`
+  // (lib/i18n-react.tsx) instead of plain-text substitution.
+  tRaw: (key: string) => string
   // User-initiated change: persists locally and, if authenticated, syncs to
   // the server (PATCH /api/me/language).
   setLanguage: (language: Language) => void
@@ -76,9 +80,11 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     [catalog],
   )
 
+  const tRaw = useCallback((key: string) => catalog[key] ?? key, [catalog])
+
   const value = useMemo<LanguageContextValue>(
-    () => ({ language, t, setLanguage, adoptLanguage }),
-    [language, t, setLanguage, adoptLanguage],
+    () => ({ language, t, tRaw, setLanguage, adoptLanguage }),
+    [language, t, tRaw, setLanguage, adoptLanguage],
   )
 
   return (

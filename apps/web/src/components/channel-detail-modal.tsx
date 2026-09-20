@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/context/language-context"
 import { useSnoozeNotification } from "@/hooks/use-notifications"
+import { interpolateNodes } from "@/lib/i18n-react"
 import {
   useAddChannelPreference,
   usePreferences,
@@ -63,7 +64,7 @@ export function ChannelDetailModal({
   channel,
   onOpenChange,
 }: ChannelDetailModalProps) {
-  const { t } = useLanguage()
+  const { t, tRaw } = useLanguage()
   const { data: preferences } = usePreferences()
   const addPreference = useAddChannelPreference()
   const push = usePushNotifications()
@@ -206,9 +207,19 @@ export function ChannelDetailModal({
                         {
                           onSuccess: () =>
                             toast(
-                              t("channel_detail.snooze_toast", {
-                                categoryName: liveCategory.name,
-                              }),
+                              interpolateNodes(
+                                tRaw("channel_detail.snooze_toast"),
+                                {
+                                  channelName: (
+                                    <strong>
+                                      {channel.broadcaster_display_name}
+                                    </strong>
+                                  ),
+                                  categoryName: (
+                                    <strong>{liveCategory.name}</strong>
+                                  ),
+                                },
+                              ),
                             ),
                         },
                       )

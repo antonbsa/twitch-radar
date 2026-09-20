@@ -74,7 +74,7 @@
   "channel_detail.snooze_action": "Remind me in 15m",
   "channel_detail.snooze_done": "Reminder set",
   "channel_detail.snooze_error": "Could not set the reminder. Try again.",
-  "channel_detail.snooze_toast": "We'll notify you in 15m if this channel is still streaming {categoryName}.",
+  "channel_detail.snooze_toast": "You'll be notified in 15m if {channelName} is still streaming {categoryName}.",
 
   "account.title": "Account",
   "account.connected": "Connected",
