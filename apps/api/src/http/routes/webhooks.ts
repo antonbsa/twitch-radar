@@ -12,10 +12,6 @@ import { ApiError } from "../errors"
 // Twitch guidance: treat messages older than 10 minutes as replays.
 const MAX_MESSAGE_AGE_MS = 10 * 60 * 1000
 
-// Best-effort webhook-level dedupe window for Twitch retries. The hard
-// guarantee lives in the consumer (unique eventsub_message_id, ADR 0033).
-const MESSAGE_DEDUPE_TTL_SECONDS = 10 * 60
-
 interface EventsubWebhookBody {
   challenge?: string
   subscription?: { id?: string; type?: string; status?: string }
@@ -114,20 +110,15 @@ export async function handleEventsubWebhook(
       subscriptionId: body.subscription?.id,
     })
 
-    const dedupeKey = `eventsub:msg:${messageId}`
-    const alreadySeen = await c.env.KV_APP_CACHE.get(dedupeKey)
-    if (!alreadySeen) {
-      await c.env.TWITCH_EVENTS_QUEUE.send({
-        messageId,
-        eventType,
-        messageTimestamp: timestamp,
-        receivedAt: now,
-        event: body.event,
-      } as TwitchEventQueueMessage)
-      await c.env.KV_APP_CACHE.put(dedupeKey, "1", {
-        expirationTtl: MESSAGE_DEDUPE_TTL_SECONDS,
-      })
-    }
+    // Dedup is solely the consumer's D1 check on eventsub_message_id (ADR
+    // 0032/0033) - every verified notification is enqueued unconditionally.
+    await c.env.TWITCH_EVENTS_QUEUE.send({
+      messageId,
+      eventType,
+      messageTimestamp: timestamp,
+      receivedAt: now,
+      event: body.event,
+    } as TwitchEventQueueMessage)
     return new Response(null, { status: 204 })
   }
 

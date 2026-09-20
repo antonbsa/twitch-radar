@@ -8,6 +8,7 @@ import type {
   StreamOnlineEventPayload,
   TwitchEventQueueMessage,
 } from "../../types"
+import { logger } from "../../logger"
 import { getAppAccessToken } from "../twitch/app-token"
 import { getStreamsByUserIds, resolveThumbnailUrl } from "../twitch/client"
 
@@ -51,7 +52,13 @@ export async function processTwitchEventMessage(
   const existing = await db.channelStateChanges.findByEventsubMessageId(
     message.messageId,
   )
-  if (existing) return existing
+  if (existing) {
+    logger.debug("Skipping already-processed EventSub message", {
+      messageId: message.messageId,
+      changeType: existing.change_type,
+    })
+    return existing
+  }
 
   switch (message.eventType) {
     case "stream.online":
