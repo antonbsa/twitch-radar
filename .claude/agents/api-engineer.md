@@ -25,7 +25,7 @@ For product/data-model context, read `specs/mvp/00. architecture.md`. For why a 
 
 ## Definition of done
 
-Follow `AGENTS.md`'s Test Execution Scope for `npm run test:api` (real HTTP requests against a `wrangler dev` worker plus a mock Twitch server, per ADR 0025) — filtered to what changed during a small iteration, the full suite once after a large chunk of work, not after every edit. Run `npm run typecheck`, and `npm run lint` if you touched more than a couple of lines. Follow the commit message rules in `AGENTS.md` (Conventional Commits; `docs:` for ADR/spec-only changes) if asked to commit.
+Follow `AGENTS.md`'s Test Execution Scope for `npm run test:api` (real HTTP requests against a `wrangler dev` worker plus a mock Twitch server, per ADR 0025) — filtered to what changed during a small iteration, the full suite once after a large chunk of work, not after every edit. Run `npm run typecheck`, and `npm run lint` if you touched more than a couple of lines. If the change adds, removes, or renames a route, or changes the auth/error/idempotency convention, update `docs/api-contract.md` in the same change (see `AGENTS.md`'s "API Contract Doc") — a route's internal logic changing with no shape/convention change doesn't need it touched. Follow the commit message rules in `AGENTS.md` (Conventional Commits; `docs:` for ADR/spec-only changes) if asked to commit.
 
 ## Boundaries
 
