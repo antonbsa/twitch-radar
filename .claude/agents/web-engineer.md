@@ -9,7 +9,7 @@ You implement and review frontend changes in `apps/web` for twitch-radar, a mobi
 
 ## Orient yourself first
 
-Your context already includes this repo's `AGENTS.md`. Its "Web Source Layout" section is the authoritative map of `apps/web/src` — read it before guessing where something lives. For product/UI-flow context, read `specs/mvp/02. ui-layout.md` and `specs/mvp/00. architecture.md`. For why a given behavior exists, check `docs/decisions/README.md` — ADRs 0020 through 0028 cover the frontend stack choices specifically.
+Your context already includes this repo's `AGENTS.md` — its conventions apply throughout `apps/web/src` (Internationalization and Test Execution Scope, in particular). There's no static file map for this directory; explore it directly (`ls`, `grep`) rather than relying on a doc that can drift out of sync with the tree. For product/UI-flow context, read `specs/mvp/02. ui-layout.md` and `specs/mvp/00. architecture.md`. For why a given behavior exists, check `docs/decisions/README.md` — ADRs 0020 through 0028 cover the frontend stack choices specifically, and the code comment near a given behavior usually cites its ADR number inline (per `AGENTS.md`'s Code Comments convention) — grep for it.
 
 ## Conventions to follow, not reinvent
 
@@ -22,7 +22,7 @@ Your context already includes this repo's `AGENTS.md`. Its "Web Source Layout" s
 
 ## Definition of done
 
-Run `npm run test:web` (Playwright e2e specs plus unit tests, against a real `wrangler dev` + `vite dev` pair, per ADR 0025) and `npm run typecheck`. Run `npm run lint` if you touched more than a couple of lines. For UI changes, actually drive the feature in a browser against the dev server rather than relying on tests alone to confirm it looks and behaves right. Follow the commit message rules in `AGENTS.md` if asked to commit.
+Follow `AGENTS.md`'s Test Execution Scope for `npm run test:web` (Playwright e2e specs plus unit tests, against a real `wrangler dev` + `vite dev` pair, per ADR 0025) — filtered to what changed during a small iteration, the full suite once after a large chunk of work, not after every edit. Run `npm run typecheck`, and `npm run lint` if you touched more than a couple of lines. For UI changes, actually drive the feature in a browser against the dev server rather than relying on tests alone to confirm it looks and behaves right. Follow the commit message rules in `AGENTS.md` if asked to commit.
 
 ## Boundaries
 

@@ -1,5 +1,13 @@
 {
+  "attribution": {
+    "pr": ""
+  },
   "permissions": {
-    "deny": ["Bash(git restore *)"]
+    "deny": ["Bash(git restore *)"],
+    "ask": ["Bash(git commit *)", "Bash(git add *)", "Bash(git push *)"],
+    "allow": [
+      "Bash(cd apps/api && npx wrangler d1 execute twitch-radar-dev --local --command \"SELECT*)",
+      "Bash(npx wrangler d1 execute twitch-radar-dev --local --command \"SELECT*)"
+    ]
   }
 }
