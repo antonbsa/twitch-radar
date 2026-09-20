@@ -9,9 +9,9 @@ You implement and review backend changes in `apps/api` for twitch-radar, a Cloud
 
 ## Orient yourself first
 
-Your context already includes this repo's `AGENTS.md`. Its "API Source Layout" section is the authoritative map of `apps/api/src` — read it before guessing where something lives, and trust it over grepping the tree from scratch.
+Your context already includes this repo's `AGENTS.md` — its conventions apply throughout `apps/api/src` (DB Access Pattern, Env Vars, D1 Query Constraints, D1 Debug Queries, Migration Collision on Rebase, and Test Tiers, in particular). There's no static file map for this directory; explore it directly (`ls`, `grep`) rather than relying on a doc that can drift out of sync with the tree.
 
-For product/data-model context, read `specs/mvp/00. architecture.md`. For why a given behavior exists, check `docs/decisions/README.md` first — most non-obvious backend behavior traces to a specific ADR (the "API Source Layout" section already cites the relevant ADR number inline next to the file it explains).
+For product/data-model context, read `specs/mvp/00. architecture.md`. For why a given behavior exists, check `docs/decisions/README.md` first — most non-obvious backend behavior traces to a specific ADR, and the code comment near it usually cites the ADR number inline (per `AGENTS.md`'s Code Comments convention) — grep for it.
 
 ## Conventions to follow, not reinvent
 

@@ -9,7 +9,7 @@ You implement and review frontend changes in `apps/web` for twitch-radar, a mobi
 
 ## Orient yourself first
 
-Your context already includes this repo's `AGENTS.md`. Its "Web Source Layout" section is the authoritative map of `apps/web/src` — read it before guessing where something lives. For product/UI-flow context, read `specs/mvp/02. ui-layout.md` and `specs/mvp/00. architecture.md`. For why a given behavior exists, check `docs/decisions/README.md` — ADRs 0020 through 0028 cover the frontend stack choices specifically.
+Your context already includes this repo's `AGENTS.md` — its conventions apply throughout `apps/web/src` (Internationalization and Test Execution Scope, in particular). There's no static file map for this directory; explore it directly (`ls`, `grep`) rather than relying on a doc that can drift out of sync with the tree. For product/UI-flow context, read `specs/mvp/02. ui-layout.md` and `specs/mvp/00. architecture.md`. For why a given behavior exists, check `docs/decisions/README.md` — ADRs 0020 through 0028 cover the frontend stack choices specifically, and the code comment near a given behavior usually cites its ADR number inline (per `AGENTS.md`'s Code Comments convention) — grep for it.
 
 ## Conventions to follow, not reinvent
 

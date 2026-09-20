@@ -31,7 +31,7 @@ Given a GitHub issue (number or URL) — the default input from milestone 1 onwa
 
 4. **For bug reports, confirm the repro before fixing.** If the input's `Proposed solution` (or equivalent) has an unconfirmed repro, an unidentified root cause, or hedges with "if it still reproduces" / "possible explanations" — reproduce it on current `main` first (or write a failing test that captures it) before touching implementation code. Invoke the superpowers:systematic-debugging skill for the root-cause work itself. If it doesn't reproduce, say so and stop — close/report that instead of fixing a guessed cause.
 
-5. **Implement.** Follow the existing per-domain conventions ([docs/agents/api-source-layout.md](../../../docs/agents/api-source-layout.md), [docs/agents/web-source-layout.md](../../../docs/agents/web-source-layout.md)) and any referenced ADRs. Delegate to the `api-engineer`/`web-engineer` subagents when the work is confined to their domain.
+5. **Implement.** Follow the existing per-domain conventions in [CLAUDE.md](../../../CLAUDE.md) and the `api-engineer`/`web-engineer` subagent instructions, plus any referenced ADRs. Delegate to those subagents when the work is confined to their domain.
 
 6. **Write the handoff doc.** On completion, create `.agents/handoff-<slug>.md` (slug derived from the spec/issue name) containing:
    - What was implemented, against which spec/issue.
