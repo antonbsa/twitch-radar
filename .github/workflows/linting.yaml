@@ -11,7 +11,7 @@ on:
 jobs:
   eslint:
     name: EsLint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - name: Set up Node.js
@@ -28,7 +28,7 @@ jobs:
 
   typecheck:
     name: Typecheck
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - name: Set up Node.js
@@ -43,7 +43,7 @@ jobs:
 
   db-check:
     name: D1 Migration Check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - name: Set up Node.js
