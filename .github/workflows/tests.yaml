@@ -8,6 +8,8 @@ on:
       - "**/*.md"
       - "docs/**"
       - "specs/**"
+      - ".claude/**"
+      - ".gitignore"
   push:
     branches:
       - main
@@ -15,6 +17,8 @@ on:
       - "**/*.md"
       - "docs/**"
       - "specs/**"
+      - ".claude/**"
+      - ".gitignore"
 
 jobs:
   api:
