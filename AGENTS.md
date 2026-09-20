@@ -195,6 +195,8 @@ Read-only queries (`SELECT`) run without asking. A query that mutates data (`INS
 
 Never target `twitch-radar-dev` without `--local`, and never run `wrangler d1 execute` against a remote/production database from an agent session.
 
+`.claude/settings.json` allow-lists this exact command shape when `--command` starts with `SELECT`, so a query written this way runs without a permission prompt - everything else (including any mutation) falls through to the default prompt. That's a plain string-prefix match, not a SQL parser: it only recognizes a query that both starts with `SELECT` and is invoked exactly as shown above (from the repo root, `cd apps/api &&` prefix, `--local` before `--command`). Don't rely on it to distinguish read from write in any other invocation shape - the mutation-confirmation rule above still governs.
+
 ## Migration Collision on Rebase
 
 `wrangler d1 migrations apply` tracks what's applied by **filename**, in a `d1_migrations` table - not by content. If two branches each generate a migration with the same number (e.g. both produce `0006_*.sql`), only one can keep that number once both land on `main`; the other must be regenerated with the next free number during rebase.
