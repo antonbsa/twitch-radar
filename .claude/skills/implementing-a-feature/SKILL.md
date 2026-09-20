@@ -7,7 +7,7 @@ description: Use when asked to implement a feature from a GitHub issue, local is
 
 ## Overview
 
-Operationalizes this repo's Development Workflow (project CLAUDE.md): take in a spec-shaped GitHub issue (the normal case, per ADR 0043) or a committed spec document, resolve every open question with the user before coding, implement, then leave a handoff doc for the human who will review and commit.
+Operationalizes this repo's Development Workflow (project CLAUDE.md): take in a spec-shaped GitHub issue (the normal case, per ADR 0043) or a committed spec document, resolve every open question with the user before coding, implement, then write (or rewrite) a handoff doc for the human who will review and commit.
 
 ## When to use
 
@@ -31,13 +31,15 @@ Given a GitHub issue (number or URL) — the default input from milestone 1 onwa
 
 4. **For bug reports, confirm the repro before fixing.** If the input's `Proposed solution` (or equivalent) has an unconfirmed repro, an unidentified root cause, or hedges with "if it still reproduces" / "possible explanations" — reproduce it on current `main` first (or write a failing test that captures it) before touching implementation code. Invoke the superpowers:systematic-debugging skill for the root-cause work itself. If it doesn't reproduce, say so and stop — close/report that instead of fixing a guessed cause.
 
-5. **Implement.** Follow the existing per-domain conventions in [CLAUDE.md](../../../CLAUDE.md) and the `api-engineer`/`web-engineer` subagent instructions, plus any referenced ADRs. Delegate to those subagents when the work is confined to their domain.
+5. **Implement.** Follow the existing per-domain conventions in [CLAUDE.md](../../../CLAUDE.md) and the `api-engineer`/`web-engineer` subagent instructions, plus any referenced ADRs. Delegate to those subagents when the work is confined to their domain. Follow [CLAUDE.md](../../../CLAUDE.md)'s Test Execution Scope for how much to run and when while iterating — filtered tests for a small change, the full relevant tier once after a large chunk of work lands; don't run a full tier after every edit.
 
-6. **Write the handoff doc.** On completion, create `.agents/handoff-<slug>.md` (slug derived from the spec/issue name) containing:
-   - What was implemented, against which spec/issue.
-   - Every decision from step 3 (question → resolution → reasoning), plus any decision made mid-implementation that wasn't in the original input.
-   - How to test: automated (which suites/commands) and manual (concrete steps a reviewer can follow).
-   - Anything left undone or deliberately out of scope.
+6. **Write (or rewrite) the handoff doc.** Create `.agents/handoff-<slug>.md` (slug derived from the spec/issue name) — or, if it already exists for this branch (this is a follow-up run of this skill), overwrite it in full — using the structure in [HANDOFF_TEMPLATE.md](HANDOFF_TEMPLATE.md). The file always reflects the branch's current, final state: rewrite it whole on every iteration rather than appending, as if it had been written this way from the start — never describe an earlier iteration or an approach abandoned since. Fill in:
+   - Objective/Problem and Scope, from the driving issue/spec and the actual change.
+   - Design Decisions: every resolution from step 3 (question → resolution → reasoning), plus any decision made mid-implementation that wasn't in the original input.
+   - How to Validate: automated (which suites/commands actually cover this — scoped per the Test Execution Scope rule in step 5, not necessarily a full run) and manual (concrete steps a reviewer can follow).
+   - Trade-offs & Known Follow-ups and Rollout/Migration Risks when they apply. Per the template's own instructions, omit a section entirely (not "N/A") when nothing in it applies to this branch.
+
+   If this run is itself a follow-up to work already on this branch, apply [CLAUDE.md](../../../CLAUDE.md)'s Follow-up Changes convention first: classify each requested fix as one-off or as a pattern/convention change, and propose persisting the latter before finishing. That classification is part of what the rewritten handoff should reflect, not a separate step to skip.
 
 7. **Stop. Do not touch git.** Never run `git add`, `git commit`, `git reset`, or any other staging/history command, even after the handoff doc is written. Report what changed in chat and let the user stage and commit it themselves.
 
@@ -47,4 +49,7 @@ Given a GitHub issue (number or URL) — the default input from milestone 1 onwa
 - Resolving a TBD silently and only mentioning it in the handoff doc afterward — confirmation happens before code, not after.
 - Fixing a bug from its proposed solution without confirming the repro/root cause first — the proposed solution may itself be a guess (e.g. "if it still reproduces...").
 - Skipping the handoff doc because "nothing interesting happened" — write it every time; it's the reviewer's only account of decisions made mid-implementation.
+- Appending to an existing handoff instead of rewriting it in full — a handoff that reads as a change log describes iterations that no longer matter, and the PR-writing skill reads it expecting the branch's current state, not its history.
+- Running a full test tier after every small edit instead of following the Test Execution Scope rule — reserve the full run for after a large chunk of work lands.
+- Treating a follow-up fix's implied convention change as a one-off without proposing to persist it — see `CLAUDE.md`'s Follow-up Changes.
 - Running `git add` "just to stage for review" — staging is git state manipulation and stays off-limits exactly like commit/push.

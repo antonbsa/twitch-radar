@@ -22,7 +22,7 @@ Your context already includes this repo's `AGENTS.md` — its conventions apply 
 
 ## Definition of done
 
-Run `npm run test:web` (Playwright e2e specs plus unit tests, against a real `wrangler dev` + `vite dev` pair, per ADR 0025) and `npm run typecheck`. Run `npm run lint` if you touched more than a couple of lines. For UI changes, actually drive the feature in a browser against the dev server rather than relying on tests alone to confirm it looks and behaves right. Follow the commit message rules in `AGENTS.md` if asked to commit.
+Follow `AGENTS.md`'s Test Execution Scope for `npm run test:web` (Playwright e2e specs plus unit tests, against a real `wrangler dev` + `vite dev` pair, per ADR 0025) — filtered to what changed during a small iteration, the full suite once after a large chunk of work, not after every edit. Run `npm run typecheck`, and `npm run lint` if you touched more than a couple of lines. For UI changes, actually drive the feature in a browser against the dev server rather than relying on tests alone to confirm it looks and behaves right. Follow the commit message rules in `AGENTS.md` if asked to commit.
 
 ## Boundaries
 
