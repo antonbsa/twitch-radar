@@ -7,6 +7,7 @@ import {
   ExternalLinkIcon,
   Loader2Icon,
 } from "lucide-react"
+import { toast } from "sonner"
 import {
   Sheet,
   SheetContent,
@@ -197,10 +198,20 @@ export function ChannelDetailModal({
                     disabled={snoozeNotification.isPending}
                     className="w-full cursor-pointer gap-1.5 sm:w-fit sm:max-w-xs"
                     onClick={() =>
-                      snoozeNotification.mutate({
-                        broadcasterUserId: channel.broadcaster_user_id,
-                        categoryId: liveCategory.id,
-                      })
+                      snoozeNotification.mutate(
+                        {
+                          broadcasterUserId: channel.broadcaster_user_id,
+                          categoryId: liveCategory.id,
+                        },
+                        {
+                          onSuccess: () =>
+                            toast(
+                              t("channel_detail.snooze_toast", {
+                                categoryName: liveCategory.name,
+                              }),
+                            ),
+                        },
+                      )
                     }
                   >
                     <AlarmClockIcon />

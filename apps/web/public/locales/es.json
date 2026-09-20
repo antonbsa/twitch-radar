@@ -74,6 +74,7 @@
   "channel_detail.snooze_action": "Recordarme en 15m",
   "channel_detail.snooze_done": "Recordatorio activado",
   "channel_detail.snooze_error": "No se pudo activar el recordatorio. Inténtalo de nuevo.",
+  "channel_detail.snooze_toast": "Te avisaremos en 15 min si este canal sigue transmitiendo {categoryName}.",
 
   "account.title": "Cuenta",
   "account.connected": "Conectado",
