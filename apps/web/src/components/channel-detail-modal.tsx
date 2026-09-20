@@ -16,7 +16,10 @@ import {
 } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/context/language-context"
-import { useSnoozeNotification } from "@/hooks/use-notifications"
+import {
+  useNotificationSnoozes,
+  useSnoozeNotification,
+} from "@/hooks/use-notifications"
 import { interpolateNodes } from "@/lib/i18n-react"
 import {
   useAddChannelPreference,
@@ -69,6 +72,7 @@ export function ChannelDetailModal({
   const addPreference = useAddChannelPreference()
   const push = usePushNotifications()
   const snoozeNotification = useSnoozeNotification()
+  const { data: pendingSnoozes } = useNotificationSnoozes()
 
   // Each open is a fresh channel — drop any pending/success/error state left
   // over from a previous one before it's shown for a new broadcaster.
@@ -81,6 +85,16 @@ export function ChannelDetailModal({
     channel?.is_live && channel.category_id && channel.category_name
       ? { id: channel.category_id, name: channel.category_name }
       : null
+
+  // Only one pending reminder per broadcaster/category is allowed.
+  const hasPendingSnooze =
+    liveCategory !== null &&
+    (pendingSnoozes ?? []).some(
+      (snooze) =>
+        snooze.broadcaster_user_id === channel?.broadcaster_user_id &&
+        snooze.category_id === liveCategory.id,
+    )
+  const isSnoozed = snoozeNotification.isSuccess || hasPendingSnooze
 
   const isNotifyingForCategory =
     liveCategory !== null &&
@@ -180,7 +194,7 @@ export function ChannelDetailModal({
           {channel && (
             <div className="flex flex-col gap-2 sm:mx-auto sm:flex-row sm:justify-center">
               {liveCategory &&
-                (snoozeNotification.isSuccess ? (
+                (isSnoozed ? (
                   <Button
                     type="button"
                     variant="secondary"

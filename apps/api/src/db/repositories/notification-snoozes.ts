@@ -88,6 +88,25 @@ export class NotificationSnoozesRepository {
     return row ? toRecord(row) : null
   }
 
+  /**
+   * All pending reminders for a user across broadcasters/categories.
+   */
+  async findPendingByUserId(
+    userId: string,
+  ): Promise<NotificationSnoozeRecord[]> {
+    const rows = await this.db
+      .select()
+      .from(notificationSnoozes)
+      .where(
+        and(
+          eq(notificationSnoozes.userId, userId),
+          eq(notificationSnoozes.status, "pending"),
+        ),
+      )
+      .all()
+    return rows.map(toRecord)
+  }
+
   /** Rows due for the sweep: still pending and past their fire time. */
   async findDue(
     now: string,

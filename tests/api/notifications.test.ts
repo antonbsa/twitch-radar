@@ -65,6 +65,12 @@ function postSnooze(
   })
 }
 
+function getSnoozes(cookie: string) {
+  return fetch(`${orchestrator.baseUrl}/api/notifications/snoozes`, {
+    headers: { Cookie: cookie },
+  })
+}
+
 beforeEach(async () => {
   await orchestrator.clearDatabase()
   await orchestrator.mockTwitch.reset()
@@ -540,6 +546,28 @@ describe("notification snoozing", () => {
       },
     )
     expect(res.status).toBe(400)
+  })
+
+  it("should list only the current user's pending reminders", async () => {
+    const { cookie: cookieA } = await orchestrator.createAuthenticatedSession()
+    const { cookie: cookieB } = await orchestrator.createAuthenticatedSession({
+      id: "usr_other_list_snooze",
+      twitchUserId: "twitch_other_list_snooze",
+    })
+
+    await postSnooze(cookieA)
+    await postSnooze(cookieB, { broadcasterUserId: "201" })
+
+    const res = await getSnoozes(cookieA)
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as {
+      data: Array<{ broadcaster_user_id: string; status: string }>
+    }
+    expect(body.data).toHaveLength(1)
+    expect(body.data[0]).toMatchObject({
+      broadcaster_user_id: BROADCASTER_ID,
+      status: "pending",
+    })
   })
 })
 

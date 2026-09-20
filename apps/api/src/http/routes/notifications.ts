@@ -47,3 +47,16 @@ export async function handleCreateNotificationSnooze(
   })
   return jsonResponse({ data: record }, { status: 201 })
 }
+
+/**
+ * Lists the current user's pending snoozes so the UI can reflect scheduled
+ * reminders across page reloads.
+ */
+export async function handleListNotificationSnoozes(
+  c: Context<HonoEnv>,
+): Promise<Response> {
+  const records = await c.var.db.notificationSnoozes.findPendingByUserId(
+    c.var.userId,
+  )
+  return jsonResponse({ data: records })
+}

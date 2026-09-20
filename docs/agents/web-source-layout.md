@@ -38,7 +38,10 @@ components/
                                  Twitch); renders a secondary "Remind me in 15m" button next to Watch
                                  on Twitch whenever the channel is currently live (same condition as
                                  notify-for-category) — POSTs broadcaster_user_id/category_id to
-                                 /notifications/snooze, independent of any notification (ADR 0048)
+                                 /notifications/snooze, independent of any notification; shows the
+                                 button already disabled when useNotificationSnoozes reports a pending
+                                 reminder for that broadcaster/category, so reopening the modal can't
+                                 stack a second one (ADR 0048)
   language-selector.tsx        — Account page's language picker (en / pt-BR / es), built on ui/select.tsx
                                 (ADR 0044)
   ui/                          — shadcn/ui primitives (Button, Sheet, Input, Badge, Avatar, Select); copied
@@ -48,7 +51,9 @@ hooks/
   use-push-notifications.ts    — push status state machine (checking/unsupported/denied/not-enabled/
                                 enabled) + enable/disable flows (T-005, ADR 0027)
   use-notifications.ts         — useSnoozeNotification; POSTs /notifications/snooze with
-                                {broadcasterUserId, categoryId} (ADR 0048)
+                                {broadcasterUserId, categoryId}, invalidates the snoozes query on
+                                success; useNotificationSnoozes; GETs /notifications/snoozes, the
+                                current user's pending reminders (ADR 0048)
   use-channels.ts, use-preferences.ts, use-category-search.ts, use-debounced-value.ts
 lib/
   api.ts                       — fetch wrapper (api.get/api.post/api.patch/api.delete), same-origin

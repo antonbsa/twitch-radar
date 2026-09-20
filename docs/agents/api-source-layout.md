@@ -36,7 +36,8 @@ db/
                                 (ADR 0048)
     notification-snoozes.ts   — NotificationSnoozesRepository; create/findDue/markFired/markExpired
                                 back the snooze sweep; findPendingByUserBroadcasterCategory makes the
-                                snooze endpoint idempotent per user/broadcaster/category (ADR 0048)
+                                snooze endpoint idempotent per user/broadcaster/category;
+                                findPendingByUserId backs GET /notifications/snoozes (ADR 0048)
     followed-channels.ts      — FollowedChannelsRepository
     channel-state.ts          — ChannelStateRepository; inArray queries batch at 100 (D1 limit);
                                 updated_from_event_at backs the stale-event guard (ADR 0033)
@@ -69,7 +70,9 @@ http/
                                 /me/language) sets the language preference (ADR 0044)
     notifications.ts          — handleCreateNotificationSnooze (POST /notifications/snooze, body
                                 {broadcaster_user_id, category_id}; idempotent per user/broadcaster/
-                                category, not tied to any notification_deliveries row; ADR 0048)
+                                category, not tied to any notification_deliveries row);
+                                handleListNotificationSnoozes (GET /notifications/snoozes, current
+                                user's pending reminders) (ADR 0048)
     push-subscriptions.ts     — handleGetVapidPublicKey, handleCreatePushSubscription (idempotent
                                 upsert by endpoint), handleDeletePushSubscription (soft revoke);
                                 lifecycle contract in ADR 0027
