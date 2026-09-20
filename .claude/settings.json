@@ -1,4 +1,7 @@
 {
+  "attribution": {
+    "pr": ""
+  },
   "permissions": {
     "deny": ["Bash(git restore *)"],
     "ask": ["Bash(git commit *)", "Bash(git add *)", "Bash(git push *)"],

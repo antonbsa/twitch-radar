@@ -127,6 +127,8 @@ When completing work that actually changed project files, include one suggested 
 
 Include the `Co-Authored-By` trailer (per the attribution instructions given in-session) only when the agent decided and wrote the change end-to-end with no direct dictation from the user - e.g. autonomous follow-through inside a skill like `implementation-round`. Omit it when the user reviewed the change directly or gave the specific implementation instruction that produced it - the common case in an interactive session - since that work isn't independently agent-authored.
 
+This criterion applies to commits only. Pull request descriptions never carry a "Generated with Claude Code" line or equivalent, regardless of how the work was authored - `.claude/settings.json` sets `attribution.pr` to an empty string to enforce this at the tool level rather than relying on remembering it per PR.
+
 ## API Contract Doc
 
 [docs/api-contract.md](docs/api-contract.md) documents `apps/api`'s HTTP surface: auth convention, the error envelope, the idempotent-create/soft-disable-delete pattern, and an endpoint index. It's transversal-convention-level, not a field-by-field spec — request/response shapes stay in the route file itself, referenced from there rather than duplicated. Update it in the same change when adding, removing, or renaming a route, or changing the auth/error/idempotency convention it describes; a change confined to a route's internal logic (no shape/convention change) doesn't need it touched. Read the actual route/schema when the detail matters - this doc is a starting map, not an authority over the code.
