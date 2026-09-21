@@ -1,8 +1,11 @@
 import { useState } from "react"
 import { useNavigate } from "react-router"
+import { changelog } from "virtual:changelog"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { LanguageSelector } from "@/components/language-selector"
+import { WhatsNewSheet } from "@/components/whats-new-sheet"
 import { useAuth } from "@/context/auth-context"
 import { useLanguage } from "@/context/language-context"
 import { useSyncFollows } from "@/hooks/use-channels"
@@ -30,9 +33,11 @@ export function AccountPage() {
   const { user, reconnectRequired, logout } = useAuth()
   const { t } = useLanguage()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [whatsNewOpen, setWhatsNewOpen] = useState(false)
   const push = usePushNotifications()
   const navigate = useNavigate()
   const syncFollows = useSyncFollows()
+  const latestVersion = changelog[0]
 
   async function handleLogout() {
     setIsLoggingOut(true)
@@ -127,6 +132,23 @@ export function AccountPage() {
       >
         {t("account.log_out")}
       </Button>
+
+      {latestVersion && (
+        <div className="mt-6 flex justify-center">
+          <Badge asChild variant="outline">
+            <button
+              type="button"
+              aria-label={t("whats_new.badge_aria", {
+                version: latestVersion.version,
+              })}
+              onClick={() => setWhatsNewOpen(true)}
+            >
+              {latestVersion.version}
+            </button>
+          </Badge>
+        </div>
+      )}
+      <WhatsNewSheet open={whatsNewOpen} onOpenChange={setWhatsNewOpen} />
     </div>
   )
 }
