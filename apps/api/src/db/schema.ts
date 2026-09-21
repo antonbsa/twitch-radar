@@ -123,6 +123,10 @@ export const channelState = sqliteTable("channel_state", {
   thumbnailUrl: text("thumbnail_url"),
   viewerCount: integer("viewer_count"),
   startedAt: text("started_at"),
+  // Twitch's stream type ("live" / "rerun" / "playlist" / "watch_party",
+  // ADR 0050): null means "unknown" (rows written before this column
+  // existed) and is treated as live rather than silently suppressed.
+  streamType: text("stream_type"),
   updatedFromEventAt: text("updated_from_event_at"),
   updatedAt: text("updated_at").notNull(),
 })

@@ -106,10 +106,14 @@
   "reconnect.cta": "Reconectar Twitch",
 
   "notification.stream_started_in_category.title": "{broadcasterName} está transmitiendo {categoryName}",
-  "notification.stream_started_in_category.body": "{broadcasterName} acaba de empezar a transmitir una categoría que sigues.",
+  "notification.stream_started_in_category.body.stream_title": "{streamTitle}",
   "notification.switched_into_category.title": "{broadcasterName} cambió a {categoryName}",
-  "notification.switched_into_category.body": "{broadcasterName} ahora está transmitiendo una categoría que sigues.",
+  "notification.switched_into_category.body.uptime_and_previous": "En vivo hace {hours}h{minutes}m · antes en {previousCategory}",
+  "notification.switched_into_category.body.uptime_only": "En vivo hace {hours}h{minutes}m",
+  "notification.switched_into_category.body.previous_only": "Antes en {previousCategory}",
+  "notification.switched_into_category.body.stream_title": "{streamTitle}",
   "notification.snooze_reminder.title": "{broadcasterName} sigue transmitiendo {categoryName}",
   "notification.snooze_reminder.body": "Recordatorio: {broadcasterName} sigue transmitiendo una categoría que sigues.",
-  "notification.snooze_action": "Recordarme en 15m"
+  "notification.snooze_action": "Recordarme en 15m",
+  "notification.watch_action": "Ver"
 }

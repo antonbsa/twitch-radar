@@ -113,6 +113,9 @@ async function processStreamOnline(
       null,
     viewerCount: stream?.viewer_count ?? null,
     startedAt: stream?.started_at ?? event.started_at,
+    // ADR 0050: notification matching suppresses anything but "live" so a
+    // rerun/playlist/watch_party doesn't page anyone.
+    streamType: stream?.type ?? event.type,
   }
 
   const now = new Date().toISOString()
@@ -169,6 +172,9 @@ async function processStreamOffline(
       thumbnailUrl: previous?.thumbnail_url ?? null,
       viewerCount: null,
       startedAt: null,
+      // Not stream info to invent while offline — carried forward like
+      // category/title above; overwritten on the next stream_started anyway.
+      streamType: previous?.stream_type ?? null,
       updatedFromEventAt: message.messageTimestamp,
       now,
     },
@@ -220,6 +226,9 @@ async function processChannelUpdate(
       thumbnailUrl: previous?.thumbnail_url ?? null,
       viewerCount: previous?.viewer_count ?? null,
       startedAt: previous?.started_at ?? null,
+      // channel.update carries no stream type — preserve whatever the last
+      // stream.online/offline recorded.
+      streamType: previous?.stream_type ?? null,
       updatedFromEventAt: message.messageTimestamp,
       now,
     },
