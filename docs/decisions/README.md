@@ -53,6 +53,7 @@ Other project documents may state goals, requirements, task scope, validation st
 - [0046 - Sandbox Personas For Twitch-Free Dev And Preview Access](0046-sandbox-personas-for-dev-and-preview.md)
 - [0047 - Error Alerting Via The Sentry SDK And A Direct Slack Webhook](0047-error-alerting-via-sentry-and-slack-webhook.md)
 - [0048 - Notification Snooze Reminders](0048-notification-snooze-reminders.md)
+- [0049 - CHANGELOG.md As The Source Of Truth For Release Notes](0049-changelog-as-source-of-truth-for-release-notes.md)
 
 ## Proposed ADRs
 
