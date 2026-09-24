@@ -84,12 +84,10 @@ describe("GET /api/channels/followed", () => {
       ],
     )
 
-    const res = await fetch(`${orchestrator.baseUrl}/api/channels/followed`, {
-      headers: { Cookie: cookie },
-    })
-    const { data } = (await res.json()) as {
-      data: Array<{ broadcaster_user_id: string; is_live: boolean }>
-    }
+    const data = await orchestrator.waitForFollowedChannels(
+      cookie,
+      (items) => items.length === 2 && items.some((c) => c.is_live),
+    )
 
     expect(data[0].broadcaster_user_id).toBe("20")
     expect(data[0].is_live).toBe(true)
@@ -144,12 +142,10 @@ describe("GET /api/channels/followed", () => {
       ],
     )
 
-    const res = await fetch(`${orchestrator.baseUrl}/api/channels/followed`, {
-      headers: { Cookie: cookie },
-    })
-    const { data } = (await res.json()) as {
-      data: Array<{ broadcaster_user_id: string; viewer_count: number }>
-    }
+    const data = await orchestrator.waitForFollowedChannels(
+      cookie,
+      (items) => items.filter((c) => c.is_live).length === 3,
+    )
 
     expect(data.map((c) => c.broadcaster_user_id)).toEqual(["20", "30", "10"])
     expect(data[0].viewer_count).toBe(5000)
@@ -175,12 +171,10 @@ describe("GET /api/channels/followed", () => {
       },
     ])
 
-    const res = await fetch(`${orchestrator.baseUrl}/api/channels/followed`, {
-      headers: { Cookie: cookie },
-    })
-    const { data } = (await res.json()) as {
-      data: Array<{ broadcaster_display_name: string }>
-    }
+    const data = await orchestrator.waitForFollowedChannels(
+      cookie,
+      (items) => items.length === 3,
+    )
 
     expect(data.map((c) => c.broadcaster_display_name)).toEqual([
       "Apple",
@@ -217,10 +211,9 @@ describe("GET /api/channels/followed", () => {
       ],
     )
 
-    const res = await fetch(`${orchestrator.baseUrl}/api/channels/followed`, {
-      headers: { Cookie: cookie },
-    })
-    const { data } = (await res.json()) as { data: unknown[] }
+    const data = await orchestrator.waitForFollowedChannels(cookie, (items) =>
+      items.some((c) => c.is_live),
+    )
 
     expect(data[0]).toMatchObject({
       is_live: true,
@@ -245,10 +238,10 @@ describe("GET /api/channels/followed", () => {
       },
     ])
 
-    const res = await fetch(`${orchestrator.baseUrl}/api/channels/followed`, {
-      headers: { Cookie: cookie },
-    })
-    const { data } = (await res.json()) as { data: unknown[] }
+    const data = await orchestrator.waitForFollowedChannels(
+      cookie,
+      (items) => items.length === 1,
+    )
 
     expect(data[0]).toMatchObject({
       is_live: false,
@@ -268,11 +261,10 @@ describe("GET /api/channels/followed", () => {
       })),
     )
 
-    const res = await fetch(`${orchestrator.baseUrl}/api/channels/followed`, {
-      headers: { Cookie: cookie },
-    })
-    expect(res.status).toBe(200)
-    const { data } = (await res.json()) as { data: unknown[] }
+    const data = await orchestrator.waitForFollowedChannels(
+      cookie,
+      (items) => items.length === COUNT,
+    )
     expect(data).toHaveLength(COUNT)
   })
 })

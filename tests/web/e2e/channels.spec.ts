@@ -165,7 +165,7 @@ describe("Channels view", () => {
     )
   })
 
-  it("should disable the sync button in-flight and refetch channels on success", async ({
+  it("should disable the sync button in-flight and update channels from the sync response", async ({
     authenticatedSession,
   }) => {
     const { page } = authenticatedSession
@@ -184,7 +184,28 @@ describe("Channels view", () => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify({ ok: true }),
+        // POST /sync/follows returns the synced channel list itself (issue
+        // #83) — the UI must render from this response directly, without a
+        // follow-up GET /channels/followed round trip.
+        body: JSON.stringify({
+          data: [
+            {
+              broadcaster_user_id: broadcasterId("pulled"),
+              broadcaster_login: "pulledstreamer",
+              broadcaster_display_name: "PulledStreamer",
+              broadcaster_profile_image_url: null,
+              followed_at: "2024-01-01T00:00:00Z",
+              is_live: false,
+              stream_id: null,
+              category_id: null,
+              category_name: null,
+              title: null,
+              thumbnail_url: null,
+              viewer_count: null,
+              started_at: null,
+            },
+          ],
+        }),
       })
     })
 
@@ -202,7 +223,8 @@ describe("Channels view", () => {
     await expect
       .poll(() => syncButton.isDisabled(), { timeout: 3000 })
       .toBe(false)
-    expect(followedCalls).toBeGreaterThan(callsBeforeSync)
+    await expectVisible(page.getByText("PulledStreamer"))
+    expect(followedCalls).toBe(callsBeforeSync)
   })
 
   it("should open the per-channel preference sheet from the config button", async ({
