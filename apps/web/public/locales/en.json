@@ -105,7 +105,7 @@
   "reconnect.message": "Your Twitch connection needs to be renewed.",
   "reconnect.cta": "Reconnect Twitch",
 
-  "notification.stream_started_in_category.title": "{broadcasterName} is streaming {categoryName}",
+  "notification.stream_started_in_category.title": "{broadcasterName} went live with {categoryName}",
   "notification.stream_started_in_category.body.stream_title": "{streamTitle}",
   "notification.switched_into_category.title": "{broadcasterName} switched to {categoryName}",
   "notification.switched_into_category.body.uptime_and_previous": "Live for {hours}h{minutes}m · was playing {previousCategory}",

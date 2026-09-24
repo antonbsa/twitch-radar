@@ -105,7 +105,7 @@
   "reconnect.message": "Sua conexão com a Twitch precisa ser renovada.",
   "reconnect.cta": "Reconectar Twitch",
 
-  "notification.stream_started_in_category.title": "{broadcasterName} está transmitindo {categoryName}",
+  "notification.stream_started_in_category.title": "{broadcasterName} está ao vivo em {categoryName}",
   "notification.stream_started_in_category.body.stream_title": "{streamTitle}",
   "notification.switched_into_category.title": "{broadcasterName} mudou para {categoryName}",
   "notification.switched_into_category.body.uptime_and_previous": "Ao vivo há {hours}h{minutes}m · antes em {previousCategory}",
