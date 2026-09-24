@@ -440,7 +440,7 @@ describe("EventSub subscription creation", () => {
     ).toEqual(["tsub_1", "tsub_2", "tsub_3"])
   })
 
-  it("should leave rows pending when Twitch rejects the create", async () => {
+  it("should leave a row pending with a scheduled backoff retry when Twitch rejects the create", async () => {
     await orchestrator.seedEventsubSubscriptions([PENDING_ROWS[0]])
     await orchestrator.mockTwitch.onAppToken()
     await orchestrator.mockTwitch.onEventsubSubscriptionCreate(
@@ -449,12 +449,61 @@ describe("EventSub subscription creation", () => {
       500,
     )
 
+    const before = Date.now()
     await orchestrator.runScheduled()
 
     const state = await orchestrator.inspect([BROADCASTER_ID])
     expect(state.eventsubSubscriptions[0]).toMatchObject({
       status: "pending",
       twitch_subscription_id: null,
+      failure_count: 1,
+    })
+    // First failure backs off ~1 minute (ADR 0049).
+    const nextRetryAt = Date.parse(
+      state.eventsubSubscriptions[0]!.next_retry_at!,
+    )
+    expect(nextRetryAt).toBeGreaterThanOrEqual(before + 55_000)
+    expect(nextRetryAt).toBeLessThanOrEqual(before + 65_000)
+  })
+
+  it("should flip a row to failed after 5 consecutive create failures", async () => {
+    await orchestrator.seedEventsubSubscriptions([
+      { ...PENDING_ROWS[0], failureCount: 4 },
+    ])
+    await orchestrator.mockTwitch.onAppToken()
+    await orchestrator.mockTwitch.onEventsubSubscriptionCreate(
+      "unused",
+      "error",
+      400,
+    )
+
+    await orchestrator.runScheduled()
+
+    const state = await orchestrator.inspect([BROADCASTER_ID])
+    expect(state.eventsubSubscriptions[0]).toMatchObject({
+      status: "failed",
+      failure_count: 5,
+      next_retry_at: null,
+    })
+  })
+
+  it("should skip a pending row whose backoff hasn't elapsed yet", async () => {
+    const farFuture = new Date(Date.now() + 60 * 60 * 1000).toISOString()
+    await orchestrator.seedEventsubSubscriptions([
+      { ...PENDING_ROWS[0], failureCount: 2, nextRetryAt: farFuture },
+    ])
+    await orchestrator.mockTwitch.onAppToken()
+    // No create response queued — if the row were picked up, the request
+    // would hit the mock server's default (unmatched) handling instead.
+
+    await orchestrator.runScheduled()
+
+    const state = await orchestrator.inspect([BROADCASTER_ID])
+    expect(state.eventsubSubscriptions[0]).toMatchObject({
+      status: "pending",
+      twitch_subscription_id: null,
+      failure_count: 2,
+      next_retry_at: farFuture,
     })
   })
 })
