@@ -54,6 +54,34 @@ Push each of these via `wrangler secret put <NAME> --env <production|preview>` (
   ```
   Generate a **separate** pair for `production` and for `preview` — don't reuse the dev keypair or share one between environments. `VAPID_PRIVATE_KEY` is pushed as a secret; the public half also needs to go into that environment's non-secret `vars` (below).
 
+### Rotating `TWITCH_CLIENT_SECRET`
+
+`TWITCH_CLIENT_SECRET` is shared across every environment pointed at the same Twitch app (currently `production` and `preview` both use one app) — rotating it in the Twitch Developer Console immediately invalidates the old secret everywhere, not just in the environment you're thinking about. A rotation that only updates the secret and skips the remaining steps below is exactly what turned a routine rotation into a multi-day incident (issue #73): the missing step wasn't an oversight of a known checklist, there simply wasn't one. Do all of the following, for **every** environment sharing the app, before considering the rotation done:
+
+1. **Rotate the secret** in the [Twitch Developer Console](https://dev.twitch.tv/console/apps) for the app.
+2. **Push the new value to every environment sharing that app**:
+   ```sh
+   cd apps/api
+   npx wrangler secret put TWITCH_CLIENT_SECRET --env production
+   npx wrangler secret put TWITCH_CLIENT_SECRET --env preview
+   ```
+   A dangling old value in even one environment starts producing `401 Invalid OAuth token` failures against Twitch as soon as the app-access-token cache (next step) rolls over.
+3. **Purge the cached app access token from KV, per environment.** `services/twitch/app-token.ts` caches the app-access-token (client-credentials grant) in KV for up to ~60 days; a token fetched under the old secret stays valid-looking to this app and keeps getting reused (and, on eventual EventSub calls, rejected by Twitch) for up to that long unless evicted:
+   ```sh
+   npx wrangler kv key delete --remote --namespace-id <KV_APP_CACHE id for the env> "twitch:app_access_token"
+   ```
+   The namespace id for each environment is `env.<name>.kv_namespaces[0].id` in `apps/api/wrangler.jsonc`. The next scheduled job or EventSub creation run then fetches a fresh token under the new secret.
+
+Any other Worker secret shared across `production` and `preview` (there currently isn't one besides `TWITCH_CLIENT_SECRET`) should be rotated the same way: push to every environment that shares it before considering the rotation complete, and check whether anything caches a value derived from it (as the app access token does here) that also needs evicting.
+
+### Hazard: `wrangler dev --remote` Against A Shared Environment
+
+`npm run dev:remote` (`infra/scripts/dev/remote-preview.mjs`) runs `wrangler dev --env preview --remote` — a local dev server bound to preview's real, shared D1/KV, not the isolated local-dev database `apps/api/wrangler.jsonc`'s top-level `d1_databases` entry exists specifically to avoid. That script already overrides `PUBLIC_URL` to the local origin for exactly this reason (see its own header comment) — but the underlying hazard is general: **any** `wrangler dev --env <preview|production> --remote` invocation writes directly into that environment's real, shared state, and any local env file still in effect (`.env.local`, an `--env-file` flag, a stray `--var`) that carries local-dev values (`PUBLIC_URL=http://localhost:...`, a placeholder secret, etc.) writes those bad values into it too. This is exactly how issue #73's preview incident started: `pending` `eventsub_subscriptions` rows seeded with a `localhost` `callback_url` that Twitch permanently rejects, sitting undetected for over two weeks. Before running `wrangler dev` with `--remote` against `preview` or `production`:
+
+- Prefer the existing `npm run dev:remote` script for preview rather than a hand-rolled invocation — it already handles the `PUBLIC_URL` override and the queues-binding incompatibility (see its comments).
+- If you must invoke `wrangler dev --remote` by hand, double-check every env var/`--var` override actually reflects that remote environment's real values before the server starts accepting requests — not after.
+- When in doubt, don't run `--remote` at all: plain `wrangler dev` (no `--remote`) against the local D1/KV bindings is safe by construction and covers the overwhelming majority of local development needs.
+
 ## Non-Secret `vars` (per environment)
 
 In `apps/api/wrangler.jsonc`'s `env.<name>.vars` block, set:
