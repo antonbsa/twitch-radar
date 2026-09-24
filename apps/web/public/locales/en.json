@@ -113,7 +113,7 @@
   "notification.switched_into_category.body.previous_only": "Was playing {previousCategory}",
   "notification.switched_into_category.body.stream_title": "{streamTitle}",
   "notification.snooze_reminder.title": "{broadcasterName} is still streaming {categoryName}",
-  "notification.snooze_reminder.body": "Reminder: {broadcasterName} is still streaming a category you follow.",
+  "notification.snooze_reminder.body": "Want to watch now?",
   "notification.snooze_action": "Remind me in 15m",
   "notification.watch_action": "Watch"
 }

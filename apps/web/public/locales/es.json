@@ -113,7 +113,7 @@
   "notification.switched_into_category.body.previous_only": "Antes en {previousCategory}",
   "notification.switched_into_category.body.stream_title": "{streamTitle}",
   "notification.snooze_reminder.title": "{broadcasterName} sigue transmitiendo {categoryName}",
-  "notification.snooze_reminder.body": "Recordatorio: {broadcasterName} sigue transmitiendo una categoría que sigues.",
+  "notification.snooze_reminder.body": "¿Quieres verlo ahora?",
   "notification.snooze_action": "Recordarme en 15m",
   "notification.watch_action": "Ver"
 }
