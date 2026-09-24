@@ -1,8 +1,11 @@
 // Push-only service worker: no fetch handler for app requests, no caching
-// (ADR 0026). Payload shape is { titleKey, bodyKey, params, lang, url }
-// (ADR 0044): the API only ever sends semantic keys, never translated text,
+// (ADR 0026). Payload shape is { titleKey, bodyKey?, params, lang, url,
+// broadcasterUserId, categoryId, broadcasterLogin?, image? } (ADR 0044,
+// ADR 0050): the API only ever sends semantic keys, never translated text,
 // so this handler resolves them against the same locale catalog the React
 // app uses (public/locales/<lang>.json) before showing the notification.
+// `bodyKey` is optional — a title-only payload must render with no body,
+// not a generic fallback (issue #38).
 //
 // interpolate()/DEFAULT_LANGUAGE/loadCatalog below intentionally duplicate
 // (not import) the small equivalents in src/lib/i18n.ts — this script is a
@@ -14,6 +17,7 @@ const DEFAULT_LANGUAGE = "en"
 const FALLBACK_TITLE = "Twitch Radar"
 const FALLBACK_BODY = "A channel you follow has an update."
 const FALLBACK_SNOOZE_ACTION_TITLE = "Remind me in 15m"
+const FALLBACK_WATCH_ACTION_TITLE = "Watch"
 
 // WebKit on iOS is known to drop `event.notification.data` by the time
 // notificationclick fires for a web-pushed notification on an installed PWA
@@ -69,34 +73,56 @@ self.addEventListener("push", (event) => {
       // notificationclick can snooze without a separate lookup.
       const broadcasterUserId = payload?.broadcasterUserId || null
       const categoryId = payload?.categoryId || null
+      const broadcasterLogin = payload?.broadcasterLogin || null
       let title = FALLBACK_TITLE
-      let body = FALLBACK_BODY
+      // null renders a title-only notification; FALLBACK_BODY is reserved
+      // for a payload that had no titleKey at all (malformed/non-JSON push).
+      let body = payload?.titleKey ? null : FALLBACK_BODY
       let snoozeActionTitle = FALLBACK_SNOOZE_ACTION_TITLE
+      let watchActionTitle = FALLBACK_WATCH_ACTION_TITLE
 
-      if (payload?.titleKey && payload?.bodyKey) {
+      if (payload?.titleKey) {
         const catalog = await loadCatalog(payload.lang || DEFAULT_LANGUAGE)
         const resolvedTitle =
           catalog && interpolate(catalog[payload.titleKey], payload.params)
-        const resolvedBody =
-          catalog && interpolate(catalog[payload.bodyKey], payload.params)
         title = resolvedTitle || title
-        body = resolvedBody || body
+        if (payload.bodyKey) {
+          const resolvedBody =
+            catalog && interpolate(catalog[payload.bodyKey], payload.params)
+          body = resolvedBody || FALLBACK_BODY
+        }
         snoozeActionTitle =
           (catalog && catalog["notification.snooze_action"]) ||
           snoozeActionTitle
+        watchActionTitle =
+          (catalog && catalog["notification.watch_action"]) || watchActionTitle
       }
 
       const canSnooze = Boolean(broadcasterUserId && categoryId)
 
+      // Watch ahead of snooze (max 2 actions in practice on Chrome); when
+      // snoozing isn't possible, Watch is the only action shown.
+      const actions = []
+      if (broadcasterLogin) {
+        actions.push({ action: "watch", title: watchActionTitle })
+      }
+      if (canSnooze) {
+        actions.push({ action: "snooze", title: snoozeActionTitle })
+      }
+
       await rememberNotificationUrl(url)
       await self.registration.showNotification(title, {
-        body,
+        ...(body ? { body } : {}),
         icon: "/icon.svg",
         badge: "/icon.svg",
-        data: { url, broadcasterUserId, categoryId },
-        actions: canSnooze
-          ? [{ action: "snooze", title: snoozeActionTitle }]
-          : [],
+        ...(payload?.image ? { image: payload.image } : {}),
+        // Collapses repeat notifications from the same broadcaster into one
+        // (issue #38 item 3) instead of stacking a notification per event.
+        ...(broadcasterUserId
+          ? { tag: broadcasterUserId, renotify: true }
+          : {}),
+        data: { url, broadcasterUserId, categoryId, broadcasterLogin },
+        actions,
       })
     })(),
   )
@@ -104,6 +130,19 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close()
+
+  // Watch action (issue #38 item 7): straight to the channel's Twitch page,
+  // bypassing the app entirely — distinct from clicking the notification
+  // body, which keeps going to the in-app deep link below.
+  if (event.action === "watch") {
+    const { broadcasterLogin } = event.notification.data ?? {}
+    if (broadcasterLogin) {
+      event.waitUntil(
+        self.clients.openWindow(`https://twitch.tv/${broadcasterLogin}`),
+      )
+    }
+    return
+  }
 
   // Snooze action (ADR 0048): fire-and-forget the reminder request instead
   // of focusing/opening a window — the user dismissed this one on purpose.

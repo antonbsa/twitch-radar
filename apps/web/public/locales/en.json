@@ -105,11 +105,15 @@
   "reconnect.message": "Your Twitch connection needs to be renewed.",
   "reconnect.cta": "Reconnect Twitch",
 
-  "notification.stream_started_in_category.title": "{broadcasterName} is streaming {categoryName}",
-  "notification.stream_started_in_category.body": "{broadcasterName} just started streaming a category you follow.",
+  "notification.stream_started_in_category.title": "{broadcasterName} went live with {categoryName}",
+  "notification.stream_started_in_category.body.stream_title": "{streamTitle}",
   "notification.switched_into_category.title": "{broadcasterName} switched to {categoryName}",
-  "notification.switched_into_category.body": "{broadcasterName} is now streaming a category you follow.",
+  "notification.switched_into_category.body.uptime_and_previous": "Live for {hours}h{minutes}m · was playing {previousCategory}",
+  "notification.switched_into_category.body.uptime_only": "Live for {hours}h{minutes}m",
+  "notification.switched_into_category.body.previous_only": "Was playing {previousCategory}",
+  "notification.switched_into_category.body.stream_title": "{streamTitle}",
   "notification.snooze_reminder.title": "{broadcasterName} is still streaming {categoryName}",
-  "notification.snooze_reminder.body": "Reminder: {broadcasterName} is still streaming a category you follow.",
-  "notification.snooze_action": "Remind me in 15m"
+  "notification.snooze_reminder.body": "Want to watch now?",
+  "notification.snooze_action": "Remind me in 15m",
+  "notification.watch_action": "Watch"
 }

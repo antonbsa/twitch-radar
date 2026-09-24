@@ -71,6 +71,8 @@ export async function sweepNotificationSnoozes(
       followed?.broadcaster_display_name ??
       followed?.broadcaster_login ??
       snooze.broadcaster_user_id
+    const broadcasterLogin =
+      monitored?.broadcaster_login ?? followed?.broadcaster_login ?? null
     const categoryName = channelState.category_name ?? snooze.category_id
 
     const delivery = await db.notificationDeliveries.insertPendingIfNew({
@@ -95,6 +97,10 @@ export async function sweepNotificationSnoozes(
           url: `/channels?broadcaster=${snooze.broadcaster_user_id}`,
           broadcasterUserId: snooze.broadcaster_user_id,
           categoryId: snooze.category_id,
+          ...(broadcasterLogin ? { broadcasterLogin } : {}),
+          ...(channelState.thumbnail_url
+            ? { image: channelState.thumbnail_url }
+            : {}),
         },
       })
     }
