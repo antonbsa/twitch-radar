@@ -59,9 +59,11 @@ export function buildBody(
   now: Date,
 ): { bodyKey: string; params: Record<string, string> } | null {
   const title = channelState?.title ?? null
+  const hasNonRedundantTitle =
+    title && !isRedundantWithCategory(title, categoryName)
 
   if (trigger === "stream_started_in_category") {
-    if (title && !isRedundantWithCategory(title, categoryName)) {
+    if (hasNonRedundantTitle) {
       return {
         bodyKey: "notification.stream_started_in_category.body.stream_title",
         params: { streamTitle: title },
@@ -93,7 +95,7 @@ export function buildBody(
       params: { previousCategory: previousCategoryName },
     }
   }
-  if (title && !isRedundantWithCategory(title, categoryName)) {
+  if (hasNonRedundantTitle) {
     return {
       bodyKey: "notification.switched_into_category.body.stream_title",
       params: { streamTitle: title },
