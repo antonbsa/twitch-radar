@@ -135,7 +135,7 @@ export function AccountPage() {
 
       {latestVersion && (
         <div className="mt-6 flex justify-center">
-          <Badge asChild variant="outline">
+          <Badge asChild variant="outline" className="cursor-pointer">
             <button
               type="button"
               aria-label={t("whats_new.badge_aria", {
