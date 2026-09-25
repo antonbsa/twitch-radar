@@ -153,9 +153,10 @@ describe("Account view", () => {
     const version = (await badge.textContent())?.trim()
 
     await badge.click()
-    await expectVisible(page.getByText("What's New"))
+    const sheet = page.getByRole("dialog", { name: "What's New" })
+    await expectVisible(sheet)
     if (version) {
-      await expectVisible(page.getByText(new RegExp(`^${version}\\s`)).first())
+      await expectVisible(sheet.getByText(version, { exact: true }).first())
     }
   })
 })

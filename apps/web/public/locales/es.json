@@ -115,8 +115,8 @@
 
   "whats_new.badge_aria": "Ver la versión {version} y Novedades",
   "whats_new.title": "Novedades",
-  "whats_new.version_heading": "{version} — {date}",
-  "whats_new.features_heading": "Funciones",
-  "whats_new.fixes_heading": "Correcciones",
+  "whats_new.new_heading": "Nuevo",
+  "whats_new.improved_heading": "Mejorado",
+  "whats_new.fixed_heading": "Corregido",
   "whats_new.no_user_facing_changes": "No hay cambios visibles para el usuario en esta versión."
 }

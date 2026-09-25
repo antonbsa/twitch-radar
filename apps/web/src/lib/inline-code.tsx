@@ -3,7 +3,7 @@ import { Fragment, type ReactNode } from "react"
 /**
  * Splits `text` on backtick-delimited spans and renders each as a `<code>`
  * element — the changelog's only inline formatting (ADR 0049 entries are
- * PR-title-derived plain text, not full markdown). Same
+ * plain-language text, not full markdown). Same
  * split-and-map-over-parts shape as `interpolateNodes`
  * (lib/i18n-react.tsx), kept separate since it matches on literal
  * backticks rather than named `{param}` placeholders.

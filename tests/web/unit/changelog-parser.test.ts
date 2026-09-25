@@ -2,30 +2,25 @@ import { describe, expect, it } from "vitest"
 import { parseChangelog } from "../../../apps/web/src/lib/changelog-parser"
 
 describe("parseChangelog", () => {
-  it("should parse version heading, date, and categorized items", () => {
+  it("should parse version heading, date, summary, and sections", () => {
     const markdown = `# Changelog
 
 ## v0.2.0 — 2026-09-10
 
-### Migrations & Config
+A short summary
+spanning two lines.
 
-- feat: add a migration
+### New
 
-### Features
+- Added a feature with \`inline code\`
 
-- feat: add a feature with \`inline code\`
+### Improved
 
-### Fixes
+- Made something faster
 
-- fix: fix a bug
+### Fixed
 
-### Docs & Decisions
-
-- docs: write a doc
-
-### Other Changes
-
-- chore: tidy up
+- Fixed a bug
 `
 
     const versions = parseChangelog(markdown)
@@ -34,12 +29,11 @@ describe("parseChangelog", () => {
       {
         version: "v0.2.0",
         date: "2026-09-10",
-        categories: {
-          migrations: ["feat: add a migration"],
-          features: ["feat: add a feature with `inline code`"],
-          fixes: ["fix: fix a bug"],
-          docs: ["docs: write a doc"],
-          other: ["chore: tidy up"],
+        summary: "A short summary spanning two lines.",
+        sections: {
+          new: ["Added a feature with `inline code`"],
+          improved: ["Made something faster"],
+          fixed: ["Fixed a bug"],
         },
       },
     ])
@@ -48,36 +42,36 @@ describe("parseChangelog", () => {
   it("should parse multiple versions in file order", () => {
     const markdown = `## v0.2.0 — 2026-09-10
 
-### Features
+### New
 
-- feat: newer thing
+- Newer thing
 
 ## v0.1.0 — 2026-08-01
 
-### Features
+### New
 
-- feat: older thing
+- Older thing
 `
 
     const versions = parseChangelog(markdown)
 
     expect(versions.map((v) => v.version)).toEqual(["v0.2.0", "v0.1.0"])
-    expect(versions[0].categories.features).toEqual(["feat: newer thing"])
-    expect(versions[1].categories.features).toEqual(["feat: older thing"])
+    expect(versions[0].sections.new).toEqual(["Newer thing"])
+    expect(versions[1].sections.new).toEqual(["Older thing"])
   })
 
   it("should ignore an Unreleased section", () => {
     const markdown = `## Unreleased
 
-### Features
+### New
 
-- feat: not shipped yet
+- Not shipped yet
 
 ## v0.1.0 — 2026-08-01
 
-### Features
+### New
 
-- feat: shipped
+- Shipped
 `
 
     const versions = parseChangelog(markdown)
@@ -86,18 +80,19 @@ describe("parseChangelog", () => {
     expect(versions[0].version).toBe("v0.1.0")
   })
 
-  it("should return an empty category for a version with no items in it", () => {
+  it("should return empty sections and summary when a version has none", () => {
     const markdown = `## v0.1.0 — 2026-08-01
 
-### Features
+### Fixed
 
-- feat: only this one
+- Only this one
 `
 
     const versions = parseChangelog(markdown)
 
-    expect(versions[0].categories.fixes).toEqual([])
-    expect(versions[0].categories.migrations).toEqual([])
+    expect(versions[0].summary).toBe("")
+    expect(versions[0].sections.new).toEqual([])
+    expect(versions[0].sections.improved).toEqual([])
   })
 
   it("should return an empty list for malformed or empty content", () => {
@@ -106,20 +101,23 @@ describe("parseChangelog", () => {
     expect(parseChangelog("## not a version heading at all")).toEqual([])
   })
 
-  it("should ignore an unrecognized category heading", () => {
+  it("should ignore an unrecognized section, including its prose", () => {
     const markdown = `## v0.1.0 — 2026-08-01
 
 ### Something Else
 
+Prose that is not the summary.
+
 - this should not appear anywhere
 
-### Features
+### New
 
-- feat: this should
+- This should
 `
 
     const versions = parseChangelog(markdown)
 
-    expect(versions[0].categories.features).toEqual(["feat: this should"])
+    expect(versions[0].summary).toBe("")
+    expect(versions[0].sections.new).toEqual(["This should"])
   })
 })
