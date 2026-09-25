@@ -127,4 +127,9 @@
   html {
     @apply font-sans;
   }
+  /* Tailwind v4 dropped Preflight's pointer cursor on buttons. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
 }

@@ -136,7 +136,7 @@ export function AlertsPage() {
                 onClick={() => setChannelSearch("")}
                 aria-label={t("alerts.clear_channel_search_aria")}
                 className={cn(
-                  "absolute inset-y-0 right-1.5 my-auto cursor-pointer transition-[opacity,visibility] duration-250",
+                  "absolute inset-y-0 right-1.5 my-auto transition-[opacity,visibility] duration-250",
                   channelSearch.length > 0
                     ? "visible opacity-100"
                     : "invisible opacity-0",
@@ -153,7 +153,7 @@ export function AlertsPage() {
               size="icon"
               onClick={() => setAddChannelOpen(true)}
               aria-label={t("alerts.add_channel")}
-              className="h-11 w-11 shrink-0 cursor-pointer"
+              className="h-11 w-11 shrink-0"
             >
               <Plus className="size-5" />
             </Button>
