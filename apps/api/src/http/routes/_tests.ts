@@ -82,6 +82,10 @@ export interface SeedEventsubSubscriptionInput {
   status?: string
   twitchSubscriptionId?: string | null
   callbackUrl?: string
+  failureCount?: number
+  // ISO timestamp, or omit for null (immediately eligible).
+  nextRetryAt?: string | null
+  updatedAt?: string
 }
 
 export interface SeedMonitoredChannelInput {
@@ -239,8 +243,10 @@ export async function handleTestSeed(c: Context<HonoEnv>): Promise<Response> {
             sub.callbackUrl ??
             `${c.var.config.publicUrl}/api/webhooks/twitch/eventsub`,
           secretVersion: "1",
+          failureCount: sub.failureCount ?? 0,
+          nextRetryAt: sub.nextRetryAt ?? null,
           createdAt: now,
-          updatedAt: now,
+          updatedAt: sub.updatedAt ?? now,
         })
         .run()
     }
