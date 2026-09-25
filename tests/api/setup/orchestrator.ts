@@ -234,6 +234,41 @@ async function waitForInspect(
   }
 }
 
+interface FollowedChannelListItem {
+  broadcaster_user_id: string
+  is_live: boolean
+  viewer_count: number | null
+  [key: string]: unknown
+}
+
+/**
+ * Polls `GET /channels/followed` until `predicate` passes — `POST
+ * /sync/follows` defers its D1 writes behind `waitUntil` (issue #83), so a
+ * test asserting on persisted state right after a sync must wait for it
+ * rather than assume it already landed.
+ */
+async function waitForFollowedChannels(
+  cookie: string,
+  predicate: (data: FollowedChannelListItem[]) => boolean,
+  options: { timeoutMs?: number } = {},
+): Promise<FollowedChannelListItem[]> {
+  const { timeoutMs = 10_000 } = options
+  const deadline = Date.now() + timeoutMs
+  for (;;) {
+    const res = await fetch(`${API_TEST_URL}/api/channels/followed`, {
+      headers: { Cookie: cookie },
+    })
+    const { data } = (await res.json()) as { data: FollowedChannelListItem[] }
+    if (predicate(data)) return data
+    if (Date.now() > deadline) {
+      throw new Error(
+        `waitForFollowedChannels timed out after ${timeoutMs}ms: ${JSON.stringify(data)}`,
+      )
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100))
+  }
+}
+
 export const orchestrator = {
   baseUrl: API_TEST_URL,
   clearDatabase,
@@ -247,6 +282,7 @@ export const orchestrator = {
     seam.inspect(broadcasterUserIds, userId),
   runScheduled,
   waitForInspect,
+  waitForFollowedChannels,
   mockTwitch,
   pushEndpoint,
 }

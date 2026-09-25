@@ -17,9 +17,9 @@ export function useSyncFollows() {
   const queryClient = useQueryClient()
 
   return useSessionAwareMutation({
-    mutationFn: () => api.post<{ ok: boolean }>("/sync/follows"),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: FOLLOWED_CHANNELS_QUERY_KEY })
+    mutationFn: () => api.post<{ data: FollowedChannel[] }>("/sync/follows"),
+    onSuccess: (res) => {
+      queryClient.setQueryData(FOLLOWED_CHANNELS_QUERY_KEY, res)
     },
   })
 }
