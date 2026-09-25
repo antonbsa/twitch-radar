@@ -164,7 +164,7 @@ export function ChannelDetailModal({
                     type="button"
                     variant="secondary"
                     size="lg"
-                    className="shrink-0 cursor-pointer gap-1.5"
+                    className="shrink-0 gap-1.5"
                     disabled={addPreference.isPending}
                     onClick={handleNotifyForCategory}
                   >
@@ -211,7 +211,7 @@ export function ChannelDetailModal({
                     variant="secondary"
                     size="lg"
                     disabled={snoozeNotification.isPending}
-                    className="w-full cursor-pointer gap-1.5 sm:w-fit sm:max-w-xs"
+                    className="w-full gap-1.5 sm:w-fit sm:max-w-xs"
                     onClick={() =>
                       snoozeNotification.mutate(
                         {
@@ -244,11 +244,7 @@ export function ChannelDetailModal({
                   </Button>
                 ))}
 
-              <Button
-                size="lg"
-                asChild
-                className="w-full cursor-pointer sm:w-fit sm:max-w-xs"
-              >
+              <Button size="lg" asChild className="w-full sm:w-fit sm:max-w-xs">
                 <a
                   href={`https://twitch.tv/${channel.broadcaster_login}`}
                   target="_blank"

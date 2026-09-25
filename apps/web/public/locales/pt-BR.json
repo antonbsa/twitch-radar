@@ -111,5 +111,12 @@
   "notification.switched_into_category.body": "{broadcasterName} agora está transmitindo uma categoria que você segue.",
   "notification.snooze_reminder.title": "{broadcasterName} ainda está transmitindo {categoryName}",
   "notification.snooze_reminder.body": "Lembrete: {broadcasterName} ainda está transmitindo uma categoria que você segue.",
-  "notification.snooze_action": "Lembrar em 15m"
+  "notification.snooze_action": "Lembrar em 15m",
+
+  "whats_new.badge_aria": "Ver a versão {version} e Novidades",
+  "whats_new.title": "Novidades",
+  "whats_new.new_heading": "Novo",
+  "whats_new.improved_heading": "Melhorado",
+  "whats_new.fixed_heading": "Corrigido",
+  "whats_new.no_user_facing_changes": "Nenhuma mudança visível para o usuário nesta versão."
 }

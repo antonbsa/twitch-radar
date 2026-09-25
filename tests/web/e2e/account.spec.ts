@@ -140,4 +140,23 @@ describe("Account view", () => {
     await expectVisible(page.getByRole("link", { name: "Reconnect Twitch" }))
     expect(new URL(page.url()).pathname).toBe("/account")
   })
+
+  it("should open the What's New sheet from the version badge", async ({
+    authenticatedSession,
+  }) => {
+    const { page } = authenticatedSession
+
+    await page.goto(`${WEB_URL}/account`)
+
+    const badge = page.getByRole("button", { name: /View version v\d/ })
+    await expectVisible(badge)
+    const version = (await badge.textContent())?.trim()
+
+    await badge.click()
+    const sheet = page.getByRole("dialog", { name: "What's New" })
+    await expectVisible(sheet)
+    if (version) {
+      await expectVisible(sheet.getByText(version, { exact: true }).first())
+    }
+  })
 })
