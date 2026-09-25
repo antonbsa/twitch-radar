@@ -43,7 +43,7 @@ export function WhatsNewSheet({ open, onOpenChange }: WhatsNewSheetProps) {
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="mx-auto max-h-[85vh] gap-0 sm:max-w-lg sm:rounded-t-xl sm:border-x"
+        className="max-h-[85vh] gap-0 data-[side=bottom]:sm:top-1/2 data-[side=bottom]:sm:bottom-auto data-[side=bottom]:sm:mx-auto data-[side=bottom]:sm:max-w-lg data-[side=bottom]:sm:-translate-y-1/2 data-[side=bottom]:sm:rounded-lg data-[side=bottom]:sm:border"
         aria-describedby={undefined}
       >
         <SheetHeader className="border-b">
