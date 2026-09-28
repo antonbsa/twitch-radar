@@ -16,11 +16,9 @@ const TRIGGER_BY_CHANGE_TYPE: Partial<Record<string, NotificationTriggerType>> =
     category_changed: "switched_into_category",
   }
 
-// A title in the same shape the client renders ("{broadcaster} is
-// streaming {category}") tells the reader nothing a body would add; the
-// backend can't compare against the actual localized string (ADR 0044 keeps
-// translation client-side), so this is a best-effort heuristic rather than
-// an exact match.
+// Best-effort check: client titles are localized and can just repeat the
+// category name, so we only suppress a stream title when it matches the
+// category text.
 function isRedundantWithCategory(
   title: string | null,
   categoryName: string,
@@ -41,16 +39,10 @@ function computeUptime(
   return { hours: Math.floor(totalMinutes / 60), minutes: totalMinutes % 60 }
 }
 
-// Body precedence per issue #38 item 4 (and the title/body redundancy fix):
-// stream_started_in_category shows the current stream title when it exists
-// and isn't just a restatement of the title's own category name; otherwise
-// the notification is title-only. switched_into_category prefers uptime +
-// the category just left, degrading through uptime-only, previous-category-
-// only, then the stream title, down to title-only.
-// Exported for tests/api/notification-body.test.ts: the push payload it
-// feeds is encrypted end-to-end (ADR 0035), so the body-composition
-// precedence can't be observed through an HTTP round trip the way other
-// tests/api coverage works — this pure function is tested directly instead.
+// Body precedence by trigger: stream_started_in_category prefers a
+// non-redundant stream title; switched_into_category prefers uptime +
+// previous category, then uptime, previous category, then the stream title.
+// Kept pure for direct tests; the push payload is encrypted end-to-end.
 export function buildBody(
   trigger: NotificationTriggerType,
   categoryName: string,
@@ -104,9 +96,7 @@ export function buildBody(
   return null
 }
 
-// ADR 0044: payloads carry only i18n keys, params, and the recipient's
-// language; broadcaster/category IDs ride along so snoozing can schedule a
-// reminder without referencing a specific delivery (ADR 0048).
+// Payloads use i18n keys and recipient language; IDs support snooze reminders.
 function buildPayload(
   trigger: NotificationTriggerType,
   broadcasterName: string,
@@ -141,21 +131,9 @@ function buildPayload(
 }
 
 /**
- * Matches one channel_state_changes row against user preferences and stages
- * deliveries (ADRs 0007, 0008, 0034):
- *
- * - per-channel: active channel_category_preferences on this broadcaster and
- *   the transition's next category.
- * - global: active global_category_preferences on the next category, limited
- *   to users who follow this broadcaster (ADR 0007).
- * - a user matched by both gets one delivery — the dedupe key is per
- *   user/broadcaster/category/trigger/stream, not per preference.
- *
- * Every matched user gets a `pending` notification_deliveries row (the
- * unique dedupe index absorbs replays) and a send job. Jobs are enqueued for
- * any delivery still `pending`, so a replay after a crash between insert and
- * enqueue re-issues the job; the sender's status check keeps a double
- * enqueue from double-sending.
+ * Match the change against active category preferences, dedupe by user,
+ * broadcaster, category, trigger, and stream, then enqueue one pending
+ * delivery per matched user.
  */
 export async function matchAndCreateDeliveries(
   db: Database,
@@ -170,9 +148,8 @@ export async function matchAndCreateDeliveries(
 
   const channelState =
     await db.channelState.findByBroadcasterUserId(broadcasterUserId)
-  // ADR 0050: suppress non-live stream types (rerun/playlist/watch_party) —
-  // null covers rows written before this column existed, treated as live so
-  // pre-migration channels don't go silently unnotified.
+  // ADR 0050: suppress known non-live stream types; null means the type is
+  // unknown (e.g. a channel.update with no prior stream.online), treated as live.
   if (channelState?.stream_type && channelState.stream_type !== "live") return
 
   const channelPreferences =
