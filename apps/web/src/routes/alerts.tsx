@@ -43,8 +43,14 @@ export function AlertsPage() {
     useState<FollowedChannel | null>(null)
   const { armedId: armedChipId, arm: armChip } = useArmedChip()
 
-  const globalPreferences = preferences?.global ?? []
-  const channelPreferences = preferences?.channel ?? []
+  const globalPreferences = useMemo(
+    () => preferences?.global ?? [],
+    [preferences?.global],
+  )
+  const channelPreferences = useMemo(
+    () => preferences?.channel ?? [],
+    [preferences?.channel],
+  )
 
   const groups = useMemo(
     () =>
