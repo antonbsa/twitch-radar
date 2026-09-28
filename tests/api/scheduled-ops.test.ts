@@ -203,6 +203,62 @@ describe("EventSub reconciliation", () => {
       twitch_subscription_id: null,
     })
   })
+
+  it("should reset a failed row back to pending once its 24h cooldown has elapsed", async () => {
+    const failedSince = new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString()
+    await orchestrator.seed({
+      monitoredChannels: [{ broadcasterUserId: BROADCASTER_ID }],
+      eventsubSubscriptions: [
+        {
+          broadcasterUserId: BROADCASTER_ID,
+          eventType: "stream.online",
+          status: "failed",
+          failureCount: 5,
+          updatedAt: failedSince,
+        },
+      ],
+    })
+    await orchestrator.mockTwitch.onAppToken()
+    await orchestrator.mockTwitch.onEventsubSubscriptionList([])
+
+    await orchestrator.runScheduled(CRON_EVENTSUB_RECONCILE)
+
+    const state = await orchestrator.inspect([BROADCASTER_ID])
+    const online = state.eventsubSubscriptions.find(
+      (s) => s.event_type === "stream.online",
+    )
+    expect(online).toMatchObject({
+      status: "pending",
+      failure_count: 0,
+      next_retry_at: null,
+    })
+  })
+
+  it("should leave a recently failed row alone within its 24h cooldown", async () => {
+    const failedSince = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+    await orchestrator.seed({
+      monitoredChannels: [{ broadcasterUserId: BROADCASTER_ID }],
+      eventsubSubscriptions: [
+        {
+          broadcasterUserId: BROADCASTER_ID,
+          eventType: "stream.online",
+          status: "failed",
+          failureCount: 5,
+          updatedAt: failedSince,
+        },
+      ],
+    })
+    await orchestrator.mockTwitch.onAppToken()
+    await orchestrator.mockTwitch.onEventsubSubscriptionList([])
+
+    await orchestrator.runScheduled(CRON_EVENTSUB_RECONCILE)
+
+    const state = await orchestrator.inspect([BROADCASTER_ID])
+    const online = state.eventsubSubscriptions.find(
+      (s) => s.event_type === "stream.online",
+    )
+    expect(online).toMatchObject({ status: "failed", failure_count: 5 })
+  })
 })
 
 describe("Twitch token refresh", () => {

@@ -7,7 +7,7 @@ const VIRTUAL_MODULE_ID = "virtual:changelog"
 const RESOLVED_VIRTUAL_MODULE_ID = "\0" + VIRTUAL_MODULE_ID
 
 /**
- * Exposes the repo-root CHANGELOG.md (ADR 0049) as the `virtual:changelog`
+ * Exposes the repo-root CHANGELOG.md (ADR 0050) as the `virtual:changelog`
  * module, parsed at build/dev-server time rather than checked into the
  * repo as generated JSON. A missing or unreadable file degrades to an
  * empty list with a build warning instead of failing the build — the

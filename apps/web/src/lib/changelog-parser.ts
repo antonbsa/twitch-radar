@@ -1,4 +1,4 @@
-// Parses the root CHANGELOG.md (ADR 0049) into structured data for the
+// Parses the root CHANGELOG.md (ADR 0050) into structured data for the
 // in-app "What's New" widget. Pure and dependency-free so it's unit
 // testable without the Vite plugin (vite-plugins/changelog-plugin.ts) that
 // wraps it for the `virtual:changelog` module.

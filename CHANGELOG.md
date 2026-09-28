@@ -1,6 +1,6 @@
 # Changelog
 
-What changed for people using Twitch Radar, one section per released version. Written in plain language for the in-app "What's New" sheet — no PR numbers, commit prefixes, or internal-only changes; the full engineering list lives in each GitHub Release, generated from PR labels below this entry (see [ADR 0049](docs/decisions/0049-changelog-as-source-of-truth-for-release-notes.md)). An `## Unreleased` section, when present, is ignored by the widget and its build-time parser.
+What changed for people using Twitch Radar, one section per released version. Written in plain language for the in-app "What's New" sheet — no PR numbers, commit prefixes, or internal-only changes; the full engineering list lives in each GitHub Release, generated from PR labels below this entry (see [ADR 0050](docs/decisions/0050-changelog-as-source-of-truth-for-release-notes.md)). An `## Unreleased` section, when present, is ignored by the widget and its build-time parser.
 
 ## v0.1.1 — 2026-08-30
 
