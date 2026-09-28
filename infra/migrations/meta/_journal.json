@@ -36,6 +36,13 @@
       "when": 1789867910455,
       "tag": "0005_t023_notification_snoozes",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1790223000771,
+      "tag": "0006_eventsub_subscription_backoff",
+      "breakpoints": true
     }
   ]
 }

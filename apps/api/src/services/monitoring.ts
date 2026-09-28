@@ -11,9 +11,29 @@ const EVENTSUB_CALLBACK_PATH = "/api/webhooks/twitch/eventsub"
  * The callback URL this deployment stamps on its EventSub subscriptions —
  * also reconciliation's ownership marker (ADR 0036): only Twitch-side
  * subscriptions pointing here are ours to delete.
+ *
+ * Validated outside local dev (ADR 0049): Twitch permanently rejects a
+ * non-https or non-standard-port callback, and nothing ever retires a
+ * `pending` row stuck failing for that reason — so a bad `PUBLIC_URL` must
+ * fail loudly here, at the one place every caller derives this URL, instead
+ * of silently producing a doomed row.
  */
 export function eventsubCallbackUrl(config: AppConfig): string {
-  return `${config.publicUrl}${EVENTSUB_CALLBACK_PATH}`
+  const callbackUrl = `${config.publicUrl}${EVENTSUB_CALLBACK_PATH}`
+  if (config.environment !== "local") {
+    assertValidEventsubCallbackUrl(callbackUrl)
+  }
+  return callbackUrl
+}
+
+function assertValidEventsubCallbackUrl(callbackUrl: string): void {
+  const parsed = new URL(callbackUrl)
+  const isStandardPort = parsed.port === "" || parsed.port === "443"
+  if (parsed.protocol !== "https:" || !isStandardPort) {
+    throw new Error(
+      `Invalid EventSub callback URL derived from PUBLIC_URL: "${callbackUrl}" must be https with a standard port (443) outside local dev`,
+    )
+  }
 }
 
 export interface MonitorTarget {

@@ -13,6 +13,12 @@ import {
 // broadcaster set gets disabled at once; the next run continues the cleanup.
 const MAX_REMOTE_DELETES_PER_RUN = 20
 
+// A `failed` row (ADR 0049) isn't retried automatically — only reconciliation
+// resurrects it, and only this long after it was flagged, so a fix (e.g. a
+// corrected PUBLIC_URL, a re-registered redirect URI) has had a real chance
+// to take effect before the exact same failure mode gets another shot.
+const FAILED_COOLDOWN_MS = 24 * 60 * 60_000
+
 // Twitch statuses that need no repair. Everything else (revocation reasons,
 // failure states) means the subscription no longer delivers events.
 const HEALTHY_REMOTE_STATUSES = new Set([
@@ -22,13 +28,17 @@ const HEALTHY_REMOTE_STATUSES = new Set([
 
 /**
  * Compares local `eventsub_subscriptions` against Twitch and repairs both
- * sides (ADRs 0007, 0031, 0036):
+ * sides (ADRs 0007, 0031, 0036, 0049):
  *
  * - broadcaster no longer monitored → delete the Twitch subscription and the
  *   local row (this is also what clears pending rows staged for a
  *   broadcaster that was disabled before the creation job picked them up).
  * - local row's Twitch subscription is missing or unhealthy → reset the row
  *   to `pending` so the minutely creation job recreates it.
+ * - local row is the terminal `failed` status (ADR 0049) for a still-active
+ *   broadcaster and its cooldown has elapsed → reset it to `pending` too, so
+ *   a permanently-stuck row isn't abandoned forever once the underlying
+ *   cause (bad config, revoked credentials) is actually fixed.
  * - local and Twitch disagree on status (e.g. a missed challenge flip) →
  *   mirror Twitch's status locally.
  * - Twitch subscription with no local row → delete it (it spends quota and
@@ -131,6 +141,16 @@ async function reconcile(
     }
 
     if (row.status === "pending") continue
+
+    if (row.status === "failed") {
+      const cooledDown =
+        Date.parse(row.updated_at) + FAILED_COOLDOWN_MS <= Date.parse(now)
+      if (cooledDown) {
+        await db.eventsubSubscriptions.resetToPending(row.id, now)
+        localRowsReset += 1
+      }
+      continue
+    }
 
     if (!remoteSub) {
       await db.eventsubSubscriptions.resetToPending(row.id, now)
