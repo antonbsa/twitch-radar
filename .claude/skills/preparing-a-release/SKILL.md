@@ -23,9 +23,9 @@ Cutting a production deploy, drafting release notes, or picking the next version
 
 3. **Gather the range.** `git log <last-tag>..main --no-merges --pretty="%h %s"` for the commits, and `gh pr list --state merged --base main --limit 50 --json number,title,labels,mergedAt` for the PRs. Read the commits, not just the PR titles - merge commits hide the Conventional Commit prefixes that tell you what kind of change each one is.
 
-4. **Validate every PR in range has a label.** `.github/release.yml` categorizes purely on labels (see "Labels" below); an unlabeled PR silently lands in "Other Changes" instead of the risk-flagged category it belongs in. For every merged PR since the last tag with an empty `labels` array:
+4. **Validate every PR in range has a label.** `.github/release.yml` categorizes purely on labels (see "Labels" below); an unlabeled PR silently lands in "Other Changes" instead of the functional category (Features/Fixes/Docs & Decisions) it belongs in. For every merged PR since the last tag with an empty `labels` array:
    - Read its changed files (`gh pr view <n> --json files`) and title/commit prefixes.
-   - Apply `migration` if it touches `infra/migrations`, `config` if it touches `apps/api/wrangler.jsonc` / `apps/api/src/crons.ts` / `apps/api/src/env.ts`, plus the applicable default (`bug` for `fix:`, `enhancement` for `feat:`, `documentation` for `docs:`) - same rule as `CLAUDE.md`'s PR-opening step.
+   - Apply `migration` if it touches `infra/migrations`, `config` if it touches `apps/api/wrangler.jsonc` / `apps/api/src/crons.ts` / `apps/api/src/env.ts`, plus the applicable default (`bug` for `fix:`, `enhancement` for `feat:`, `documentation` for `docs:`) - same rule as `CLAUDE.md`'s PR-opening step. `migration`/`config` don't have their own category in `release.yml` (see "Labels" below) - they still describe risk, surfaced in step 5 and the notes' prose, not in how the PR is grouped.
    - `chore:`/`refactor:`/`test:`-prefixed PRs that touch none of the risk paths above have no correct default label - leave them unlabeled (they correctly fall into "Other Changes", which exists precisely so unlabeled work isn't dropped, not miscategorized into something it isn't).
    - Present the suggested labels to the human before applying (`gh pr edit <n> --add-label "..."`) - this rewrites shared PR metadata, not local draft state.
 
@@ -62,6 +62,8 @@ gh label create config --color d93f0b --description "Touches wrangler.jsonc, cro
 gh label create skip-changelog --color ededed --description "Omit from generated release notes"
 ```
 
+`migration` and `config` deliberately have no category of their own - a PR carrying one of them still groups under its functional label (Features/Fixes/Docs & Decisions), so an EventSub bug fix that happens to add a migration reads as a fix, not as an undifferentiated "migration" entry next to an i18n feature that also added one. The two labels still matter: step 5 uses them (via the changed-files check, not the label) to decide what to call out in the notes' prose, and CLAUDE.md's PR-opening step still requires them for anyone auditing what touched `infra/migrations`/config later.
+
 Unlabeled PRs still appear, under "Other Changes" - the catch-all category exists so nothing is silently dropped.
 
 ## Common mistakes
@@ -71,7 +73,7 @@ Unlabeled PRs still appear, under "Other Changes" - the catch-all category exist
 - Creating the draft before the human has approved the prose. Show the draft notes first; only step 8 touches `gh release create`.
 - Tagging a commit that isn't on `main`, isn't pushed to `origin/main` yet, or whose preview deploy hasn't been exercised. Preview is the gate ADR 0041 added; skipping it defeats the split. An unpushed target commit surfaces as an opaque `HTTP 500` from the releases API, not a helpful error.
 - Titling the release with a name suffix (`"v0.1.0 - <name>"`). The title is the version string alone; any narrative goes in the notes body.
-- Assuming unlabeled PRs are fine because "Other Changes" catches them. That catch-all exists for genuinely unlabeled/chore work, not as a substitute for checking - a `feat:`/`fix:`/`migration`/`config` PR that slipped through unlabeled belongs in a risk-flagged category, not buried at the bottom.
+- Assuming unlabeled PRs are fine because "Other Changes" catches them. That catch-all exists for genuinely unlabeled/chore work, not as a substitute for checking - a `feat:`/`fix:`/`migration`/`config` PR that slipped through unlabeled belongs in Features/Fixes, not buried at the bottom.
 - Missing a migration because you only read PR titles. Check `git diff --name-only <last-tag>..main -- infra/migrations` directly.
 - Bumping minor for every release out of habit. Most releases here are patches.
 - Treating `package.json`'s version as the current version - the field doesn't exist there anymore; the git tag is the sole source of truth.
