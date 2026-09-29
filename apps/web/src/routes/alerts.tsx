@@ -4,9 +4,9 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { AddChannelSheet } from "@/components/add-channel-sheet"
-import { AddGlobalCategorySheet } from "@/components/add-global-category-sheet"
+import { AddGlobalCategoryDialog } from "@/components/add-global-category-dialog"
 import { ChannelAlertsCard } from "@/components/channel-alerts-card"
-import { ChannelPreferencesSheet } from "@/components/channel-preferences-sheet"
+import { ChannelPreferencesDialog } from "@/components/channel-preferences-dialog"
 import { GlobalAlertsCard } from "@/components/global-alerts-card"
 import { ReconnectRequired } from "@/components/reconnect-required"
 import { useAuth } from "@/context/auth-context"
@@ -209,13 +209,13 @@ export function AlertsPage() {
           />
         ))}
 
-      <AddGlobalCategorySheet
+      <AddGlobalCategoryDialog
         open={addGlobalOpen}
         onOpenChange={setAddGlobalOpen}
         disabledCategoryIds={globalPreferences.map((pref) => pref.category_id)}
       />
 
-      <ChannelPreferencesSheet
+      <ChannelPreferencesDialog
         channel={configuringChannel}
         onOpenChange={(open) => {
           if (!open) setConfiguringChannel(null)

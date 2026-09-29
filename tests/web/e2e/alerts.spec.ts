@@ -63,7 +63,7 @@ describe("Alerts view", () => {
     )
   })
 
-  it("should open the add-category sheet and dismiss it on tap outside", async ({
+  it("should open the add-category dialog full-screen and dismiss it with the close button", async ({
     authenticatedSession,
   }) => {
     const { page } = authenticatedSession
@@ -82,10 +82,18 @@ describe("Alerts view", () => {
     await expectVisible(dialog)
     await expectVisible(dialog.getByText("Add Category"))
 
-    // Tap outside (the overlay behind the sheet) to dismiss.
-    await page
-      .locator('[data-slot="sheet-overlay"]')
-      .click({ position: { x: 5, y: 5 } })
+    // Full-screen on every viewport (#20): no overlay is left exposed to tap,
+    // so the close button is the dismiss path.
+    const box = await dialog.boundingBox()
+    const viewport = page.viewportSize()
+    expect(box).toEqual({
+      x: 0,
+      y: 0,
+      width: viewport?.width,
+      height: viewport?.height,
+    })
+
+    await dialog.getByRole("button", { name: "Close" }).click()
     await expectHidden(dialog)
   })
 
