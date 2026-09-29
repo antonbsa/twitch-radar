@@ -77,18 +77,27 @@ describe("Channels view", () => {
     await page.goto(WEB_URL)
 
     const rows = page.getByTestId("channel-row")
-    await expect.poll(() => rows.count()).toBe(4)
+    // Initial fetch and render can exceed Vitest's default poll timeout under CI load.
+    await expect.poll(() => rows.count(), { timeout: 5000 }).toBe(4)
     await expect
-      .poll(() => rows.nth(0).getAttribute("data-broadcaster-user-id"))
+      .poll(() => rows.nth(0).getAttribute("data-broadcaster-user-id"), {
+        timeout: 5000,
+      })
       .toBe(highViewer)
     await expect
-      .poll(() => rows.nth(1).getAttribute("data-broadcaster-user-id"))
+      .poll(() => rows.nth(1).getAttribute("data-broadcaster-user-id"), {
+        timeout: 5000,
+      })
       .toBe(lowViewer)
     await expect
-      .poll(() => rows.nth(2).getAttribute("data-broadcaster-user-id"))
+      .poll(() => rows.nth(2).getAttribute("data-broadcaster-user-id"), {
+        timeout: 5000,
+      })
       .toBe(apple)
     await expect
-      .poll(() => rows.nth(3).getAttribute("data-broadcaster-user-id"))
+      .poll(() => rows.nth(3).getAttribute("data-broadcaster-user-id"), {
+        timeout: 5000,
+      })
       .toBe(zebra)
   })
 
