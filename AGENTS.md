@@ -141,6 +141,10 @@ The three catalogs (`en.json`, `es.json`, `pt-BR.json`) are kept in lockstep - a
 
 This extends past the React app: the service worker (`apps/web/public/service-worker.js`) and the backend (`NotificationJobMessage`'s `{titleKey, bodyKey, params, lang}`, ADR 0044) also pass around catalog keys, not literal text - a hook or handler that resolves user-facing text should return a key for its caller to look up, not the resolved string, unless it's the one place actually rendering it.
 
+## Frontend Interaction Cursor
+
+Tailwind v4's Preflight no longer gives `<button>` a pointer cursor, so `apps/web/src/index.css` restores it globally in `@layer base` for every enabled `button` and `[role="button"]`. Don't add `cursor-pointer` per element to a `<button>`, a `Button`, or a `Badge asChild` wrapping a `<button>` - it's already covered. Add it explicitly only on a clickable element that isn't a button (e.g. a row `div` with `onClick`, or a Radix `option`/`menuitem` item). `disabled:cursor-not-allowed` still wins, since utilities outrank the base layer.
+
 ## DB Access Pattern
 
 A fresh `Database` instance is created per request via Hono middleware in `index.ts`:

@@ -111,5 +111,12 @@
   "notification.switched_into_category.body": "{broadcasterName} is now streaming a category you follow.",
   "notification.snooze_reminder.title": "{broadcasterName} is still streaming {categoryName}",
   "notification.snooze_reminder.body": "Reminder: {broadcasterName} is still streaming a category you follow.",
-  "notification.snooze_action": "Remind me in 15m"
+  "notification.snooze_action": "Remind me in 15m",
+
+  "whats_new.badge_aria": "View version {version} and What's New",
+  "whats_new.title": "What's New",
+  "whats_new.new_heading": "New",
+  "whats_new.improved_heading": "Improved",
+  "whats_new.fixed_heading": "Fixed",
+  "whats_new.no_user_facing_changes": "No user-facing changes in this version."
 }
