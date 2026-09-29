@@ -132,14 +132,18 @@ Notifications work the same way whether you're on the dev machine or on mobile (
    Copy the printed keys into `.env.local`.
 2. Restart `npm run dev` so the new keys are picked up.
 3. In the app, go to the Account tab and enable notifications (grants the browser permission prompt and creates a real Push subscription).
-4. Add a category preference for a broadcaster you follow (Channels tab), and note that broadcaster's numeric Twitch id — visible in the network tab on the `POST /api/preferences/channel` request, or in a `GET /api/channels/followed` response.
+4. Add a category preference (Channels tab for a channel preference, or a global one).
 5. Force a notification without waiting for the broadcaster to actually go live or change category:
    ```sh
-   npm run mock-eventsub -- <broadcasterUserId> <categoryId> "<categoryName>" <baselineCategoryId> "<baselineCategoryName>"
+   npm run mock-eventsub
+   ```
+   With no arguments, it reads this worktree's local D1 to pick the most recently logged-in user and their oldest active channel preference (or, if they have none, their oldest global preference paired with their first-followed monitored channel). Set `MOCK_USER_ID` (in the environment or `.env.local`) to pick a different user. Explicit arguments override the derived target:
+   ```sh
+   npm run mock-eventsub -- <broadcasterUserId> <categoryId> "<categoryName>" [<baselineCategoryId> "<baselineCategoryName>"]
    # e.g. switch a broadcaster from Minecraft into Just Chatting:
    npm run mock-eventsub -- 123456789 509658 "Just Chatting" 27471 Minecraft
    ```
-   This signs a forged (but valid) EventSub webhook the same way Twitch would and sends it straight to your local API — no real Twitch event required. It prints the resulting `notification_deliveries` row; your device should get the push. Only works while `ENVIRONMENT !== "production"` (true for all local/dev setups).
+   Either way, it seeds the broadcaster live in a baseline category (a synthetic "Mock Baseline" unless given) and signs a forged (but valid) `channel.update` EventSub webhook switching into the target category, the same way Twitch would, sending it straight to your local API — no real Twitch event or API call required. It prints the resulting `notification_deliveries` row; your device should get the push. Only works while `ENVIRONMENT !== "production"` (true for all local/dev setups).
 
 ## Testing On Mobile (Or Any Other Device)
 
