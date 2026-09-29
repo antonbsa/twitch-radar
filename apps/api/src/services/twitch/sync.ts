@@ -1,3 +1,4 @@
+import { scheduledJobLogFields } from "../../crons"
 import type { AppConfig } from "../../env"
 import type { Database } from "../../db"
 import { logger, serializeError } from "../../logger"
@@ -255,6 +256,7 @@ export async function syncStaleFollows(
   db: Database,
   config: AppConfig,
 ): Promise<void> {
+  const logFields = scheduledJobLogFields("follow-sync")
   try {
     const userIds = await db.globalCategoryPreferences.listUserIdsWithActive()
     const cutoff = Date.now() - FOLLOW_SYNC_STALE_MS
@@ -285,6 +287,7 @@ export async function syncStaleFollows(
         succeeded += 1
       } catch (error) {
         logger.error("Scheduled follow sync failed", {
+          ...logFields,
           userId,
           ...serializeError(error),
         })
@@ -292,6 +295,7 @@ export async function syncStaleFollows(
     }
 
     logger.info("Scheduled follow sync run completed", {
+      ...logFields,
       attempted,
       succeeded,
       failed: attempted - succeeded,
@@ -302,6 +306,7 @@ export async function syncStaleFollows(
     // detail instead of escaping as Cloudflare's bare automatic exception
     // capture.
     logger.error("Scheduled follow sync run failed", {
+      ...logFields,
       ...serializeError(error),
     })
   }

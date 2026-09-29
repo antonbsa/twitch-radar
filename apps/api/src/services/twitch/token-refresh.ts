@@ -1,3 +1,4 @@
+import { scheduledJobLogFields } from "../../crons"
 import type { AppConfig } from "../../env"
 import { ApiError } from "../../http/errors"
 import { logger, serializeError } from "../../logger"
@@ -110,6 +111,7 @@ export async function refreshExpiringTwitchTokens(
   db: Database,
   config: AppConfig,
 ): Promise<void> {
+  const logFields = scheduledJobLogFields("token-refresh")
   try {
     const cutoff = new Date(
       Date.now() + SCHEDULED_REFRESH_LOOKAHEAD_MS,
@@ -126,6 +128,7 @@ export async function refreshExpiringTwitchTokens(
         succeeded += 1
       } catch (error) {
         logger.error("Scheduled Twitch token refresh failed", {
+          ...logFields,
           userId: record.user_id,
           ...serializeError(error),
         })
@@ -133,6 +136,7 @@ export async function refreshExpiringTwitchTokens(
     }
 
     logger.info("Scheduled Twitch token refresh sweep completed", {
+      ...logFields,
       attempted: expiring.length,
       succeeded,
       failed: expiring.length - succeeded,
@@ -142,6 +146,7 @@ export async function refreshExpiringTwitchTokens(
     // outside the per-record handling above, so it's logged with full detail
     // instead of escaping as Cloudflare's bare automatic exception capture.
     logger.error("Scheduled Twitch token refresh sweep failed", {
+      ...logFields,
       ...serializeError(error),
     })
   }

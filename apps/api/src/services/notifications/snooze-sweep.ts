@@ -1,5 +1,6 @@
 import type { Database } from "../../db"
-import { logger } from "../../logger"
+import { scheduledJobLogFields } from "../../crons"
+import { logger, serializeError } from "../../logger"
 import type { NotificationJobMessage } from "../../types"
 
 // Bounds the sweep the same way the other scheduled jobs bound theirs
@@ -26,92 +27,107 @@ export async function sweepNotificationSnoozes(
   db: Database,
   queue: Queue<NotificationJobMessage>,
 ): Promise<void> {
-  const now = new Date().toISOString()
-  const due = await db.notificationSnoozes.findDue(now, MAX_SNOOZES_PER_RUN)
-  if (due.length === 0) return
+  const logFields = scheduledJobLogFields("snooze-sweep")
+  try {
+    const now = new Date().toISOString()
+    const due = await db.notificationSnoozes.findDue(now, MAX_SNOOZES_PER_RUN)
+    if (due.length === 0) {
+      logger.debug("Notification snooze sweep found nothing to do", logFields)
+      return
+    }
 
-  let fired = 0
-  let expired = 0
+    let fired = 0
+    let expired = 0
 
-  // ADR 0044: language is per-recipient, so batch-load it up front the same
-  // way matchAndCreateDeliveries does.
-  const languageByUserId = await db.users.findLanguagesByIds(
-    due.map((snooze) => snooze.user_id),
-  )
-
-  for (const snooze of due) {
-    const channelState = await db.channelState.findByBroadcasterUserId(
-      snooze.broadcaster_user_id,
+    // ADR 0044: language is per-recipient, so batch-load it up front the same
+    // way matchAndCreateDeliveries does.
+    const languageByUserId = await db.users.findLanguagesByIds(
+      due.map((snooze) => snooze.user_id),
     )
-    const stillCurrent =
-      channelState?.is_live === true &&
-      channelState.category_id === snooze.category_id
 
-    if (!stillCurrent) {
-      await db.notificationSnoozes.markExpired(snooze.id)
-      expired += 1
-      continue
-    }
+    for (const snooze of due) {
+      const channelState = await db.channelState.findByBroadcasterUserId(
+        snooze.broadcaster_user_id,
+      )
+      const stillCurrent =
+        channelState?.is_live === true &&
+        channelState.category_id === snooze.category_id
 
-    const [monitored] = await db.monitoredChannels.findByBroadcasterUserIds([
-      snooze.broadcaster_user_id,
-    ])
-    // Snoozes need no preference row, so fall back to the user's followed
-    // channel record, then to the raw broadcaster id to avoid leaking
-    // English text into non-English templates.
-    const followed = monitored
-      ? null
-      : await db.followedChannels.findOne(
-          snooze.user_id,
-          snooze.broadcaster_user_id,
-        )
-    const broadcasterName =
-      monitored?.broadcaster_display_name ??
-      monitored?.broadcaster_login ??
-      followed?.broadcaster_display_name ??
-      followed?.broadcaster_login ??
-      snooze.broadcaster_user_id
-    const broadcasterLogin =
-      monitored?.broadcaster_login ?? followed?.broadcaster_login ?? null
-    const categoryName = channelState.category_name ?? snooze.category_id
+      if (!stillCurrent) {
+        await db.notificationSnoozes.markExpired(snooze.id)
+        expired += 1
+        continue
+      }
 
-    const delivery = await db.notificationDeliveries.insertPendingIfNew({
-      userId: snooze.user_id,
-      broadcasterUserId: snooze.broadcaster_user_id,
-      categoryId: snooze.category_id,
-      triggerType: "snooze_reminder",
-      eventsubMessageId: null,
-      streamId: channelState.stream_id,
-      now,
-    })
+      const [monitored] = await db.monitoredChannels.findByBroadcasterUserIds([
+        snooze.broadcaster_user_id,
+      ])
+      // Snoozes need no preference row, so fall back to the user's followed
+      // channel record, then to the raw broadcaster id to avoid leaking
+      // English text into non-English templates.
+      const followed = monitored
+        ? null
+        : await db.followedChannels.findOne(
+            snooze.user_id,
+            snooze.broadcaster_user_id,
+          )
+      const broadcasterName =
+        monitored?.broadcaster_display_name ??
+        monitored?.broadcaster_login ??
+        followed?.broadcaster_display_name ??
+        followed?.broadcaster_login ??
+        snooze.broadcaster_user_id
+      const broadcasterLogin =
+        monitored?.broadcaster_login ?? followed?.broadcaster_login ?? null
+      const categoryName = channelState.category_name ?? snooze.category_id
 
-    if (delivery?.status === "pending") {
-      await queue.send({
-        deliveryId: delivery.id,
+      const delivery = await db.notificationDeliveries.insertPendingIfNew({
         userId: snooze.user_id,
-        payload: {
-          titleKey: "notification.snooze_reminder.title",
-          bodyKey: "notification.snooze_reminder.body",
-          params: { broadcasterName, categoryName },
-          lang: languageByUserId.get(snooze.user_id) ?? "en",
-          url: `/channels?broadcaster=${snooze.broadcaster_user_id}`,
-          broadcasterUserId: snooze.broadcaster_user_id,
-          categoryId: snooze.category_id,
-          ...(broadcasterLogin ? { broadcasterLogin } : {}),
-          ...(channelState.thumbnail_url
-            ? { image: channelState.thumbnail_url }
-            : {}),
-        },
+        broadcasterUserId: snooze.broadcaster_user_id,
+        categoryId: snooze.category_id,
+        triggerType: "snooze_reminder",
+        eventsubMessageId: null,
+        streamId: channelState.stream_id,
+        now,
       })
+
+      if (delivery?.status === "pending") {
+        await queue.send({
+          deliveryId: delivery.id,
+          userId: snooze.user_id,
+          payload: {
+            titleKey: "notification.snooze_reminder.title",
+            bodyKey: "notification.snooze_reminder.body",
+            params: { broadcasterName, categoryName },
+            lang: languageByUserId.get(snooze.user_id) ?? "en",
+            url: `/channels?broadcaster=${snooze.broadcaster_user_id}`,
+            broadcasterUserId: snooze.broadcaster_user_id,
+            categoryId: snooze.category_id,
+            ...(broadcasterLogin ? { broadcasterLogin } : {}),
+            ...(channelState.thumbnail_url
+              ? { image: channelState.thumbnail_url }
+              : {}),
+          },
+        })
+      }
+
+      await db.notificationSnoozes.markFired(snooze.id)
+      fired += 1
     }
 
-    await db.notificationSnoozes.markFired(snooze.id)
-    fired += 1
+    logger.info("Notification snooze sweep completed", {
+      ...logFields,
+      attempted: due.length,
+      fired,
+      expired,
+    })
+  } catch (error) {
+    // Same backstop as the other scheduled jobs: keeps a D1/queue failure
+    // attributed to this job instead of only reaching scheduled()'s generic
+    // "Scheduled job failed" log.
+    logger.error("Notification snooze sweep failed", {
+      ...logFields,
+      ...serializeError(error),
+    })
   }
-
-  logger.info("Notification snooze sweep completed", {
-    attempted: due.length,
-    fired,
-    expired,
-  })
 }

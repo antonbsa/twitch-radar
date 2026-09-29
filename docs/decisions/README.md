@@ -56,6 +56,7 @@ Other project documents may state goals, requirements, task scope, validation st
 - [0049 - EventSub Subscription Failure Backoff, Terminal Status, And Callback Validation](0049-eventsub-subscription-failure-backoff-and-callback-validation.md)
 - [0050 - CHANGELOG.md As The Source Of Truth For Release Notes](0050-changelog-as-source-of-truth-for-release-notes.md)
 - [0051 - Suppress Notifications For Non-Live Stream Types](0051-suppress-non-live-stream-type-notifications.md)
+- [0052 - Self-Describing Scheduled Job Logs](0052-self-describing-scheduled-job-logs.md)
 
 ## Proposed ADRs
 
