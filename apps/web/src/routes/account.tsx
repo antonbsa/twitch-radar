@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useNavigate } from "react-router"
-import { changelog } from "virtual:changelog"
+import { changelogs } from "virtual:changelog"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -37,7 +37,8 @@ export function AccountPage() {
   const push = usePushNotifications()
   const navigate = useNavigate()
   const syncFollows = useSyncFollows()
-  const latestVersion = changelog[0]
+  // All changelogs share the same version/date; English is enough for the badge.
+  const latestVersion = changelogs.en[0]
 
   async function handleLogout() {
     setIsLoggingOut(true)

@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest"
-import { parseChangelog } from "../../../apps/web/src/lib/changelog-parser"
+import {
+  parseChangelog,
+  withEnglishFallback,
+} from "../../../apps/web/src/lib/changelog-parser"
 
 describe("parseChangelog", () => {
   it("should parse version heading, date, summary, and sections", () => {
@@ -119,5 +122,51 @@ Prose that is not the summary.
 
     expect(versions[0].summary).toBe("")
     expect(versions[0].sections.new).toEqual(["This should"])
+  })
+})
+
+describe("withEnglishFallback", () => {
+  const english = parseChangelog(`## v0.2.0 — 2026-09-10
+
+### New
+
+- English v0.2.0
+
+## v0.1.0 — 2026-08-01
+
+### New
+
+- English v0.1.0
+`)
+
+  it("should prefer the translated entry when a version exists in both", () => {
+    const translated = parseChangelog(`## v0.2.0 — 2026-09-10
+
+### New
+
+- Translated v0.2.0
+`)
+
+    const merged = withEnglishFallback(english, translated)
+
+    expect(merged.map((v) => v.version)).toEqual(["v0.2.0", "v0.1.0"])
+    expect(merged[0].sections.new).toEqual(["Translated v0.2.0"])
+  })
+
+  it("should fall back to English for a version missing from the translation", () => {
+    const translated = parseChangelog(`## v0.2.0 — 2026-09-10
+
+### New
+
+- Translated v0.2.0
+`)
+
+    const merged = withEnglishFallback(english, translated)
+
+    expect(merged[1].sections.new).toEqual(["English v0.1.0"])
+  })
+
+  it("should return the English list unchanged when there is no translation at all", () => {
+    expect(withEnglishFallback(english, [])).toEqual(english)
   })
 })

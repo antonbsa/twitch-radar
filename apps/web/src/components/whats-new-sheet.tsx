@@ -1,6 +1,6 @@
 import { SparklesIcon, TrendingUpIcon, WrenchIcon } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
-import { changelog } from "virtual:changelog"
+import { changelogs } from "virtual:changelog"
 import {
   Sheet,
   SheetContent,
@@ -38,6 +38,7 @@ export function WhatsNewSheet({ open, onOpenChange }: WhatsNewSheetProps) {
     dateStyle: "long",
     timeZone: "UTC",
   })
+  const changelog = changelogs[language]
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>

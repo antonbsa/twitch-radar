@@ -9,7 +9,7 @@ description: Use when preparing a production release in this repo - picking the 
 
 Publishing a GitHub release **is** the production deploy in this repo - [`deploy-release.yaml`](../../../.github/workflows/deploy-release.yaml) triggers on `release: published`, re-runs the full suite against the tag, applies pending D1 migrations against `twitch-radar-prod`, then deploys ([ADR 0041](../../../docs/decisions/0041-release-gated-production-deploys.md)). There is no other path to production. This skill prepares everything a release needs - version, labels, risk call-outs, the `CHANGELOG.md` entry - and, once the human accepts the drafted entry, commits it to `main`, tags, and creates the release itself **as a draft**. Publishing (flipping draft → published) stays a deliberate human action this skill never takes.
 
-The root [`CHANGELOG.md`](../../../CHANGELOG.md) is the source of truth for the user-facing part of release notes ([ADR 0050](../../../docs/decisions/0050-changelog-as-source-of-truth-for-release-notes.md)) - it is what the in-app "What's New" sheet shows. It is authored and committed to `main` first, before tagging. The GitHub Release body is that entry with GitHub's PR-label-generated list appended (`--notes` + `--generate-notes`), so the engineering account (`.github/release.yml`'s five categories) is generated, never hand-copied into the file. Your job is the part nothing can do for you: deciding the version, keeping labels right, and translating merged PRs into a few plain-language bullets a user of the PWA would understand.
+The root [`CHANGELOG.md`](../../../CHANGELOG.md) is the source of truth for the user-facing part of release notes ([ADR 0050](../../../docs/decisions/0050-changelog-as-source-of-truth-for-release-notes.md)) - it is what the in-app "What's New" sheet shows. It is authored and committed to `main` first, before tagging. `CHANGELOG.pt-BR.md` and `CHANGELOG.es.md` are its translated siblings, kept in lockstep the same way `apps/web/public/locales/<lang>.json` already is - every entry gets translated into both before committing, not left for later. The GitHub Release body is the English entry with GitHub's PR-label-generated list appended (`--notes` + `--generate-notes`), so the engineering account (`.github/release.yml`'s five categories) is generated, never hand-copied into the file. Your job is the part nothing can do for you: deciding the version, keeping labels right, and translating merged PRs into a few plain-language bullets a user of the PWA would understand - in all three languages.
 
 ## When to use
 
@@ -40,18 +40,20 @@ Cutting a production deploy, drafting release notes, or picking the next version
    - Write each bullet as one plain sentence from the user's point of view, naming things as the UI names them ("followed channels", "alerts", "sign in with Twitch"), not as the code does ("follow sync", "EventSub", "OAuth callback"). No PR numbers, links, commit prefixes (`feat:`/`fix:`), or backticked identifiers.
    - Optionally add a one-to-two sentence summary right under the heading when the release has a theme worth stating (e.g. a first release). Skip it otherwise.
    - If nothing in range is user-visible, the entry is the heading alone - the sheet shows a "no user-facing changes" placeholder for it.
-   - English regardless of the conversation's language, matching every other artifact in this repo.
+   - Draft this entry in English regardless of the conversation's language, matching every other artifact in this repo.
    - New heading: `## vX.Y.Z — <publish date, YYYY-MM-DD>`, inserted above the previous top entry (below any `## Unreleased` section, which this skill doesn't manage or remove).
 
-7. **Once the human approves the entry, commit it to `main` and push - this must land before tagging.**
+7. **Translate the approved entry into `CHANGELOG.pt-BR.md` and `CHANGELOG.es.md` and show those too, before writing anything.** Same heading (`## vX.Y.Z — <date>` - version and date are never translated), same section structure, `### New`/`### Improved`/`### Fixed` headings left in English in every file (the build-time parser matches on them literally - see `changelog-parser.ts`'s `SECTION_TITLES`). Translate the prose using the terminology the UI itself uses in that language (check `apps/web/public/locales/<lang>.json` for how a feature is already named - e.g. "Notificarme"/"Notificar-me" for the notify-category action, "Recordarme"/"Lembrar" for the snooze reminder) rather than translating literally from the English draft.
+
+8. **Once the human approves all three entries, commit them to `main` together and push - this must land before tagging.**
 
    ```sh
-   git add CHANGELOG.md
+   git add CHANGELOG.md CHANGELOG.pt-BR.md CHANGELOG.es.md
    git commit -m "docs: add CHANGELOG entry for vX.Y.Z"
    git push origin main
    ```
 
-   This is the first artifact of the release, not a byproduct of it (ADR 0050) - the tag and the GitHub Release both point at the commit that adds this entry.
+   This is the first artifact of the release, not a byproduct of it (ADR 0050) - the tag and the GitHub Release both point at the commit that adds this entry. The GitHub Release body itself (step 9) is built from the English file only - the translated siblings exist for the in-app widget, not for GitHub.
 
 8. **Confirm the target commit is on the remote.** `git rev-parse HEAD` vs `git rev-parse origin/main` (after `git fetch origin`) - the push in step 7 should already cover this, but re-check before tagging. If `main` is still ahead of `origin/main` for any reason, `gh release create` will fail against an unpushed SHA (observed as a bare `HTTP 500` with no useful message, not a clean validation error).
 
@@ -88,7 +90,8 @@ Unlabeled PRs still appear, under "Other Changes" - the catch-all category exist
 - Tagging or creating the release before the `CHANGELOG.md` entry is committed to `main`. The entry is the source of truth for user-facing notes (ADR 0050) and the first artifact of the release.
 - Copying PR titles into `CHANGELOG.md` (`fix: batch D1 queries (#44)`). That list already comes from `--generate-notes` in the GitHub Release; the file is what users read in the app and must be plain language with no PR references.
 - Running `--generate-notes` without `--notes`, or `--notes` without `--generate-notes`. The release body needs both halves: the user-facing entry and the generated engineering list.
-- Creating the draft before the human has approved the `CHANGELOG.md` entry. Show the drafted entry first; only step 7 commits it, and only step 9 touches `gh release create`.
+- Creating the draft before the human has approved all three `CHANGELOG*.md` entries. Show the drafted entries first; only step 8 commits them, and only step 9 touches `gh release create`.
+- Committing `CHANGELOG.md` without its `CHANGELOG.pt-BR.md`/`CHANGELOG.es.md` translations. The three files are meant to stay in lockstep (ADR 0050); a missing version in a translated file degrades to English for that version rather than failing the build, but that's a gap to close, not a shortcut to take deliberately.
 - Tagging a commit that isn't on `main`, isn't pushed to `origin/main` yet, or whose preview deploy hasn't been exercised. Preview is the gate ADR 0041 added; skipping it defeats the split. An unpushed target commit surfaces as an opaque `HTTP 500` from the releases API, not a helpful error.
 - Titling the release with a name suffix (`"v0.1.0 - <name>"`). The title is the version string alone; any narrative goes in the notes body (and in `CHANGELOG.md`'s prose).
 - Assuming unlabeled PRs are fine because "Other Changes" catches them. That catch-all exists for genuinely unlabeled/chore work, not as a substitute for checking - a `feat:`/`fix:`/`migration`/`config` PR that slipped through unlabeled belongs in Features/Fixes, not buried at the bottom.

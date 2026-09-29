@@ -91,3 +91,12 @@ export function parseChangelog(content: string): ChangelogVersion[] {
 
   return versions
 }
+
+/** Uses the English entry for versions missing from the translation. */
+export function withEnglishFallback(
+  english: ChangelogVersion[],
+  translated: ChangelogVersion[],
+): ChangelogVersion[] {
+  const byVersion = new Map(translated.map((v) => [v.version, v]))
+  return english.map((v) => byVersion.get(v.version) ?? v)
+}
