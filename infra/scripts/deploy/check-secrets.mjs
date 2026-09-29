@@ -7,9 +7,10 @@
  * Usage: node infra/scripts/deploy/check-secrets.mjs --env production
  */
 
-import { spawnSync } from "node:child_process"
 import { resolve } from "node:path"
 import { fileURLToPath } from "node:url"
+
+import { runWranglerWithRetry } from "./lib/run-wrangler-with-retry.mjs"
 
 const REPO_ROOT = resolve(fileURLToPath(import.meta.url), "../../../..")
 const API_DIR = resolve(REPO_ROOT, "apps/api")
@@ -30,9 +31,8 @@ if (!env) {
   process.exit(1)
 }
 
-const result = spawnSync("npx", ["wrangler", "secret", "list", "--env", env], {
+const result = await runWranglerWithRetry(["secret", "list", "--env", env], {
   cwd: API_DIR,
-  encoding: "utf-8",
 })
 if (result.status !== 0) {
   console.error(result.stderr || result.stdout)
