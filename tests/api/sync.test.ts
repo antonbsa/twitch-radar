@@ -44,15 +44,7 @@ describe("POST /api/sync/follows", () => {
     })
 
     expect(res.status).toBe(200)
-    await expect(res.json()).resolves.toMatchObject({ ok: true })
-
-    const channelsRes = await fetch(
-      `${orchestrator.baseUrl}/api/channels/followed`,
-      {
-        headers: { Cookie: cookie },
-      },
-    )
-    const { data } = (await channelsRes.json()) as {
+    const { data } = (await res.json()) as {
       data: Array<{
         broadcaster_user_id: string
         is_live: boolean
@@ -60,6 +52,8 @@ describe("POST /api/sync/follows", () => {
       }>
     }
 
+    // The response is the synced channel list itself (issue #83) — no
+    // second round trip to GET /channels/followed needed to see it.
     expect(data).toHaveLength(2)
     const a = data.find((c) => c.broadcaster_user_id === "100")!
     const b = data.find((c) => c.broadcaster_user_id === "200")!
@@ -67,6 +61,13 @@ describe("POST /api/sync/follows", () => {
     expect(a.viewer_count).toBe(1000)
     expect(b.is_live).toBe(false)
     expect(b.viewer_count).toBeNull()
+
+    // The D1 writes run deferred (waitUntil) after the response above — poll
+    // until they land to confirm they still happen, just not synchronously.
+    await orchestrator.waitForFollowedChannels(
+      cookie,
+      (items) => items.length === 2,
+    )
   })
 
   it("should handle Twitch pagination across multiple pages", async () => {
@@ -84,14 +85,7 @@ describe("POST /api/sync/follows", () => {
     })
 
     expect(res.status).toBe(200)
-
-    const channelsRes = await fetch(
-      `${orchestrator.baseUrl}/api/channels/followed`,
-      {
-        headers: { Cookie: cookie },
-      },
-    )
-    const { data } = (await channelsRes.json()) as { data: unknown[] }
+    const { data } = (await res.json()) as { data: unknown[] }
     expect(data).toHaveLength(2)
   })
 
@@ -200,12 +194,7 @@ describe("POST /api/sync/follows", () => {
       headers: { Cookie: cookie },
     })
     expect(res.status).toBe(200)
-
-    const channelsRes = await fetch(
-      `${orchestrator.baseUrl}/api/channels/followed`,
-      { headers: { Cookie: cookie } },
-    )
-    const { data } = (await channelsRes.json()) as {
+    const { data } = (await res.json()) as {
       data: Array<{
         broadcaster_user_id: string
         broadcaster_display_name: string
@@ -218,6 +207,14 @@ describe("POST /api/sync/follows", () => {
     expect(live).toHaveLength(1)
     expect(live[0]!.broadcaster_user_id).toBe(channels[0]!.broadcaster_id)
     expect(live[0]!.viewer_count).toBe(500)
+
+    // The D1 writes above are deferred (waitUntil) — wait for them to land
+    // before re-syncing, otherwise the second sync's writes could race the
+    // first's and make the idempotency assertion below flaky.
+    await orchestrator.waitForFollowedChannels(
+      cookie,
+      (items) => items.length === BROADCASTER_COUNT,
+    )
 
     // Re-sync with refreshed display names and the stream now offline — a
     // repeat run over the same broadcasters must refresh rows in place
@@ -237,12 +234,7 @@ describe("POST /api/sync/follows", () => {
       headers: { Cookie: cookie },
     })
     expect(res2.status).toBe(200)
-
-    const channelsRes2 = await fetch(
-      `${orchestrator.baseUrl}/api/channels/followed`,
-      { headers: { Cookie: cookie } },
-    )
-    const { data: data2 } = (await channelsRes2.json()) as {
+    const { data: data2 } = (await res2.json()) as {
       data: Array<{
         broadcaster_user_id: string
         broadcaster_display_name: string
@@ -257,5 +249,21 @@ describe("POST /api/sync/follows", () => {
     expect(first.broadcaster_display_name).toBe(
       `${channels[0]!.broadcaster_name}Updated`,
     )
+
+    // Confirm the second sync's deferred writes also land, refreshing the
+    // display name persisted from the first run rather than duplicating it.
+    const persisted = await orchestrator.waitForFollowedChannels(
+      cookie,
+      (items) =>
+        items.length === BROADCASTER_COUNT &&
+        items.every((c) => !c.is_live) &&
+        items.some(
+          (c) =>
+            c.broadcaster_user_id === channels[0]!.broadcaster_id &&
+            c.broadcaster_display_name ===
+              `${channels[0]!.broadcaster_name}Updated`,
+        ),
+    )
+    expect(persisted).toHaveLength(BROADCASTER_COUNT)
   }, 30_000)
 })
