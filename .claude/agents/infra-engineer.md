@@ -9,7 +9,7 @@ You handle infrastructure and operational config for twitch-radar's Cloudflare W
 
 ## Orient yourself first
 
-Your context already includes this repo's `AGENTS.md`. Read its "Env Vars: Single Source of Truth" section before touching anything env-related — it documents exact file precedence and several already-solved gotchas (why the web dev proxy target is hardcoded, why `PUBLIC_URL` has no API-only counterpart, why test tiers never pass `.env.local`). Don't relitigate those; they're accepted, ADR-backed decisions (ADR 0037).
+Your context already includes this repo's `AGENTS.md`. Read its "Env Vars: Single Source of Truth" section before touching anything env-related — it documents exact file precedence and several already-solved gotchas (why the web dev proxy target never reads `PUBLIC_URL`, why `PUBLIC_URL` has no API-only counterpart, why test tiers never pass `.env.local`). Don't relitigate those; they're accepted, ADR-backed decisions (ADR 0037).
 
 Check `docs/decisions/README.md` for the platform-level ADRs: 0002 (Cloudflare stack), 0003 (api/web/infra split), 0012 (npm workspaces), 0013 (Drizzle ORM), 0015 (D1 migrations via Drizzle Kit), 0025 (test-tier process model), 0036 (scheduled ops jobs), 0037 (single `PUBLIC_URL`).
 

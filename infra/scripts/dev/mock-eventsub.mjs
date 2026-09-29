@@ -21,33 +21,7 @@
 // offline.
 
 import { createHmac, randomUUID } from "node:crypto"
-import { existsSync, readFileSync } from "node:fs"
-import { resolve } from "node:path"
-import { fileURLToPath } from "node:url"
-
-const REPO_ROOT = resolve(fileURLToPath(import.meta.url), "../../../..")
-
-function parseDevVars(filePath) {
-  return Object.fromEntries(
-    readFileSync(filePath, "utf-8")
-      .split("\n")
-      .filter((line) => line && !line.startsWith("#") && line.includes("="))
-      .map((line) => {
-        const idx = line.indexOf("=")
-        return [line.slice(0, idx).trim(), line.slice(idx + 1).trim()]
-      }),
-  )
-}
-
-// Mirrors dev-env.ts: .env.development overridden by gitignored .env.local —
-// must match whatever the running `wrangler dev` process loaded.
-function loadDevVars() {
-  const localPath = resolve(REPO_ROOT, ".env.local")
-  return {
-    ...parseDevVars(resolve(REPO_ROOT, ".env.development")),
-    ...(existsSync(localPath) ? parseDevVars(localPath) : {}),
-  }
-}
+import { loadDevEnv } from "./load-env.mjs"
 
 const [
   broadcasterUserId,
@@ -64,12 +38,12 @@ if (!broadcasterUserId || !categoryId || !categoryName) {
   process.exit(1)
 }
 
-const vars = loadDevVars()
-const publicUrl = vars.PUBLIC_URL
+// Same merged env the running `npm run dev` worker was started with.
+const { vars, publicUrl } = loadDevEnv()
 const webhookSecret = vars.EVENTSUB_WEBHOOK_SECRET
-if (!publicUrl || !webhookSecret) {
+if (!webhookSecret) {
   throw new Error(
-    "PUBLIC_URL / EVENTSUB_WEBHOOK_SECRET not found in .env.development/.env.local",
+    "EVENTSUB_WEBHOOK_SECRET not found in .env.development/.env.local",
   )
 }
 

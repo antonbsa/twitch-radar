@@ -62,7 +62,7 @@ Because of that, two secrets that are placeholders by default fail loudly the mo
 
 This validation intentionally lives at the point each value is actually used, not in `env.ts` itself: `env.ts` runs on every request, and both test tiers (`tests/api`, `tests/web/e2e`) boot the Worker with only `.env.development` — no real secrets — because they never do a real OAuth round-trip. Rejecting placeholders globally would fail those tests (and every unrelated route in local dev) instead of just the features that need real credentials. The test setups instead pass real (throwaway) values for the specific vars their scenarios exercise, via `wrangler dev --var`.
 
-To use Twitch OAuth flows locally, create `.env.local` (repo root, gitignored) with real credentials:
+To use Twitch OAuth flows locally, create `.env.local` (repo root, gitignored) with real credentials. In a git worktree, the main worktree's `.env.local` is read too, so secrets only need to live there; a worktree's own `.env.local` (e.g. for per-worktree ports, or the tunnel `PUBLIC_URL` written by `npm run dev:mobile`) is merged on top of it rather than replacing it. Precedence, lowest to highest: this worktree's `.env.development`, the main worktree's `.env.local`, this worktree's `.env.local` (see `infra/scripts/dev/load-env.mjs`).
 
 ```sh
 TWITCH_CLIENT_ID=<your-client-id>
@@ -71,7 +71,7 @@ TWITCH_CLIENT_SECRET=<your-client-secret>
 
 The Twitch app's redirect URI must be set to `http://localhost:5173/api/auth/twitch/callback` in the Twitch developer console.
 
-All other variables in `.env.development` have working local defaults, including `PUBLIC_URL` (used both to build the OAuth redirect URI and to send the browser back into the app once login completes). The Vite dev proxy target is fixed to `http://localhost:8787` independent of `PUBLIC_URL` — the two can diverge (e.g. when tunneling the dev server to another device), see `apps/web/vite.config.ts`.
+All other variables in `.env.development` have working local defaults, including `PUBLIC_URL` (used both to build the OAuth redirect URI and to send the browser back into the app once login completes). Unless a `.env.local` sets `PUBLIC_URL` explicitly, it's derived as `http://localhost:<WEB_DEV_PORT>`. The Vite dev proxy target is always the local Worker (`http://localhost:<API_DEV_PORT>`), independent of `PUBLIC_URL` — the two can diverge (e.g. when tunneling the dev server to another device), see `apps/web/vite.config.ts`.
 
 ### Starting
 
@@ -97,7 +97,19 @@ Check API health:
 http://localhost:8787/api/health
 ```
 
-If port `8787` or `5173` is occupied, edit `--port` in `apps/api/package.json` or the `server.port` in `apps/web/vite.config.ts` (and update the proxy target if you change the API port).
+### Ports And Parallel Worktrees
+
+Ports come from `API_DEV_PORT` (default `8787`), `API_INSPECTOR_PORT` (default `9229`) and `WEB_DEV_PORT` (default `5173`) in `.env.development`. To run `npm run dev` in two worktrees at once, override them in the second worktree's own `.env.local`:
+
+```sh
+API_DEV_PORT=8797
+API_INSPECTOR_PORT=9239
+WEB_DEV_PORT=5183
+```
+
+That worktree's `PUBLIC_URL` then defaults to `http://localhost:5183`, and Vite refuses to start (`strictPort`) instead of silently moving to another port if `WEB_DEV_PORT` is taken.
+
+**Only one worktree at a time can complete a real Twitch login.** Twitch only redirects to URIs registered on the app in the developer console, and each registered URI names one origin and port. A worktree on a port whose `http://localhost:<WEB_DEV_PORT>/api/auth/twitch/callback` isn't registered will fail OAuth with a redirect-URI mismatch. Either register that extra URI too (Twitch allows several), or keep real logins to the worktree on the default port.
 
 Then initiate login at:
 

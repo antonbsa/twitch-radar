@@ -19,10 +19,12 @@
 import { spawn } from "node:child_process"
 import { existsSync, readFileSync, writeFileSync } from "node:fs"
 import { resolve } from "node:path"
-import { fileURLToPath } from "node:url"
 import qrcode from "qrcode-terminal"
+import { loadDevEnv, REPO_ROOT } from "./load-env.mjs"
 
-const REPO_ROOT = resolve(fileURLToPath(import.meta.url), "../../../..")
+const WEB_DEV_URL = `http://localhost:${loadDevEnv().webPort}`
+// This worktree's own .env.local, which outranks the main worktree's without
+// hiding its secrets (see load-env.mjs).
 const ENV_LOCAL_PATH = resolve(REPO_ROOT, ".env.local")
 const TUNNEL_URL_PATTERN = /https:\/\/[a-z0-9-]+\.trycloudflare\.com/
 
@@ -78,14 +80,10 @@ function waitForTunnelUrl(child) {
 }
 
 async function main() {
-  console.log(
-    "Starting cloudflared quick tunnel for http://localhost:5173...\n",
-  )
-  const tunnel = spawn(
-    "cloudflared",
-    ["tunnel", "--url", "http://localhost:5173"],
-    { stdio: ["ignore", "ignore", "pipe"] },
-  )
+  console.log(`Starting cloudflared quick tunnel for ${WEB_DEV_URL}...\n`)
+  const tunnel = spawn("cloudflared", ["tunnel", "--url", WEB_DEV_URL], {
+    stdio: ["ignore", "ignore", "pipe"],
+  })
 
   const tunnelUrl = await waitForTunnelUrl(tunnel)
   updateTunnelUrl(tunnelUrl)
