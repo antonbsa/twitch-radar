@@ -12,6 +12,7 @@ export interface UpsertChannelStateInput {
   thumbnailUrl?: string | null
   viewerCount?: number | null
   startedAt?: string | null
+  streamType?: string | null
   // Twitch's message timestamp when the write comes from an EventSub event;
   // the stale-event guard compares against it (ADR 0033). Seeding leaves it
   // unset so the first event for a seeded channel always processes.
@@ -29,6 +30,7 @@ export interface ChannelStateRecord {
   thumbnail_url: string | null
   viewer_count: number | null
   started_at: string | null
+  stream_type: string | null
   updated_from_event_at: string | null
   updated_at: string
 }
@@ -42,11 +44,11 @@ export class ChannelStateRepository {
 
   async upsertAll(inputs: UpsertChannelStateInput[]): Promise<void> {
     if (inputs.length === 0) return
-    // 11 bound params per row (broadcasterUserId, isLive, streamId,
+    // 12 bound params per row (broadcasterUserId, isLive, streamId,
     // categoryId, categoryName, title, thumbnailUrl, viewerCount, startedAt,
-    // updatedFromEventAt, updatedAt); D1 caps bound params at 100 per query,
-    // so 9 rows/batch (99 params) stays safely under that limit.
-    const BATCH_SIZE = 9
+    // streamType, updatedFromEventAt, updatedAt); D1 caps bound params at
+    // 100 per query, so 8 rows/batch (96 params) stays safely under that limit.
+    const BATCH_SIZE = 8
     const statements = []
     for (let i = 0; i < inputs.length; i += BATCH_SIZE) {
       const batch = inputs.slice(i, i + BATCH_SIZE)
@@ -64,6 +66,7 @@ export class ChannelStateRepository {
               thumbnailUrl: input.thumbnailUrl ?? null,
               viewerCount: input.viewerCount ?? null,
               startedAt: input.startedAt ?? null,
+              streamType: input.streamType ?? null,
               updatedFromEventAt: input.updatedFromEventAt ?? null,
               updatedAt: input.now,
             })),
@@ -79,6 +82,7 @@ export class ChannelStateRepository {
               thumbnailUrl: sql`excluded.thumbnail_url`,
               viewerCount: sql`excluded.viewer_count`,
               startedAt: sql`excluded.started_at`,
+              streamType: sql`excluded.stream_type`,
               updatedFromEventAt: sql`excluded.updated_from_event_at`,
               updatedAt: sql`excluded.updated_at`,
             },
@@ -114,6 +118,7 @@ export class ChannelStateRepository {
           thumbnail_url: row.thumbnailUrl,
           viewer_count: row.viewerCount,
           started_at: row.startedAt,
+          stream_type: row.streamType,
           updated_from_event_at: row.updatedFromEventAt,
           updated_at: row.updatedAt,
         })

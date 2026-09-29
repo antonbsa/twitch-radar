@@ -125,12 +125,15 @@ const mockTwitch = {
       started_at: string
       title: string
       thumbnail_url?: string
+      // Defaults to "live" — override to exercise non-live suppression
+      // (issue #38 item 1).
+      type?: string
     }>,
   ) {
     // The "?" keeps this pattern from also matching /helix/streams/followed
     // requests (the mock server routes on URL substring containment).
     return this.queue("/helix/streams?", {
-      data: streams.map((s) => ({ ...s, type: "live" })),
+      data: streams.map((s) => ({ ...s, type: s.type ?? "live" })),
     })
   },
 

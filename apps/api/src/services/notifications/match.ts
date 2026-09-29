@@ -1,5 +1,6 @@
 import type { Database } from "../../db"
 import type { ChannelStateChangeRecord } from "../../db/repositories/channel-state-changes"
+import type { ChannelStateRecord } from "../../db/repositories/channel-state"
 import type { NotificationTriggerType } from "../../db/repositories/notification-deliveries"
 import type {
   Language,
@@ -15,9 +16,87 @@ const TRIGGER_BY_CHANGE_TYPE: Partial<Record<string, NotificationTriggerType>> =
     category_changed: "switched_into_category",
   }
 
-// ADR 0044: payloads carry only i18n keys, params, and the recipient's
-// language; broadcaster/category IDs ride along so snoozing can schedule a
-// reminder without referencing a specific delivery (ADR 0048).
+// Best-effort check: client titles are localized and can just repeat the
+// category name, so we only suppress a stream title when it matches the
+// category text.
+function isRedundantWithCategory(
+  title: string | null,
+  categoryName: string,
+): boolean {
+  return (
+    !title || title.trim().toLowerCase() === categoryName.trim().toLowerCase()
+  )
+}
+
+function computeUptime(
+  startedAt: string | null,
+  now: Date,
+): { hours: number; minutes: number } | null {
+  if (!startedAt) return null
+  const elapsedMs = now.getTime() - Date.parse(startedAt)
+  if (!Number.isFinite(elapsedMs) || elapsedMs < 0) return null
+  const totalMinutes = Math.floor(elapsedMs / 60000)
+  return { hours: Math.floor(totalMinutes / 60), minutes: totalMinutes % 60 }
+}
+
+// Body precedence by trigger: stream_started_in_category prefers a
+// non-redundant stream title; switched_into_category prefers uptime +
+// previous category, then uptime, previous category, then the stream title.
+// Kept pure for direct tests; the push payload is encrypted end-to-end.
+export function buildBody(
+  trigger: NotificationTriggerType,
+  categoryName: string,
+  previousCategoryName: string | null,
+  channelState: ChannelStateRecord | null,
+  now: Date,
+): { bodyKey: string; params: Record<string, string> } | null {
+  const title = channelState?.title ?? null
+  const hasNonRedundantTitle =
+    title && !isRedundantWithCategory(title, categoryName)
+
+  if (trigger === "stream_started_in_category") {
+    if (hasNonRedundantTitle) {
+      return {
+        bodyKey: "notification.stream_started_in_category.body.stream_title",
+        params: { streamTitle: title },
+      }
+    }
+    return null
+  }
+
+  const uptime = computeUptime(channelState?.started_at ?? null, now)
+  if (uptime && previousCategoryName) {
+    return {
+      bodyKey: "notification.switched_into_category.body.uptime_and_previous",
+      params: {
+        hours: String(uptime.hours),
+        minutes: String(uptime.minutes),
+        previousCategory: previousCategoryName,
+      },
+    }
+  }
+  if (uptime) {
+    return {
+      bodyKey: "notification.switched_into_category.body.uptime_only",
+      params: { hours: String(uptime.hours), minutes: String(uptime.minutes) },
+    }
+  }
+  if (previousCategoryName) {
+    return {
+      bodyKey: "notification.switched_into_category.body.previous_only",
+      params: { previousCategory: previousCategoryName },
+    }
+  }
+  if (hasNonRedundantTitle) {
+    return {
+      bodyKey: "notification.switched_into_category.body.stream_title",
+      params: { streamTitle: title },
+    }
+  }
+  return null
+}
+
+// Payloads use i18n keys and recipient language; IDs support snooze reminders.
 function buildPayload(
   trigger: NotificationTriggerType,
   broadcasterName: string,
@@ -25,34 +104,36 @@ function buildPayload(
   lang: Language,
   broadcasterUserId: string,
   categoryId: string,
+  previousCategoryName: string | null,
+  channelState: ChannelStateRecord | null,
+  broadcasterLogin: string | null,
 ): NotificationPayload {
+  const body = buildBody(
+    trigger,
+    categoryName,
+    previousCategoryName,
+    channelState,
+    new Date(),
+  )
   return {
     titleKey: `notification.${trigger}.title`,
-    bodyKey: `notification.${trigger}.body`,
-    params: { broadcasterName, categoryName },
+    ...(body ? { bodyKey: body.bodyKey } : {}),
+    params: { broadcasterName, categoryName, ...(body?.params ?? {}) },
     lang,
     url: `/channels?broadcaster=${broadcasterUserId}`,
     broadcasterUserId,
     categoryId,
+    ...(broadcasterLogin ? { broadcasterLogin } : {}),
+    ...(channelState?.thumbnail_url
+      ? { image: channelState.thumbnail_url }
+      : {}),
   }
 }
 
 /**
- * Matches one channel_state_changes row against user preferences and stages
- * deliveries (ADRs 0007, 0008, 0034):
- *
- * - per-channel: active channel_category_preferences on this broadcaster and
- *   the transition's next category.
- * - global: active global_category_preferences on the next category, limited
- *   to users who follow this broadcaster (ADR 0007).
- * - a user matched by both gets one delivery — the dedupe key is per
- *   user/broadcaster/category/trigger/stream, not per preference.
- *
- * Every matched user gets a `pending` notification_deliveries row (the
- * unique dedupe index absorbs replays) and a send job. Jobs are enqueued for
- * any delivery still `pending`, so a replay after a crash between insert and
- * enqueue re-issues the job; the sender's status check keeps a double
- * enqueue from double-sending.
+ * Match the change against active category preferences, dedupe by user,
+ * broadcaster, category, trigger, and stream, then enqueue one pending
+ * delivery per matched user.
  */
 export async function matchAndCreateDeliveries(
   db: Database,
@@ -64,6 +145,12 @@ export async function matchAndCreateDeliveries(
   if (!trigger || !categoryId) return
 
   const broadcasterUserId = change.broadcaster_user_id
+
+  const channelState =
+    await db.channelState.findByBroadcasterUserId(broadcasterUserId)
+  // ADR 0050: suppress known non-live stream types; null means the type is
+  // unknown (e.g. a channel.update with no prior stream.online), treated as live.
+  if (channelState?.stream_type && channelState.stream_type !== "live") return
 
   const channelPreferences =
     await db.channelCategoryPreferences.findActiveByBroadcasterAndCategory(
@@ -125,6 +212,9 @@ export async function matchAndCreateDeliveries(
         languageByUserId.get(userId) ?? "en",
         broadcasterUserId,
         categoryId,
+        change.previous_category_name,
+        channelState,
+        monitored?.broadcaster_login ?? null,
       )
       await queue.send({ deliveryId: delivery.id, userId, payload })
     }

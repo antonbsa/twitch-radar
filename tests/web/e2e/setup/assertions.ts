@@ -18,3 +18,8 @@ export async function expectHidden(
 ): Promise<void> {
   await locator.waitFor({ state: "hidden", timeout })
 }
+
+// Vitest's `expect.poll(...)` defaults to ~1000ms, which may be too short for
+// the initial fetch and render when polling right after `page.goto`. Pass
+// `{ timeout: 5000 }` for that first assertion; otherwise the default is
+// sufficient after an earlier wait has absorbed the page load.

@@ -43,6 +43,13 @@
       "when": 1790223000771,
       "tag": "0006_eventsub_subscription_backoff",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1790642485763,
+      "tag": "0007_channel_state_stream_type",
+      "breakpoints": true
     }
   ]
 }

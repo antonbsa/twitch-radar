@@ -208,6 +208,12 @@ Never target `twitch-radar-dev` without `--local`, and never run `wrangler d1 ex
 
 `.claude/settings.json` allow-lists this exact command shape when `--command` starts with `SELECT`, so a query written this way runs without a permission prompt - everything else (including any mutation) falls through to the default prompt. That's a plain string-prefix match, not a SQL parser: it only recognizes a query that both starts with `SELECT` and is invoked exactly as shown above (from the repo root, `cd apps/api &&` prefix, `--local` before `--command`). Don't rely on it to distinguish read from write in any other invocation shape - the mutation-confirmation rule above still governs.
 
+## No Backward-Compatibility Code (Pre-launch)
+
+Before launch, do not add code that exists only to accept old schema/data states created before a breaking change. If a schema or data format changes, update the existing records in the same change and make the new invariant the only supported state. Prefer a backfill `UPDATE` in the migration so all environments (local, preview, production) converge automatically without manual repair.
+
+This rule does not apply to fields that are legitimately optional going forward (for example, a nullable column that some writers cannot populate). Those cases still require explicit handling, and the code/comment should describe the current optional state rather than labeling it as compatibility. Revisit this rule once the app has real users beyond the developer.
+
 ## Migration Collision on Rebase
 
 `wrangler d1 migrations apply` tracks what's applied by **filename**, in a `d1_migrations` table - not by content. If two branches each generate a migration with the same number (e.g. both produce `0006_*.sql`), only one can keep that number once both land on `main`; the other must be regenerated with the next free number during rebase.

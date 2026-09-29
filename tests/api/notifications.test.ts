@@ -478,6 +478,81 @@ describe("notification matching and delivery", () => {
     const state = await orchestrator.inspect([BROADCASTER_ID])
     expect(state.notificationDeliveries).toHaveLength(0)
   })
+
+  it("should not notify for a non-live stream type (issue #38 item 1)", async () => {
+    await orchestrator.seed({
+      user: {},
+      preferences: {
+        channel: [
+          {
+            broadcasterUserId: BROADCASTER_ID,
+            categoryId: MINECRAFT.id,
+            categoryName: MINECRAFT.name,
+          },
+        ],
+      },
+      pushSubscriptions: [{ endpoint: orchestrator.pushEndpoint("/push/d8") }],
+    })
+    await orchestrator.seedChannelState([
+      { broadcasterUserId: BROADCASTER_ID, isLive: false },
+    ])
+    await orchestrator.mockTwitch.onAppToken()
+    await orchestrator.mockTwitch.onStreams([{ ...STREAM, type: "rerun" }])
+
+    await sendEventsubWebhook("stream.online", { event: streamOnlineEvent() })
+
+    const state = await orchestrator.waitForInspect([BROADCASTER_ID], (s) =>
+      s.channelStateChanges.some((c) => c.change_type === "stream_started"),
+    )
+    expect(
+      state.channelState.find((s) => s.broadcaster_user_id === BROADCASTER_ID)
+        ?.stream_type,
+    ).toBe("rerun")
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    const settled = await orchestrator.inspect([BROADCASTER_ID])
+    expect(settled.notificationDeliveries).toHaveLength(0)
+  })
+
+  it("should suppress a category switch while the channel is in a non-live stream type", async () => {
+    await orchestrator.seed({
+      user: {},
+      preferences: {
+        channel: [
+          {
+            broadcasterUserId: BROADCASTER_ID,
+            categoryId: CHATTING.id,
+            categoryName: CHATTING.name,
+          },
+        ],
+      },
+      pushSubscriptions: [{ endpoint: orchestrator.pushEndpoint("/push/d9") }],
+    })
+    await orchestrator.seedChannelState([
+      {
+        broadcasterUserId: BROADCASTER_ID,
+        isLive: true,
+        streamId: STREAM.id,
+        categoryId: MINECRAFT.id,
+        categoryName: MINECRAFT.name,
+        streamType: "rerun",
+      },
+    ])
+
+    await sendEventsubWebhook("channel.update", {
+      event: channelUpdateEvent({
+        category_id: CHATTING.id,
+        category_name: CHATTING.name,
+      }),
+      subscription: { version: "2" },
+    })
+
+    await orchestrator.waitForInspect([BROADCASTER_ID], (s) =>
+      s.channelStateChanges.some((c) => c.change_type === "category_changed"),
+    )
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    const state = await orchestrator.inspect([BROADCASTER_ID])
+    expect(state.notificationDeliveries).toHaveLength(0)
+  })
 })
 
 describe("notification snoozing", () => {
