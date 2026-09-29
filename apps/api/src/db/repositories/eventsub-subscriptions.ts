@@ -1,4 +1,4 @@
-import { asc, eq, inArray } from "drizzle-orm"
+import { and, asc, eq, inArray, isNull, lte, or } from "drizzle-orm"
 import { nanoid } from "nanoid"
 import { asBatch, type AppDatabase } from "../client"
 import { eventsubSubscriptions } from "../schema"
@@ -28,6 +28,8 @@ export interface EventsubSubscriptionRecord {
   status: string
   callback_url: string
   secret_version: string
+  failure_count: number
+  next_retry_at: string | null
   created_at: string
   updated_at: string
   revoked_at: string | null
@@ -45,6 +47,8 @@ function toRecord(
     status: row.status,
     callback_url: row.callbackUrl,
     secret_version: row.secretVersion,
+    failure_count: row.failureCount,
+    next_retry_at: row.nextRetryAt,
     created_at: row.createdAt,
     updated_at: row.updatedAt,
     revoked_at: row.revokedAt,
@@ -93,7 +97,11 @@ export class EventsubSubscriptionsRepository {
       })),
     )
 
-    const PARAMS_PER_ROW = 9
+    // Drizzle binds a param for every column that has a schema-level
+    // `.default(...)` too (not just the columns explicitly set above), so
+    // this must count `failureCount`'s default alongside the 9 explicit
+    // fields — `nextRetryAt` has no default and stays column-count-free.
+    const PARAMS_PER_ROW = 10
     const BATCH_SIZE = Math.floor(100 / PARAMS_PER_ROW)
     const statements = []
     for (let i = 0; i < rows.length; i += BATCH_SIZE) {
@@ -113,11 +121,27 @@ export class EventsubSubscriptionsRepository {
     await this.db.batch(asBatch(statements))
   }
 
-  async findPending(limit: number): Promise<EventsubSubscriptionRecord[]> {
+  /**
+   * `pending` rows due for a (re)try — excludes rows still serving out their
+   * backoff window (ADR 0049), whether never-tried (`nextRetryAt` null) or
+   * due (`nextRetryAt` at or before `now`).
+   */
+  async findPending(
+    limit: number,
+    now: string,
+  ): Promise<EventsubSubscriptionRecord[]> {
     const rows = await this.db
       .select()
       .from(eventsubSubscriptions)
-      .where(eq(eventsubSubscriptions.status, "pending"))
+      .where(
+        and(
+          eq(eventsubSubscriptions.status, "pending"),
+          or(
+            isNull(eventsubSubscriptions.nextRetryAt),
+            lte(eventsubSubscriptions.nextRetryAt, now),
+          ),
+        ),
+      )
       .orderBy(
         asc(eventsubSubscriptions.createdAt),
         asc(eventsubSubscriptions.id),
@@ -127,7 +151,11 @@ export class EventsubSubscriptionsRepository {
     return rows.map(toRecord)
   }
 
-  /** Records the Twitch-side subscription id and Twitch's initial status. */
+  /**
+   * Records the Twitch-side subscription id and Twitch's initial status.
+   * Clears any accumulated failure/backoff state (ADR 0049) — a successful
+   * create means the row's next visit starts a clean failure count.
+   */
   async markCreated(
     id: string,
     twitchSubscriptionId: string,
@@ -136,7 +164,40 @@ export class EventsubSubscriptionsRepository {
   ): Promise<void> {
     await this.db
       .update(eventsubSubscriptions)
-      .set({ twitchSubscriptionId, status, updatedAt: now })
+      .set({
+        twitchSubscriptionId,
+        status,
+        failureCount: 0,
+        nextRetryAt: null,
+        updatedAt: now,
+      })
+      .where(eq(eventsubSubscriptions.id, id))
+      .run()
+  }
+
+  /**
+   * Records a failed create attempt (ADR 0049): advances `failureCount` and
+   * either schedules the next backoff retry (`status` stays `pending`) or
+   * flips the row to the terminal `failed` status, whichever the caller
+   * decided based on the new failure count.
+   */
+  async recordCreateFailure(
+    id: string,
+    params: {
+      failureCount: number
+      nextRetryAt: string | null
+      status: "pending" | "failed"
+      now: string
+    },
+  ): Promise<void> {
+    await this.db
+      .update(eventsubSubscriptions)
+      .set({
+        failureCount: params.failureCount,
+        nextRetryAt: params.nextRetryAt,
+        status: params.status,
+        updatedAt: params.now,
+      })
       .where(eq(eventsubSubscriptions.id, id))
       .run()
   }
@@ -175,7 +236,10 @@ export class EventsubSubscriptionsRepository {
 
   /**
    * Sends a row back to the start of the lifecycle so the minutely creation
-   * job recreates it on Twitch (reconciliation repair, ADR 0036).
+   * job recreates it on Twitch (reconciliation repair, ADR 0036). Also used
+   * to bring a terminal `failed` row back after its cooldown (ADR 0049), so
+   * failure/backoff state is cleared here too — a fresh attempt cycle starts
+   * at zero rather than carrying over the count that got it flagged `failed`.
    */
   async resetToPending(id: string, now: string): Promise<void> {
     await this.db
@@ -184,6 +248,8 @@ export class EventsubSubscriptionsRepository {
         twitchSubscriptionId: null,
         status: "pending",
         revokedAt: null,
+        failureCount: 0,
+        nextRetryAt: null,
         updatedAt: now,
       })
       .where(eq(eventsubSubscriptions.id, id))

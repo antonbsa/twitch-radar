@@ -115,5 +115,12 @@
   "notification.snooze_reminder.title": "{broadcasterName} is still streaming {categoryName}",
   "notification.snooze_reminder.body": "Want to watch now?",
   "notification.snooze_action": "Remind me in 15m",
-  "notification.watch_action": "Watch"
+  "notification.watch_action": "Watch",
+
+  "whats_new.badge_aria": "View version {version} and What's New",
+  "whats_new.title": "What's New",
+  "whats_new.new_heading": "New",
+  "whats_new.improved_heading": "Improved",
+  "whats_new.fixed_heading": "Fixed",
+  "whats_new.no_user_facing_changes": "No user-facing changes in this version."
 }

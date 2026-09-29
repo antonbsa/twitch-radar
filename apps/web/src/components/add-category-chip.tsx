@@ -24,7 +24,7 @@ export function AddCategoryChip({
     <Badge
       asChild
       variant="outline"
-      className="h-8 cursor-pointer border-dashed px-2.5 text-muted-foreground hover:border-foreground/40 hover:text-foreground"
+      className="h-8 border-dashed px-2.5 text-muted-foreground hover:border-foreground/40 hover:text-foreground"
     >
       <button type="button" onClick={onClick} aria-label={label}>
         <Plus aria-hidden="true" className="size-3" />

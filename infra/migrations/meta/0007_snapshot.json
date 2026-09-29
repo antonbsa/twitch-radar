@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "60dbaedb-3fa6-4c01-8774-16eb49ef9899",
-  "prevId": "91f8e1fa-81a4-498b-b1c4-e104b5d6af0c",
+  "id": "af19bc4b-6431-4958-be20-6bc325864b79",
+  "prevId": "60dbaedb-3fa6-4c01-8774-16eb49ef9899",
   "tables": {
     "channel_category_preferences": {
       "name": "channel_category_preferences",
@@ -156,6 +156,13 @@
         },
         "started_at": {
           "name": "started_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "stream_type": {
+          "name": "stream_type",
           "type": "text",
           "primaryKey": false,
           "notNull": false,

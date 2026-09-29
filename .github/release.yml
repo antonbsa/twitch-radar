@@ -1,8 +1,7 @@
-# Controls GitHub's "Generate release notes" button and the auto-generated
-# body of `gh release create --generate-notes`. Categories are matched top to
-# bottom and the first match wins, so the migration/config category is listed
-# first: a PR labeled both `migration` and `enhancement` must surface as a
-# migration, since that is the part of the release that is hard to roll back.
+# Controls GitHub-generated release notes. Categories match top to bottom, so
+# functional labels take precedence over `migration`/`config`, which describe
+# risk rather than change type. Those labels remain required for PRs and are
+# called out in release-note prose.
 # See docs/decisions/0041-release-gated-production-deploys.md.
 changelog:
   exclude:
@@ -11,10 +10,6 @@ changelog:
     authors:
       - dependabot
   categories:
-    - title: Migrations & Config
-      labels:
-        - migration
-        - config
     - title: Features
       labels:
         - enhancement

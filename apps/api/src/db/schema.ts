@@ -99,6 +99,12 @@ export const eventsubSubscriptions = sqliteTable(
     status: text("status").notNull(),
     callbackUrl: text("callback_url").notNull(),
     secretVersion: text("secret_version").notNull(),
+    // Consecutive creation failures since the last success; drives the
+    // backoff schedule and the pending → failed cutoff (ADR 0049).
+    failureCount: integer("failure_count").notNull().default(0),
+    // Earliest time findPending will pick this row up again; null means
+    // immediately eligible (a fresh row, or one never retried yet).
+    nextRetryAt: text("next_retry_at"),
     createdAt: text("created_at").notNull(),
     updatedAt: text("updated_at").notNull(),
     revokedAt: text("revoked_at"),

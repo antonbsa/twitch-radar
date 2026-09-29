@@ -2,13 +2,14 @@ import { fileURLToPath, URL } from "node:url"
 import { defineConfig } from "vite"
 import react from "@vitejs/plugin-react"
 import tailwindcss from "@tailwindcss/vite"
+import { changelogPlugin } from "./vite-plugins/changelog-plugin"
 
 export default defineConfig(() => {
   const envDir = fileURLToPath(new URL("../..", import.meta.url))
 
   return {
     envDir,
-    plugins: [react(), tailwindcss()],
+    plugins: [react(), tailwindcss(), changelogPlugin()],
     resolve: {
       alias: {
         "@": fileURLToPath(new URL("./src", import.meta.url)),
