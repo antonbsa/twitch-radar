@@ -2,7 +2,7 @@
 name: gotcha-fresh-worktree-needs-npm-install
 description: A freshly created git worktree under .agents/worktrees/ has no node_modules — typecheck/lint/test fail with misleading errors until `npm install` is run at the worktree root
 metadata:
-  type: gotcha
+  type: feedback
 ---
 
 A new `git worktree add` checkout does not inherit `node_modules` from the main checkout — it starts with none at all. Running `npm run typecheck` inside `apps/api` in a fresh worktree fails with `error TS2688: Cannot find type definition file for '@cloudflare/workers-types'`, which reads like a tsconfig/env problem but is actually just "dependencies were never installed here."

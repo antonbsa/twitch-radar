@@ -23,11 +23,11 @@ Cutting a production deploy, drafting release notes, or picking the next version
 
 3. **Validate every PR in range has a label.** `.github/release.yml` categorizes purely on labels (see "Labels" below); an unlabeled PR silently lands in "Other Changes" instead of the functional category (Features/Fixes/Docs & Decisions) it belongs in. For every merged PR since the last tag with an empty `labels` array:
    - Read its changed files (`gh pr view <n> --json files`) and title/commit prefixes.
-   - Apply `migration` if it touches `infra/migrations`, `config` if it touches `apps/api/wrangler.jsonc` / `apps/api/src/crons.ts` / `apps/api/src/env.ts`, plus the applicable default (`bug` for `fix:`, `enhancement` for `feat:`, `documentation` for `docs:`) - same rule as `CLAUDE.md`'s PR-opening step. `migration`/`config` don't have their own category in `release.yml` (see "Labels" below) - they still describe risk, surfaced in step 5 and the notes' prose, not in how the PR is grouped.
+   - Apply `migration` if it touches `infra/migrations`, `config` if it touches `apps/api/wrangler.jsonc` / `apps/api/src/crons.ts` / `apps/api/src/env.ts`, plus the applicable default (`bug` for `fix:`, `enhancement` for `feat:`, `documentation` for `docs:`) - same rule as `CLAUDE.md`'s PR-opening step. `migration`/`config` don't have their own category in `release.yml` (see "Labels" below) - they still describe risk, surfaced in step 4 and the notes' prose, not in how the PR is grouped.
    - `chore:`/`refactor:`/`test:`-prefixed PRs that touch none of the risk paths above have no correct default label - leave them unlabeled (they correctly fall into "Other Changes", which exists precisely so unlabeled work isn't dropped, not miscategorized into something it isn't).
    - Present the suggested labels to the human before applying (`gh pr edit <n> --add-label "..."`) - this rewrites shared PR metadata, not local draft state.
 
-4. **Check the three things that make a release risky**, and name each one explicitly in a short "Deploy notes" paragraph for the GitHub Release body if present (step 9) - not in `CHANGELOG.md`, whose readers are users, not operators:
+4. **Check the three things that make a release risky**, and name each one explicitly in a short "Deploy notes" paragraph for the GitHub Release body if present (step 10) - not in `CHANGELOG.md`, whose readers are users, not operators:
    - New files in `infra/migrations` - irreversible against production D1. Say which tables/columns change.
    - Changes to `apps/api/wrangler.jsonc`, `apps/api/src/crons.ts`, or the env schema in `apps/api/src/env.ts` - a new binding, cron, or required env var must be provisioned before the deploy, or the Worker breaks on boot.
    - Changes to `apps/web/public/service-worker.js` or the push/subscription contract - installed PWAs hold a cached service worker; a contract change can silently break notifications on devices already out there. Doesn't apply to the very first release (no devices out there yet).
@@ -53,11 +53,11 @@ Cutting a production deploy, drafting release notes, or picking the next version
    git push origin main
    ```
 
-   This is the first artifact of the release, not a byproduct of it (ADR 0050) - the tag and the GitHub Release both point at the commit that adds this entry. The GitHub Release body itself (step 9) is built from the English file only - the translated siblings exist for the in-app widget, not for GitHub.
+   This is the first artifact of the release, not a byproduct of it (ADR 0050) - the tag and the GitHub Release both point at the commit that adds this entry. The GitHub Release body itself (step 10) is built from the English file only - the translated siblings exist for the in-app widget, not for GitHub.
 
-8. **Confirm the target commit is on the remote.** `git rev-parse HEAD` vs `git rev-parse origin/main` (after `git fetch origin`) - the push in step 7 should already cover this, but re-check before tagging. If `main` is still ahead of `origin/main` for any reason, `gh release create` will fail against an unpushed SHA (observed as a bare `HTTP 500` with no useful message, not a clean validation error).
+9. **Confirm the target commit is on the remote.** `git rev-parse HEAD` vs `git rev-parse origin/main` (after `git fetch origin`) - the push in step 8 should already cover this, but re-check before tagging. If `main` is still ahead of `origin/main` for any reason, `gh release create` will fail against an unpushed SHA (observed as a bare `HTTP 500` with no useful message, not a clean validation error).
 
-9. **Create the release as a draft - body is the committed `CHANGELOG.md` entry (plus deploy notes from step 4, if any), with GitHub's generated PR list appended; title is the version string alone (`v0.1.0`, not `v0.1.0 - <name>`):**
+10. **Create the release as a draft - body is the committed `CHANGELOG.md` entry (plus deploy notes from step 4, if any), with GitHub's generated PR list appended; title is the version string alone (`v0.1.0`, not `v0.1.0 - <name>`):**
 
    ```sh
    gh release create v0.1.0 --target <sha> --title "v0.1.0" --draft --generate-notes \
@@ -68,7 +68,7 @@ Cutting a production deploy, drafting release notes, or picking the next version
 
    `--generate-notes` produces the categorized "What's Changed" list from PR labels, and `--notes` is prepended above it - the user-facing entry on top, the engineering list below, neither copied into the other.
 
-10. **Return the draft's URL and stop.** That's the artifact for human review and manual publish (UI button, or `gh release edit <version> --draft=false`) - never call `--draft=false` or otherwise flip it to published yourself.
+11. **Return the draft's URL and stop.** That's the artifact for human review and manual publish (UI button, or `gh release edit <version> --draft=false`) - never call `--draft=false` or otherwise flip it to published yourself.
 
 ## Labels
 
@@ -80,7 +80,7 @@ gh label create config --color d93f0b --description "Touches wrangler.jsonc, cro
 gh label create skip-changelog --color ededed --description "Omit from generated release notes"
 ```
 
-`migration` and `config` deliberately have no category of their own - a PR carrying one of them still groups under its functional label (Features/Fixes/Docs & Decisions), so an EventSub bug fix that happens to add a migration reads as a fix, not as an undifferentiated "migration" entry next to an i18n feature that also added one. The two labels still matter: step 5 uses them (via the changed-files check, not the label) to decide what to call out in the notes' prose, and CLAUDE.md's PR-opening step still requires them for anyone auditing what touched `infra/migrations`/config later.
+`migration` and `config` deliberately have no category of their own - a PR carrying one of them still groups under its functional label (Features/Fixes/Docs & Decisions), so an EventSub bug fix that happens to add a migration reads as a fix, not as an undifferentiated "migration" entry next to an i18n feature that also added one. The two labels still matter: step 4 uses them (via the changed-files check, not the label) to decide what to call out in the notes' prose, and CLAUDE.md's PR-opening step still requires them for anyone auditing what touched `infra/migrations`/config later.
 
 Unlabeled PRs still appear, under "Other Changes" - the catch-all category exists so nothing is silently dropped.
 
@@ -90,7 +90,7 @@ Unlabeled PRs still appear, under "Other Changes" - the catch-all category exist
 - Tagging or creating the release before the `CHANGELOG.md` entry is committed to `main`. The entry is the source of truth for user-facing notes (ADR 0050) and the first artifact of the release.
 - Copying PR titles into `CHANGELOG.md` (`fix: batch D1 queries (#44)`). That list already comes from `--generate-notes` in the GitHub Release; the file is what users read in the app and must be plain language with no PR references.
 - Running `--generate-notes` without `--notes`, or `--notes` without `--generate-notes`. The release body needs both halves: the user-facing entry and the generated engineering list.
-- Creating the draft before the human has approved all three `CHANGELOG*.md` entries. Show the drafted entries first; only step 8 commits them, and only step 9 touches `gh release create`.
+- Creating the draft before the human has approved all three `CHANGELOG*.md` entries. Show the drafted entries first; only step 8 commits them, and only step 10 touches `gh release create`.
 - Committing `CHANGELOG.md` without its `CHANGELOG.pt-BR.md`/`CHANGELOG.es.md` translations. The three files are meant to stay in lockstep (ADR 0050); a missing version in a translated file degrades to English for that version rather than failing the build, but that's a gap to close, not a shortcut to take deliberately.
 - Tagging a commit that isn't on `main`, isn't pushed to `origin/main` yet, or whose preview deploy hasn't been exercised. Preview is the gate ADR 0041 added; skipping it defeats the split. An unpushed target commit surfaces as an opaque `HTTP 500` from the releases API, not a helpful error.
 - Titling the release with a name suffix (`"v0.1.0 - <name>"`). The title is the version string alone; any narrative goes in the notes body (and in `CHANGELOG.md`'s prose).
