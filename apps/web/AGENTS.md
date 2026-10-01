@@ -28,9 +28,7 @@ Tailwind v4's Preflight doesn't give `<button>` a pointer cursor, so `src/index.
 
 `components/ui/` is copied source, not an upgradeable dependency: edit it directly.
 
-- Before `npx shadcn add <component>`, confirm `@/*` is declared in both `tsconfig.json` and `tsconfig.app.json`, or it silently writes to a literal `./@` directory instead of `src/components/ui/`.
-- The CLI (style `radix-nova`) also emits `import { cn } from "cn"` instead of `@/lib/utils`, adds a bogus `cn` npm dependency, and blocks on an interactive "button.tsx already exists, overwrite?" prompt that `--yes` doesn't answer (pipe `printf 'n\n'`; never let it overwrite `button.tsx`).
-- After any `shadcn add`: revert `package.json`/`package-lock.json` (`git checkout`, then `npm install`), fix the `cn` import to `@/lib/utils`, and route literal text it hardcodes (e.g. sr-only "Close") through `useLanguage().t()`, matching `ui/sheet.tsx` (key `common.close`).
+Before running `npx shadcn add <component>`, read [docs/shadcn-add-component.md](../../docs/shadcn-add-component.md): the CLI misconfigures paths, imports and dependencies here.
 
 ## E2E tier
 
