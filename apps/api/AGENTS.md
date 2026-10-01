@@ -56,7 +56,7 @@ for (let i = 0; i < ids.length; i += BATCH_SIZE) {
 - `put(key, value, { expirationTtl })` rejects a TTL under 60 seconds (`Invalid expiration_ttl ... must be at least 60`). It only fails at runtime against the real `wrangler dev` worker, so typecheck and lint pass and the route silently 500s. For a shorter effective window, store a timestamp with a 60s TTL and compare elapsed time yourself. Verify a new TTL by running `tests/api` once, not just typecheck.
 - Most `tests/api` files share the fixed `E2E_USER_ID` (`usr_e2e`). `clearDatabase()` wipes D1 and `session:*` KV keys but nothing else, so a new user-keyed KV namespace leaks between tests unless it's cleared in both reset paths of `handleTestReset` in `http/routes/_tests.ts`: the `scope: "all"` branch (prefix-scan delete, like `deleteAllSessions`) and the scoped `E2E_USER_ID` branch (single-key delete, like `deleteSessionsForUser`). Confirm with the full `npm run test:api` suite, since a single-file run can pass while the full run exposes the leak.
 
-## Config files owned by `infra-engineer`
+## Change together
 
-- Cron expressions are defined once in `src/crons.ts` (so tests can import them) and mirrored by hand into `wrangler.jsonc`'s `triggers.crons`. Change both together: one without the other silently breaks either the deployed schedule or the tests.
-- The zod schema in `src/env.ts` and the `.env.development` placeholders change together.
+- Cron expressions are defined once in `src/crons.ts` (so tests can import them) and mirrored by hand into `wrangler.jsonc`'s `triggers.crons`. Edit both in the same change: one without the other silently breaks either the deployed schedule or the tests.
+- The zod schema in `src/env.ts` and the `.env.development` placeholders move in the same change.
