@@ -1,3 +1,5 @@
+import { base64UrlDecode, base64UrlEncode } from "./base64url"
+
 async function deriveKey(secret: string): Promise<CryptoKey> {
   const hash = await crypto.subtle.digest(
     "SHA-256",
@@ -7,22 +9,6 @@ async function deriveKey(secret: string): Promise<CryptoKey> {
     "encrypt",
     "decrypt",
   ])
-}
-
-function bytesToBase64url(bytes: Uint8Array): string {
-  let binary = ""
-  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "")
-}
-
-function base64urlToBytes(b64: string): Uint8Array<ArrayBuffer> {
-  const std = b64.replace(/-/g, "+").replace(/_/g, "/")
-  const padded = std.padEnd(std.length + ((4 - (std.length % 4)) % 4), "=")
-  const binary = atob(padded)
-  const buf = new ArrayBuffer(binary.length)
-  const bytes = new Uint8Array(buf)
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
-  return bytes
 }
 
 export async function encryptToken(
@@ -36,7 +22,7 @@ export async function encryptToken(
     key,
     new TextEncoder().encode(plaintext),
   )
-  return `${bytesToBase64url(iv)}:${bytesToBase64url(new Uint8Array(ct))}`
+  return `${base64UrlEncode(iv)}:${base64UrlEncode(new Uint8Array(ct))}`
 }
 
 export async function decryptToken(
@@ -47,9 +33,9 @@ export async function decryptToken(
   if (sep === -1) throw new Error("Invalid encrypted token format")
   const key = await deriveKey(secret)
   const plaintext = await crypto.subtle.decrypt(
-    { name: "AES-GCM", iv: base64urlToBytes(encrypted.slice(0, sep)) },
+    { name: "AES-GCM", iv: base64UrlDecode(encrypted.slice(0, sep)) },
     key,
-    base64urlToBytes(encrypted.slice(sep + 1)),
+    base64UrlDecode(encrypted.slice(sep + 1)),
   )
   return new TextDecoder().decode(plaintext)
 }

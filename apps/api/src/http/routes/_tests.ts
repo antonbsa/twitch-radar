@@ -17,6 +17,7 @@ import {
   twitchTokens,
   users,
 } from "../../db/schema"
+import { base64UrlEncode } from "../../services/base64url"
 import { encryptToken } from "../../services/crypto"
 import { APP_TOKEN_KV_KEY } from "../../services/twitch/app-token"
 import {
@@ -305,12 +306,6 @@ export async function handleTestSeed(c: Context<HonoEnv>): Promise<Response> {
   }
 
   return jsonResponse({ userId, session } satisfies SeedResponse)
-}
-
-function base64UrlEncode(bytes: Uint8Array): string {
-  let binary = ""
-  for (const byte of bytes) binary += String.fromCharCode(byte)
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "")
 }
 
 // A real (throwaway) P-256 public key — Web Push payload encryption performs
