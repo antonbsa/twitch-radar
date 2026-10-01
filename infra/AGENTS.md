@@ -1,6 +1,7 @@
 # infra
 
 Conventions for `infra/` (D1 migrations, dev/deploy scripts).
+
 ## Migrations
 
 - Generate migrations with `npm run migrations:create` (drizzle-kit); never hand-write a migration file.
@@ -10,12 +11,4 @@ Conventions for `infra/` (D1 migrations, dev/deploy scripts).
 
 ## Local D1 already recorded the old filename
 
-If your local D1 applied the old filename before you caught the collision, `db:setup` re-runs the migration under its new name and fails (typically `duplicate column name: ... : SQLITE_ERROR`). Repoint the tracking row at the new filename without losing dev data. This is a mutating `d1 execute`, so confirm before running it (see `apps/api/AGENTS.md`, "D1 debug queries"):
-
-```bash
-cd apps/api
-npx wrangler d1 execute twitch-radar-dev --local \
-  --command "UPDATE d1_migrations SET name = '<new_filename>.sql' WHERE name = '<old_filename>.sql'"
-```
-
-Then `npm run db:setup` should report "No migrations to apply!" (or apply only the genuinely new ones). Deleting `apps/api/.wrangler/state/v3/d1` and rerunning `npm run db:setup` also works, but wipes local sessions and synced channel data.
+If `npm run db:setup` fails after renumbering a migration (typically `duplicate column name: ... : SQLITE_ERROR`), read [docs/d1-migration-rename-recovery.md](../docs/d1-migration-rename-recovery.md) before touching local D1.

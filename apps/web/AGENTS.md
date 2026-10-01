@@ -1,6 +1,7 @@
 # apps/web
 
 Frontend conventions for the React/Vite PWA (Tailwind v4, shadcn/ui, TanStack Query, React Router v7).
+
 ## Internationalization (ADR 0044)
 
 - All user-visible text goes through the i18n catalog: never a hardcoded string in JSX, a `placeholder`/`aria-label`/`title` attribute, or a toast/error message shown to the user.
@@ -29,11 +30,3 @@ Tailwind v4's Preflight doesn't give `<button>` a pointer cursor, so `src/index.
 `components/ui/` is copied source, not an upgradeable dependency: edit it directly.
 
 Before running `npx shadcn add <component>`, read [docs/shadcn-add-component.md](../../docs/shadcn-add-component.md): the CLI misconfigures paths, imports and dependencies here.
-
-## E2E tier
-
-`tests/web/e2e` drives Playwright manually from vitest, not through `@playwright/test`, so vitest's chai `expect` is in scope and Playwright's locator matchers (`toHaveAttribute`, `toBeVisible`, `toBeAttached`, ...) don't exist: they throw `Invalid Chai property` at runtime, not a type error.
-
-- Visibility: `expectVisible`/`expectHidden` from `tests/web/e2e/setup/assertions.ts`.
-- Attributes/properties: await the value, then compare with plain `expect` (`expect(await link.getAttribute("href")).toBe(...)`).
-- Absence: `expect(await locator.count()).toBe(0)`.

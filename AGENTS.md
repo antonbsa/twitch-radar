@@ -3,8 +3,9 @@
 ## Project Map
 
 - Monorepo: `apps/api` (Hono on Cloudflare Workers), `apps/web` (React/Vite PWA), `infra` (D1 migrations, scripts), `tests/{api,web}`.
-- Package-specific rules live in nested files, loaded when you work there: [apps/api/AGENTS.md](apps/api/AGENTS.md), [apps/web/AGENTS.md](apps/web/AGENTS.md), [infra/AGENTS.md](infra/AGENTS.md).
+- Package-specific rules live in nested files, loaded when you work there: [apps/api/AGENTS.md](apps/api/AGENTS.md), [apps/web/AGENTS.md](apps/web/AGENTS.md), [infra/AGENTS.md](infra/AGENTS.md), [tests/web/AGENTS.md](tests/web/AGENTS.md).
 - Decisions: `docs/decisions` (ADRs, [ADR 0001](docs/decisions/0001-keep-project-decisions-in-adrs.md)). Research conclusions: `docs/notes` (TNs, [ADR 0039](docs/decisions/0039-adopt-technical-notes-for-non-decision-research.md)). HTTP surface: [docs/api-contract.md](docs/api-contract.md).
+- Where guidance goes: needed on most edits → this file; scoped to a directory → that directory's `AGENTS.md` (plus a `CLAUDE.md` containing `@AGENTS.md`); a procedure needed for one task only and longer than ~15 lines → `docs/<topic>.md`, linked from the nearest `AGENTS.md` with its trigger ("Before X, read Y"); a decision → ADR. Re-check placement when a section grows or its trigger changes.
 - `specs/mvp/00. architecture.md` is background reference for the product/system; the MVP spec is closed to new work.
 
 ## Workflow
@@ -53,6 +54,10 @@ Keep them short: inline is 1-2 lines above the relevant line. JSDoc only when th
 ## Commits
 
 - Conventional Commits: `feat:` runtime behavior, `fix:` bug fixes, `docs:` docs/specs/task checklists/agent instructions, `test:` test-only, `chore:` tooling/deps/formatting/maintenance, `refactor:` restructuring without behavior change. If a change touches both docs and tooling or scripts, use `chore:`.
+- Subject: imperative, ≤72 chars, no trailing period; it must stand alone in `git log --oneline`.
+- Body is optional; skip it when the subject says everything. When present: 1–4 `- ` bullets, one line each, no hard wrap. Each says why or what's non-obvious (constraint, rejected alternative, side effect), never a file-by-file how.
+- Context that has a home elsewhere (incident history, design rationale) stays in its issue/ADR/PR; the commit points to it in a footer (`Refs: #73, ADR 0049`) instead of retelling it.
+- Merge commits: subject only, plus one bullet if resolving conflicts required a non-obvious choice.
 - When your work changed project files, end the final response with one suggested commit message. While iterating on the same uncommitted work, update that single suggestion to cover the whole change set; start a new one only after a commit or when separate work begins. Skip it for advice-only responses.
 - `Co-Authored-By` trailer: only on commits a skill makes autonomously (e.g. `implementation-round`); never on interactive work the user directed or reviewed. PR descriptions never carry attribution (`attribution.pr` enforces it).
 
@@ -68,6 +73,13 @@ Don't hard-wrap prose: one paragraph, one line (`npx prettier --write <file>.md`
 - `wrangler dev --env <preview|production> --remote` binds local-dev values to a shared remote D1/KV and writes bad data into it (issue #73). Use `npm run dev:remote`; see [docs/deployment.md](docs/deployment.md) "Hazard: `wrangler dev --remote` Against A Shared Environment".
 - Both test tiers pass only `--env-file .env.development` to `wrangler dev`, never `.env.local`: it's absent in CI, and a nonexistent path makes wrangler exit at once (surfacing as vitest's "No test files found"). Don't add it back.
 - `/api/__test__/*` routes exist only when `environment !== "production"` (ADR 0025).
+
+## Engineering
+
+- Build the simplest thing that fully meets the current requirement, end to end; add capability on top of something that already works. No speculative abstractions, config or indirection.
+- Small is fine, throwaway isn't: the simplest version should be one you'll extend, not one you'll replace. Don't accept a stopgap meant to be rewritten later.
+- Before writing your own code: use what the project's dependencies already offer (check their docs and types before assuming a gap), then a well-maintained library; adding a dependency needs a reason.
+- For a design with no precedent in the codebase, look at how established products solve it and follow their conventions instead of inventing one.
 
 ## No Backward-Compatibility Code (Pre-launch)
 
