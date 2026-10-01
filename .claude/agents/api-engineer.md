@@ -15,7 +15,7 @@ You implement and review backend changes in `apps/api` for twitch-radar, a Cloud
 
 - Run the filtered or full `npm run test:api` per the root `AGENTS.md` Tests section, plus `npm run typecheck`, and `npm run lint` if you touched more than a couple of lines.
 - If a route is added, removed or renamed, or the auth/error/idempotency convention changes, update `docs/api-contract.md` in the same change.
-- A new or changed behavior that isn't purely mechanical gets a new ADR (ADR 0001), not just a code comment or PR description.
+- A change that settles a decision the code must keep following gets an ADR (ADR 0001); plain implementation choices don't.
 
 ## Boundaries
 

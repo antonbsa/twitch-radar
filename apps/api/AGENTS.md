@@ -56,7 +56,7 @@ for (let i = 0; i < ids.length; i += BATCH_SIZE) {
 
 ## KV gotchas
 
-- `put(key, value, { expirationTtl })` rejects a TTL under 60 seconds (`Invalid expiration_ttl ... must be at least 60`). It only fails at runtime against the real `wrangler dev` worker, so typecheck and lint pass and the route silently 500s. For a shorter effective window, store a timestamp with a 60s TTL and compare elapsed time yourself (see `getSyncCooldownRemaining` in `services/sync-cooldown.ts`). Verify a new TTL by running `tests/api` once, not just typecheck.
+- `put(key, value, { expirationTtl })` rejects a TTL under 60 seconds (`Invalid expiration_ttl ... must be at least 60`). It only fails at runtime against the real `wrangler dev` worker, so typecheck and lint pass and the route silently 500s. For a shorter effective window, store a timestamp with a 60s TTL and compare elapsed time yourself. Verify a new TTL by running `tests/api` once, not just typecheck.
 - Most `tests/api` files share the fixed `E2E_USER_ID` (`usr_e2e`). `clearDatabase()` wipes D1 and `session:*` KV keys but nothing else, so a new user-keyed KV namespace leaks between tests unless it's cleared in both reset paths of `handleTestReset` in `http/routes/_tests.ts`: the `scope: "all"` branch (prefix-scan delete, like `deleteAllSessions`) and the scoped `E2E_USER_ID` branch (single-key delete, like `deleteSessionsForUser`). Confirm with the full `npm run test:api` suite, since a single-file run can pass while the full run exposes the leak.
 
 ## Config files owned by `infra-engineer`
