@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Superseded in part by [ADR 0052](0052-nested-agents-md-and-slim-subagents.md): the decision to add role-scoped subagents and reject the rest of the template pattern stands, but subagents no longer point at root `AGENTS.md` source layout sections (none exist); package conventions live in nested `AGENTS.md` files.
 
 ## Context
 
