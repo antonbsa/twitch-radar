@@ -47,6 +47,7 @@ Write a comment when:
 
 Keep them short: inline is 1-2 lines above the relevant line. JSDoc only when the contract isn't obvious from the signature; add `@param`/`@returns` only for meaning the types don't carry (a unit, an encoding, a sentinel).
 
+- A comment describing a function, method or function-valued `const` goes in `/** */` directly above it, so it shows on hover; `//` is for comments inside bodies.
 - A durable decision gets a one-line ADR pointer, e.g. `// ... (ADR 0033)`. Alternatives considered for one change go in the commit message or PR.
 - Preserve "why" comments that still hold. Update or remove ones the code outgrew, and say so in your summary.
 - If a block needs long prose, extract a well-named function instead.
