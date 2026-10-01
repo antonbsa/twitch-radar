@@ -83,11 +83,11 @@ Don't add code that only accepts old schema/data states. When a schema or format
   npx vitest run --config vitest.e2e.config.ts tests/web/e2e/alerts.spec.ts
   ```
 - Run each affected full tier once after a large chunk of work. Don't re-run before opening a PR just as a formality.
-- The tiers use fixed ports (e2e `8877`/`5273`, api `8788`/`8799`), distinct from dev `8787`/`5173`. Another worktree's run holding them is contention, not your bug: don't kill other sessions' servers.
+- The tiers use fixed ports, distinct from dev's. Another worktree's run holding them is contention, not your bug: leave other sessions' servers running.
 
 ## Tooling
 
-- Pre-commit (`husky` + `lint-staged`) lints/formats staged files and typechecks workspaces with staged `.ts`/`.tsx`. It's a local convenience (skippable with `--no-verify`); CI (`linting.yaml`, `tests.yaml`) is the enforced source of truth.
+- When the pre-commit hook (`husky` + `lint-staged`) fails, fix the reported cause and commit again.
 - `eslint.config.mjs` `ignores` must keep `**/dist/**`: an unignored minified bundle makes `npm run lint` hang for 10+ minutes with no error.
 
 ## Worktrees and `.agents/`

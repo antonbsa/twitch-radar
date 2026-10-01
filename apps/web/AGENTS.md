@@ -1,7 +1,6 @@
 # apps/web
 
-Frontend conventions for the React/Vite PWA (Tailwind v4, shadcn/ui, TanStack Query, React Router v7). Loaded when you read files under `apps/web`.
-
+Frontend conventions for the React/Vite PWA (Tailwind v4, shadcn/ui, TanStack Query, React Router v7).
 ## Internationalization (ADR 0044)
 
 - All user-visible text goes through the i18n catalog: never a hardcoded string in JSX, a `placeholder`/`aria-label`/`title` attribute, or a toast/error message shown to the user.
@@ -13,8 +12,8 @@ Frontend conventions for the React/Vite PWA (Tailwind v4, shadcn/ui, TanStack Qu
 
 Tailwind v4's Preflight doesn't give `<button>` a pointer cursor, so `src/index.css` restores it globally in `@layer base` for every enabled `button` and `[role="button"]`.
 
-- Don't add `cursor-pointer` to a `<button>`, a `Button`, or a `Badge asChild` wrapping a `<button>`.
-- Add it only on a clickable non-button (a row `div` with `onClick`, a Radix `option`/`menuitem`).
+- A `<button>`, a `Button`, or a `Badge asChild` wrapping a `<button>` gets its cursor from that rule.
+- Add `cursor-pointer` only on a clickable non-button (a row `div` with `onClick`, a Radix `option`/`menuitem`).
 - `disabled:cursor-not-allowed` still wins, since utilities outrank the base layer.
 
 ## Data and state

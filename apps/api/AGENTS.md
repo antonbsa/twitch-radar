@@ -1,14 +1,11 @@
 # apps/api
 
-Backend conventions for the Hono + Drizzle + D1/KV/Queues Worker. Loaded when you read files under `apps/api`.
+Backend conventions for the Hono + Drizzle + D1/KV/Queues Worker.
 
 ## Database access
 
 - A fresh `Database` is created per request by middleware in `index.ts` (`c.set("db", new Database(c.env.DB))`); handlers use `c.var.db`, typed via `HonoEnv.Variables`.
-- Never instantiate `Database` inside a route handler, and never use a module-level singleton.
 - New repositories go in `db/repositories/<entity>.ts` as a class taking `AppDatabase` in the constructor, then get wired into the `Database` class in `db/index.ts`.
-- Table names are the `sqliteTable("...")` calls in `src/db/schema.ts`; look them up there, since a repository name doesn't always map 1:1 (e.g. `channelStateChanges` backs `channel_state_changes`).
-- Before launch, don't add code that only accepts old schema/data states: update existing rows with a backfill `UPDATE` in the migration instead (root `AGENTS.md`, "No Backward-Compatibility Code").
 
 ## D1 query limits
 
@@ -35,7 +32,7 @@ for (let i = 0; i < ids.length; i += BATCH_SIZE) {
   cd apps/api && npx wrangler d1 execute twitch-radar-dev --local --command "SELECT * FROM notification_snoozes WHERE user_id = '...'"
   ```
 
-- `SELECT` runs without a prompt: `.claude/settings.json` allow-lists this exact shape. It is a string-prefix match, not a SQL parser, so it only recognizes a query that starts with `SELECT` and keeps the `cd apps/api &&` prefix with `--local` before `--command`.
+- Keep the exact shape above (`cd apps/api &&` prefix, `--local` before `--command`, query starting with `SELECT`): that is what `.claude/settings.json` allow-lists, so it runs without a prompt.
 - Anything that mutates data or schema (`INSERT`, `UPDATE`, `DELETE`, `DROP`, "seed a test row", "reset this field to test X") needs explicit confirmation every time, even against local state: say what it does and what it targets first.
 - Never target `twitch-radar-dev` without `--local`. Remote `d1 execute` is denied in `.claude/settings.json` and is never run from an agent session.
 

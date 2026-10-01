@@ -1,7 +1,6 @@
 # infra
 
-Conventions for `infra/` (D1 migrations, dev/deploy scripts). Loaded when you read files under `infra`.
-
+Conventions for `infra/` (D1 migrations, dev/deploy scripts).
 ## Migrations
 
 - Generate migrations with `npm run migrations:create` (drizzle-kit); never hand-write a migration file.
