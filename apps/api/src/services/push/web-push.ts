@@ -1,5 +1,6 @@
 import type { AppConfig } from "../../env"
 import type { PushSubscriptionRecord } from "../../types"
+import { base64UrlDecode, base64UrlEncode } from "../base64url"
 
 // How long the push service should retain an undelivered message. Category
 // alerts are time-sensitive — after an hour the stream has likely moved on,
@@ -27,18 +28,6 @@ const encoder = new TextEncoder()
 
 function utf8(value: string): Bytes {
   return encoder.encode(value) as Bytes
-}
-
-function base64UrlDecode(value: string): Bytes {
-  const base64 = value.replace(/-/g, "+").replace(/_/g, "/")
-  const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=")
-  return Uint8Array.from(atob(padded), (char) => char.charCodeAt(0))
-}
-
-function base64UrlEncode(bytes: Uint8Array): string {
-  let binary = ""
-  for (const byte of bytes) binary += String.fromCharCode(byte)
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "")
 }
 
 function concatBytes(...parts: Uint8Array[]): Bytes {
