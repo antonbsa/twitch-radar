@@ -9,23 +9,18 @@ You implement and review backend changes in `apps/api` for twitch-radar, a Cloud
 
 ## Orient yourself first
 
-Your context already includes this repo's `AGENTS.md` — its conventions apply throughout `apps/api/src` (DB Access Pattern, Env Vars, D1 Query Constraints, D1 Debug Queries, Migration Collision on Rebase, and Test Tiers, in particular). There's no static file map for this directory; explore it directly (`ls`, `grep`) rather than relying on a doc that can drift out of sync with the tree.
+Backend conventions live in `apps/api/AGENTS.md`, which loads when you read files under `apps/api`; repo-wide rules are in the root `AGENTS.md`. There's no static file map for this directory; explore it directly (`ls`, `grep`) rather than relying on a doc that can drift out of sync with the tree.
 
 For product/data-model context, read `specs/mvp/00. architecture.md`. For why a given behavior exists, check `docs/decisions/README.md` first — most non-obvious backend behavior traces to a specific ADR, and the code comment near it usually cites the ADR number inline (per `AGENTS.md`'s Code Comments convention) — grep for it.
 
 ## Conventions to follow, not reinvent
 
-- **DB access**: a fresh `Database` is created per request in `index.ts` middleware and reached via `c.var.db`. Never instantiate `Database` inside a handler or as a module-level singleton. New repositories are classes under `db/repositories/<entity>.ts` taking `AppDatabase` in the constructor, then wired into `db/index.ts`.
-- **Route handlers**: validate input with a local `zod` schema and `.safeParse`, throw `ApiError(status, code, message)` on failure, respond with `jsonResponse(...)`. See `http/routes/preferences.ts` for the current shape of this pattern.
-- **Idempotent lifecycle resources**: preference- and subscription-like rows (`channel_category_preferences`, `global_category_preferences`, `eventsub_subscriptions`, `monitored_channels`) follow create = idempotent upsert / revive-on-recreate, delete = soft-disable via `disabled_at` — never a hard delete. A new resource with similar shape should match this lifecycle (ADRs 0029, 0030) instead of inventing new semantics.
-- **D1 batching**: any `inArray(col, ids)` where `ids` can exceed 100 must chunk at 100 (D1's bound-parameter limit). SQLite in tests won't catch a missing batch — it only breaks in production. See the D1 Query Constraints section of `AGENTS.md` for the exact pattern.
-- **Queue messages**: `TwitchEventQueueMessage` and `NotificationJobMessage` in `types.ts` are discriminated unions (ADRs 0032, 0034). Extend the union for a new event/job shape; don't add a parallel ad hoc message type.
 - **Env vars**: application code reads validated config through `apps/api/src/env.ts`'s zod-derived `AppConfig` (`c.env` in handlers), never `process.env` directly. Adding a new env var means updating this schema, but the var itself (`.env.development`/`.env.local`, `wrangler.jsonc` bindings) is `infra-engineer`'s territory.
 - **Decisions**: a new or changed backend behavior that isn't purely mechanical belongs in a new ADR under `docs/decisions/`, per ADR 0001 — don't bury rationale only in a code comment or PR description.
 
 ## Definition of done
 
-Follow `AGENTS.md`'s Test Execution Scope for `npm run test:api` (real HTTP requests against a `wrangler dev` worker plus a mock Twitch server, per ADR 0025) — filtered to what changed during a small iteration, the full suite once after a large chunk of work, not after every edit. Run `npm run typecheck`, and `npm run lint` if you touched more than a couple of lines. If the change adds, removes, or renames a route, or changes the auth/error/idempotency convention, update `docs/api-contract.md` in the same change (see `AGENTS.md`'s "API Contract Doc") — a route's internal logic changing with no shape/convention change doesn't need it touched. Follow the commit message rules in `AGENTS.md` (Conventional Commits; `docs:` for ADR/spec-only changes) if asked to commit.
+Follow `AGENTS.md`'s Test Execution Scope for `npm run test:api` (real HTTP requests against a `wrangler dev` worker plus a mock Twitch server, per ADR 0025) — filtered to what changed during a small iteration, the full suite once after a large chunk of work, not after every edit. Run `npm run typecheck`, and `npm run lint` if you touched more than a couple of lines. If the change adds, removes, or renames a route, or changes the auth/error/idempotency convention, update `docs/api-contract.md` in the same change (see `apps/api/AGENTS.md`'s "API contract doc") — a route's internal logic changing with no shape/convention change doesn't need it touched. Follow the commit message rules in `AGENTS.md` (Conventional Commits; `docs:` for ADR/spec-only changes) if asked to commit.
 
 ## Boundaries
 

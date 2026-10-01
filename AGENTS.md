@@ -129,39 +129,6 @@ Include the `Co-Authored-By` trailer (per the attribution instructions given in-
 
 This criterion applies to commits only. Pull request descriptions never carry a "Generated with Claude Code" line or equivalent, regardless of how the work was authored - `.claude/settings.json` sets `attribution.pr` to an empty string to enforce this at the tool level rather than relying on remembering it per PR.
 
-## API Contract Doc
-
-[docs/api-contract.md](docs/api-contract.md) documents `apps/api`'s HTTP surface: auth convention, the error envelope, the idempotent-create/soft-disable-delete pattern, and an endpoint index. It's transversal-convention-level, not a field-by-field spec — request/response shapes stay in the route file itself, referenced from there rather than duplicated. Update it in the same change when adding, removing, or renaming a route, or changing the auth/error/idempotency convention it describes; a change confined to a route's internal logic (no shape/convention change) doesn't need it touched. Read the actual route/schema when the detail matters - this doc is a starting map, not an authority over the code.
-
-## Internationalization (i18n)
-
-All user-visible frontend text goes through the i18n catalog (ADR 0044) - never a hardcoded string in JSX, a `placeholder`/`aria-label`/`title` attribute, or a toast/error message shown to the user. Add a key to `apps/web/public/locales/en.json` and resolve it via `useLanguage().t()` (or `interpolateNodes` from `lib/i18n-react.tsx` when the text needs embedded JSX, e.g. bolding a name).
-
-The three catalogs (`en.json`, `es.json`, `pt-BR.json`) are kept in lockstep - a key added to `en.json` without matching entries in the other two is a silent bug (the string falls back to the raw key or the `en` text for those locales), not a partial rollout to fix later.
-
-This extends past the React app: the service worker (`apps/web/public/service-worker.js`) and the backend (`NotificationJobMessage`'s `{titleKey, bodyKey, params, lang}`, ADR 0044) also pass around catalog keys, not literal text - a hook or handler that resolves user-facing text should return a key for its caller to look up, not the resolved string, unless it's the one place actually rendering it.
-
-## Frontend Interaction Cursor
-
-Tailwind v4's Preflight no longer gives `<button>` a pointer cursor, so `apps/web/src/index.css` restores it globally in `@layer base` for every enabled `button` and `[role="button"]`. Don't add `cursor-pointer` per element to a `<button>`, a `Button`, or a `Badge asChild` wrapping a `<button>` - it's already covered. Add it explicitly only on a clickable element that isn't a button (e.g. a row `div` with `onClick`, or a Radix `option`/`menuitem` item). `disabled:cursor-not-allowed` still wins, since utilities outrank the base layer.
-
-## DB Access Pattern
-
-A fresh `Database` instance is created per request via Hono middleware in `index.ts`:
-
-```ts
-app.use("*", (c, next) => {
-  c.set("db", new Database(c.env.DB))
-  return next()
-})
-```
-
-Route handlers access it as `c.var.db` (typed via `HonoEnv.Variables`).
-
-Do **not** instantiate `Database` inside route handlers. Do **not** use a module-level singleton.
-
-New repositories go in `db/repositories/<entity>.ts` as a class with `AppDatabase` in the constructor, then get wired into the `Database` class in `db/index.ts`.
-
 ## Env Vars: Single Source of Truth
 
 - All dev env vars live at the repo root, not per-app: `.env.development` — committed; safe placeholder values for all secrets. `.env.local` — gitignored; override with real values (e.g., actual `TWITCH_CLIENT_ID` / `TWITCH_CLIENT_SECRET`). Only these two need real values for OAuth flows; everything else works with the placeholders.
@@ -174,63 +141,11 @@ New repositories go in `db/repositories/<entity>.ts` as a class with `AppDatabas
 - Both test tiers' `wrangler dev` invocations (`tests/api/setup/global-setup.ts`, `tests/web/e2e/setup/global-setup.ts`) pass only `--env-file .env.development`, never `.env.local`. `.env.local` is gitignored and absent in CI; passing a nonexistent path makes `wrangler dev` exit immediately (surfaced confusingly as vitest's "No test files found"). Tests never do a real OAuth round-trip, so `.env.development`'s placeholders are sufficient — don't add `.env.local` back to these scripts.
 - **Never delete, move, rename, or overwrite any root `.env.*` file holding real secrets in the main worktree** — this covers `.env.local` and `.env.production` (the latter is the developer's manual scratch copy of the values pushed via `wrangler secret put`; nothing in the repo reads it directly, but it's the only record of those production secrets) — whether directly or via a broad/destructive command (`git clean`, `rm -rf`, a "reset the repo to a clean state" request, etc.). These hold real secrets (`TWITCH_CLIENT_SECRET`, VAPID keys, `TOKEN_ENCRYPTION_KEY`, `EVENTSUB_WEBHOOK_SECRET`, `CLOUDFLARE_API_TOKEN`) that exist nowhere else in the repo or its history — being gitignored (`.env.*` in `.gitignore`, with only `.env.development` un-ignored), there is no commit to recover them from. Deleting `.env.local` also silently breaks `npm run dev` for every worktree (`infra/scripts/dev/api-dev.mjs` reads it live via `git rev-parse --git-common-dir`, so all worktrees share this one file), and the loss is only discovered later, disconnected from whatever action caused it. If a task seems to call for touching any of these files, stop and confirm with the user first instead of acting.
 
-## D1 Query Constraints
-
-D1 enforces a maximum of **100 bound parameters per query**. Any `inArray(column, ids)` call where `ids` may exceed 100 must be batched in chunks:
-
-```ts
-const BATCH_SIZE = 100
-for (let i = 0; i < ids.length; i += BATCH_SIZE) {
-  const rows = await db
-    .select()
-    .from(table)
-    .where(inArray(col, ids.slice(i, i + BATCH_SIZE)))
-    .all()
-  results.push(...rows)
-}
-```
-
-SQLite in tests has no such limit, so unbatched queries pass locally and only fail in production.
-
-## D1 Debug Queries
-
-For a debugging question ("check whether X row exists", "what's the current state of Y") don't tell the user to run a query - run it yourself and report the result. The local dev D1 database is reachable from the repo root:
-
-```bash
-cd apps/api && npx wrangler d1 execute twitch-radar-dev --local --command "SELECT * FROM notification_snoozes WHERE user_id = '...'"
-```
-
-Table names are the `sqliteTable("...", ...)` calls in [apps/api/src/db/schema.ts](apps/api/src/db/schema.ts) - check there rather than guessing a table name from a repository or type name, since not every one maps 1:1 (e.g. the `channelStateChanges` repository backs `channel_state_changes`, but check schema.ts instead of assuming a pattern holds for a table you haven't looked up yet).
-
-Read-only queries (`SELECT`) run without asking. A query that mutates data (`INSERT`, `UPDATE`, `DELETE`, `DROP`, or anything altering schema/rows - including "seed a test row" or "reset this field to test X") requires explicit confirmation first, every time, even against local dev state - say what the query does and what it targets before running it.
-
-Never target `twitch-radar-dev` without `--local`, and never run `wrangler d1 execute` against a remote/production database from an agent session.
-
-`.claude/settings.json` allow-lists this exact command shape when `--command` starts with `SELECT`, so a query written this way runs without a permission prompt - everything else (including any mutation) falls through to the default prompt. That's a plain string-prefix match, not a SQL parser: it only recognizes a query that both starts with `SELECT` and is invoked exactly as shown above (from the repo root, `cd apps/api &&` prefix, `--local` before `--command`). Don't rely on it to distinguish read from write in any other invocation shape - the mutation-confirmation rule above still governs.
-
 ## No Backward-Compatibility Code (Pre-launch)
 
 Before launch, do not add code that exists only to accept old schema/data states created before a breaking change. If a schema or data format changes, update the existing records in the same change and make the new invariant the only supported state. Prefer a backfill `UPDATE` in the migration so all environments (local, preview, production) converge automatically without manual repair.
 
 This rule does not apply to fields that are legitimately optional going forward (for example, a nullable column that some writers cannot populate). Those cases still require explicit handling, and the code/comment should describe the current optional state rather than labeling it as compatibility. Revisit this rule once the app has real users beyond the developer.
-
-## Migration Collision on Rebase
-
-`wrangler d1 migrations apply` tracks what's applied by **filename**, in a `d1_migrations` table - not by content. If two branches each generate a migration with the same number (e.g. both produce `0006_*.sql`), only one can keep that number once both land on `main`; the other must be regenerated with the next free number during rebase.
-
-Only one branch should generate a migration at a time. If a branch's migration would collide with one that landed on `main` first, rebase onto `main`, delete that branch's own `.sql` file and its `meta/<n>_snapshot.json`, and run `migrations:create` again on top of the now-merged baseline - this is the only way to keep the snapshot chain correct. Don't hand-renumber the file or edit the journal to "fix" the collision.
-
-`npm run db:check -w @twitch-radar/api` (`drizzle-kit check`) detects this exact numbering/journal collision, and runs in CI (`.github/workflows/linting.yaml`) on every push/PR - but run it yourself after any rebase that touched `infra/migrations` too, rather than waiting to find out from CI. Treat a failure as this problem, not a flaky check.
-
-If your local D1 already has the old filename recorded as applied before you catch the collision, `db:setup` will try to re-run the migration under its new name and fail (typically `duplicate column name: ... : SQLITE_ERROR`, or the equivalent for whatever the migration added). Fix locally without losing dev data by repointing the tracking row at the new filename:
-
-```bash
-cd apps/api
-npx wrangler d1 execute twitch-radar-dev --local \
-  --command "UPDATE d1_migrations SET name = '<new_filename>.sql' WHERE name = '<old_filename>.sql'"
-```
-
-Then `npm run db:setup` should report "No migrations to apply!" (or apply only the genuinely new ones). If reconciling isn't worth it, deleting `apps/api/.wrangler/state/v3/d1` and rerunning `npm run db:setup` also works, but wipes local sessions and synced channel data.
 
 ## Test Tiers
 

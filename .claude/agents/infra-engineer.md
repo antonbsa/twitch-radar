@@ -15,8 +15,6 @@ Check `docs/decisions/README.md` for the platform-level ADRs: 0002 (Cloudflare s
 
 ## Conventions to follow, not reinvent
 
-- **Cron config lives in two places that must agree**: cron expressions are defined once in `apps/api/src/crons.ts` (so tests can import them) and mirrored by hand into `wrangler.jsonc`'s `triggers.crons`. Changing one without the other silently breaks either the deployed schedule or the tests.
-- **Migrations**: generate with `npm run migrations:create` (drizzle-kit), never hand-write a migration file. D1 enforces a 100-bound-parameter limit per query — this doesn't block a migration itself, but keep it in mind when reviewing schema changes that app code will query with `inArray`.
 - **Env vars are root-level, not per-app**: `.env.development` (committed, placeholder secrets) and `.env.local` (gitignored, real secrets) live at the repo root and are read by both `wrangler dev` (via `--env-file` flags) and Vite (via `envDir` pointing at the root). Never add a per-app `.env` file. Only `TWITCH_CLIENT_ID`/`TWITCH_CLIENT_SECRET` need real values in `.env.local` for OAuth to work locally.
 - **`PUBLIC_URL` is the one origin var**: don't add a separate API-only URL var or an `EVENTSUB_CALLBACK_URL` — every derived URL (`twitchRedirectUri`, the EventSub callback, the post-login redirect) is computed from `PUBLIC_URL` at the point of use, not stored separately.
 - **Test tiers never pass `.env.local`**: both `tests/api/setup/global-setup.ts` and `tests/web/e2e/setup/global-setup.ts` start `wrangler dev` with only `--env-file .env.development`. `.env.local` is gitignored and absent in CI, and passing a nonexistent path makes `wrangler dev` exit immediately, which surfaces confusingly as "No test files found" rather than a clear error.
