@@ -62,3 +62,4 @@ Other project documents may state goals, requirements, task scope, validation st
 ## Proposed ADRs
 
 - [0042 - Async Follow Sync Via Queue With KV-Backed Progress Polling](0042-async-follow-sync-with-progress-polling.md)
+- [0054 - User-Controlled Notification Suppression: Pause, Broadcaster Mute, Global Category Exclusions](0054-user-controlled-notification-suppression.md)
