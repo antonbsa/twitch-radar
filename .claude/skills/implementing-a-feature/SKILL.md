@@ -21,13 +21,14 @@ description: Use when asked to implement a feature from a GitHub issue, local is
 
    If the input already has no open items, say so and proceed straight to implementation. Do not invent questions that aren't there.
 
-4. **Move onto a feature branch before the first file write.** If the session is on `main`, create a worktree named after the work, per AGENTS.md "Worktrees and `.agents/`":
+4. **Leave `main` before the first file write.** This step precedes every write the skill makes, including a spec draft from step 2 or an ADR from step 3. If `git branch --show-current` prints `main`, branch a worktree off the latest `origin/main`, named after the work per AGENTS.md "Worktrees and `.agents/`":
    ```bash
-   git worktree add .agents/worktrees/<branch-name> -b <branch-name>
+   git fetch origin main
+   git worktree add --no-track -b <branch-name> .agents/worktrees/<branch-name> origin/main
    ```
-   From here on, the worktree is the working directory: `cd` there and use paths under it for every Read/Edit/Write, since absolute paths copied from earlier in the session still point at the `main` checkout. Run `npm install` at its root before the first command that runs project code. Already on another branch or in a worktree (e.g. dispatched by `implementation-round`): stay where you are.
+   Then call `EnterWorktree` with `path: .agents/worktrees/<branch-name>`, which moves the whole session (file tools, nested `AGENTS.md`, subagents) into the worktree; a Bash `cd` moves only the shell, and Read/Edit/Write would keep hitting the `main` checkout. Run `npm install` at its root before the first command that runs project code. Uncommitted changes in the `main` checkout stay behind there: if any relate to this work, ask the user before branching. On any other branch (e.g. dispatched by `implementation-round` into its worktree), skip this step.
 
-5. **For bug reports, confirm the repro before fixing.** If the input's `Proposed solution` (or equivalent) has an unconfirmed repro, an unidentified root cause, or hedges with "if it still reproduces" / "possible explanations" — reproduce it on current `main` first (or write a failing test that captures it) before touching implementation code. Invoke the superpowers:systematic-debugging skill for the root-cause work itself. If it doesn't reproduce, say so and stop — close/report that instead of fixing a guessed cause.
+5. **For bug reports, confirm the repro before fixing.** If the input's `Proposed solution` (or equivalent) has an unconfirmed repro, an unidentified root cause, or hedges with "if it still reproduces" / "possible explanations" — reproduce it on the new branch first (or write a failing test that captures it) before touching implementation code. Invoke the superpowers:systematic-debugging skill for the root-cause work itself. If it doesn't reproduce, say so and stop — close/report that instead of fixing a guessed cause.
 
 6. **Implement.** Follow the conventions in [AGENTS.md](../../../AGENTS.md) (nested package files load as you work there) and any referenced ADRs. Delegate to `api-engineer`, `web-engineer` or `infra-engineer` when the work is confined to their domain, giving them the worktree's absolute path as their working directory. Follow AGENTS.md "Tests" for how much to run while iterating: filtered tests for a small change, the full relevant tier once after a large chunk of work.
 

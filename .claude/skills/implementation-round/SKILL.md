@@ -35,15 +35,16 @@ Given a list of inputs to implement together - any mix of spec paths (`specs/mil
 
 4. **Create every worktree before dispatching anything.** For each group, from the repo root:
    ```bash
-   git worktree add .agents/worktrees/<name> -b <name>
+   git fetch origin main
+   git worktree add --no-track -b <name> .agents/worktrees/<name> origin/main
    ```
-   branching off current `main`, then `npm install` at each new worktree root (a fresh worktree has no `node_modules`). Do this for the whole batch up front, in your own session - a naming collision or a dirty `main` surfaces here, not inside a subagent mid-implementation.
+   branching off the latest `origin/main`, then `npm install` at each new worktree root (a fresh worktree has no `node_modules`). Do this for the whole batch up front, in your own session - a naming collision or a dirty `main` surfaces here, not inside a subagent mid-implementation.
 
 5. **Dispatch one subagent per group, all in the same message.** Pick the agent type by the group's scope: `api-engineer` for changes confined to `apps/api`, `web-engineer` for `apps/web`, `infra-engineer` for migrations/wrangler/env/deploy scripts, `claude`/`general-purpose` otherwise (including groups that mix scopes). Each dispatch prompt must include:
    - Every item in the group (spec path / issue number / issue file) and the absolute path of the shared worktree - the subagent has no `isolation` param that can target that exact path, so it must treat that path as its working directory for the whole task (`cd` there, and/or use absolute paths under it for every Read/Write/Edit/Bash call).
    - For a multi-item group, the reasoning for why these items are combined and, if there's a sequential dependency, the order to implement them in.
    - Any resolution from step 2 that applies to this group's item(s), stated as already-decided - the subagent must not re-ask it.
-   - The instruction to invoke `implementing-a-feature` for steps 4-7 (step 4 is a no-op inside the worktree; implement, then write the handoff doc) for each item in the group, with **step 8 overridden**: instead of never touching git, commit the finished work on the group's own branch, following this repo's Conventional Commits rules (AGENTS.md "Commits"; this autonomous commit carries the `Co-Authored-By` trailer) - one commit per item if they're logically separable, or a single commit if the group is one cohesive change. Still no push, no PR - those stay manual and explicit.
+   - The instruction to invoke `implementing-a-feature` for steps 4-7 (step 4 is skipped off `main`; implement, then write the handoff doc) for each item in the group, with **step 8 overridden**: instead of never touching git, commit the finished work on the group's own branch, following this repo's Conventional Commits rules (AGENTS.md "Commits"; this autonomous commit carries the `Co-Authored-By` trailer) - one commit per item if they're logically separable, or a single commit if the group is one cohesive change. Still no push, no PR - those stay manual and explicit.
    - Test-run contention: both tiers use fixed ports shared by every worktree, so wrap each tier run in `flock /tmp/twitch-radar-tests.lock <command>` to serialize across groups. Never kill another session's servers.
    - A short report contract: status (`DONE`/`BLOCKED`), commit hash(es), handoff doc path(s).
 
