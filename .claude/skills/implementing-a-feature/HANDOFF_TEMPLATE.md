@@ -4,7 +4,7 @@
      reflects the branch's current, final state, as if it had been written this way from the
      start. Do not append change-by-change narration, and do not describe earlier iterations or
      abandoned approaches that no longer apply to the branch as it stands. See
-     implementing-a-feature (step 7) for when this is written, and creating-pull-requests for
+     implementing-a-feature's handoff step for when this is written, and creating-pull-requests for
      how it feeds the PR description.
 
      Required sections: Objective/Problem, Scope, How to Validate - every handoff needs these.
