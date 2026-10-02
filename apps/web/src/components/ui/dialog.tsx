@@ -55,8 +55,10 @@ function DialogContent({
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
   /**
-   * Covers the whole viewport on every screen size. Used for surfaces with an
-   * auto-focused input, which a mobile keyboard would otherwise cover (#20).
+   * Covers the whole viewport below the `sm` breakpoint, where a mobile
+   * keyboard would otherwise cover an auto-focused input (#20), and becomes a
+   * fixed-size centered dialog from `sm` up (#40). The height is fixed rather
+   * than content-sized so the dialog doesn't jump as search results load.
    */
   fullScreen?: boolean
 }) {
@@ -70,7 +72,7 @@ function DialogContent({
         className={cn(
           "fixed z-50 bg-popover text-sm text-popover-foreground duration-100 outline-none data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
           fullScreen
-            ? "inset-0 flex h-dvh flex-col"
+            ? "inset-0 flex h-dvh flex-col sm:inset-auto sm:top-1/2 sm:left-1/2 sm:h-[min(85dvh,40rem)] sm:w-full sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:ring-1 sm:ring-foreground/10 sm:data-open:zoom-in-95 sm:data-closed:zoom-out-95"
             : "top-1/2 left-1/2 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl p-4 ring-1 ring-foreground/10 sm:max-w-sm data-open:zoom-in-95 data-closed:zoom-out-95",
           className,
         )}

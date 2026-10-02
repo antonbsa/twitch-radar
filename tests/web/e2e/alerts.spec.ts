@@ -97,6 +97,39 @@ describe("Alerts view", () => {
     await expectHidden(dialog)
   })
 
+  it("should open the add-category dialog as a centered, size-constrained dialog on desktop and dismiss it by clicking outside", async ({
+    authenticatedSession,
+  }) => {
+    const { page } = authenticatedSession
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.route("**/api/preferences", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ data: { channel: [], global: [] } }),
+      }),
+    )
+
+    await page.goto(`${WEB_URL}/alerts`)
+    await page.getByRole("button", { name: "Add global category" }).click()
+
+    const dialog = page.getByRole("dialog")
+    await expectVisible(dialog)
+    await expectVisible(dialog.getByText("Add Category"))
+
+    // Smaller than the page behind it, centered, with the overlay left to
+    // click (#40).
+    await expect
+      .poll(async () => (await dialog.boundingBox())?.width)
+      .toBeLessThanOrEqual(512)
+    const box = await dialog.boundingBox()
+    expect(box?.height).toBeLessThan(800)
+    expect((box?.x ?? 0) + (box?.width ?? 0) / 2).toBeCloseTo(640, 0)
+
+    await page.mouse.click(10, 10)
+    await expectHidden(dialog)
+  })
+
   it("should add and remove a global category preference end to end", async ({
     authenticatedSession,
   }) => {
