@@ -4,7 +4,7 @@ import type { MonitorReason } from "../db/repositories/monitored-channels"
 import { getStreamsByUserIds } from "./twitch/client"
 import { getValidAccessToken } from "./twitch/token-refresh"
 
-// Must match the webhook route T-007 registers under /api.
+// Must match the EventSub webhook route registered under /api.
 const EVENTSUB_CALLBACK_PATH = "/api/webhooks/twitch/eventsub"
 
 /**
@@ -45,7 +45,7 @@ export interface MonitorTarget {
 /**
  * Makes the given broadcasters monitored (ADR 0007): upserts
  * `monitored_channels` (re-enabling disabled rows), ensures pending local
- * EventSub subscription rows for T-007 to create on Twitch, and seeds
+ * EventSub subscription rows for the creation job (ADR 0031) to create on Twitch, and seeds
  * `channel_state` for broadcasters that have no row yet so future
  * transition comparisons have a baseline (ADR 0008). Broadcasters that
  * already have a state row are not re-fetched — EventSub-driven updates
@@ -146,7 +146,7 @@ async function seedMissingChannelState(
  * Soft-disables monitoring for each broadcaster no active preference still
  * requires: no active channel preference (any user) references it and no
  * user with an active global preference follows it. Disabled rows are the
- * signal for T-007's reconciliation to drop the Twitch-side subscriptions.
+ * signal for reconciliation (ADR 0036) to drop the Twitch-side subscriptions.
  */
 export async function cleanupMonitoringForBroadcasters(
   db: Database,

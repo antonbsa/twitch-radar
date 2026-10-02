@@ -50,10 +50,10 @@ export class UsersRepository {
   }
 
   /**
-   * Upserts by Twitch user id, resolving whether this is a first-time login
-   * (mint a new `usr_` id) or a returning user (keep the existing row's id)
-   * internally, so callers no longer need to look up the existing user just
-   * to decide whether to generate an id.
+   * Upserts by Twitch user id: a first-time login mints a new `usr_` id, a
+   * returning user keeps the existing row's id.
+   *
+   * @returns The internal `usr_` id.
    */
   async upsertByTwitchUserId(
     input: UpsertUserByTwitchIdInput,

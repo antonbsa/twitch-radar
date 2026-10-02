@@ -17,6 +17,7 @@ import {
   twitchTokens,
   users,
 } from "../../db/schema"
+import { base64UrlEncode } from "../../services/base64url"
 import { encryptToken } from "../../services/crypto"
 import { APP_TOKEN_KV_KEY } from "../../services/twitch/app-token"
 import {
@@ -307,14 +308,10 @@ export async function handleTestSeed(c: Context<HonoEnv>): Promise<Response> {
   return jsonResponse({ userId, session } satisfies SeedResponse)
 }
 
-function base64UrlEncode(bytes: Uint8Array): string {
-  let binary = ""
-  for (const byte of bytes) binary += String.fromCharCode(byte)
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "")
-}
-
-// A real (throwaway) P-256 public key — Web Push payload encryption performs
-// actual ECDH against it, so a placeholder string would fail the send path.
+/**
+ * A real (throwaway) P-256 public key — Web Push payload encryption performs
+ * actual ECDH against it, so a placeholder string would fail the send path.
+ */
 async function generateP256dhKey(): Promise<string> {
   const pair = await crypto.subtle.generateKey(
     { name: "ECDH", namedCurve: "P-256" },
@@ -453,10 +450,12 @@ export interface InspectRequestBody {
   userId?: string
 }
 
-// Read-only window into broadcaster-keyed tables the public API never
-// exposes (monitoring is server-internal, ADR 0007) so tests can assert
-// monitored_channels / eventsub_subscriptions / channel_state /
-// notification_deliveries side effects.
+/**
+ * Read-only window into broadcaster-keyed tables the public API never
+ * exposes (monitoring is server-internal, ADR 0007) so tests can assert
+ * monitored_channels / eventsub_subscriptions / channel_state /
+ * notification_deliveries side effects.
+ */
 export async function handleTestInspect(
   c: Context<HonoEnv>,
 ): Promise<Response> {

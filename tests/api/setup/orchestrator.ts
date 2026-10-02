@@ -137,7 +137,7 @@ const mockTwitch = {
     })
   },
 
-  // Client-credentials exchange (same /oauth2/token path as the user grant).
+  /** Client-credentials exchange (same /oauth2/token path as the user grant). */
   onAppToken(accessToken = "app-access-token") {
     return this.queue("/oauth2/token", {
       access_token: accessToken,

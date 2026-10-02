@@ -1,6 +1,7 @@
 export interface TwitchTokenResponse {
   access_token: string
   refresh_token: string
+  /** Seconds until the access token expires. */
   expires_in: number
   scope: string[]
   token_type: string
@@ -54,9 +55,15 @@ export interface TwitchStream {
   thumbnail_url: string
 }
 
-// Twitch's stream thumbnail URLs are templates with literal {width}/{height}
-// placeholders (e.g. ".../live_user_foo-{width}x{height}.jpg") that callers
-// must substitute before the URL is usable.
+/**
+ * Twitch's stream thumbnail URLs are templates with literal {width}/{height}
+ * placeholders (e.g. ".../live_user_foo-{width}x{height}.jpg") that callers
+ * must substitute before the URL is usable.
+ *
+ * @param width Pixels.
+ * @param height Pixels.
+ * @returns `null` when there's no template.
+ */
 export function resolveThumbnailUrl(
   template: string | null | undefined,
   width = 640,
@@ -143,12 +150,15 @@ export async function refreshAccessToken(
 
 export interface TwitchAppTokenResponse {
   access_token: string
+  /** Seconds until the access token expires. */
   expires_in: number
   token_type: string
 }
 
-// Client-credentials grant. EventSub webhook subscriptions (and the queue
-// consumer's stream lookups) authenticate as the app, not as a user.
+/**
+ * Client-credentials grant. EventSub webhook subscriptions (and the queue
+ * consumer's stream lookups) authenticate as the app, not as a user.
+ */
 export async function fetchAppAccessToken(
   clientId: string,
   clientSecret: string,

@@ -1,17 +1,12 @@
 ---
 name: implementation-round
-description: Use when asked to implement a batch of specs/issues in this repo together - validates every item's readiness and how items relate to each other upfront (dependencies, shared-flow coupling), groups items that need to land as one implementation, then runs implementing-a-feature per group in its own isolated git worktree, in parallel.
+description: Implement a batch of specs/issues in parallel, one isolated git worktree per group of related items.
+disable-model-invocation: true
 ---
 
 # Implementation Round
 
-## Overview
-
-Runs [implementing-a-feature](../implementing-a-feature) for a batch of specs/issues, grouped so each group becomes one implementation in its own isolated git worktree under `.agents/worktrees/`, groups run in parallel. Validates every item's readiness and how it relates to the rest of the batch before creating any worktree, so the batch either proceeds as a whole or pauses on one consolidated set of questions covering both open decisions and the proposed grouping.
-
-## Language
-
-Every message this skill sends directly to the user - step 2's consolidated questions/grouping proposal, step 6's final report, any other status update - is written in the language the user has been using in this conversation; if that can't be identified, default to English. This follows the project-wide chat-language convention in [CLAUDE.md](../../../CLAUDE.md) "Language". It does not extend to anything that becomes a project artifact: dispatch prompts to subagents, code, commit messages, and handoff docs stay in English regardless of the conversation's language, same as that rule already requires.
+Runs [implementing-a-feature](../implementing-a-feature) for a batch of specs/issues, one isolated git worktree per group under `.agents/worktrees/`, groups in parallel. Every item is validated before any worktree is created, so the batch either proceeds whole or pauses on one consolidated set of questions (open decisions and proposed grouping).
 
 ## When to use
 
@@ -36,34 +31,33 @@ Given a list of inputs to implement together - any mix of spec paths (`specs/mil
    - All items `READY` and every group a singleton (no combining proposed) -> continue to step 3 automatically, no pause.
    - Otherwise - any `NEEDS_INPUT`, or any proposed group combining 2+ items - stop. Present everything in one plain chat message (a direct text response): every open question from every flagged item, grouped by item, each with your recommended resolution; and the proposed grouping with reasoning for any group of more than one item, framed as a recommendation the user can confirm or override. Do not use an interactive question/input tool (e.g. `AskUserQuestion`) for this - the batch can have several open questions and a grouping call to make at once, and they must all be visible together as text, not walked through one at a time in a dialog. Resolve both in the same round: a decision resolution can itself change whether two items are actually coupled, so don't ask about grouping separately from open decisions. Wait until the user has answered every open item and confirmed the grouping across the whole batch - do not dispatch the settled groups early while others are still pending. If a resolution is itself an accepted decision the code must follow going forward, flag it for an ADR per [ADR 0001](../../../docs/decisions/0001-keep-project-decisions-in-adrs.md), same as `implementing-a-feature` step 3 - most resolutions are plain implementation choices and won't need one. Once every question is answered and the grouping is confirmed, continue to step 3 for the full batch.
 
-3. **Derive a worktree name per group.** Succinct, kebab-case, descriptive of the implementation itself - no issue number, no generic id (per [CLAUDE.md](../../../CLAUDE.md) "Worktree Configuration"). For a group of more than one item, name it after the combined implementation, not after one member item. This name is both the branch name and the worktree directory name.
+3. **Derive a worktree name per group.** Succinct, kebab-case, descriptive of the implementation itself - no issue number, no generic id (per AGENTS.md "Worktrees and `.agents/`"). For a group of more than one item, name it after the combined implementation, not after one member item. This name is both the branch name and the worktree directory name.
 
 4. **Create every worktree before dispatching anything.** For each group, from the repo root:
    ```bash
    git worktree add .agents/worktrees/<name> -b <name>
    ```
-   branching off current `main`. Do this for the whole batch up front, in your own session - a naming collision or a dirty `main` surfaces here, not inside a subagent mid-implementation.
+   branching off current `main`, then `npm install` at each new worktree root (a fresh worktree has no `node_modules`). Do this for the whole batch up front, in your own session - a naming collision or a dirty `main` surfaces here, not inside a subagent mid-implementation.
 
-5. **Dispatch one subagent per group, all in the same message.** Pick the agent type by the group's scope: `api-engineer` for changes confined to `apps/api`, `web-engineer` for `apps/web`, `claude`/`general-purpose` otherwise (if a group mixes scopes, use `claude`/`general-purpose`). Each dispatch prompt must include:
+5. **Dispatch one subagent per group, all in the same message.** Pick the agent type by the group's scope: `api-engineer` for changes confined to `apps/api`, `web-engineer` for `apps/web`, `infra-engineer` for migrations/wrangler/env/deploy scripts, `claude`/`general-purpose` otherwise (including groups that mix scopes). Each dispatch prompt must include:
    - Every item in the group (spec path / issue number / issue file) and the absolute path of the shared worktree - the subagent has no `isolation` param that can target that exact path, so it must treat that path as its working directory for the whole task (`cd` there, and/or use absolute paths under it for every Read/Write/Edit/Bash call).
    - For a multi-item group, the reasoning for why these items are combined and, if there's a sequential dependency, the order to implement them in.
    - Any resolution from step 2 that applies to this group's item(s), stated as already-decided - the subagent must not re-ask it.
-   - The instruction to invoke `implementing-a-feature` for steps 4-6 (implement, then write the handoff doc) for each item in the group, with **step 7 overridden**: instead of never touching git, commit the finished work on the group's own branch, following this repo's Conventional Commits rules ([CLAUDE.md](../../../CLAUDE.md) "Commit Message Rules") - one commit per item if they're logically separable, or a single commit if the group is one cohesive change. Still no push, no PR - those stay manual and explicit.
+   - The instruction to invoke `implementing-a-feature` for steps 4-6 (implement, then write the handoff doc) for each item in the group, with **step 7 overridden**: instead of never touching git, commit the finished work on the group's own branch, following this repo's Conventional Commits rules (AGENTS.md "Commits"; this autonomous commit carries the `Co-Authored-By` trailer) - one commit per item if they're logically separable, or a single commit if the group is one cohesive change. Still no push, no PR - those stay manual and explicit.
+   - Test-run contention: both tiers use fixed ports shared by every worktree, so wrap each tier run in `flock /tmp/twitch-radar-tests.lock <command>` to serialize across groups. Never kill another session's servers.
    - A short report contract: status (`DONE`/`BLOCKED`), commit hash(es), handoff doc path(s).
 
 6. **Report the whole batch once every subagent returns.** One consolidated summary, per group: worktree path, branch, items covered, commit hash(es), handoff doc path(s) (`.agents/handoff-<slug>.md`, inside that worktree), and status. Leave every worktree in place - this skill never deletes or merges them, and never pushes or opens a PR. Point the user at `creating-pull-requests` for whichever branches they want to open next, one at a time.
 
 ## Common mistakes
 
-- Defaulting to one worktree per item without actively checking for a sequential dependency or shared-flow coupling first - the skill must look for these, not assume every item is independent.
-- Splitting a real sequential dependency into two parallel worktrees/subagents - if item B needs item A's work to exist, they belong in the same group, implemented in order, not raced against each other.
-- Deciding a multi-item grouping silently instead of surfacing it for confirmation - like open decisions, a proposed merge changes the shape of the batch (fewer worktrees, one branch covering multiple items) and needs the same one-round confirmation before any worktree is created.
-- Asking about grouping in a separate round from open decisions - a decision resolution can change whether two items are actually coupled, so both must be resolved together in one message.
-- Dispatching the settled groups while others are still waiting on an answer - the gate is on the whole batch, not per group.
-- Using an interactive question tool (e.g. `AskUserQuestion`) to surface the batch's open questions or grouping proposal instead of a plain chat response - that hides multiple items' questions behind a one-at-a-time dialog when they need to be visible together as text.
-- Treating two items touching the same file as disqualifying, or as requiring grouping, on its own - only a real dependency or a shared-flow change between items forces grouping; a plain file overlap is just a later merge conflict.
-- Treating "decision" as ADR-only - most open decisions flagged in step 1 are plain implementation choices (a library, which callers to migrate); ADR is a conditional flag on top, not the trigger itself.
-- Using the Agent tool's `isolation: "worktree"` for the per-group dispatch - it can't be pointed at `.agents/worktrees/<name>`, which the branch-naming rule requires. Create the worktree yourself first, then dispatch a plain agent into it.
-- Letting a subagent skip the commit ("implementing-a-feature says never touch git") - that rule is overridden here specifically because the work is isolated in its own worktree/branch; the commit is what makes the branch reviewable.
-- Naming a worktree/branch after an issue number, a generic id (`issue-42`, `agent-3`), or - for a multi-item group - after only one of its member items instead of the combined implementation.
-- Auto-merging, pushing, or opening a PR from inside this skill - it stops at a committed, isolated branch; everything after that is a separate, explicit step.
+- Defaulting to one worktree per item without checking for a sequential dependency or shared-flow coupling.
+- Splitting a real dependency into parallel worktrees: if B needs A's work, they share a group, in order.
+- Deciding a multi-item grouping silently, or asking about it in a separate round from open decisions: a resolution can change whether items are coupled.
+- Dispatching settled groups while others still wait on an answer: the gate is on the whole batch.
+- Using `AskUserQuestion` for the batch's questions: they must be visible together as plain text.
+- Treating shared-file overlap as a reason to group: that is just a later merge conflict.
+- Treating every open decision as ADR-worthy: most are plain implementation choices.
+- Using the Agent tool's `isolation: "worktree"`: it can't target `.agents/worktrees/<name>`. Create the worktree yourself, then dispatch a plain agent into it.
+- Letting a subagent skip the commit: the "never touch git" rule is overridden here because the work is isolated on its own branch.
+- Pushing, merging or opening a PR from inside this skill.

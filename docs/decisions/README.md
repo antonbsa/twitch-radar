@@ -43,7 +43,7 @@ Other project documents may state goals, requirements, task scope, validation st
 - [0035 - Web Push Sends Hand-Rolled On WebCrypto](0035-web-push-via-webcrypto.md)
 - [0036 - Scheduled Ops Jobs: Reconciliation, Token Refresh, Follow Sync](0036-scheduled-ops-jobs.md)
 - [0037 - Single PUBLIC_URL, Same-Origin API And Web In Every Environment](0037-single-public-url-same-origin-deployment.md)
-- [0038 - Adopt Role-Scoped Subagents, Reject The Rest Of The Agent-Context-Template Pattern](0038-adopt-role-scoped-subagents-reject-template.md)
+- [0038 - Adopt Role-Scoped Subagents, Reject The Rest Of The Agent-Context-Template Pattern](0038-adopt-role-scoped-subagents-reject-template.md) — superseded in part by 0052
 - [0039 - Adopt Technical Notes For Non-Decision Research](0039-adopt-technical-notes-for-non-decision-research.md)
 - [0040 - Structured Leveled Logging Convention](0040-structured-leveled-logging-convention.md)
 - [0041 - Release-Gated Production Deploys, Automatic Preview Deploys](0041-release-gated-production-deploys.md)
@@ -56,6 +56,7 @@ Other project documents may state goals, requirements, task scope, validation st
 - [0049 - EventSub Subscription Failure Backoff, Terminal Status, And Callback Validation](0049-eventsub-subscription-failure-backoff-and-callback-validation.md)
 - [0050 - CHANGELOG.md As The Source Of Truth For Release Notes](0050-changelog-as-source-of-truth-for-release-notes.md)
 - [0051 - Suppress Notifications For Non-Live Stream Types](0051-suppress-non-live-stream-type-notifications.md)
+- [0052 - Agent Instructions: Nested AGENTS.md For Conventions, Subagents For Persona And Boundaries](0052-nested-agents-md-and-slim-subagents.md)
 
 ## Proposed ADRs
 
