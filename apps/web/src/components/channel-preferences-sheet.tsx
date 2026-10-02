@@ -50,7 +50,7 @@ export function ChannelPreferencesSheet({
         <SheetHeader>
           <SheetTitle>{channel?.broadcaster_display_name}</SheetTitle>
         </SheetHeader>
-        <div className="space-y-4 overflow-y-auto px-4 pb-4">
+        <div className="space-y-4 overflow-y-auto px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <CategorySearchList
             disabledCategoryIds={savedForChannel.map(
               (pref) => pref.category_id,

@@ -69,6 +69,10 @@ async function refreshAndStoreToken(
   return refreshed.access_token
 }
 
+/**
+ * @returns The decrypted access token, refreshing first when it expires within 5 min.
+ * @throws ApiError 401 `auth_required` (no token row) or `reconnect_required` (Twitch rejected the refresh).
+ */
 export async function getValidAccessToken(
   db: Database,
   config: AppConfig,

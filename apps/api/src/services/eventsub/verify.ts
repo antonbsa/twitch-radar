@@ -9,7 +9,7 @@ function toHex(buffer: ArrayBuffer): string {
     .join("")
 }
 
-// Constant-time comparison so signature checks don't leak match length.
+/** Constant-time comparison so signature checks don't leak match length. */
 function timingSafeEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false
   let diff = 0

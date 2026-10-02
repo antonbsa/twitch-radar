@@ -79,8 +79,10 @@ export class PushSubscriptionsRepository {
     return row ? toPushSubscription(row) : null
   }
 
-  // Re-claims an existing endpoint row: refreshes keys, reassigns the owner,
-  // and clears any prior revocation (see ADR 0027).
+  /**
+   * Re-claims an existing endpoint row: refreshes keys, reassigns the owner,
+   * and clears any prior revocation (see ADR 0027).
+   */
   async refresh(input: RefreshPushSubscriptionInput): Promise<void> {
     await this.db
       .update(pushSubscriptions)

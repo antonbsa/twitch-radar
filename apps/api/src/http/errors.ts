@@ -56,8 +56,10 @@ export function errorResponse(error: unknown, requestId: string): Response {
   )
 }
 
-// Detects an unmigrated local D1 (e.g. a fresh worktree) so the log can
-// point at `npm run db:setup` instead of SQLite's generic "no such table".
+/**
+ * Detects an unmigrated local D1 (e.g. a fresh worktree) so the log can
+ * point at `npm run db:setup` instead of SQLite's generic "no such table".
+ */
 function isMissingLocalD1SchemaError(error: unknown): boolean {
   if (!(error instanceof Error) || error.cause === undefined) return false
   const causeMessage =

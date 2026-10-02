@@ -27,7 +27,7 @@ Every error response has the same shape:
 
 - **Idempotent create, soft-disable delete** (ADR 0029, ADR 0030): a create endpoint for a preference/subscription-like resource upserts — a repeat call with the same identity revives a soft-disabled row instead of erroring or duplicating. Response status reflects which happened: `201` for a genuinely new row, `200` when an existing (possibly disabled) row was revived/returned. A delete endpoint soft-disables (`disabled_at`) rather than removing the row, and responds `204`.
 - **Notification payloads carry catalog keys, not resolved text** (ADR 0044): `NotificationJobMessage` and the push payload it produces carry `{titleKey, bodyKey, params, lang}` — the receiving client (service worker) resolves the catalog itself. This is an internal queue/push contract, not an HTTP endpoint, but it's part of the same i18n convention as the rest of the API and worth knowing if you're touching notification delivery.
-- **D1 batching is an internal detail, not a contract concern** — see `AGENTS.md`'s "D1 Query Constraints"; it never surfaces at the HTTP layer (large `inArray` lookups are batched transparently).
+- **D1 batching is an internal detail, not a contract concern** — see `apps/api/AGENTS.md`'s "D1 query limits"; it never surfaces at the HTTP layer (large `inArray` lookups are batched transparently).
 
 ## Endpoints
 

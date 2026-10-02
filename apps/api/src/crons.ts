@@ -9,7 +9,7 @@ export const CRON_EVENTSUB_RECONCILE = "*/30 * * * *"
 export const CRON_TOKEN_REFRESH = "5,35 * * * *"
 export const CRON_FOLLOW_SYNC = "10 * * * *"
 
-// Stable job names for Workers Logs filtering (ADR 0052). One entry per job,
+// Stable job names for Workers Logs filtering (ADR 0053). One entry per job,
 // not per cron: the minutely schedule runs two jobs.
 const SCHEDULED_JOB_CRONS = {
   "eventsub-create": CRON_MINUTELY,
