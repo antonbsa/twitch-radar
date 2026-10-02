@@ -85,7 +85,7 @@ export async function sweepNotificationSnoozes(
       now,
     })
 
-    if (delivery?.status === "pending") {
+    if (delivery.status === "pending") {
       await queue.send({
         deliveryId: delivery.id,
         userId: snooze.user_id,

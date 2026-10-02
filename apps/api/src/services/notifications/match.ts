@@ -204,7 +204,7 @@ export async function matchAndCreateDeliveries(
       streamId: change.stream_id,
       now,
     })
-    if (delivery?.status === "pending") {
+    if (delivery.status === "pending") {
       const payload = buildPayload(
         trigger,
         broadcasterName,
