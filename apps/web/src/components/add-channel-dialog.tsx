@@ -1,33 +1,33 @@
 import { useMemo, useState } from "react"
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet"
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useLanguage } from "@/context/language-context"
 import type { FollowedChannel } from "@/types/channel"
 
-interface AddChannelSheetProps {
+interface AddChannelDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   channels: FollowedChannel[]
   onSelect: (channel: FollowedChannel) => void
 }
 
-export function AddChannelSheet({
+export function AddChannelDialog({
   open,
   onOpenChange,
   channels,
   onSelect,
-}: AddChannelSheetProps) {
+}: AddChannelDialogProps) {
   const [query, setQuery] = useState("")
   const { t } = useLanguage()
 
   // Channels that already have a card are deliberately not filtered out:
-  // picking one opens its sheet, the same result as tapping its own "+".
+  // picking one opens its preferences dialog, the same result as tapping its own "+".
   const matches = useMemo(() => {
     const needle = query.trim().toLowerCase()
     const list = needle
@@ -45,12 +45,12 @@ export function AddChannelSheet({
   }, [channels, query])
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="max-h-[85vh]">
-        <SheetHeader>
-          <SheetTitle>{t("alerts.add_channel")}</SheetTitle>
-        </SheetHeader>
-        <div className="space-y-2 overflow-y-auto px-4 pb-4">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent fullScreen>
+        <DialogHeader className="p-4 pr-12">
+          <DialogTitle>{t("alerts.add_channel")}</DialogTitle>
+        </DialogHeader>
+        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-4 pb-4">
           <Input
             placeholder={t("alerts.channel_search_placeholder")}
             aria-label={t("alerts.channel_picker_search_aria")}
@@ -64,7 +64,7 @@ export function AddChannelSheet({
               {t("alerts.no_channels_found")}
             </p>
           ) : (
-            <ul className="max-h-64 overflow-y-auto rounded-lg border border-border">
+            <ul className="rounded-lg border border-border">
               {matches.map((channel) => (
                 <li key={channel.broadcaster_user_id}>
                   <button
@@ -90,7 +90,7 @@ export function AddChannelSheet({
             </ul>
           )}
         </div>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   )
 }

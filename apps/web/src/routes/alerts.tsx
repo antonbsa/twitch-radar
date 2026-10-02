@@ -3,7 +3,7 @@ import { Plus, Search, X } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { AddChannelSheet } from "@/components/add-channel-sheet"
+import { AddChannelDialog } from "@/components/add-channel-dialog"
 import { AddGlobalCategoryDialog } from "@/components/add-global-category-dialog"
 import { ChannelAlertsCard } from "@/components/channel-alerts-card"
 import { ChannelPreferencesDialog } from "@/components/channel-preferences-dialog"
@@ -222,7 +222,7 @@ export function AlertsPage() {
         }}
       />
 
-      <AddChannelSheet
+      <AddChannelDialog
         open={addChannelOpen}
         onOpenChange={setAddChannelOpen}
         channels={channels ?? []}

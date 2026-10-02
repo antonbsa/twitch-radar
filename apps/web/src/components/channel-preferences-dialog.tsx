@@ -51,25 +51,6 @@ export function ChannelPreferencesDialog({
           <DialogTitle>{channel?.broadcaster_display_name}</DialogTitle>
         </DialogHeader>
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 pb-4">
-          <CategorySearchList
-            disabledCategoryIds={savedForChannel.map(
-              (pref) => pref.category_id,
-            )}
-            globalCategoryIds={(preferences?.global ?? []).map(
-              (pref) => pref.category_id,
-            )}
-            onSelect={(category) => {
-              if (!channel) return
-              addPreference.mutate(
-                {
-                  broadcasterUserId: channel.broadcaster_user_id,
-                  category,
-                },
-                { onSuccess: handlePreferenceAdded },
-              )
-            }}
-          />
-
           <div>
             <p className="text-sm font-medium">
               {t("channel_preferences.saved_for_channel")}
@@ -97,6 +78,26 @@ export function ChannelPreferencesDialog({
               </div>
             )}
           </div>
+
+          <CategorySearchList
+            disabledCategoryIds={savedForChannel.map(
+              (pref) => pref.category_id,
+            )}
+            globalCategoryIds={(preferences?.global ?? []).map(
+              (pref) => pref.category_id,
+            )}
+            autoFocus={false}
+            onSelect={(category) => {
+              if (!channel) return
+              addPreference.mutate(
+                {
+                  broadcasterUserId: channel.broadcaster_user_id,
+                  category,
+                },
+                { onSuccess: handlePreferenceAdded },
+              )
+            }}
+          />
         </div>
       </DialogContent>
     </Dialog>

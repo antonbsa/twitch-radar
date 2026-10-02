@@ -15,12 +15,15 @@ interface CategorySearchListProps {
    * alive if the global preference is later removed.
    */
   globalCategoryIds?: string[]
+  /** Pass false when the list sits below other content the user should see before the keyboard opens. */
+  autoFocus?: boolean
 }
 
 export function CategorySearchList({
   onSelect,
   disabledCategoryIds = [],
   globalCategoryIds = [],
+  autoFocus = true,
 }: CategorySearchListProps) {
   const [query, setQuery] = useState("")
   const { data, isFetching, isError, isEnabled } = useCategorySearch(query)
@@ -32,7 +35,7 @@ export function CategorySearchList({
         placeholder={t("category_search.placeholder")}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        autoFocus
+        autoFocus={autoFocus}
       />
 
       {isEnabled && isFetching && (
@@ -55,7 +58,7 @@ export function CategorySearchList({
       )}
 
       {isEnabled && !isFetching && !isError && data && data.length > 0 && (
-        <ul className="max-h-64 overflow-y-auto rounded-lg border border-border">
+        <ul className="rounded-lg border border-border">
           {data.map((category) => {
             const disabled = disabledCategoryIds.includes(category.id)
             const isGlobal = globalCategoryIds.includes(category.id)
