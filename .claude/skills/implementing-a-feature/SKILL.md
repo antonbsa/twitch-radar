@@ -5,6 +5,15 @@ description: Use when asked to implement a feature from a GitHub issue, local is
 
 # Implementing a Feature
 
+## Before the first write
+
+Every write this skill makes happens off `main`: a spec draft, an ADR, code, the handoff doc. Loading and scoping (steps 1-3) stay read-only until they draft a spec or ADR, so an issue that stops at scoping needs no worktree. Before the first write, if `git branch --show-current` prints `main`, branch a worktree off the latest `origin/main`, named after the work per AGENTS.md "Worktrees and `.agents/`":
+```bash
+git fetch origin main
+git worktree add --no-track -b <branch-name> .agents/worktrees/<branch-name> origin/main
+```
+Then call `EnterWorktree` with `path: .agents/worktrees/<branch-name>`, which moves the whole session (file tools, nested `AGENTS.md`) into the worktree; a Bash `cd` moves only the shell, and Read/Edit/Write would keep hitting the `main` checkout. Run `npm install` at its root before the first command that runs project code. Uncommitted changes in the `main` checkout stay behind there: if any relate to this work, ask the user before branching. On a branch already made for this work (e.g. dispatched by `implementation-round` into its worktree), write where you are; on a branch for unrelated work, ask the user before writing.
+
 ## What to do
 
 1. **Load the input.**
@@ -21,7 +30,7 @@ description: Use when asked to implement a feature from a GitHub issue, local is
 
    If the input already has no open items, say so and proceed straight to implementation. Do not invent questions that aren't there.
 
-4. **For bug reports, confirm the repro before fixing.** If the input's `Proposed solution` (or equivalent) has an unconfirmed repro, an unidentified root cause, or hedges with "if it still reproduces" / "possible explanations" — reproduce it on current `main` first (or write a failing test that captures it) before touching implementation code. Invoke the superpowers:systematic-debugging skill for the root-cause work itself. If it doesn't reproduce, say so and stop — close/report that instead of fixing a guessed cause.
+4. **For bug reports, confirm the repro before fixing.** If the input's `Proposed solution` (or equivalent) has an unconfirmed repro, an unidentified root cause, or hedges with "if it still reproduces" / "possible explanations" — reproduce it on the feature branch first (or write a failing test that captures it) before touching implementation code. Invoke the superpowers:systematic-debugging skill for the root-cause work itself. If it doesn't reproduce, say so and stop — close/report that instead of fixing a guessed cause.
 
 5. **Implement.** Follow the conventions in [AGENTS.md](../../../AGENTS.md) (nested package files load as you work there) and any referenced ADRs. Delegate to `api-engineer`, `web-engineer` or `infra-engineer` when the work is confined to their domain. Follow AGENTS.md "Tests" for how much to run while iterating: filtered tests for a small change, the full relevant tier once after a large chunk of work.
 
@@ -33,7 +42,7 @@ description: Use when asked to implement a feature from a GitHub issue, local is
 
    If this run is itself a follow-up to work already on this branch, apply [AGENTS.md](../../../AGENTS.md)'s Follow-up Changes convention first: classify each requested fix as one-off or as a pattern/convention change, and propose persisting the latter before finishing. That classification is part of what the rewritten handoff should reflect, not a separate step to skip.
 
-7. **Stop. Do not touch git.** Never run `git add`, `git commit`, `git reset`, or any other staging/history command, even after the handoff doc is written. Report what changed in chat and let the user stage and commit it themselves.
+7. **Stop. Leave staging and history to the user.** The branch and worktree from "Before the first write" are the only git state this skill creates; never run `git add`, `git commit`, `git reset`, or any other staging/history command, even after the handoff doc is written. Report what changed in chat and let the user stage and commit it themselves.
 
 ## Common mistakes
 
