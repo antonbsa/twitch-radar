@@ -7,12 +7,12 @@ description: Use when asked to implement a feature from a GitHub issue, local is
 
 ## Before the first write
 
-Every write this skill makes happens off `main`: a spec draft, an ADR, code, the handoff doc. If `git branch --show-current` prints `main`, branch a worktree off the latest `origin/main`, named after the work per AGENTS.md "Worktrees and `.agents/`":
+Every write this skill makes happens off `main`: a spec draft, an ADR, code, the handoff doc. Loading and scoping (steps 1-3) stay read-only until they draft a spec or ADR, so an issue that stops at scoping needs no worktree. Before the first write, if `git branch --show-current` prints `main`, branch a worktree off the latest `origin/main`, named after the work per AGENTS.md "Worktrees and `.agents/`":
 ```bash
 git fetch origin main
 git worktree add --no-track -b <branch-name> .agents/worktrees/<branch-name> origin/main
 ```
-Then call `EnterWorktree` with `path: .agents/worktrees/<branch-name>`, which moves the whole session (file tools, nested `AGENTS.md`) into the worktree; a Bash `cd` moves only the shell, and Read/Edit/Write would keep hitting the `main` checkout. Run `npm install` at its root before the first command that runs project code. Uncommitted changes in the `main` checkout stay behind there: if any relate to this work, ask the user before branching. On any other branch (e.g. dispatched by `implementation-round` into its worktree), you're already off `main`: write where you are.
+Then call `EnterWorktree` with `path: .agents/worktrees/<branch-name>`, which moves the whole session (file tools, nested `AGENTS.md`) into the worktree; a Bash `cd` moves only the shell, and Read/Edit/Write would keep hitting the `main` checkout. Run `npm install` at its root before the first command that runs project code. Uncommitted changes in the `main` checkout stay behind there: if any relate to this work, ask the user before branching. On a branch already made for this work (e.g. dispatched by `implementation-round` into its worktree), write where you are; on a branch for unrelated work, ask the user before writing.
 
 ## What to do
 

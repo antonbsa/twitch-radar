@@ -38,7 +38,7 @@ Given a list of inputs to implement together - any mix of spec paths (`specs/mil
    git fetch origin main
    git worktree add --no-track -b <name> .agents/worktrees/<name> origin/main
    ```
-   branching off the latest `origin/main`, then `npm install` at each new worktree root (a fresh worktree has no `node_modules`). Do this for the whole batch up front, in your own session - a naming collision or a dirty `main` surfaces here, not inside a subagent mid-implementation.
+   branching off the latest `origin/main`, then `npm install` at each new worktree root (a fresh worktree has no `node_modules`). Do this for the whole batch up front, in your own session - a naming collision surfaces here, not inside a subagent mid-implementation.
 
 5. **Dispatch one subagent per group, all in the same message.** Pick the agent type by the group's scope: `api-engineer` for changes confined to `apps/api`, `web-engineer` for `apps/web`, `infra-engineer` for migrations/wrangler/env/deploy scripts, `claude`/`general-purpose` otherwise (including groups that mix scopes). Each dispatch prompt must include:
    - Every item in the group (spec path / issue number / issue file) and the absolute path of the shared worktree - the subagent has no `isolation` param that can target that exact path, so it must treat that path as its working directory for the whole task (`cd` there, and/or use absolute paths under it for every Read/Write/Edit/Bash call).
