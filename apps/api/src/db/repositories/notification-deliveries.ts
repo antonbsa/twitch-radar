@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNull } from "drizzle-orm"
+import { and, eq, inArray } from "drizzle-orm"
 import { nanoid } from "nanoid"
 import type { AppDatabase } from "../client"
 import { notificationDeliveries } from "../schema"
@@ -73,7 +73,7 @@ export class NotificationDeliveriesRepository {
    */
   async insertPendingIfNew(
     input: InsertNotificationDeliveryInput,
-  ): Promise<NotificationDeliveryRecord | null> {
+  ): Promise<NotificationDeliveryRecord> {
     // SQLite treats NULLs in a unique index as distinct, so a null stream_id
     // would bypass the dedupe check. Current callers always pass a real
     // stream_id, so this guard fails loudly instead of silently allowing a
@@ -119,13 +119,14 @@ export class NotificationDeliveriesRepository {
           eq(notificationDeliveries.broadcasterUserId, input.broadcasterUserId),
           eq(notificationDeliveries.categoryId, input.categoryId),
           eq(notificationDeliveries.triggerType, input.triggerType),
-          input.streamId === null
-            ? isNull(notificationDeliveries.streamId)
-            : eq(notificationDeliveries.streamId, input.streamId),
+          eq(notificationDeliveries.streamId, input.streamId),
         ),
       )
       .get()
-    return row ? toRecord(row) : null
+    if (!row) {
+      throw new Error("insertPendingIfNew: delivery row missing after insert")
+    }
+    return toRecord(row)
   }
 
   async findById(id: string): Promise<NotificationDeliveryRecord | null> {

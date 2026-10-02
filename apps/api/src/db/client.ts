@@ -8,12 +8,8 @@ export function createDatabaseClient(d1: D1Database): AppDatabase {
 }
 
 /**
- * `AppDatabase["batch"]` requires a non-empty tuple type (`[U, ...U[]]`),
- * not a plain array, per drizzle-orm's d1 session typings — a dynamically
- * built `T[]` doesn't structurally satisfy that on its own. Callers must
- * still guard the empty-input case themselves (as every `upsertAll`/
- * `ensurePending` here already does) before calling this; `db.batch([])`
- * is both a type error and a runtime no-op that isn't worth reaching for.
+ * Callers must skip empty input; the cast only satisfies drizzle's non-empty
+ * tuple type for `batch`.
  */
 export function asBatch<T>(statements: T[]): [T, ...T[]] {
   return statements as [T, ...T[]]

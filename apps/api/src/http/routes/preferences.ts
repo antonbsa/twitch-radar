@@ -21,8 +21,10 @@ const CreateGlobalPreferenceSchema = z.object({
   category_name: z.string().min(1),
 })
 
-// Wire shapes (mirrored in apps/web/src/types/preference.ts, ADR 0028) omit
-// user_id (implied by the session) and disabled_at (list returns active only).
+/**
+ * Wire shapes (mirrored in apps/web/src/types/preference.ts, ADR 0028) omit
+ * user_id (implied by the session) and disabled_at (list returns active only).
+ */
 function toChannelPreferenceItem(record: ChannelPreferenceRecord) {
   return {
     id: record.id,

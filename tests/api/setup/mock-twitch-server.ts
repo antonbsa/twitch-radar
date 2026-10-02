@@ -56,6 +56,7 @@ export function createMockTwitchServer(): Server {
   })
 }
 
+/** @param port `0` lets the OS pick a free port; the bound port is in the returned `url`. */
 export async function startMockTwitchServer(
   port = 0,
 ): Promise<{ url: string; server: Server }> {

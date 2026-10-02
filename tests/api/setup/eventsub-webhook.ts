@@ -6,9 +6,11 @@ import { API_TEST_URL } from "./ports"
 
 const REPO_ROOT = resolve(fileURLToPath(import.meta.url), "../../../..")
 
-// The worker under test boots with only .env.development (see
-// global-setup.ts), so signatures must use that file's webhook secret —
-// read it from the file itself so the two can't drift.
+/**
+ * The worker under test boots with only .env.development (see
+ * global-setup.ts), so signatures must use that file's webhook secret —
+ * read it from the file itself so the two can't drift.
+ */
 function readDevWebhookSecret(): string {
   const env = readFileSync(resolve(REPO_ROOT, ".env.development"), "utf8")
   const match = env.match(/^EVENTSUB_WEBHOOK_SECRET=(.+)$/m)

@@ -24,9 +24,9 @@ export async function handleGetMe(c: Context<HonoEnv>): Promise<Response> {
   })
 }
 
-// ADR 0044: sets the user's UI/notification language preference. Kept as its
-// own endpoint (rather than a general-purpose PATCH /me) since language is
-// the only user-editable field on this resource today.
+/**
+ * ADR 0044: sets the user's UI/notification language preference.
+ */
 export async function handleUpdateLanguage(
   c: Context<HonoEnv>,
 ): Promise<Response> {

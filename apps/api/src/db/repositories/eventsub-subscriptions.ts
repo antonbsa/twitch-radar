@@ -64,17 +64,9 @@ export class EventsubSubscriptionsRepository {
 
   /**
    * Ensures a local row exists for each monitored event type of every given
-   * broadcaster. New rows start as `pending`; T-007's creation/reconciliation
-   * job picks pending rows up and creates them on Twitch. Existing rows
-   * (any status) are left untouched — reconciliation owns status repair.
-   *
-   * Issues a single multi-row `INSERT ... ON CONFLICT DO NOTHING` per chunk
-   * instead of one statement per (broadcaster, event type) pair. Each row
-   * binds 9 params, so the chunk size accounts for D1's 100-bound-parameter
-   * limit on total params, not just row count. All chunk statements are then
-   * submitted via a single `db.batch()` call instead of one await per
-   * chunk — see the batch()-limits note in followed-channels.ts's
-   * upsertAll.
+   * broadcaster. New rows start as `pending`; the creation job (ADR 0031)
+   * picks pending rows up and creates them on Twitch. Existing rows (any
+   * status) are left untouched — reconciliation owns status repair.
    */
   async ensurePending(
     broadcasterUserIds: string[],
@@ -97,6 +89,9 @@ export class EventsubSubscriptionsRepository {
       })),
     )
 
+    // One multi-row INSERT per chunk, all submitted in a single `db.batch()`
+    // (see the batch() limits note in followed-channels.ts's upsertAll). The
+    // chunk size accounts for D1's 100-bound-parameter limit, not row count.
     // Drizzle binds a param for every column that has a schema-level
     // `.default(...)` too (not just the columns explicitly set above), so
     // this must count `failureCount`'s default alongside the 9 explicit
@@ -122,9 +117,9 @@ export class EventsubSubscriptionsRepository {
   }
 
   /**
-   * `pending` rows due for a (re)try — excludes rows still serving out their
-   * backoff window (ADR 0049), whether never-tried (`nextRetryAt` null) or
-   * due (`nextRetryAt` at or before `now`).
+   * `pending` rows that are never-tried (`nextRetryAt` null) or due
+   * (`nextRetryAt` at or before `now`); rows still in their backoff window
+   * (ADR 0049) are excluded.
    */
   async findPending(
     limit: number,

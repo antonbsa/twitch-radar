@@ -8,8 +8,10 @@ export interface CapturedProcess {
   readOutput: () => string
 }
 
-// Captures output instead of inheriting it, so a healthy run stays quiet
-// (only vitest's own output prints) while a failure can still be diagnosed.
+/**
+ * Captures output instead of inheriting it, so a healthy run stays quiet
+ * (only vitest's own output prints) while a failure can still be diagnosed.
+ */
 export function spawnCapturing(
   command: string,
   args: string[],
@@ -46,10 +48,12 @@ export function runToCompletion(
   })
 }
 
-// Silences the dev server's own request logs so only vitest's test output
-// shows; a crash after setup would otherwise go unnoticed until tests start
-// timing out one by one, so it's still watched and fails the run immediately,
-// printing whatever it wrote before dying.
+/**
+ * Silences the dev server's own request logs so only vitest's test output
+ * shows; a crash after setup would otherwise go unnoticed until tests start
+ * timing out one by one, so it's still watched and fails the run immediately,
+ * printing whatever it wrote before dying.
+ */
 export function failOnUnexpectedExit(
   child: ChildProcess,
   label: string,
@@ -90,11 +94,13 @@ async function waitForReady(url: string): Promise<void> {
   throw new Error(`Timed out waiting for ${url} to become ready: ${lastError}`)
 }
 
-// A port collision (something else already listening) makes the spawned
-// process exit immediately while the *other* thing on that port keeps
-// answering health checks — waitForReady alone would then report "ready"
-// against a process we didn't start. Racing against the child's own exit
-// event turns that into a clear failure instead of a false positive.
+/**
+ * A port collision (something else already listening) makes the spawned
+ * process exit immediately while the *other* thing on that port keeps
+ * answering health checks — waitForReady alone would then report "ready"
+ * against a process we didn't start. Racing against the child's own exit
+ * event turns that into a clear failure instead of a false positive.
+ */
 function waitForExit(child: ChildProcess, label: string): Promise<never> {
   return new Promise((_resolve, reject) => {
     child.once("exit", (code, signal) => {

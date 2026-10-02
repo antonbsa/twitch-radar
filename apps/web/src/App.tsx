@@ -10,10 +10,12 @@ import { ChannelsPage } from "@/routes/channels"
 import { AlertsPage } from "@/routes/alerts"
 import { AccountPage } from "@/routes/account"
 
-// Reconciles the client-guessed language (localStorage/navigator, set before
-// any user is known) with the authoritative server-side preference once
-// GET /api/me resolves (ADR 0044). adoptLanguage does not re-PATCH the value
-// it just received.
+/**
+ * Reconciles the client-guessed language (localStorage/navigator, set before
+ * any user is known) with the authoritative server-side preference once
+ * GET /api/me resolves (ADR 0044). adoptLanguage does not re-PATCH the value
+ * it just received.
+ */
 function useSyncLanguageWithUser() {
   const { user } = useAuth()
   const { adoptLanguage } = useLanguage()

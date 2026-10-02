@@ -5,6 +5,8 @@ import type { Locator } from "playwright"
 // matchers. Locator#waitFor already retries until the state holds or the
 // timeout elapses, and throwing on timeout is exactly the assertion failure
 // we want — so these thin wrappers are the retrying "expect" for this tier.
+
+/** Retries until `locator` is visible; throws on timeout (ms). */
 export async function expectVisible(
   locator: Locator,
   timeout = 5000,
@@ -12,6 +14,7 @@ export async function expectVisible(
   await locator.waitFor({ state: "visible", timeout })
 }
 
+/** Retries until `locator` is hidden; throws on timeout (ms). */
 export async function expectHidden(
   locator: Locator,
   timeout = 5000,

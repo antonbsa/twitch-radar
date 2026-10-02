@@ -88,9 +88,7 @@ export class NotificationSnoozesRepository {
     return row ? toRecord(row) : null
   }
 
-  /**
-   * All pending reminders for a user across broadcasters/categories.
-   */
+  /** All pending reminders for a user across broadcasters/categories. */
   async findPendingByUserId(
     userId: string,
   ): Promise<NotificationSnoozeRecord[]> {

@@ -14,9 +14,7 @@ export interface NotificationSnooze {
 
 const NOTIFICATION_SNOOZES_QUERY_KEY = ["notification-snoozes"]
 
-/**
- * The current user's pending reminder snoozes, synced with server state.
- */
+/** The current user's pending reminder snoozes. */
 export function useNotificationSnoozes() {
   return useQuery({
     queryKey: NOTIFICATION_SNOOZES_QUERY_KEY,
