@@ -108,6 +108,7 @@ Don't add code that only accepts old schema/data states. When a schema or format
 
 ## Worktrees and `.agents/`
 
+- Work headed for a PR is written in its own worktree, never in the `main` checkout. A session on `main` creates one before its first write, per [implementing-a-feature](.claude/skills/implementing-a-feature/SKILL.md) step 4 (`EnterWorktree`, not `cd`), and gives its absolute path to any subagent it delegates to. Release commits from `preparing-a-release` go to `main` by design.
 - Create worktrees at `.agents/worktrees/<branch-name>`, with the directory name matching the branch. Name the branch after the work (`oauth-cancel-callback`), with no `issue-<n>` prefix and no generic `agent-<id>`.
 - A fresh worktree needs `npm install` at its root before anything runs.
 - `.agents/` is gitignored scratch space (drafts, worktrees), not project state. Don't read or factor in its contents unless a task points at a specific file; real decisions live in `docs/decisions`, `docs/notes` and `specs/`.
