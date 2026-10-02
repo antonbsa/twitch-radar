@@ -1,14 +1,14 @@
 import { useMemo, useState } from "react"
-import { Plus, Search, X } from "lucide-react"
+import { Plus } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { AddChannelDialog } from "@/components/add-channel-dialog"
 import { AddGlobalCategoryDialog } from "@/components/add-global-category-dialog"
 import { ChannelAlertsCard } from "@/components/channel-alerts-card"
 import { ChannelPreferencesDialog } from "@/components/channel-preferences-dialog"
 import { GlobalAlertsCard } from "@/components/global-alerts-card"
 import { ReconnectRequired } from "@/components/reconnect-required"
+import { SearchField } from "@/components/search-field"
 import { useAuth } from "@/context/auth-context"
 import { useLanguage } from "@/context/language-context"
 import { useArmedChip } from "@/hooks/use-armed-chip"
@@ -17,7 +17,6 @@ import {
   buildChannelAlertGroups,
   filterChannelAlertGroups,
 } from "@/lib/alert-groups"
-import { cn } from "@/lib/utils"
 import {
   usePreferences,
   useRemoveChannelPreference,
@@ -122,35 +121,16 @@ export function AlertsPage() {
 
         <div className="flex items-center gap-2">
           {channelSectionReady && groups.length > 0 && (
-            <div className="relative w-36 sm:w-48">
-              <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={channelSearch}
-                onChange={(e) => setChannelSearch(e.target.value)}
-                placeholder={t("alerts.channel_search_placeholder")}
-                aria-label={t("alerts.channel_search_aria")}
-                // h-11/text-base matches the 44px touch-target size used by
-                // the Channels page's filters bar (see ChannelFiltersBar).
-                // Fixed width rather than flex-1: this row doesn't need the
-                // search to claim the whole line.
-                className="h-11 w-full pr-10 pl-10 text-base"
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => setChannelSearch("")}
-                aria-label={t("alerts.clear_channel_search_aria")}
-                className={cn(
-                  "absolute inset-y-0 right-1.5 my-auto transition-[opacity,visibility] duration-250",
-                  channelSearch.length > 0
-                    ? "visible opacity-100"
-                    : "invisible opacity-0",
-                )}
-              >
-                <X />
-              </Button>
-            </div>
+            <SearchField
+              value={channelSearch}
+              onChange={setChannelSearch}
+              placeholder={t("alerts.channel_search_placeholder")}
+              ariaLabel={t("alerts.channel_search_aria")}
+              clearLabel={t("alerts.clear_channel_search_aria")}
+              // Fixed width rather than flex-1: this row doesn't need the
+              // search to claim the whole line.
+              className="w-36 sm:w-48"
+            />
           )}
 
           {channelSectionReady && (

@@ -64,6 +64,7 @@
   "add_global_category.title": "Adicionar Categoria",
 
   "category_search.placeholder": "Buscar categorias",
+  "category_search.clear_aria": "Limpar busca",
   "category_search.error": "Falha ao buscar categorias.",
   "category_search.empty": "Nenhuma categoria encontrada.",
   "category_search.already_global": "já em Todos os canais",

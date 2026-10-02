@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Globe } from "lucide-react"
-import { Input } from "@/components/ui/input"
+import { SearchField } from "@/components/search-field"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useLanguage } from "@/context/language-context"
 import { useCategorySearch } from "@/hooks/use-category-search"
@@ -31,10 +31,11 @@ export function CategorySearchList({
 
   return (
     <div className="space-y-2">
-      <Input
-        placeholder={t("category_search.placeholder")}
+      <SearchField
         value={query}
-        onChange={(e) => setQuery(e.target.value)}
+        onChange={setQuery}
+        placeholder={t("category_search.placeholder")}
+        clearLabel={t("category_search.clear_aria")}
         autoFocus={autoFocus}
       />
 
@@ -68,7 +69,7 @@ export function CategorySearchList({
                   type="button"
                   disabled={disabled}
                   onClick={() => onSelect(category)}
-                  className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
+                  className="flex min-h-11 w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
                 >
                   <span className="truncate">{category.name}</span>
                   {isGlobal && (

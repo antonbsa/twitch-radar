@@ -1,12 +1,5 @@
-import {
-  ArrowDown10,
-  ArrowDownAZ,
-  ChevronDownIcon,
-  Search,
-  X,
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { ArrowDown10, ArrowDownAZ, ChevronDownIcon } from "lucide-react"
+import { SearchField } from "@/components/search-field"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -23,7 +16,6 @@ import {
 } from "@/components/ui/select"
 import { useLanguage } from "@/context/language-context"
 import type { ChannelFilters, ChannelSort } from "@/lib/channel-filters"
-import { cn } from "@/lib/utils"
 
 // 44px touch-target height; responsive width (narrow on mobile, full label width at md+)
 const CATEGORY_TRIGGER_CLASSNAME =
@@ -60,37 +52,14 @@ export function ChannelFiltersBar({
 
   return (
     <div className="flex items-center gap-2 px-4 pb-2">
-      <div className="relative min-w-0 flex-1">
-        <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={filters.search}
-          onChange={(e) => onChange({ search: e.target.value })}
-          placeholder={t("channels.search_placeholder")}
-          aria-label={t("channels.search_aria")}
-          // h-11/text-base matches SelectTrigger's "lg" size (see
-          // CATEGORY_TRIGGER_CLASSNAME above) for the 44px touch target.
-          className="h-11 pr-10 pl-10 text-base"
-        />
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          onClick={() => onChange({ search: "" })}
-          aria-label={t("channels.clear_search_aria")}
-          // inset-y-0 + my-auto centers without translate, avoiding conflicts
-          // with Button's active:translate-y-px press effect. visibility
-          // toggles discrete state so transitions feel smooth and the button
-          // becomes non-interactive when hidden.
-          className={cn(
-            "absolute inset-y-0 right-1.5 my-auto transition-[opacity,visibility] duration-250",
-            filters.search.length > 0
-              ? "visible opacity-100"
-              : "invisible opacity-0",
-          )}
-        >
-          <X />
-        </Button>
-      </div>
+      <SearchField
+        value={filters.search}
+        onChange={(search) => onChange({ search })}
+        placeholder={t("channels.search_placeholder")}
+        ariaLabel={t("channels.search_aria")}
+        clearLabel={t("channels.clear_search_aria")}
+        className="flex-1"
+      />
 
       {categories.length > 0 && (
         <DropdownMenu>

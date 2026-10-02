@@ -5,7 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
+import { SearchField } from "@/components/search-field"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useLanguage } from "@/context/language-context"
 import type { FollowedChannel } from "@/types/channel"
@@ -47,15 +47,16 @@ export function AddChannelDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent fullScreen>
-        <DialogHeader className="p-4 pr-12">
+        <DialogHeader className="h-14 justify-center px-4 pr-14">
           <DialogTitle>{t("alerts.add_channel")}</DialogTitle>
         </DialogHeader>
         <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-4 pb-4">
-          <Input
-            placeholder={t("alerts.channel_search_placeholder")}
-            aria-label={t("alerts.channel_picker_search_aria")}
+          <SearchField
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={setQuery}
+            placeholder={t("alerts.channel_search_placeholder")}
+            ariaLabel={t("alerts.channel_picker_search_aria")}
+            clearLabel={t("alerts.clear_channel_search_aria")}
             autoFocus
           />
 
@@ -70,7 +71,7 @@ export function AddChannelDialog({
                   <button
                     type="button"
                     onClick={() => onSelect(channel)}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted"
+                    className="flex min-h-11 w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted"
                   >
                     <Avatar size="sm">
                       <AvatarImage
