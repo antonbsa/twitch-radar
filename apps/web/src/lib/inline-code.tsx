@@ -3,10 +3,7 @@ import { Fragment, type ReactNode } from "react"
 /**
  * Splits `text` on backtick-delimited spans and renders each as a `<code>`
  * element — the changelog's only inline formatting (ADR 0050 entries are
- * plain-language text, not full markdown). Same
- * split-and-map-over-parts shape as `interpolateNodes`
- * (lib/i18n-react.tsx), kept separate since it matches on literal
- * backticks rather than named `{param}` placeholders.
+ * plain-language text, not full markdown).
  */
 export function renderInlineCode(text: string): ReactNode {
   const parts = text.split(/(`[^`]+`)/g)

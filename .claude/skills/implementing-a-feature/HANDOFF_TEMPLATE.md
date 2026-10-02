@@ -41,7 +41,7 @@
 
 ## How to Validate
 
-<!-- Automated: which suites/commands actually cover this (see AGENTS.md "Test Execution Scope"
+<!-- Automated: which suites/commands actually cover this (see AGENTS.md "Tests"
      for how much to run and when). Manual: concrete steps a reviewer can follow, including any
      device/browser-specific checks (e.g. push notification permission prompts) with no automated
      coverage. -->

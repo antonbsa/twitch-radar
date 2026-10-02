@@ -41,7 +41,7 @@ export function AddGlobalCategoryDialog({
         <DialogHeader className="h-14 justify-center px-4 pr-14">
           <DialogTitle>{t("add_global_category.title")}</DialogTitle>
         </DialogHeader>
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 pt-1 pb-4">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 pt-1 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <CategorySearchList
             disabledCategoryIds={disabledCategoryIds}
             onSelect={handleSelect}

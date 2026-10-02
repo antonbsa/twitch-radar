@@ -75,9 +75,11 @@ class Logger {
 
 export const logger = new Logger()
 
-// Human-readable rendering for `environment === "local"` only. real newlines
-// instead of a single JSON line with escaped `\n`. preview/prod keep JSON,
-// which Workers Logs relies on for field extraction (ADR 0040)
+/**
+ * Human-readable rendering for `environment === "local"` only: real newlines
+ * instead of a single JSON line with escaped `\n`. Preview/prod keep JSON,
+ * which Workers Logs relies on for field extraction (ADR 0040).
+ */
 function formatForTerminal(record: Record<string, unknown>): string {
   const { level, message, timestamp, ...fields } = record
   const lines = [
@@ -116,10 +118,8 @@ export interface SerializedError {
  * inline pattern — that pattern drops `stack`/`cause` and any extra fields
  * (e.g. `TwitchApiError.status`/`.body`) the thrown value carries.
  *
- * Deliberately checks for `status`/`code`/`body` via `in` rather than
- * importing `TwitchApiError` — keeps this module free of a dependency on the
- * Twitch client and also picks up these fields from any other error shape
- * the app introduces later.
+ * Checks `status`/`code`/`body` via `in` on purpose, so this module doesn't
+ * depend on the Twitch client.
  */
 export function serializeError(err: unknown): SerializedError {
   const result: SerializedError = {

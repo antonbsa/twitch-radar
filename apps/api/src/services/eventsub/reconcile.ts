@@ -99,7 +99,11 @@ async function reconcile(
 
   const now = new Date().toISOString()
   let remoteDeletes = 0
-  // Budgeted best-effort delete: false means "try again next run".
+  /**
+   * Budgeted best-effort delete.
+   *
+   * @returns `false` means try again next run.
+   */
   const deleteRemote = async (twitchSubscriptionId: string) => {
     if (remoteDeletes >= MAX_REMOTE_DELETES_PER_RUN) return false
     remoteDeletes += 1

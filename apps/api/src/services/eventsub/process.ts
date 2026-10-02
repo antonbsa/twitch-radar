@@ -12,14 +12,16 @@ import { logger } from "../../logger"
 import { getAppAccessToken } from "../twitch/app-token"
 import { getStreamsByUserIds, resolveThumbnailUrl } from "../twitch/client"
 
-// Twitch sends "" for an unset category; store it as null.
+/** Twitch sends "" for an unset category; store it as null. */
 function normalizeCategory(value: string | null | undefined): string | null {
   return value || null
 }
 
-// Out-of-order guard (ADR 0033): skip a message when the state row was
-// already written from a later EventSub message. Equal timestamps process —
-// exact duplicates are caught by the message-id check instead.
+/**
+ * Out-of-order guard (ADR 0033): skip a message when the state row was
+ * already written from a later EventSub message. Equal timestamps process —
+ * exact duplicates are caught by the message-id check instead.
+ */
 function isStale(
   previous: ChannelStateRecord | null,
   messageTimestamp: string,
@@ -42,6 +44,8 @@ function isStale(
  * caller can run notification matching on it — matching is idempotent at the
  * delivery-dedupe level, so re-returning a known row on a queue replay is
  * safe and lets a crashed match/enqueue step recover (ADR 0034).
+ *
+ * @returns `null` when the message was stale or produced no tracked transition.
  */
 export async function processTwitchEventMessage(
   db: Database,

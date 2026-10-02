@@ -14,8 +14,10 @@ export async function registerServiceWorker(): Promise<void> {
   await navigator.serviceWorker.register("/service-worker.js")
 }
 
-// Uses getRegistration() rather than .ready so a failed/missing registration
-// resolves to null immediately instead of hanging the status check forever.
+/**
+ * Uses getRegistration() rather than .ready so a failed/missing registration
+ * resolves to null immediately instead of hanging the status check forever.
+ */
 export async function getExistingPushSubscription(): Promise<PushSubscription | null> {
   const registration = await navigator.serviceWorker.getRegistration()
   if (!registration) return null
@@ -44,8 +46,10 @@ export function clearStoredSubscriptionId(): void {
   localStorage.removeItem(SUBSCRIPTION_ID_STORAGE_KEY)
 }
 
-// The Push API wants the VAPID public key as raw bytes; the server exposes it
-// base64url-encoded (RFC 7515), which atob does not accept directly.
+/**
+ * The Push API wants the VAPID public key as raw bytes; the server exposes it
+ * base64url-encoded (RFC 7515), which atob does not accept directly.
+ */
 export function urlBase64ToUint8Array(
   base64String: string,
 ): Uint8Array<ArrayBuffer> {
