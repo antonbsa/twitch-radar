@@ -11,6 +11,7 @@ async function deriveKey(secret: string): Promise<CryptoKey> {
   ])
 }
 
+/** @returns `<iv>:<ciphertext>`, both base64url (AES-GCM, key derived from `secret`). */
 export async function encryptToken(
   plaintext: string,
   secret: string,
@@ -25,6 +26,7 @@ export async function encryptToken(
   return `${base64UrlEncode(iv)}:${base64UrlEncode(new Uint8Array(ct))}`
 }
 
+/** Inverse of `encryptToken`. Throws on a malformed value or a failed AES-GCM auth check (tampered value or wrong key). */
 export async function decryptToken(
   encrypted: string,
   secret: string,

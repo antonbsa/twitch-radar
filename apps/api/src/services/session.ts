@@ -22,6 +22,7 @@ export async function createSession(
   return sessionId
 }
 
+/** @returns `null` for a missing or expired session. */
 export async function getSession(
   kv: KVNamespace,
   sessionId: string,
@@ -40,8 +41,10 @@ export async function deleteSession(
   await kv.delete(`session:${sessionId}`)
 }
 
-// Sessions are keyed by sessionId, not userId, so removing "all sessions for
-// a user" (test-seam cleanup) means scanning the session: prefix.
+/**
+ * Sessions are keyed by sessionId, not userId, so removing "all sessions for
+ * a user" (test-seam cleanup) means scanning the session: prefix.
+ */
 export async function deleteSessionsForUser(
   kv: KVNamespace,
   userId: string,
@@ -67,6 +70,7 @@ export async function createOAuthState(kv: KVNamespace): Promise<string> {
   return state
 }
 
+/** @returns `true` when the state was valid; it is now consumed (single use). */
 export async function consumeOAuthState(
   kv: KVNamespace,
   state: string,

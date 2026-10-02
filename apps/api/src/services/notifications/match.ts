@@ -16,9 +16,11 @@ const TRIGGER_BY_CHANGE_TYPE: Partial<Record<string, NotificationTriggerType>> =
     category_changed: "switched_into_category",
   }
 
-// Best-effort check: client titles are localized and can just repeat the
-// category name, so we only suppress a stream title when it matches the
-// category text.
+/**
+ * Best-effort check: client titles are localized and can just repeat the
+ * category name, so we only suppress a stream title when it matches the
+ * category text.
+ */
 function isRedundantWithCategory(
   title: string | null,
   categoryName: string,
@@ -39,10 +41,14 @@ function computeUptime(
   return { hours: Math.floor(totalMinutes / 60), minutes: totalMinutes % 60 }
 }
 
-// Body precedence by trigger: stream_started_in_category prefers a
-// non-redundant stream title; switched_into_category prefers uptime +
-// previous category, then uptime, previous category, then the stream title.
-// Kept pure for direct tests; the push payload is encrypted end-to-end.
+/**
+ * Body precedence by trigger: stream_started_in_category prefers a
+ * non-redundant stream title; switched_into_category prefers uptime +
+ * previous category, then uptime, previous category, then the stream title.
+ * Kept pure for direct tests; the push payload is encrypted end-to-end.
+ *
+ * @returns `null` means no body line, so the notification shows the title only.
+ */
 export function buildBody(
   trigger: NotificationTriggerType,
   categoryName: string,
@@ -96,7 +102,7 @@ export function buildBody(
   return null
 }
 
-// Payloads use i18n keys and recipient language; IDs support snooze reminders.
+/** Payloads use i18n keys and recipient language; IDs support snooze reminders. */
 function buildPayload(
   trigger: NotificationTriggerType,
   broadcasterName: string,
