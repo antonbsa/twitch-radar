@@ -12,7 +12,7 @@ import {
 import { useSessionAwareMutation } from "@/hooks/use-session-aware-mutation"
 import type { PushSubscriptionRecord } from "@/types/push"
 
-// Status states and transitions are specced in T-005 (see also ADR 0027):
+// Status states and transitions follow ADR 0027:
 // "enabled" means permission is granted AND this device holds an active
 // push subscription — permission alone is not enough to receive anything.
 export type PushStatus =
