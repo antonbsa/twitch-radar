@@ -41,7 +41,7 @@ export function AddGlobalCategorySheet({
         <SheetHeader>
           <SheetTitle>{t("add_global_category.title")}</SheetTitle>
         </SheetHeader>
-        <div className="space-y-4 px-4 pb-4">
+        <div className="space-y-4 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <CategorySearchList
             disabledCategoryIds={disabledCategoryIds}
             onSelect={handleSelect}
