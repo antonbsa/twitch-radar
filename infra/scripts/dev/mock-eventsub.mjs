@@ -8,69 +8,181 @@
 // Only works when the worker's ENVIRONMENT !== "production" (the test seam
 // this script also calls is unregistered in production, see AGENTS.md).
 //
+// Always seeds the broadcaster live in a baseline category, then sends a
+// channel.update switching into the target category — the
+// "switched_into_category" trigger (ADR 0008). Unlike stream.online, this path
+// makes no real Twitch API call, so it matches deterministically.
+//
 // Usage:
+//   node infra/scripts/dev/mock-eventsub.mjs
 //   node infra/scripts/dev/mock-eventsub.mjs <broadcasterUserId> <categoryId> <categoryName> [baselineCategoryId] [baselineCategoryName]
 //
-// Example — force a "switched into category" notification for a followed
-// broadcaster (get their numeric id from a `GET /api/channels/followed`
-// response or the network tab when creating a preference):
-//   node infra/scripts/dev/mock-eventsub.mjs 123456789 509658 "Just Chatting" 27471 Minecraft
-//
-// With no baseline category args, sends `stream.online` instead (a
-// "stream started in category" notification) after seeding the broadcaster
-// offline.
+// With no arguments, the target is derived from this worktree's local D1: the
+// most recently logged-in user's oldest active channel preference, else their
+// oldest active global preference paired with their first-followed monitored
+// channel. Set MOCK_USER_ID (env or .env.local) to pick the user explicitly.
 
 import { createHmac, randomUUID } from "node:crypto"
-import { existsSync, readFileSync } from "node:fs"
+import { spawnSync } from "node:child_process"
 import { resolve } from "node:path"
-import { fileURLToPath } from "node:url"
+import { loadDevEnv, REPO_ROOT } from "./load-env.mjs"
 
-const REPO_ROOT = resolve(fileURLToPath(import.meta.url), "../../../..")
+const USAGE =
+  "Usage: node infra/scripts/dev/mock-eventsub.mjs [<broadcasterUserId> <categoryId> <categoryName> [baselineCategoryId] [baselineCategoryName]]"
 
-function parseDevVars(filePath) {
-  return Object.fromEntries(
-    readFileSync(filePath, "utf-8")
-      .split("\n")
-      .filter((line) => line && !line.startsWith("#") && line.includes("="))
-      .map((line) => {
-        const idx = line.indexOf("=")
-        return [line.slice(0, idx).trim(), line.slice(idx + 1).trim()]
-      }),
+// Must differ from any real category a preference could target, or the
+// channel.update wouldn't be a category switch.
+const DEFAULT_BASELINE = { id: "0", name: "Mock Baseline" }
+
+// Test seam's fixed identity (apps/api/src/http/routes/_tests.ts), left in
+// the shared dev D1 by the e2e tier — never the user you're testing as.
+const E2E_USER_ID = "usr_e2e"
+
+// Same merged env the running `npm run dev` worker was started with.
+const { vars, publicUrl } = loadDevEnv()
+const webhookSecret = vars.EVENTSUB_WEBHOOK_SECRET
+if (!webhookSecret) {
+  throw new Error(
+    "EVENTSUB_WEBHOOK_SECRET not found in .env.development/.env.local",
   )
 }
 
-// Mirrors dev-env.ts: .env.development overridden by gitignored .env.local —
-// must match whatever the running `wrangler dev` process loaded.
-function loadDevVars() {
-  const localPath = resolve(REPO_ROOT, ".env.local")
+function sqlString(value) {
+  return `'${String(value).replaceAll("'", "''")}'`
+}
+
+// Read-only SELECTs against this worktree's local dev D1 — the same database
+// its `npm run dev` worker uses.
+function queryLocalD1(sql) {
+  const result = spawnSync(
+    "npx",
+    [
+      "wrangler",
+      "d1",
+      "execute",
+      "twitch-radar-dev",
+      "--local",
+      "--json",
+      "--command",
+      sql,
+    ],
+    { cwd: resolve(REPO_ROOT, "apps/api"), encoding: "utf-8" },
+  )
+  if (result.status !== 0) {
+    throw new Error(
+      `wrangler d1 execute failed:\n${result.stderr || result.stdout}`,
+    )
+  }
+  return JSON.parse(result.stdout)[0].results
+}
+
+function findUser() {
+  const forcedUserId = process.env.MOCK_USER_ID ?? vars.MOCK_USER_ID
+  if (forcedUserId) {
+    const [user] = queryLocalD1(
+      `SELECT id, twitch_login FROM users WHERE id = ${sqlString(forcedUserId)}`,
+    )
+    if (!user) throw new Error(`MOCK_USER_ID ${forcedUserId} not found`)
+    return user
+  }
+  // Sessions live in KV, not D1; twitch_tokens.updated_at is bumped on every
+  // login (and token refresh), so it's the closest D1 proxy for "most recent
+  // session".
+  const [user] = queryLocalD1(
+    `SELECT u.id, u.twitch_login FROM users u
+     LEFT JOIN twitch_tokens t ON t.user_id = u.id
+     WHERE u.id != ${sqlString(E2E_USER_ID)}
+     ORDER BY COALESCE(t.updated_at, u.updated_at) DESC
+     LIMIT 1`,
+  )
+  if (!user) {
+    throw new Error(
+      "No user in local D1 — log in through `npm run dev` first, or pass explicit arguments.",
+    )
+  }
+  return user
+}
+
+function findTarget(userId) {
+  const [channelPreference] = queryLocalD1(
+    `SELECT broadcaster_user_id, category_id, category_name
+     FROM channel_category_preferences
+     WHERE user_id = ${sqlString(userId)} AND disabled_at IS NULL
+     ORDER BY created_at ASC
+     LIMIT 1`,
+  )
+  if (channelPreference) {
+    return {
+      broadcasterUserId: channelPreference.broadcaster_user_id,
+      categoryId: channelPreference.category_id,
+      categoryName: channelPreference.category_name,
+    }
+  }
+
+  const [globalPreference] = queryLocalD1(
+    `SELECT category_id, category_name
+     FROM global_category_preferences
+     WHERE user_id = ${sqlString(userId)} AND disabled_at IS NULL
+     ORDER BY created_at ASC
+     LIMIT 1`,
+  )
+  if (!globalPreference) {
+    throw new Error(
+      `User ${userId} has no active channel or global preference — add one in the app first.`,
+    )
+  }
+
+  // Only monitored channels have EventSub subscriptions, so a global
+  // preference can only fire for one of those.
+  const [channel] = queryLocalD1(
+    `SELECT f.broadcaster_user_id
+     FROM followed_channels f
+     JOIN monitored_channels m ON m.broadcaster_user_id = f.broadcaster_user_id
+     WHERE f.user_id = ${sqlString(userId)} AND m.disabled_at IS NULL
+     ORDER BY f.followed_at IS NULL, f.followed_at ASC
+     LIMIT 1`,
+  )
+  if (!channel) {
+    throw new Error(
+      `User ${userId} has a global preference but no followed channel that is monitored.`,
+    )
+  }
   return {
-    ...parseDevVars(resolve(REPO_ROOT, ".env.development")),
-    ...(existsSync(localPath) ? parseDevVars(localPath) : {}),
+    broadcasterUserId: channel.broadcaster_user_id,
+    categoryId: globalPreference.category_id,
+    categoryName: globalPreference.category_name,
   }
 }
 
-const [
-  broadcasterUserId,
-  categoryId,
-  categoryName,
-  baselineCategoryId,
-  baselineCategoryName,
-] = process.argv.slice(2)
+function resolveTarget(args) {
+  const [
+    broadcasterUserId,
+    categoryId,
+    categoryName,
+    baselineCategoryId,
+    baselineCategoryName,
+  ] = args
 
-if (!broadcasterUserId || !categoryId || !categoryName) {
-  console.error(
-    "Usage: node infra/scripts/dev/mock-eventsub.mjs <broadcasterUserId> <categoryId> <categoryName> [baselineCategoryId] [baselineCategoryName]",
-  )
-  process.exit(1)
-}
+  if (args.length > 0 && (!broadcasterUserId || !categoryId || !categoryName)) {
+    console.error(USAGE)
+    process.exit(1)
+  }
 
-const vars = loadDevVars()
-const publicUrl = vars.PUBLIC_URL
-const webhookSecret = vars.EVENTSUB_WEBHOOK_SECRET
-if (!publicUrl || !webhookSecret) {
-  throw new Error(
-    "PUBLIC_URL / EVENTSUB_WEBHOOK_SECRET not found in .env.development/.env.local",
-  )
+  const baseline = baselineCategoryId
+    ? {
+        id: baselineCategoryId,
+        name: baselineCategoryName ?? baselineCategoryId,
+      }
+    : DEFAULT_BASELINE
+
+  if (args.length > 0) {
+    return { broadcasterUserId, categoryId, categoryName, baseline }
+  }
+
+  const user = findUser()
+  const target = findTarget(user.id)
+  console.log(`Using user ${user.twitch_login} (${user.id}).`)
+  return { ...target, baseline }
 }
 
 async function seed(body) {
@@ -84,20 +196,15 @@ async function seed(body) {
   }
 }
 
-async function sendEventsubWebhook(
-  subscriptionType,
-  event,
-  subscriptionOverrides = {},
-) {
+async function sendChannelUpdateWebhook(event) {
   const messageId = randomUUID()
   const timestamp = new Date().toISOString()
   const body = JSON.stringify({
     subscription: {
       id: "mock_sub",
-      type: subscriptionType,
-      version: subscriptionType === "channel.update" ? "2" : "1",
+      type: "channel.update",
+      version: "2",
       status: "enabled",
-      ...subscriptionOverrides,
     },
     event,
   })
@@ -113,13 +220,13 @@ async function sendEventsubWebhook(
       "Twitch-Eventsub-Message-Type": "notification",
       "Twitch-Eventsub-Message-Timestamp": timestamp,
       "Twitch-Eventsub-Message-Signature": signature,
-      "Twitch-Eventsub-Subscription-Type": subscriptionType,
+      "Twitch-Eventsub-Subscription-Type": "channel.update",
     },
     body,
   })
 }
 
-async function inspect() {
+async function inspect(broadcasterUserId) {
   const res = await fetch(`${publicUrl}/api/__test__/inspect`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -128,82 +235,66 @@ async function inspect() {
   return res.json()
 }
 
-async function waitForDelivery(timeoutMs = 10_000) {
+// Filters by this run's stream id so deliveries left over from earlier runs
+// against the same broadcaster don't count.
+async function waitForDeliveries(
+  broadcasterUserId,
+  streamId,
+  timeoutMs = 10_000,
+) {
   const deadline = Date.now() + timeoutMs
   for (;;) {
-    const state = await inspect()
-    if (state.notificationDeliveries?.length > 0) return state
-    if (Date.now() > deadline) return state
+    const state = await inspect(broadcasterUserId)
+    const deliveries = (state.notificationDeliveries ?? []).filter(
+      (delivery) => delivery.stream_id === streamId,
+    )
+    if (deliveries.length > 0 || Date.now() > deadline) return deliveries
     await new Promise((resolve) => setTimeout(resolve, 250))
   }
 }
 
 async function main() {
-  if (baselineCategoryId) {
-    // Seed the broadcaster already live in a different category, then send a
-    // channel.update switching into the target category — the
-    // "switched_into_category" trigger (ADR 0008), no real Twitch API calls.
-    console.log(
-      `Seeding ${broadcasterUserId} live in ${baselineCategoryName} (${baselineCategoryId})...`,
-    )
-    await seed({
-      channelState: [
-        {
-          broadcasterUserId,
-          isLive: true,
-          streamId: `mock_${Date.now()}`,
-          categoryId: baselineCategoryId,
-          categoryName: baselineCategoryName ?? baselineCategoryId,
-        },
-      ],
-    })
+  const { broadcasterUserId, categoryId, categoryName, baseline } =
+    resolveTarget(process.argv.slice(2))
+  const streamId = `mock_${Date.now()}`
 
-    console.log(`Sending channel.update -> ${categoryName} (${categoryId})...`)
-    const res = await sendEventsubWebhook(
-      "channel.update",
+  console.log(
+    `Seeding ${broadcasterUserId} live in ${baseline.name} (${baseline.id})...`,
+  )
+  await seed({
+    channelState: [
       {
-        broadcaster_user_id: broadcasterUserId,
-        broadcaster_user_login: "mock_broadcaster",
-        broadcaster_user_name: "Mock Broadcaster",
-        title: "Manual test stream",
-        language: "en",
-        category_id: categoryId,
-        category_name: categoryName,
-        content_classification_labels: [],
+        broadcasterUserId,
+        isLive: true,
+        streamId,
+        categoryId: baseline.id,
+        categoryName: baseline.name,
       },
-      { version: "2" },
-    )
-    console.log(`Webhook responded ${res.status}`)
-  } else {
-    // No baseline given: seed offline, then stream.online. Note this path
-    // does call real Twitch (Get Streams with the app token) inside the
-    // worker — if the broadcaster isn't genuinely live, category falls back
-    // to the (null) seeded state and matching will find nothing. Prefer the
-    // baseline-category form above for a guaranteed match.
-    console.log(`Seeding ${broadcasterUserId} offline...`)
-    await seed({ channelState: [{ broadcasterUserId, isLive: false }] })
+    ],
+  })
 
-    console.log(`Sending stream.online...`)
-    const res = await sendEventsubWebhook("stream.online", {
-      id: `mock_${Date.now()}`,
-      broadcaster_user_id: broadcasterUserId,
-      broadcaster_user_login: "mock_broadcaster",
-      broadcaster_user_name: "Mock Broadcaster",
-      type: "live",
-      started_at: new Date().toISOString(),
-    })
-    console.log(`Webhook responded ${res.status}`)
-  }
+  console.log(`Sending channel.update -> ${categoryName} (${categoryId})...`)
+  const res = await sendChannelUpdateWebhook({
+    broadcaster_user_id: broadcasterUserId,
+    broadcaster_user_login: "mock_broadcaster",
+    broadcaster_user_name: "Mock Broadcaster",
+    title: "Manual test stream",
+    language: "en",
+    category_id: categoryId,
+    category_name: categoryName,
+    content_classification_labels: [],
+  })
+  console.log(`Webhook responded ${res.status}`)
 
   console.log("Waiting for a notification_deliveries row...")
-  const state = await waitForDelivery()
-  if (!state.notificationDeliveries?.length) {
+  const deliveries = await waitForDeliveries(broadcasterUserId, streamId)
+  if (deliveries.length === 0) {
     console.log(
       "No delivery row appeared — either no active preference matches this broadcaster+category, or matching hasn't finished yet. Check the `npm run dev` api console for consumer logs.",
     )
     return
   }
-  for (const delivery of state.notificationDeliveries) {
+  for (const delivery of deliveries) {
     console.log(delivery)
   }
 }
