@@ -1,3 +1,4 @@
+import { scheduledJobLogFields } from "../../crons"
 import type { AppConfig } from "../../env"
 import type { Database } from "../../db"
 import { MONITORED_EVENT_TYPES } from "../../db/repositories/eventsub-subscriptions"
@@ -12,6 +13,8 @@ import {
 // Keeps one run well under the Workers subrequest limit even when a large
 // broadcaster set gets disabled at once; the next run continues the cleanup.
 const MAX_REMOTE_DELETES_PER_RUN = 20
+
+const RECONCILE_LOG_FIELDS = scheduledJobLogFields("eventsub-reconcile")
 
 // A `failed` row (ADR 0049) isn't retried automatically — only reconciliation
 // resurrects it, and only this long after it was flagged, so a fix (e.g. a
@@ -62,6 +65,7 @@ export async function reconcileEventsubSubscriptions(
     // failing, or a D1 write — so it's logged with full detail instead of
     // escaping as Cloudflare's bare automatic exception capture.
     logger.error("EventSub reconciliation run failed", {
+      ...RECONCILE_LOG_FIELDS,
       ...serializeError(error),
     })
   }
@@ -117,6 +121,7 @@ async function reconcile(
       return true
     } catch (error) {
       logger.error("EventSub subscription delete failed", {
+        ...RECONCILE_LOG_FIELDS,
         twitchSubscriptionId,
         ...serializeError(error),
       })
@@ -203,6 +208,7 @@ async function reconcile(
   )
 
   logger.info("EventSub reconciliation run completed", {
+    ...RECONCILE_LOG_FIELDS,
     localRowsDeleted,
     localRowsReset,
     localRowsUpdated,

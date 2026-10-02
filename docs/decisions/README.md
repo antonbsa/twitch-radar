@@ -57,6 +57,7 @@ Other project documents may state goals, requirements, task scope, validation st
 - [0050 - CHANGELOG.md As The Source Of Truth For Release Notes](0050-changelog-as-source-of-truth-for-release-notes.md)
 - [0051 - Suppress Notifications For Non-Live Stream Types](0051-suppress-non-live-stream-type-notifications.md)
 - [0052 - Agent Instructions: Nested AGENTS.md For Conventions, Subagents For Persona And Boundaries](0052-nested-agents-md-and-slim-subagents.md)
+- [0053 - Self-Describing Scheduled Job Logs](0053-self-describing-scheduled-job-logs.md)
 
 ## Proposed ADRs
 

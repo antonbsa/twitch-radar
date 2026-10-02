@@ -1,3 +1,4 @@
+import { scheduledJobLogFields } from "../../crons"
 import type { AppConfig } from "../../env"
 import type { Database } from "../../db"
 import { logger, serializeError } from "../../logger"
@@ -33,13 +34,20 @@ export async function createPendingEventsubSubscriptions(
   config: AppConfig,
   kv: KVNamespace,
 ): Promise<void> {
+  const logFields = scheduledJobLogFields("eventsub-create")
   try {
     const now = new Date().toISOString()
     const pending = await db.eventsubSubscriptions.findPending(
       MAX_CREATES_PER_RUN,
       now,
     )
-    if (pending.length === 0) return
+    if (pending.length === 0) {
+      logger.debug(
+        "Pending EventSub subscription creation run found nothing to do",
+        logFields,
+      )
+      return
+    }
 
     const appAccessToken = await getAppAccessToken(kv, config)
     let succeeded = 0
@@ -81,6 +89,7 @@ export async function createPendingEventsubSubscriptions(
           now,
         })
         logger.error("EventSub subscription create failed", {
+          ...logFields,
           subscriptionId: row.id,
           broadcasterUserId: row.broadcaster_user_id,
           eventType: row.event_type,
@@ -92,6 +101,7 @@ export async function createPendingEventsubSubscriptions(
     }
 
     logger.info("Pending EventSub subscription creation run completed", {
+      ...logFields,
       attempted: pending.length,
       succeeded,
       failed: pending.length - succeeded,
@@ -103,6 +113,7 @@ export async function createPendingEventsubSubscriptions(
     // Cloudflare's bare automatic exception capture instead of our structured
     // log.
     logger.error("Pending EventSub subscription creation run failed", {
+      ...logFields,
       ...serializeError(error),
     })
   }
