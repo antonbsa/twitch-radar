@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ChannelRow } from "@/components/channel-row"
 import { ChannelFiltersBar } from "@/components/channel-filters-bar"
-import { ChannelPreferencesSheet } from "@/components/channel-preferences-sheet"
+import { ChannelPreferencesDialog } from "@/components/channel-preferences-dialog"
 import { ChannelDetailModal } from "@/components/channel-detail-modal"
 import { ReconnectRequired } from "@/components/reconnect-required"
 import { useAuth } from "@/context/auth-context"
@@ -167,7 +167,7 @@ export function ChannelsPage() {
         </section>
       )}
 
-      <ChannelPreferencesSheet
+      <ChannelPreferencesDialog
         channel={configuringChannel}
         onOpenChange={(open) => {
           if (!open) setConfiguringChannel(null)

@@ -1,9 +1,9 @@
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet"
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Skeleton } from "@/components/ui/skeleton"
 import { CategorySearchList } from "@/components/category-search-list"
 import { CategoryChip } from "@/components/category-chip"
@@ -18,15 +18,15 @@ import { usePushNotifications } from "@/hooks/use-push-notifications"
 import { showEnablePushToast } from "@/lib/push-toast"
 import type { FollowedChannel } from "@/types/channel"
 
-interface ChannelPreferencesSheetProps {
+interface ChannelPreferencesDialogProps {
   channel: FollowedChannel | null
   onOpenChange: (open: boolean) => void
 }
 
-export function ChannelPreferencesSheet({
+export function ChannelPreferencesDialog({
   channel,
   onOpenChange,
-}: ChannelPreferencesSheetProps) {
+}: ChannelPreferencesDialogProps) {
   const { data: preferences, isLoading } = usePreferences()
   const { t } = useLanguage()
   const addPreference = useAddChannelPreference()
@@ -45,31 +45,12 @@ export function ChannelPreferencesSheet({
     : []
 
   return (
-    <Sheet open={channel !== null} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="max-h-[85vh]">
-        <SheetHeader>
-          <SheetTitle>{channel?.broadcaster_display_name}</SheetTitle>
-        </SheetHeader>
-        <div className="space-y-4 overflow-y-auto px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-          <CategorySearchList
-            disabledCategoryIds={savedForChannel.map(
-              (pref) => pref.category_id,
-            )}
-            globalCategoryIds={(preferences?.global ?? []).map(
-              (pref) => pref.category_id,
-            )}
-            onSelect={(category) => {
-              if (!channel) return
-              addPreference.mutate(
-                {
-                  broadcasterUserId: channel.broadcaster_user_id,
-                  category,
-                },
-                { onSuccess: handlePreferenceAdded },
-              )
-            }}
-          />
-
+    <Dialog open={channel !== null} onOpenChange={onOpenChange}>
+      <DialogContent fullScreen>
+        <DialogHeader className="h-14 justify-center px-4 pr-14">
+          <DialogTitle>{channel?.broadcaster_display_name}</DialogTitle>
+        </DialogHeader>
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 pt-1 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <div>
             <p className="text-sm font-medium">
               {t("channel_preferences.saved_for_channel")}
@@ -97,8 +78,28 @@ export function ChannelPreferencesSheet({
               </div>
             )}
           </div>
+
+          <CategorySearchList
+            disabledCategoryIds={savedForChannel.map(
+              (pref) => pref.category_id,
+            )}
+            globalCategoryIds={(preferences?.global ?? []).map(
+              (pref) => pref.category_id,
+            )}
+            autoFocus={false}
+            onSelect={(category) => {
+              if (!channel) return
+              addPreference.mutate(
+                {
+                  broadcasterUserId: channel.broadcaster_user_id,
+                  category,
+                },
+                { onSuccess: handlePreferenceAdded },
+              )
+            }}
+          />
         </div>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   )
 }

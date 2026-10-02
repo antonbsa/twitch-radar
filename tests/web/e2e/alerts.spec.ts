@@ -63,7 +63,7 @@ describe("Alerts view", () => {
     )
   })
 
-  it("should open the add-category sheet and dismiss it on tap outside", async ({
+  it("should open the add-category dialog full-screen and dismiss it with the close button", async ({
     authenticatedSession,
   }) => {
     const { page } = authenticatedSession
@@ -82,10 +82,51 @@ describe("Alerts view", () => {
     await expectVisible(dialog)
     await expectVisible(dialog.getByText("Add Category"))
 
-    // Tap outside (the overlay behind the sheet) to dismiss.
-    await page
-      .locator('[data-slot="sheet-overlay"]')
-      .click({ position: { x: 5, y: 5 } })
+    // Full-screen on every viewport (#20): no overlay is left exposed to tap,
+    // so the close button is the dismiss path.
+    const box = await dialog.boundingBox()
+    const viewport = page.viewportSize()
+    expect(box).toEqual({
+      x: 0,
+      y: 0,
+      width: viewport?.width,
+      height: viewport?.height,
+    })
+
+    await dialog.getByRole("button", { name: "Close" }).click()
+    await expectHidden(dialog)
+  })
+
+  it("should open the add-category dialog as a centered, size-constrained dialog on desktop and dismiss it by clicking outside", async ({
+    authenticatedSession,
+  }) => {
+    const { page } = authenticatedSession
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.route("**/api/preferences", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ data: { channel: [], global: [] } }),
+      }),
+    )
+
+    await page.goto(`${WEB_URL}/alerts`)
+    await page.getByRole("button", { name: "Add global category" }).click()
+
+    const dialog = page.getByRole("dialog")
+    await expectVisible(dialog)
+    await expectVisible(dialog.getByText("Add Category"))
+
+    // Smaller than the page behind it, centered, with the overlay left to
+    // click (#40).
+    await expect
+      .poll(async () => (await dialog.boundingBox())?.width)
+      .toBeLessThanOrEqual(512)
+    const box = await dialog.boundingBox()
+    expect(box?.height).toBeLessThan(800)
+    expect((box?.x ?? 0) + (box?.width ?? 0) / 2).toBeCloseTo(640, 0)
+
+    await page.mouse.click(10, 10)
     await expectHidden(dialog)
   })
 

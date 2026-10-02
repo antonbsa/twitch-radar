@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Globe } from "lucide-react"
-import { Input } from "@/components/ui/input"
+import { SearchField } from "@/components/search-field"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useLanguage } from "@/context/language-context"
 import { useCategorySearch } from "@/hooks/use-category-search"
@@ -15,12 +15,15 @@ interface CategorySearchListProps {
    * alive if the global preference is later removed.
    */
   globalCategoryIds?: string[]
+  /** Pass false when the list sits below other content the user should see before the keyboard opens. */
+  autoFocus?: boolean
 }
 
 export function CategorySearchList({
   onSelect,
   disabledCategoryIds = [],
   globalCategoryIds = [],
+  autoFocus = true,
 }: CategorySearchListProps) {
   const [query, setQuery] = useState("")
   const { data, isFetching, isError, isEnabled } = useCategorySearch(query)
@@ -28,11 +31,12 @@ export function CategorySearchList({
 
   return (
     <div className="space-y-2">
-      <Input
-        placeholder={t("category_search.placeholder")}
+      <SearchField
         value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        autoFocus
+        onChange={setQuery}
+        placeholder={t("category_search.placeholder")}
+        clearLabel={t("category_search.clear_aria")}
+        autoFocus={autoFocus}
       />
 
       {isEnabled && isFetching && (
@@ -55,7 +59,7 @@ export function CategorySearchList({
       )}
 
       {isEnabled && !isFetching && !isError && data && data.length > 0 && (
-        <ul className="max-h-64 overflow-y-auto rounded-lg border border-border">
+        <ul className="rounded-lg border border-border">
           {data.map((category) => {
             const disabled = disabledCategoryIds.includes(category.id)
             const isGlobal = globalCategoryIds.includes(category.id)
@@ -65,7 +69,7 @@ export function CategorySearchList({
                   type="button"
                   disabled={disabled}
                   onClick={() => onSelect(category)}
-                  className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
+                  className="flex min-h-11 w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
                 >
                   <span className="truncate">{category.name}</span>
                   {isGlobal && (
