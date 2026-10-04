@@ -1,8 +1,8 @@
-import { eq, inArray } from "drizzle-orm"
+import { and, asc, eq, inArray, isNull, lt, or } from "drizzle-orm"
 import { nanoid } from "nanoid"
 import type { Language, User } from "../../types"
 import type { AppDatabase } from "../client"
-import { users, type UserRow } from "../schema"
+import { twitchTokens, users, type UserRow } from "../schema"
 
 export interface UpsertUserInput {
   id: string
@@ -86,7 +86,7 @@ export class UsersRepository {
 
   async updateLastFollowSyncAt(
     id: string,
-    lastFollowSyncAt: string,
+    lastFollowSyncAt: string | null,
     now: string,
   ): Promise<void> {
     await this.db
@@ -94,6 +94,36 @@ export class UsersRepository {
       .set({ lastFollowSyncAt, updatedAt: now })
       .where(eq(users.id, id))
       .run()
+  }
+
+  /**
+   * Users due for a scheduled follow sync: never synced or last synced before
+   * `cutoff`, oldest first (SQLite sorts NULL first ascending, so never-synced
+   * users lead). Users in reconnect state are excluded: their sync can't
+   * succeed and, never getting a fresh timestamp, they'd hold the head of the
+   * queue and starve everyone behind them.
+   */
+  async listFollowSyncCandidates(
+    cutoff: string,
+    limit: number,
+  ): Promise<User[]> {
+    const rows = await this.db
+      .select({ user: users })
+      .from(users)
+      .innerJoin(twitchTokens, eq(twitchTokens.userId, users.id))
+      .where(
+        and(
+          isNull(twitchTokens.refreshFailedAt),
+          or(
+            isNull(users.lastFollowSyncAt),
+            lt(users.lastFollowSyncAt, cutoff),
+          ),
+        ),
+      )
+      .orderBy(asc(users.lastFollowSyncAt))
+      .limit(limit)
+      .all()
+    return rows.map((row) => toUser(row.user))
   }
 
   /** Sets the user's UI/notification language preference (ADR 0044). */
