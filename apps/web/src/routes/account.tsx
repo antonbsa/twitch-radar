@@ -123,15 +123,23 @@ export function AccountPage() {
       </Button>
 
       {reconnectRequired && (
-        <Button className="mt-3 w-full" asChild>
+        <Button
+          className="mt-3 w-full aria-disabled:pointer-events-none aria-disabled:opacity-70"
+          asChild
+        >
           {/* Native link click, not window.location: see login.tsx. */}
           <a
             href="/api/auth/twitch/start"
             aria-busy={isReconnecting}
+            aria-disabled={isReconnecting}
             onClick={markReconnecting}
           >
             {isReconnecting && <Loader2Icon className="animate-spin" />}
-            {t("account.reconnect_twitch")}
+            {t(
+              isReconnecting
+                ? "account.reconnecting"
+                : "account.reconnect_twitch",
+            )}
           </a>
         </Button>
       )}

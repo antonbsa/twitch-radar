@@ -10,6 +10,7 @@
   "login.tagline": "Get notified when channels you follow go live in the categories you care about.",
   "login.declined": "Login was cancelled - try again.",
   "login.connect": "Connect with Twitch",
+  "login.connecting": "Connecting…",
 
   "channels.title": "Channels",
   "channels.sync": "Sync",
@@ -91,6 +92,7 @@
   "account.denied_hint": "Go to browser settings to enable.",
   "account.sync_channels": "Sync Channels",
   "account.reconnect_twitch": "Reconnect Twitch",
+  "account.reconnecting": "Reconnecting…",
   "account.log_out": "Log Out",
   "account.language": "Language",
   "account.language_en": "English",

@@ -10,6 +10,7 @@
   "login.tagline": "Receba notificações quando os canais que você segue entrarem ao vivo nas categorias que você acompanha.",
   "login.declined": "O login foi cancelado - tente novamente.",
   "login.connect": "Conectar com a Twitch",
+  "login.connecting": "Conectando…",
 
   "channels.title": "Canais",
   "channels.sync": "Sincronizar",
@@ -91,6 +92,7 @@
   "account.denied_hint": "Acesse as configurações do navegador para ativar.",
   "account.sync_channels": "Sincronizar Canais",
   "account.reconnect_twitch": "Reconectar Twitch",
+  "account.reconnecting": "Reconectando…",
   "account.log_out": "Sair",
   "account.language": "Idioma",
   "account.language_en": "English",

@@ -138,7 +138,7 @@ describe("Account view", () => {
     await revokeSession(sessionId)
 
     await page.getByRole("button", { name: "Sync Channels" }).click()
-    await expectVisible(page.getByRole("link", { name: "Reconnect Twitch" }))
+    await expectVisible(page.locator(`a[href="/api/auth/twitch/start"]`))
     expect(new URL(page.url()).pathname).toBe("/account")
   })
 
@@ -151,7 +151,7 @@ describe("Account view", () => {
     await revokeSession(sessionId)
     await page.getByRole("button", { name: "Sync Channels" }).click()
 
-    const reconnect = page.getByRole("link", { name: "Reconnect Twitch" })
+    const reconnect = page.locator(`a[href="/api/auth/twitch/start"]`)
     await expectVisible(reconnect)
     expect(await reconnect.getAttribute("aria-busy")).toBe("false")
     expect(await reconnect.getAttribute("href")).toBe("/api/auth/twitch/start")
@@ -159,6 +159,8 @@ describe("Account view", () => {
     await preventLinkNavigation(page, "/api/auth/twitch/start")
     await reconnect.click()
     await expect.poll(() => reconnect.getAttribute("aria-busy")).toBe("true")
+    expect(await reconnect.getAttribute("aria-disabled")).toBe("true")
+    await expectVisible(page.getByRole("link", { name: "Reconnecting…" }))
   })
 
   it("should open the What's New sheet from the version badge", async ({

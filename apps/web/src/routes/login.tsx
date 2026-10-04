@@ -25,14 +25,19 @@ export function LoginPage() {
       it is what stops the soft keyboard from opening on Twitch's login
       inputs after the redirect. The pending state only changes what the
       link renders, never how it navigates. */}
-      <Button size="lg" asChild>
+      <Button
+        size="lg"
+        className="aria-disabled:pointer-events-none aria-disabled:opacity-70"
+        asChild
+      >
         <a
           href="/api/auth/twitch/start"
           aria-busy={isConnecting}
+          aria-disabled={isConnecting}
           onClick={markConnecting}
         >
           {isConnecting && <Loader2Icon className="animate-spin" />}
-          {t("login.connect")}
+          {t(isConnecting ? "login.connecting" : "login.connect")}
         </a>
       </Button>
     </div>
