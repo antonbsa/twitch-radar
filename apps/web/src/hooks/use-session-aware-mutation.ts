@@ -4,7 +4,7 @@ import {
   type UseMutationResult,
 } from "@tanstack/react-query"
 import { useAuth } from "@/context/auth-context"
-import { ApiRequestError } from "@/lib/errors"
+import { isReconnectRequiredError } from "@/lib/errors"
 
 export function useSessionAwareMutation<
   TData,
@@ -18,7 +18,7 @@ export function useSessionAwareMutation<
   return useMutation({
     ...options,
     onError: (error, variables, onMutateResult, context) => {
-      if (error instanceof ApiRequestError && error.status === 401) {
+      if (isReconnectRequiredError(error)) {
         markReconnectRequired()
       }
       options.onError?.(error, variables, onMutateResult, context)

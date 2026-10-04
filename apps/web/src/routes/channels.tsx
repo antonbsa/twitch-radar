@@ -10,7 +10,7 @@ import { ChannelDetailModal } from "@/components/channel-detail-modal"
 import { ReconnectRequired } from "@/components/reconnect-required"
 import { useAuth } from "@/context/auth-context"
 import { useLanguage } from "@/context/language-context"
-import { useFollowedChannels, useSyncFollows } from "@/hooks/use-channels"
+import { useFollowedChannels, useManualSyncFollows } from "@/hooks/use-channels"
 import {
   applyChannelFilters,
   DEFAULT_CHANNEL_FILTERS,
@@ -24,7 +24,7 @@ export function ChannelsPage() {
   const { data: channels, isLoading, isError } = useFollowedChannels()
   const { reconnectRequired } = useAuth()
   const { t } = useLanguage()
-  const syncFollows = useSyncFollows()
+  const syncFollows = useManualSyncFollows()
   const [configuringChannel, setConfiguringChannel] =
     useState<FollowedChannel | null>(null)
   const [filters, setFilters] = useState<ChannelFilters>(
@@ -86,7 +86,7 @@ export function ChannelsPage() {
             variant="outline"
             size="sm"
             disabled={syncFollows.isPending}
-            onClick={() => syncFollows.mutate()}
+            onClick={() => syncFollows.sync()}
           >
             <RefreshCw
               className={cn(

@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react"
+import { useLanguage } from "@/context/language-context"
 import { api } from "@/lib/api"
+import { showMutationErrorToast } from "@/lib/error-toast"
 import { ApiRequestError } from "@/lib/errors"
 import {
   clearStoredSubscriptionId,
@@ -33,7 +35,10 @@ export function usePushNotifications() {
   const [status, setStatus] = useState<PushStatus>(() =>
     isPushSupported() ? "checking" : "unsupported",
   )
+  // Only the "permission not granted" outcome lives here, rendered inline on
+  // the Account tab; enable/disable failures are toasts instead (#24).
   const [error, setError] = useState<string | null>(null)
+  const { t } = useLanguage()
 
   useEffect(() => {
     if (!isPushSupported()) return
@@ -68,10 +73,13 @@ export function usePushNotifications() {
       setStatus(next)
       // "denied" needs no extra error — the UI already explains that state.
       // A catalog key, not literal text — the caller (AccountPage) resolves
-      // it via useLanguage().t() (ADR 0044); this hook stays language-agnostic.
+      // it via useLanguage().t() where it renders it (ADR 0044).
       setError(next === "not-enabled" ? "push.permission_not_granted" : null)
     },
-    onError: () => setError("push.enable_error"),
+    onError: (err) => {
+      setError(null)
+      showMutationErrorToast(err, t("push.enable_error"))
+    },
   })
 
   const disableMutation = useSessionAwareMutation({
@@ -103,7 +111,7 @@ export function usePushNotifications() {
       setStatus("not-enabled")
       setError(null)
     },
-    onError: () => setError("push.disable_error"),
+    onError: (err) => showMutationErrorToast(err, t("push.disable_error")),
   })
 
   return {

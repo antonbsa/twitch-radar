@@ -89,6 +89,41 @@ describe("Account view", () => {
     )
   })
 
+  it("should show an error toast when enabling push fails", async ({
+    authenticatedSession,
+  }) => {
+    const { page } = authenticatedSession
+    await mockPushEnvironment(page)
+    await page.route("**/api/push/vapid-public-key", (route) =>
+      route.fulfill({
+        status: 500,
+        contentType: "application/json",
+        body: JSON.stringify({
+          error: {
+            code: "internal_error",
+            message: "boom",
+            requestId: "req_e2e",
+          },
+        }),
+      }),
+    )
+
+    await page.goto(`${WEB_URL}/account`)
+    await page.getByRole("button", { name: "Enable Notifications" }).click()
+
+    const toast = page
+      .locator("[data-sonner-toast]")
+      .getByText("Could not enable notifications. Try again.")
+    await expectVisible(toast)
+    // Toast only: the failure no longer also renders inline.
+    expect(
+      await page
+        .getByText("Could not enable notifications. Try again.")
+        .count(),
+    ).toBe(1)
+    await expectVisible(page.getByText("Status: Not enabled"))
+  })
+
   it("should render the default notification permission state with an enable button", async ({
     authenticatedSession,
   }) => {
@@ -139,6 +174,8 @@ describe("Account view", () => {
     await page.getByRole("button", { name: "Sync Channels" }).click()
     await expectVisible(page.getByRole("link", { name: "Reconnect Twitch" }))
     expect(new URL(page.url()).pathname).toBe("/account")
+    // The reconnect flow replaces the generic sync error toast.
+    expect(await page.locator("[data-sonner-toast]").count()).toBe(0)
   })
 
   it("should open the What's New sheet from the version badge", async ({

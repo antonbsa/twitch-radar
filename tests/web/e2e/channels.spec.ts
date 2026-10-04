@@ -234,6 +234,32 @@ describe("Channels view", () => {
       .toBe(false)
     await expectVisible(page.getByText("PulledStreamer"))
     expect(followedCalls).toBe(callsBeforeSync)
+    await expectVisible(page.getByText("Channels synced."))
+  })
+
+  it("should show an error toast when a manual sync fails", async ({
+    authenticatedSession,
+  }) => {
+    const { page } = authenticatedSession
+    await page.route("**/api/sync/follows", (route) =>
+      route.fulfill({
+        status: 502,
+        contentType: "application/json",
+        body: JSON.stringify({
+          error: {
+            code: "twitch_unavailable",
+            message: "Twitch is unavailable",
+            requestId: "req_e2e",
+          },
+        }),
+      }),
+    )
+
+    await page.goto(WEB_URL)
+    await page.getByRole("button", { name: /sync/i }).click()
+
+    await expectVisible(page.getByText("Could not sync channels. Try again."))
+    expect(await page.getByText("Channels synced.").count()).toBe(0)
   })
 
   it("should open the per-channel preference sheet from the config button", async ({

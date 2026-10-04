@@ -103,6 +103,14 @@
   "push.banner_prompt": "Enable notifications so you don't miss this alert.",
   "push.banner_enable_cta": "Enable",
 
+  "preferences.add_success": "Alert saved.",
+  "preferences.add_error": "Could not save the alert. Try again.",
+  "preferences.remove_success": "Alert removed.",
+  "preferences.remove_error": "Could not remove the alert. Try again.",
+
+  "sync.success": "Channels synced.",
+  "sync.error": "Could not sync channels. Try again.",
+
   "reconnect.message": "Your Twitch connection needs to be renewed.",
   "reconnect.cta": "Reconnect Twitch",
 
