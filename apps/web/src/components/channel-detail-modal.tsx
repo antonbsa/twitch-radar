@@ -14,6 +14,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/context/language-context"
 import {
@@ -138,7 +139,18 @@ export function ChannelDetailModal({
         }}
       >
         <SheetHeader className="pb-0">
-          <SheetTitle>{channel?.broadcaster_display_name}</SheetTitle>
+          <div className="flex items-center gap-2">
+            <Avatar size="sm">
+              <AvatarImage
+                src={channel?.broadcaster_profile_image_url ?? undefined}
+                alt=""
+              />
+              <AvatarFallback>
+                {channel?.broadcaster_display_name[0]?.toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <SheetTitle>{channel?.broadcaster_display_name}</SheetTitle>
+          </div>
           {channel?.is_live ? (
             <div className="flex items-center justify-between gap-2">
               <p className="truncate text-xs text-muted-foreground">

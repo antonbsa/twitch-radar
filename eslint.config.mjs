@@ -20,6 +20,7 @@ export default [
       "**/node_modules/**",
       "**/dist/**",
       ".agents/**",
+      "tests/web/e2e/scratch/**",
     ],
   },
   ...compat.extends("@rocketseat/eslint-config/react"),

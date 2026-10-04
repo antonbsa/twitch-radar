@@ -11,7 +11,12 @@ import { ChannelDetailModal } from "@/components/channel-detail-modal"
 import { ReconnectRequired } from "@/components/reconnect-required"
 import { useAuth } from "@/context/auth-context"
 import { useLanguage } from "@/context/language-context"
-import { useFollowedChannels, useSyncFollows } from "@/hooks/use-channels"
+import {
+  isFollowSyncStale,
+  useAutoSyncFollowsStatus,
+  useFollowedChannels,
+  useSyncFollows,
+} from "@/hooks/use-channels"
 import {
   applyChannelFilters,
   DEFAULT_CHANNEL_FILTERS,
@@ -22,8 +27,20 @@ import { cn } from "@/lib/utils"
 import type { FollowedChannel } from "@/types/channel"
 
 export function ChannelsPage() {
-  const { data: channels, isLoading, isError } = useFollowedChannels()
-  const { reconnectRequired } = useAuth()
+  const {
+    data: channels,
+    isLoading: isChannelsLoading,
+    isError,
+  } = useFollowedChannels()
+  const { user, reconnectRequired } = useAuth()
+  const autoSyncStatus = useAutoSyncFollowsStatus()
+  // An auto-sync only runs when the last sync is stale (issue #88): hold the
+  // skeleton until it lands instead of painting stale D1 rows that would
+  // visibly reorder once the fresh list arrives.
+  const isLoading = isChannelsLoading || autoSyncStatus === "pending"
+  const autoSyncFailed =
+    autoSyncStatus === "error" &&
+    isFollowSyncStale(user?.last_follow_sync_at ?? null)
   const { t } = useLanguage()
   const syncFollows = useSyncFollows()
   const [configuringChannel, setConfiguringChannel] =
@@ -99,6 +116,16 @@ export function ChannelsPage() {
           </Button>
         </div>
       </div>
+
+      {!isLoading && !isError && autoSyncFailed && reconnectRequired && (
+        <ReconnectRequired />
+      )}
+
+      {!isLoading && !isError && autoSyncFailed && !reconnectRequired && (
+        <p role="status" className="px-4 pb-2 text-xs text-muted-foreground">
+          {t("channels.sync_stale_notice")}
+        </p>
+      )}
 
       {isLoading && <ChannelsLoadingSkeleton />}
 

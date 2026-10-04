@@ -44,6 +44,10 @@ import { deliverNotification } from "./services/notifications/deliver"
 import { sweepNotificationSnoozes } from "./services/notifications/snooze-sweep"
 import { refreshExpiringTwitchTokens } from "./services/twitch/token-refresh"
 import { syncStaleFollows } from "./services/twitch/sync"
+import {
+  isAvatarRefreshSlot,
+  refreshBroadcasterAvatars,
+} from "./services/twitch/avatar-refresh"
 import type { NotificationJobMessage, TwitchEventQueueMessage } from "./types"
 import {
   handleTestInspect,
@@ -227,7 +231,8 @@ export default {
    * notification snooze sweep (ADR 0048): the account-wide cron trigger cap
    * (5, already fully consumed by production + preview) leaves no free slot
    * for the sweep's own schedule, and it wants a minutely cadence anyway to
-   * keep the 15-minute snooze window tight.
+   * keep the 15-minute snooze window tight. The same cap is why the monthly
+   * avatar refresh is gated inside the hourly follow-sync branch.
    */
   async scheduled(controller: ScheduledController, env: Env): Promise<void> {
     // Each job function below already has its own top-level try/catch, so
@@ -250,7 +255,13 @@ export default {
         case CRON_TOKEN_REFRESH:
           return await refreshExpiringTwitchTokens(db, config)
         case CRON_FOLLOW_SYNC:
-          return await syncStaleFollows(db, config)
+          // Both jobs catch and log their own failures, so neither can skip
+          // the other.
+          await syncStaleFollows(db, config)
+          if (isAvatarRefreshSlot(controller.scheduledTime)) {
+            await refreshBroadcasterAvatars(db, config, env.KV_APP_CACHE)
+          }
+          return
         default:
           await createPendingEventsubSubscriptions(db, config, env.KV_APP_CACHE)
           return await sweepNotificationSnoozes(db, env.NOTIFICATION_JOBS_QUEUE)

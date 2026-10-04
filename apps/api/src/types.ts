@@ -70,6 +70,9 @@ export interface NotificationPayload {
   // Stream thumbnail shown as the notification's `image`; omitted entirely
   // when there is none rather than sent as null (issue #38 item 6).
   image?: string
+  // Broadcaster avatar shown as the notification's `icon`; omitted when none
+  // is stored, so the service worker falls back to the app icon (issue #25).
+  icon?: string
 }
 
 // Queue payload contract for NOTIFICATION_JOBS_QUEUE (ADR 0034). The payload

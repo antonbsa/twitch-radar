@@ -10,7 +10,7 @@ The canonical PR structure lives in [.github/PULL_REQUEST_TEMPLATE.md](../../../
 ## What to do
 
 1. Read `.github/PULL_REQUEST_TEMPLATE.md`. Its HTML comments are the instructions - resolve every comment into real content, don't leave placeholders or delete sections that apply.
-2. Title: use the Conventional Commits prefix from this repo's commit message rules (`feat:`, `fix:`, `docs:`, `test:`, `chore:`, `refactor:` - see AGENTS.md "Commits").
+2. Title: use the Conventional Commits prefix from the root `AGENTS.md` "Commits" section (`feat:`, `fix:`, `docs:`, `test:`, `chore:`, `refactor:`).
 3. **Source the description from the diff against `main` (`git diff main...HEAD`), not from memory of how the work went.**
    - The diff is the base source and always exists. With no handoff (small or ad hoc change), derive the description from the diff and the conversation; that is the normal path.
    - If `.agents/handoff-<slug>.md` exists for this branch (written by `implementing-a-feature`'s handoff step), read it too: it carries the *why* (Objective/Problem, Design Decisions, Trade-offs) in the structure of [HANDOFF_TEMPLATE.md](../implementing-a-feature/HANDOFF_TEMPLATE.md).
@@ -21,7 +21,7 @@ The canonical PR structure lives in [.github/PULL_REQUEST_TEMPLATE.md](../../../
    - Labels: apply them when opening the PR (`gh pr create --label ...` or `gh pr edit --add-label ...`), not only when asked: `migration` if it touches `infra/migrations`; `config` if it touches `apps/api/wrangler.jsonc`, `crons.ts`, or `env.ts`; plus the default label (`bug`, `enhancement`, `documentation`). These drive the categorized release notes in [.github/release.yml](../../../.github/release.yml): an unlabeled PR silently lands in "Other Changes", and `migration`/`config` have no category of their own - `preparing-a-release` calls out that risk in the notes' prose instead.
 6. Impact section: the specific effect, not the mechanism - name the capability/fix/behavior change precisely, then attach proof (command output, screenshots, benchmark results) only to substantiate that specific claim. Don't restate Summary. Mark N/A for changes with no external effect (pure refactor, docs).
 7. How to test section: reproduction steps for a reviewer, if applicable - instructions, not proof; the proof itself goes in Impact. Condense the handoff's How to Validate section into this when one exists; otherwise derive repro steps directly from the diff and the conversation.
-8. **For any change with a visible UI effect, generate a screenshot and attach it to the PR (Impact, or Summary if it frames the problem better).** Follow [SCREENSHOTS.md](SCREENSHOTS.md). Skip this for changes with no visible UI effect (backend-only, refactors, docs).
+8. **For any change with a visible UI effect, generate a screenshot and attach it to the PR (Impact, or Summary if it frames the problem better).** Follow [docs/ui-screenshots.md](../../../docs/ui-screenshots.md). Skip this for changes with no visible UI effect (backend-only, refactors, docs).
 9. If there's no tracked issue and no spec/ADR link, delete the "References" section rather than leaving it empty.
 
 ## Common mistakes

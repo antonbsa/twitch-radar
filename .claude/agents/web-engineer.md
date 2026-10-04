@@ -14,7 +14,7 @@ You implement and review frontend changes in `apps/web` for twitch-radar, a mobi
 ## Definition of done
 
 - Run the filtered or full `npm run test:web` per the root `AGENTS.md` Tests section, plus `npm run typecheck`, and `npm run lint` if you touched more than a couple of lines.
-- For UI changes, drive the feature in a browser against the dev server instead of trusting tests alone.
+- For UI changes, see the result in a real browser, not through tests alone: follow `docs/ui-screenshots.md`.
 - A change that settles a decision the code must keep following gets an ADR (ADR 0001); plain implementation choices don't.
 
 ## Boundaries

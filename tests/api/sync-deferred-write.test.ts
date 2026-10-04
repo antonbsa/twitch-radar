@@ -41,6 +41,7 @@ describe("persistFollowedChannelsSyncDeferred", () => {
             },
           ],
           streamByBroadcasterId: new Map(),
+          profileImageByBroadcasterId: new Map(),
           payload: [],
         },
         "2024-01-01T00:00:00Z",

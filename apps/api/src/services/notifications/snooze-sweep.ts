@@ -59,8 +59,11 @@ export async function sweepNotificationSnoozes(
         continue
       }
 
-      const [monitored] = await db.monitoredChannels.findByBroadcasterUserIds([
-        snooze.broadcaster_user_id,
+      const [[monitored], broadcasterAvatarUrl] = await Promise.all([
+        db.monitoredChannels.findByBroadcasterUserIds([
+          snooze.broadcaster_user_id,
+        ]),
+        db.followedChannels.findProfileImageUrl(snooze.broadcaster_user_id),
       ])
       // Snoozes need no preference row, so fall back to the user's followed
       // channel record, then to the raw broadcaster id to avoid leaking
@@ -107,6 +110,7 @@ export async function sweepNotificationSnoozes(
             ...(channelState.thumbnail_url
               ? { image: channelState.thumbnail_url }
               : {}),
+            ...(broadcasterAvatarUrl ? { icon: broadcasterAvatarUrl } : {}),
           },
         })
       }

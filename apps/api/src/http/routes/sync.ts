@@ -19,7 +19,9 @@ export async function handleSyncFollows(
 
   const accessToken = await getValidAccessToken(db, config, userId)
   const fetched = await fetchFollowedChannelsSync(
+    db,
     config,
+    userId,
     user.twitch_user_id,
     accessToken,
   )

@@ -33,12 +33,12 @@ Given a list of inputs to implement together - any mix of spec paths (`specs/mil
 
 3. **Derive a worktree name per group.** Succinct, kebab-case, descriptive of the implementation itself - no issue number, no generic id (per AGENTS.md "Worktrees and `.agents/`"). For a group of more than one item, name it after the combined implementation, not after one member item. This name is both the branch name and the worktree directory name.
 
-4. **Create every worktree before dispatching anything.** For each group, from the repo root:
+4. **Create every worktree, with dependencies installed, before dispatching anything.** For each group, from the repo root, branching off the latest `origin/main` (a fresh worktree has no `node_modules`, so the install is part of creating it):
    ```bash
    git fetch origin main
-   git worktree add --no-track -b <name> .agents/worktrees/<name> origin/main
+   git worktree add --no-track -b <name> .agents/worktrees/<name> origin/main && npm install --prefix .agents/worktrees/<name>
    ```
-   branching off the latest `origin/main`, then `npm install` at each new worktree root (a fresh worktree has no `node_modules`). Do this for the whole batch up front, in your own session - a naming collision surfaces here, not inside a subagent mid-implementation.
+   Do this for the whole batch up front, in your own session - a naming collision surfaces here, not inside a subagent mid-implementation. Done when every worktree has `node_modules/.bin/tsc`; dispatch nothing until that holds (a subagent without it fails typecheck with `TS2688` on `@cloudflare/workers-types`).
 
 5. **Dispatch one subagent per group, all in the same message.** Pick the agent type by the group's scope: `api-engineer` for changes confined to `apps/api`, `web-engineer` for `apps/web`, `infra-engineer` for migrations/wrangler/env/deploy scripts, `claude`/`general-purpose` otherwise (including groups that mix scopes). Each dispatch prompt must include:
    - Every item in the group (spec path / issue number / issue file) and the absolute path of the shared worktree - the subagent has no `isolation` param that can target that exact path, so it must treat that path as its working directory for the whole task (`cd` there, and/or use absolute paths under it for every Read/Write/Edit/Bash call).
