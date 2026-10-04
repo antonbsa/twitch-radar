@@ -1,6 +1,6 @@
 // Push-only service worker: no fetch handler for app requests, no caching
 // (ADR 0026). Payload shape is { titleKey, bodyKey?, params, lang, url,
-// broadcasterUserId, categoryId, broadcasterLogin?, image? } (ADR 0044,
+// broadcasterUserId, categoryId, broadcasterLogin?, image?, icon? } (ADR 0044,
 // ADR 0050): the API only ever sends semantic keys, never translated text,
 // so this handler resolves them against the same locale catalog the React
 // app uses (public/locales/<lang>.json) before showing the notification.
@@ -113,7 +113,9 @@ self.addEventListener("push", (event) => {
       await rememberNotificationUrl(url)
       await self.registration.showNotification(title, {
         ...(body ? { body } : {}),
-        icon: "/icon.svg",
+        // Broadcaster avatar when the API has one (issue #25). The badge stays
+        // the app icon: Android renders it as a monochrome mask (TN 0006).
+        icon: payload?.icon || "/icon.svg",
         badge: "/icon.svg",
         ...(payload?.image ? { image: payload.image } : {}),
         // Collapses repeat notifications from the same broadcaster into one

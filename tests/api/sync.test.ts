@@ -267,3 +267,118 @@ describe("POST /api/sync/follows", () => {
     expect(persisted).toHaveLength(BROADCASTER_COUNT)
   }, 30_000)
 })
+
+describe("POST /api/sync/follows broadcaster avatars", () => {
+  const AVATAR_A = "https://static-cdn.jtvnw.net/a-300x300.png"
+  const AVATAR_B = "https://static-cdn.jtvnw.net/b-300x300.png"
+
+  async function syncFollows(cookie: string) {
+    const res = await fetch(`${orchestrator.baseUrl}/api/sync/follows`, {
+      method: "POST",
+      headers: { Cookie: cookie },
+    })
+    expect(res.status).toBe(200)
+    const { data } = (await res.json()) as {
+      data: Array<{
+        broadcaster_user_id: string
+        broadcaster_profile_image_url: string | null
+      }>
+    }
+    return new Map(
+      data.map((c) => [c.broadcaster_user_id, c.broadcaster_profile_image_url]),
+    )
+  }
+
+  it("should return and persist avatars fetched from Get Users", async () => {
+    const { cookie } = await orchestrator.createAuthenticatedSession()
+    await orchestrator.mockTwitch.onFollowedChannels([CHANNEL_A, CHANNEL_B])
+    await orchestrator.mockTwitch.onFollowedStreams([])
+    await orchestrator.mockTwitch.onUsersByIds([
+      { id: "100", profile_image_url: AVATAR_A },
+      { id: "200", profile_image_url: AVATAR_B },
+    ])
+
+    const avatars = await syncFollows(cookie)
+    expect(avatars.get("100")).toBe(AVATAR_A)
+    expect(avatars.get("200")).toBe(AVATAR_B)
+
+    await orchestrator.waitForFollowedChannels(
+      cookie,
+      (items) =>
+        items.length === 2 &&
+        items.every(
+          (c) =>
+            c.broadcaster_profile_image_url ===
+            (c.broadcaster_user_id === "100" ? AVATAR_A : AVATAR_B),
+        ),
+    )
+  })
+
+  it("should keep stored avatars and only look up new follows", async () => {
+    const { cookie } = await orchestrator.createAuthenticatedSession()
+    await orchestrator.mockTwitch.onFollowedChannels([CHANNEL_A])
+    await orchestrator.mockTwitch.onFollowedStreams([])
+    await orchestrator.mockTwitch.onUsersByIds([
+      { id: "100", profile_image_url: AVATAR_A },
+    ])
+    await syncFollows(cookie)
+    await orchestrator.waitForFollowedChannels(cookie, (items) =>
+      items.some((c) => c.broadcaster_profile_image_url === AVATAR_A),
+    )
+
+    // Stored avatars are not re-fetched on every sync.
+    await orchestrator.mockTwitch.reset()
+    await orchestrator.mockTwitch.onFollowedChannels([CHANNEL_A, CHANNEL_B])
+    await orchestrator.mockTwitch.onFollowedStreams([])
+    await orchestrator.mockTwitch.onUsersByIds([
+      { id: "200", profile_image_url: AVATAR_B },
+    ])
+
+    const avatars = await syncFollows(cookie)
+    expect(avatars.get("100")).toBe(AVATAR_A)
+    expect(avatars.get("200")).toBe(AVATAR_B)
+    const userLookups = (await orchestrator.mockTwitch.requests()).filter(
+      (url) => url.startsWith("/helix/users?"),
+    )
+    expect(userLookups).toEqual(["/helix/users?id=200"])
+  })
+
+  it("should still sync when the avatar lookup fails", async () => {
+    const { cookie } = await orchestrator.createAuthenticatedSession()
+    await orchestrator.mockTwitch.onFollowedChannels([CHANNEL_A])
+    await orchestrator.mockTwitch.onFollowedStreams([])
+    await orchestrator.mockTwitch.onUsersByIds([], 500)
+
+    const avatars = await syncFollows(cookie)
+    expect(avatars.get("100")).toBeNull()
+    await orchestrator.waitForFollowedChannels(
+      cookie,
+      (items) => items.length === 1,
+    )
+  })
+
+  it("should chunk the avatar lookup at 100 ids per Get Users call", async () => {
+    const { cookie } = await orchestrator.createAuthenticatedSession()
+    const channels = Array.from({ length: 150 }, (_, i) => ({
+      broadcaster_id: `${7000 + i}`,
+      broadcaster_login: `channel${i}`,
+      broadcaster_name: `Channel${i}`,
+    }))
+    await orchestrator.mockTwitch.onFollowedChannels(channels)
+    await orchestrator.mockTwitch.onFollowedStreams([])
+    const users = channels.map((ch) => ({
+      id: ch.broadcaster_id,
+      profile_image_url: `https://example.test/${ch.broadcaster_id}.png`,
+    }))
+    // The mock answers each request with whatever is queued, so a single
+    // unchunked call would consume the first entry and leave 50 ids blank.
+    await orchestrator.mockTwitch.onUsersByIds(users.slice(0, 100))
+    await orchestrator.mockTwitch.onUsersByIds(users.slice(100))
+
+    const avatars = await syncFollows(cookie)
+    expect(avatars.size).toBe(150)
+    for (const user of users) {
+      expect(avatars.get(user.id)).toBe(user.profile_image_url)
+    }
+  }, 30_000)
+})

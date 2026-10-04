@@ -17,6 +17,9 @@ const SCHEDULED_JOB_CRONS = {
   "eventsub-reconcile": CRON_EVENTSUB_RECONCILE,
   "token-refresh": CRON_TOKEN_REFRESH,
   "follow-sync": CRON_FOLLOW_SYNC,
+  // Monthly, gated inside the hourly follow-sync trigger: no free trigger
+  // slot under the account-wide cron cap (ADR 0048).
+  "avatar-refresh": CRON_FOLLOW_SYNC,
 } as const
 
 export type ScheduledJobName = keyof typeof SCHEDULED_JOB_CRONS
