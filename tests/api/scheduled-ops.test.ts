@@ -346,7 +346,7 @@ describe("Twitch token refresh", () => {
 })
 
 describe("scheduled follow sync", () => {
-  it("should re-sync stale follows for users with active global preferences", async () => {
+  it("should re-sync stale follows and monitoring for users with global preferences", async () => {
     await orchestrator.createAuthenticatedSession()
     await orchestrator.seed({
       preferences: {
@@ -371,6 +371,41 @@ describe("scheduled follow sync", () => {
       disabled_at: null,
     })
     expect(state.eventsubSubscriptions).toHaveLength(3)
+    expect(state.channelState).toHaveLength(1)
+  })
+
+  it("should re-sync stale follows for users without global preferences", async () => {
+    const { cookie } = await orchestrator.createAuthenticatedSession()
+    await orchestrator.seed({
+      preferences: {
+        channel: [
+          {
+            broadcasterUserId: BROADCASTER_ID,
+            categoryId: "27471",
+            categoryName: "Minecraft",
+          },
+        ],
+      },
+    })
+    await orchestrator.mockTwitch.onFollowedChannels([
+      {
+        broadcaster_id: BROADCASTER_ID,
+        broadcaster_login: "channelx",
+        broadcaster_name: "ChannelX",
+      },
+    ])
+    await orchestrator.mockTwitch.onFollowedStreams([])
+
+    await orchestrator.runScheduled(CRON_FOLLOW_SYNC)
+
+    const me = await fetch(`${orchestrator.baseUrl}/api/me`, {
+      headers: { Cookie: cookie },
+    })
+    const body = (await me.json()) as {
+      data: { last_follow_sync_at: string | null }
+    }
+    expect(body.data.last_follow_sync_at).not.toBeNull()
+    const state = await orchestrator.inspect([BROADCASTER_ID])
     expect(state.channelState).toHaveLength(1)
   })
 })
