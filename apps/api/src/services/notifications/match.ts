@@ -183,8 +183,9 @@ export async function matchAndCreateDeliveries(
   }
   if (matchedUserIds.size === 0) return
 
-  const [monitored] = await db.monitoredChannels.findByBroadcasterUserIds([
-    broadcasterUserId,
+  const [[monitored], broadcasterAvatarUrl] = await Promise.all([
+    db.monitoredChannels.findByBroadcasterUserIds([broadcasterUserId]),
+    db.followedChannels.findProfileImageUrl(broadcasterUserId),
   ])
   // Fallback to the raw id rather than English prose (ADR 0044): these
   // values flow into `params` verbatim into every language's template, so a
@@ -194,8 +195,6 @@ export async function matchAndCreateDeliveries(
     monitored?.broadcaster_login ??
     broadcasterUserId
   const categoryName = change.next_category_name ?? categoryId
-  const broadcasterAvatarUrl =
-    await db.followedChannels.findProfileImageUrl(broadcasterUserId)
 
   // Payload can no longer be built once and reused for every matched user —
   // `lang` is per-recipient — so language is batch-loaded up front instead.
