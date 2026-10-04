@@ -1,4 +1,4 @@
-name: Linting
+name: Code quality
 
 on:
   pull_request:
@@ -7,6 +7,8 @@ on:
   push:
     branches:
       - main
+  # Deploy workflows call this so they gate on the same checks as PRs.
+  workflow_call:
 
 jobs:
   eslint:
@@ -40,6 +42,18 @@ jobs:
         run: npm ci
       - name: Run typecheck
         run: npm run typecheck
+
+  i18n-check:
+    name: i18n Catalog Check
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Run i18n catalog check
+        run: npm run check-i18n
 
   db-check:
     name: D1 Migration Check

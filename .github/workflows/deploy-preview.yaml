@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   # A push to main can be a direct push or the result of merging a PR
-  # (merge/squash/rebase). If it went through a PR, linting.yaml/tests.yaml
+  # (merge/squash/rebase). If it went through a PR, code-quality.yaml/tests.yaml
   # already ran these same checks against that PR's pull_request event -
   # rerunning them here would be pure duplication. Commit-message matching
   # can't reliably tell the two apart (rebase merges carry no PR reference
@@ -35,92 +35,21 @@ jobs:
             echo "via_pr=false" >> "$GITHUB_OUTPUT"
           fi
 
-  lint:
-    name: EsLint
+  code-quality:
     needs: [check-pr-origin]
-    runs-on: ubuntu-latest
-    steps:
-      - if: needs.check-pr-origin.outputs.via_pr != 'true'
-        uses: actions/checkout@v5
-      - if: needs.check-pr-origin.outputs.via_pr != 'true'
-        name: Set up Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: npm
-      - if: needs.check-pr-origin.outputs.via_pr != 'true'
-        name: Install dependencies
-        run: npm ci
-      - if: needs.check-pr-origin.outputs.via_pr != 'true'
-        name: Run eslint
-        run: npm run lint
+    if: needs.check-pr-origin.outputs.via_pr != 'true'
+    uses: ./.github/workflows/code-quality.yaml
 
-  typecheck:
-    name: Typecheck
+  tests:
     needs: [check-pr-origin]
-    runs-on: ubuntu-latest
-    steps:
-      - if: needs.check-pr-origin.outputs.via_pr != 'true'
-        uses: actions/checkout@v5
-      - if: needs.check-pr-origin.outputs.via_pr != 'true'
-        name: Set up Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: npm
-      - if: needs.check-pr-origin.outputs.via_pr != 'true'
-        name: Install dependencies
-        run: npm ci
-      - if: needs.check-pr-origin.outputs.via_pr != 'true'
-        name: Run typecheck
-        run: npm run typecheck
-
-  test-api:
-    name: API tests
-    needs: [check-pr-origin]
-    runs-on: ubuntu-latest
-    steps:
-      - if: needs.check-pr-origin.outputs.via_pr != 'true'
-        uses: actions/checkout@v5
-      - if: needs.check-pr-origin.outputs.via_pr != 'true'
-        name: Set up Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: npm
-      - if: needs.check-pr-origin.outputs.via_pr != 'true'
-        name: Install dependencies
-        run: npm ci
-      - if: needs.check-pr-origin.outputs.via_pr != 'true'
-        name: Run tests
-        run: npm run test:api
-
-  test-e2e:
-    name: E2E tests
-    needs: [check-pr-origin]
-    runs-on: ubuntu-latest
-    steps:
-      - if: needs.check-pr-origin.outputs.via_pr != 'true'
-        uses: actions/checkout@v5
-      - if: needs.check-pr-origin.outputs.via_pr != 'true'
-        name: Set up Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: npm
-      - if: needs.check-pr-origin.outputs.via_pr != 'true'
-        name: Install dependencies
-        run: npm ci
-      - if: needs.check-pr-origin.outputs.via_pr != 'true'
-        name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-      - if: needs.check-pr-origin.outputs.via_pr != 'true'
-        name: Run tests
-        run: npm run test:web
+    if: needs.check-pr-origin.outputs.via_pr != 'true'
+    uses: ./.github/workflows/tests.yaml
 
   deploy:
     name: Deploy to Cloudflare (preview)
-    needs: [lint, typecheck, test-api, test-e2e]
+    needs: [check-pr-origin, code-quality, tests]
+    # Skipped checks (push via PR) must not skip the deploy; any failure still blocks it.
+    if: ${{ !failure() && !cancelled() }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5

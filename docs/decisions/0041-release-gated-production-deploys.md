@@ -21,7 +21,7 @@ Both add a deliberate human act between merge and production. Approval is lower-
 
 Split the single `deploy.yaml` into two independent workflows, matching the two environments:
 
-- **`deploy-preview.yaml`** — trigger: `push` to `main`. Runs lint/typecheck/API tests/E2E tests (skipped if the push came from a merged PR, since `linting.yaml`/`tests.yaml` already ran them against that PR), applies pending D1 migrations against `twitch-radar-preview`, then `npm run deploy:preview`.
+- **`deploy-preview.yaml`** — trigger: `push` to `main`. Runs lint/typecheck/API tests/E2E tests (skipped if the push came from a merged PR, since `code-quality.yaml`/`tests.yaml` already ran them against that PR), applies pending D1 migrations against `twitch-radar-preview`, then `npm run deploy:preview`.
 - **`deploy-release.yaml`** — trigger: `release: published`. Checks out the release's tag, always re-runs the full lint/typecheck/API/E2E suite against that exact commit (not skipped — a release isn't necessarily tied to a just-checked PR, e.g. a tag could be created against an older `main` commit), applies pending D1 migrations against `twitch-radar-prod`, then `npm run deploy`.
 
 `main` moving forward never touches production by itself. Production only advances when someone deliberately tags a commit and publishes a release. Versioning starts at `v0.1.0` (SemVer, major pinned at 0 while the MVP is still under active development per the Implementation Order in `CLAUDE.md`) — not `v1.0.0`.

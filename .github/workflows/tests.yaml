@@ -19,6 +19,8 @@ on:
       - "specs/**"
       - ".claude/**"
       - ".gitignore"
+  # Deploy workflows call this so they gate on the same tests as PRs.
+  workflow_call:
 
 jobs:
   api:
