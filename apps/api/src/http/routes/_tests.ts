@@ -45,6 +45,9 @@ export interface SeedUserInput {
   accessToken?: string
   refreshToken?: string
   expiredToken?: boolean
+  // Applied whenever present, null included, so a re-seed resets a value a
+  // previous test left on the shared user row; omitted leaves it untouched.
+  lastFollowSyncAt?: string | null
 }
 
 export interface SeedFollowedChannelInput {
@@ -152,6 +155,14 @@ export async function handleTestSeed(c: Context<HonoEnv>): Promise<Response> {
       twitchDisplayName: body.user.twitchDisplayName ?? "E2E Test User",
       now,
     })
+
+    if (body.user.lastFollowSyncAt !== undefined) {
+      await c.var.db.users.updateLastFollowSyncAt(
+        userId,
+        body.user.lastFollowSyncAt,
+        now,
+      )
+    }
 
     if (body.user.accessToken) {
       const expiresAt = body.user.expiredToken

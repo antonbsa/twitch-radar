@@ -14,6 +14,7 @@
   "channels.title": "Canais",
   "channels.sync": "Sincronizar",
   "channels.load_error": "Falha ao carregar os canais. Tente sincronizar ou recarregar a página.",
+  "channels.sync_stale_notice": "Não foi possível atualizar. Mostrando os últimos dados sincronizados.",
   "channels.empty": "Nenhum canal seguido ainda. Sincronize para importar seus canais da Twitch.",
   "channels.live": "Ao vivo",
   "channels.offline": "Offline",

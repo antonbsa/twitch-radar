@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect } from "vitest"
 import {
   E2E_BROADCASTER_PREFIX,
   resetState,
+  seedAuthenticatedUser,
   seedChannelState,
   seedFollowedChannels,
   seedPreferences,
@@ -797,5 +798,124 @@ describe("Channels view", () => {
     await expectVisible(
       page.getByText("Enable notifications so you don't miss this alert."),
     )
+  })
+
+  describe("auto-sync on load and resume", () => {
+    function offlineChannel(suffix: string, displayName: string) {
+      return {
+        broadcaster_user_id: broadcasterId(suffix),
+        broadcaster_login: displayName.toLowerCase(),
+        broadcaster_display_name: displayName,
+        broadcaster_profile_image_url: null,
+        followed_at: "2024-01-01T00:00:00Z",
+        is_live: false,
+        stream_id: null,
+        category_id: null,
+        category_name: null,
+        title: null,
+        thumbnail_url: null,
+        viewer_count: null,
+        started_at: null,
+      }
+    }
+
+    function fulfillJson(body: unknown, status = 200) {
+      return {
+        status,
+        contentType: "application/json",
+        body: JSON.stringify(body),
+      }
+    }
+
+    it("should hold the skeleton until the auto-sync lands when the last sync is stale", async ({
+      authenticatedSession,
+    }) => {
+      // Same user row as the fixture's session; only the sync stamp changes.
+      await seedAuthenticatedUser({ lastFollowSyncAt: null })
+      const { page } = authenticatedSession
+      let syncCalls = 0
+      await page.route("**/api/channels/followed", (route) =>
+        route.fulfill(
+          fulfillJson({ data: [offlineChannel("d1_stale", "D1Stale")] }),
+        ),
+      )
+      await page.route("**/api/sync/follows", async (route) => {
+        syncCalls++
+        await new Promise((resolve) => setTimeout(resolve, 800))
+        await route.fulfill(
+          fulfillJson({ data: [offlineChannel("synced", "SyncedStreamer")] }),
+        )
+      })
+
+      await page.goto(WEB_URL)
+
+      await expectVisible(page.locator('[data-slot="skeleton"]').first())
+      await expectVisible(page.getByText("SyncedStreamer"))
+      expect(await page.getByText("D1Stale").count()).toBe(0)
+      expect(syncCalls).toBe(1)
+    })
+
+    it("should fall back to D1 data with a notice when the auto-sync fails", async ({
+      authenticatedSession,
+    }) => {
+      await seedAuthenticatedUser({ lastFollowSyncAt: null })
+      const { page } = authenticatedSession
+      await page.route("**/api/channels/followed", (route) =>
+        route.fulfill(
+          fulfillJson({ data: [offlineChannel("d1_fallback", "D1Fallback")] }),
+        ),
+      )
+      await page.route("**/api/sync/follows", (route) =>
+        route.fulfill(
+          fulfillJson(
+            {
+              error: {
+                code: "twitch_unavailable",
+                message: "boom",
+                requestId: "test",
+              },
+            },
+            502,
+          ),
+        ),
+      )
+
+      await page.goto(WEB_URL)
+
+      await expectVisible(page.getByText("D1Fallback"))
+      await expectVisible(
+        page.getByText("Couldn't refresh. Showing last synced data."),
+      )
+    })
+
+    it("should not auto-sync on load when the last sync is fresh, but should on resume once stale", async ({
+      authenticatedSession,
+    }) => {
+      const { page } = authenticatedSession
+      let syncCalls = 0
+      await page.route("**/api/channels/followed", (route) =>
+        route.fulfill(
+          fulfillJson({ data: [offlineChannel("fresh", "FreshStreamer")] }),
+        ),
+      )
+      await page.route("**/api/sync/follows", (route) => {
+        syncCalls++
+        return route.fulfill(
+          fulfillJson({ data: [offlineChannel("resumed", "ResumedStreamer")] }),
+        )
+      })
+      await page.clock.install()
+
+      await page.goto(WEB_URL)
+      await expectVisible(page.getByText("FreshStreamer"))
+      await page.evaluate(() => window.dispatchEvent(new Event("focus")))
+      expect(syncCalls).toBe(0)
+
+      await page.clock.fastForward("31:00")
+      await page.evaluate(() => window.dispatchEvent(new Event("focus")))
+
+      await expectVisible(page.getByText("ResumedStreamer"))
+      expect(syncCalls).toBe(1)
+    })
   })
 })

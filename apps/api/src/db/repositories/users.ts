@@ -86,7 +86,7 @@ export class UsersRepository {
 
   async updateLastFollowSyncAt(
     id: string,
-    lastFollowSyncAt: string,
+    lastFollowSyncAt: string | null,
     now: string,
   ): Promise<void> {
     await this.db

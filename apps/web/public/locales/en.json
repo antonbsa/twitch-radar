@@ -14,6 +14,7 @@
   "channels.title": "Channels",
   "channels.sync": "Sync",
   "channels.load_error": "Failed to load channels. Try syncing or reload the page.",
+  "channels.sync_stale_notice": "Couldn't refresh. Showing last synced data.",
   "channels.empty": "No followed channels yet. Sync to pull your Twitch follows.",
   "channels.live": "Live",
   "channels.offline": "Offline",
