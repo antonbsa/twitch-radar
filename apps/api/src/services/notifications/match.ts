@@ -113,6 +113,7 @@ function buildPayload(
   previousCategoryName: string | null,
   channelState: ChannelStateRecord | null,
   broadcasterLogin: string | null,
+  broadcasterAvatarUrl: string | null,
 ): NotificationPayload {
   const body = buildBody(
     trigger,
@@ -133,6 +134,7 @@ function buildPayload(
     ...(channelState?.thumbnail_url
       ? { image: channelState.thumbnail_url }
       : {}),
+    ...(broadcasterAvatarUrl ? { icon: broadcasterAvatarUrl } : {}),
   }
 }
 
@@ -192,6 +194,8 @@ export async function matchAndCreateDeliveries(
     monitored?.broadcaster_login ??
     broadcasterUserId
   const categoryName = change.next_category_name ?? categoryId
+  const broadcasterAvatarUrl =
+    await db.followedChannels.findProfileImageUrl(broadcasterUserId)
 
   // Payload can no longer be built once and reused for every matched user —
   // `lang` is per-recipient — so language is batch-loaded up front instead.
@@ -221,6 +225,7 @@ export async function matchAndCreateDeliveries(
         change.previous_category_name,
         channelState,
         monitored?.broadcaster_login ?? null,
+        broadcasterAvatarUrl,
       )
       await queue.send({ deliveryId: delivery.id, userId, payload })
     }

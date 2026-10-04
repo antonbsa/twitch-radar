@@ -80,6 +80,10 @@ export async function sweepNotificationSnoozes(
       const broadcasterLogin =
         monitored?.broadcaster_login ?? followed?.broadcaster_login ?? null
       const categoryName = channelState.category_name ?? snooze.category_id
+      const broadcasterAvatarUrl =
+        await db.followedChannels.findProfileImageUrl(
+          snooze.broadcaster_user_id,
+        )
 
       const delivery = await db.notificationDeliveries.insertPendingIfNew({
         userId: snooze.user_id,
@@ -107,6 +111,7 @@ export async function sweepNotificationSnoozes(
             ...(channelState.thumbnail_url
               ? { image: channelState.thumbnail_url }
               : {}),
+            ...(broadcasterAvatarUrl ? { icon: broadcasterAvatarUrl } : {}),
           },
         })
       }

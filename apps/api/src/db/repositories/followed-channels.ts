@@ -133,6 +133,22 @@ export class FollowedChannelsRepository {
     )
   }
 
+  /** Any follower's stored avatar for the broadcaster; they're all the same Twitch user. */
+  async findProfileImageUrl(broadcasterUserId: string): Promise<string | null> {
+    const row = await this.db
+      .select({ url: followedChannels.broadcasterProfileImageUrl })
+      .from(followedChannels)
+      .where(
+        and(
+          eq(followedChannels.broadcasterUserId, broadcasterUserId),
+          isNotNull(followedChannels.broadcasterProfileImageUrl),
+        ),
+      )
+      .limit(1)
+      .get()
+    return row?.url ?? null
+  }
+
   async findUserIdsByBroadcasterUserId(
     broadcasterUserId: string,
   ): Promise<string[]> {
