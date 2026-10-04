@@ -7,6 +7,8 @@ on:
   push:
     branches:
       - main
+  # Deploy workflows call this so they gate on the same checks as PRs.
+  workflow_call:
 
 jobs:
   eslint:
