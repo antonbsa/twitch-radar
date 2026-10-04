@@ -3,7 +3,7 @@
 ## Project Map
 
 - Monorepo: `apps/api` (Hono on Cloudflare Workers), `apps/web` (React/Vite PWA), `infra` (D1 migrations, scripts), `tests/{api,web}`.
-- Package-specific rules live in nested files, loaded when you work there: [apps/api/AGENTS.md](apps/api/AGENTS.md), [apps/web/AGENTS.md](apps/web/AGENTS.md), [infra/AGENTS.md](infra/AGENTS.md), [tests/web/AGENTS.md](tests/web/AGENTS.md).
+- Package-specific rules live in nested files, loaded when you work there: [apps/api/AGENTS.md](apps/api/AGENTS.md), [apps/web/AGENTS.md](apps/web/AGENTS.md), [infra/AGENTS.md](infra/AGENTS.md), [tests/api/AGENTS.md](tests/api/AGENTS.md), [tests/web/AGENTS.md](tests/web/AGENTS.md).
 - Decisions: `docs/decisions` (ADRs, [ADR 0001](docs/decisions/0001-keep-project-decisions-in-adrs.md)). Research conclusions: `docs/notes` (TNs, [ADR 0039](docs/decisions/0039-adopt-technical-notes-for-non-decision-research.md)). HTTP surface: [docs/api-contract.md](docs/api-contract.md).
 - Where guidance goes: needed on most edits → this file; scoped to a directory → that directory's `AGENTS.md` (plus a `CLAUDE.md` containing `@AGENTS.md`); a procedure needed for one task only and longer than ~15 lines → `docs/<topic>.md`, linked from the nearest `AGENTS.md` with its trigger ("Before X, read Y"); a decision → ADR. Re-check placement when a section grows or its trigger changes.
 - `specs/mvp/00. architecture.md` is background reference for the product/system; the MVP spec is closed to new work.

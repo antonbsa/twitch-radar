@@ -1,5 +1,5 @@
 <!--
-Title: follow the Conventional Commits prefixes from CLAUDE.md's "Commit Message Rules"
+Title: follow the Conventional Commits prefixes from the root AGENTS.md "Commits" section
 (feat:, fix:, docs:, test:, chore:, refactor:), e.g. "feat: add stale-follow re-sync cron"
 -->
 
