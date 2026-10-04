@@ -57,9 +57,13 @@ export const it = base.extend<E2eFixtures>({
     // "normally connected" user nearly every test implicitly assumes. Tests
     // that specifically want the reconnect-required state (e.g. a mid-session
     // 401) provoke it themselves rather than relying on the fixture default.
+    // Also stamp a fresh follow sync so the app's auto-sync on load (issue
+    // #88) doesn't fire a real POST /sync/follows; tests covering auto-sync
+    // re-seed lastFollowSyncAt: null and route-mock the sync themselves.
     const { userId, sessionId } = await seedAuthenticatedUser({
       accessToken: "e2e-fixture-access-token",
       refreshToken: "e2e-fixture-refresh-token",
+      lastFollowSyncAt: new Date().toISOString(),
     })
     const session = await openBrowser(sessionId)
     try {

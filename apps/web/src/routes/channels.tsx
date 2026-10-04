@@ -4,13 +4,19 @@ import { RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ChannelRow } from "@/components/channel-row"
+import { ChannelRowSkeleton } from "@/components/channel-row-skeleton"
 import { ChannelFiltersBar } from "@/components/channel-filters-bar"
 import { ChannelPreferencesDialog } from "@/components/channel-preferences-dialog"
 import { ChannelDetailModal } from "@/components/channel-detail-modal"
 import { ReconnectRequired } from "@/components/reconnect-required"
 import { useAuth } from "@/context/auth-context"
 import { useLanguage } from "@/context/language-context"
-import { useFollowedChannels, useManualSyncFollows } from "@/hooks/use-channels"
+import {
+  isFollowSyncStale,
+  useAutoSyncFollowsStatus,
+  useFollowedChannels,
+  useManualSyncFollows,
+} from "@/hooks/use-channels"
 import {
   applyChannelFilters,
   DEFAULT_CHANNEL_FILTERS,
@@ -21,8 +27,20 @@ import { cn } from "@/lib/utils"
 import type { FollowedChannel } from "@/types/channel"
 
 export function ChannelsPage() {
-  const { data: channels, isLoading, isError } = useFollowedChannels()
-  const { reconnectRequired } = useAuth()
+  const {
+    data: channels,
+    isLoading: isChannelsLoading,
+    isError,
+  } = useFollowedChannels()
+  const { user, reconnectRequired } = useAuth()
+  const autoSyncStatus = useAutoSyncFollowsStatus()
+  // An auto-sync only runs when the last sync is stale (issue #88): hold the
+  // skeleton until it lands instead of painting stale D1 rows that would
+  // visibly reorder once the fresh list arrives.
+  const isLoading = isChannelsLoading || autoSyncStatus === "pending"
+  const autoSyncFailed =
+    autoSyncStatus === "error" &&
+    isFollowSyncStale(user?.last_follow_sync_at ?? null)
   const { t } = useLanguage()
   const syncFollows = useManualSyncFollows()
   const [configuringChannel, setConfiguringChannel] =
@@ -99,13 +117,17 @@ export function ChannelsPage() {
         </div>
       </div>
 
-      {isLoading && (
-        <div className="space-y-1 px-4">
-          <Skeleton className="h-14 w-full" />
-          <Skeleton className="h-14 w-full" />
-          <Skeleton className="h-14 w-full" />
-        </div>
+      {!isLoading && !isError && autoSyncFailed && reconnectRequired && (
+        <ReconnectRequired />
       )}
+
+      {!isLoading && !isError && autoSyncFailed && !reconnectRequired && (
+        <p role="status" className="px-4 pb-2 text-xs text-muted-foreground">
+          {t("channels.sync_stale_notice")}
+        </p>
+      )}
+
+      {isLoading && <ChannelsLoadingSkeleton />}
 
       {!isLoading && isError && reconnectRequired && <ReconnectRequired />}
 
@@ -180,6 +202,39 @@ export function ChannelsPage() {
           if (!open) setDetailChannel(null)
         }}
       />
+    </div>
+  )
+}
+
+/**
+ * Mirrors the loaded page chrome (filters bar, LIVE/OFFLINE headers, rows)
+ * box for box, so nothing shifts when the list resolves.
+ */
+function ChannelsLoadingSkeleton() {
+  return (
+    <div data-testid="channels-loading" aria-busy>
+      {/* Search, category trigger and icon-only sort, sized like ChannelFiltersBar. */}
+      <div className="flex items-center gap-2 px-4 pb-2">
+        <Skeleton className="h-11 flex-1 rounded-lg" />
+        <Skeleton className="h-11 w-28 shrink-0 rounded-lg sm:w-36" />
+        <Skeleton className="h-11 w-11 shrink-0 rounded-lg" />
+      </div>
+
+      <div className="px-4 pt-2 pb-1">
+        <Skeleton className="h-4 w-10" />
+      </div>
+      <ChannelRowSkeleton variant="live" />
+      <ChannelRowSkeleton variant="live" />
+      <ChannelRowSkeleton variant="live" />
+      <ChannelRowSkeleton variant="live" />
+      <ChannelRowSkeleton variant="live" />
+
+      <div className="px-4 pt-4 pb-1">
+        <Skeleton className="h-4 w-14" />
+      </div>
+      <ChannelRowSkeleton variant="offline" />
+      <ChannelRowSkeleton variant="offline" />
+      <ChannelRowSkeleton variant="offline" />
     </div>
   )
 }

@@ -128,16 +128,6 @@ export class GlobalCategoryPreferencesRepository {
     return rows.map(toRecord)
   }
 
-  /** Distinct users holding at least one active global preference. */
-  async listUserIdsWithActive(): Promise<string[]> {
-    const rows = await this.db
-      .selectDistinct({ userId: globalCategoryPreferences.userId })
-      .from(globalCategoryPreferences)
-      .where(isNull(globalCategoryPreferences.disabledAt))
-      .all()
-    return rows.map((row) => row.userId)
-  }
-
   /** Subset of the given users holding at least one active global preference. */
   async listUsersWithActive(userIds: string[]): Promise<Set<string>> {
     if (userIds.length === 0) return new Set()

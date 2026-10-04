@@ -8,6 +8,8 @@ type QueueEntry = {
 }
 
 const queue: QueueEntry[] = []
+// URLs of answered Twitch calls, so tests can assert which ids were requested.
+const requests: string[] = []
 
 function handleRequest(
   method: string,
@@ -21,8 +23,14 @@ function handleRequest(
     return
   }
 
+  if (url === "/__mock/requests" && method === "GET") {
+    respond(200, JSON.stringify(requests))
+    return
+  }
+
   if (url === "/__mock" && method === "DELETE") {
     queue.length = 0
+    requests.length = 0
     respond(204, "")
     return
   }
@@ -35,6 +43,7 @@ function handleRequest(
   }
 
   const [entry] = queue.splice(idx, 1)
+  requests.push(url)
   respond(entry.status, JSON.stringify(entry.body))
 }
 

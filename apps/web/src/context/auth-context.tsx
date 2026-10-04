@@ -24,6 +24,10 @@ interface AuthContextValue {
   refetch: () => Promise<void>
   logout: () => Promise<void>
   markReconnectRequired: () => void
+  // Keeps `user.last_follow_sync_at` current after a client-triggered sync,
+  // since /me is only fetched on load and the auto-sync staleness check
+  // (issue #88) reads it on every resume.
+  markFollowsSynced: (syncedAt: string) => void
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
@@ -70,6 +74,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setMutationReconnectRequired(true)
   }, [])
 
+  const markFollowsSynced = useCallback((syncedAt: string) => {
+    setUser((current) =>
+      current ? { ...current, last_follow_sync_at: syncedAt } : current,
+    )
+  }, [])
+
   const reconnectRequired = useMemo(
     () =>
       mutationReconnectRequired || (user?.twitch_reconnect_required ?? false),
@@ -85,6 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       refetch,
       logout,
       markReconnectRequired,
+      markFollowsSynced,
     }),
     [
       user,
@@ -93,6 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       refetch,
       logout,
       markReconnectRequired,
+      markFollowsSynced,
     ],
   )
 

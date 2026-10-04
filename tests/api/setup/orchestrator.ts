@@ -57,12 +57,37 @@ const mockTwitch = {
     await fetch(`${MOCK_TWITCH_URL}/__mock`, { method: "DELETE" })
   },
 
+  /** Paths (with query) of the mocked calls answered since the last reset. */
+  async requests(): Promise<string[]> {
+    const res = await fetch(`${MOCK_TWITCH_URL}/__mock/requests`)
+    return (await res.json()) as string[]
+  },
+
   onTokenExchange(body: unknown, status = 200) {
     return this.queue("/oauth2/token", body, status)
   },
 
   onUserInfo(body: unknown, status = 200) {
     return this.queue("/helix/users", body, status)
+  },
+
+  /** Get Users by id (avatar lookup); one call per chunk of up to 100 ids. */
+  onUsersByIds(
+    users: Array<{ id: string; profile_image_url: string }>,
+    status = 200,
+  ) {
+    // "?id=" keeps this apart from onUserInfo's id-less /helix/users call.
+    return this.queue(
+      "/helix/users?id=",
+      {
+        data: users.map((u) => ({
+          ...u,
+          login: `login_${u.id}`,
+          display_name: `Name_${u.id}`,
+        })),
+      },
+      status,
+    )
   },
 
   onFollowedChannels(

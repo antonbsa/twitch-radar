@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useNavigate } from "react-router"
+import { Loader2Icon } from "lucide-react"
 import { changelogs } from "virtual:changelog"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -9,6 +10,7 @@ import { WhatsNewSheet } from "@/components/whats-new-sheet"
 import { useAuth } from "@/context/auth-context"
 import { useLanguage } from "@/context/language-context"
 import { useManualSyncFollows } from "@/hooks/use-channels"
+import { useNavigationPending } from "@/hooks/use-navigation-pending"
 import {
   usePushNotifications,
   type PushStatus,
@@ -37,6 +39,7 @@ export function AccountPage() {
   const push = usePushNotifications()
   const navigate = useNavigate()
   const syncFollows = useManualSyncFollows()
+  const [isReconnecting, markReconnecting] = useNavigationPending()
   // All changelogs share the same version/date; English is enough for the badge.
   const latestVersion = changelogs.en[0]
 
@@ -120,8 +123,24 @@ export function AccountPage() {
       </Button>
 
       {reconnectRequired && (
-        <Button className="mt-3 w-full" asChild>
-          <a href="/api/auth/twitch/start">{t("account.reconnect_twitch")}</a>
+        <Button
+          className="mt-3 w-full aria-disabled:pointer-events-none aria-disabled:opacity-70"
+          asChild
+        >
+          {/* Native link click, not window.location: see login.tsx. */}
+          <a
+            href="/api/auth/twitch/start"
+            aria-busy={isReconnecting}
+            aria-disabled={isReconnecting}
+            onClick={markReconnecting}
+          >
+            {isReconnecting && <Loader2Icon className="animate-spin" />}
+            {t(
+              isReconnecting
+                ? "account.reconnecting"
+                : "account.reconnect_twitch",
+            )}
+          </a>
         </Button>
       )}
 

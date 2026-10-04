@@ -7,6 +7,7 @@ import {
 import { WEB_URL } from "./setup/browser"
 import { it } from "./setup/fixtures"
 import { expectVisible } from "./setup/assertions"
+import { preventLinkNavigation } from "./setup/navigation"
 import {
   mockNotificationPermission,
   mockPushEnvironment,
@@ -172,10 +173,31 @@ describe("Account view", () => {
     await revokeSession(sessionId)
 
     await page.getByRole("button", { name: "Sync Channels" }).click()
-    await expectVisible(page.getByRole("link", { name: "Reconnect Twitch" }))
+    await expectVisible(page.locator(`a[href="/api/auth/twitch/start"]`))
     expect(new URL(page.url()).pathname).toBe("/account")
     // The reconnect flow replaces the generic sync error toast.
     expect(await page.locator("[data-sonner-toast]").count()).toBe(0)
+  })
+
+  it("should show a pending state on Reconnect Twitch as soon as it is clicked", async ({
+    authenticatedSession,
+  }) => {
+    const { page, sessionId } = authenticatedSession
+    await page.goto(`${WEB_URL}/account`)
+    await expectVisible(page.getByRole("button", { name: "Log Out" }))
+    await revokeSession(sessionId)
+    await page.getByRole("button", { name: "Sync Channels" }).click()
+
+    const reconnect = page.locator(`a[href="/api/auth/twitch/start"]`)
+    await expectVisible(reconnect)
+    expect(await reconnect.getAttribute("aria-busy")).toBe("false")
+    expect(await reconnect.getAttribute("href")).toBe("/api/auth/twitch/start")
+
+    await preventLinkNavigation(page, "/api/auth/twitch/start")
+    await reconnect.click()
+    await expect.poll(() => reconnect.getAttribute("aria-busy")).toBe("true")
+    expect(await reconnect.getAttribute("aria-disabled")).toBe("true")
+    await expectVisible(page.getByRole("link", { name: "Reconnecting…" }))
   })
 
   it("should open the What's New sheet from the version badge", async ({

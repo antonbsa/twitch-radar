@@ -113,6 +113,7 @@ function buildPayload(
   previousCategoryName: string | null,
   channelState: ChannelStateRecord | null,
   broadcasterLogin: string | null,
+  broadcasterAvatarUrl: string | null,
 ): NotificationPayload {
   const body = buildBody(
     trigger,
@@ -133,6 +134,7 @@ function buildPayload(
     ...(channelState?.thumbnail_url
       ? { image: channelState.thumbnail_url }
       : {}),
+    ...(broadcasterAvatarUrl ? { icon: broadcasterAvatarUrl } : {}),
   }
 }
 
@@ -181,8 +183,9 @@ export async function matchAndCreateDeliveries(
   }
   if (matchedUserIds.size === 0) return
 
-  const [monitored] = await db.monitoredChannels.findByBroadcasterUserIds([
-    broadcasterUserId,
+  const [[monitored], broadcasterAvatarUrl] = await Promise.all([
+    db.monitoredChannels.findByBroadcasterUserIds([broadcasterUserId]),
+    db.followedChannels.findProfileImageUrl(broadcasterUserId),
   ])
   // Fallback to the raw id rather than English prose (ADR 0044): these
   // values flow into `params` verbatim into every language's template, so a
@@ -221,6 +224,7 @@ export async function matchAndCreateDeliveries(
         change.previous_category_name,
         channelState,
         monitored?.broadcaster_login ?? null,
+        broadcasterAvatarUrl,
       )
       await queue.send({ deliveryId: delivery.id, userId, payload })
     }
