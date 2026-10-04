@@ -10,6 +10,7 @@ import {
 import {
   getAllFollowedChannels,
   getAllFollowedStreams,
+  getUsersByIds,
   resolveThumbnailUrl,
   type TwitchFollowedChannel,
   type TwitchFollowedStream,
@@ -27,21 +28,64 @@ const MAX_FOLLOW_SYNCS_PER_RUN = 3
 export interface FollowedChannelsSyncFetch {
   channels: TwitchFollowedChannel[]
   streamByBroadcasterId: Map<string, TwitchFollowedStream>
+  profileImageByBroadcasterId: Map<string, string>
   payload: FollowedChannelViewItem[]
 }
 
 /**
- * Twitch side of a follow sync only: the paginated follows/streams fetch,
- * shaped into the same response payload `GET /channels/followed` returns
- * (issue #83) — no D1 access, so callers can respond with `payload` before
- * persisting anything.
+ * Get Followed Channels has no profile image, so avatars come from D1 and,
+ * for follows with none stored yet, from Get Users; stored ones aren't
+ * re-fetched, to keep the sync path cheap (issue #34). A failed lookup only
+ * costs avatars (letter fallback, retried next sync), never the sync.
+ */
+async function resolveProfileImages(
+  config: AppConfig,
+  accessToken: string,
+  channels: TwitchFollowedChannel[],
+  stored: Map<string, string>,
+  userId: string,
+): Promise<Map<string, string>> {
+  const missing = channels
+    .map((ch) => ch.broadcaster_id)
+    .filter((id) => !stored.has(id))
+  if (missing.length === 0) return stored
+
+  const resolved = new Map(stored)
+  try {
+    const users = await getUsersByIds(
+      config.twitchClientId,
+      accessToken,
+      missing,
+      config.twitchApiBaseUrl,
+    )
+    for (const user of users) {
+      if (user.profile_image_url) resolved.set(user.id, user.profile_image_url)
+    }
+  } catch (error) {
+    logger.warn("Broadcaster avatar lookup failed", {
+      userId,
+      missingCount: missing.length,
+      ...serializeError(error),
+    })
+  }
+  return resolved
+}
+
+/**
+ * Twitch side of a follow sync: the paginated follows/streams fetch plus the
+ * avatar lookup, shaped into the same response payload `GET
+ * /channels/followed` returns (issue #83). Its only D1 access is a read of
+ * stored avatars, run alongside the Twitch fetch, so callers can still
+ * respond with `payload` before persisting anything.
  */
 export async function fetchFollowedChannelsSync(
+  db: Database,
   config: AppConfig,
+  userId: string,
   twitchUserId: string,
   accessToken: string,
 ): Promise<FollowedChannelsSyncFetch> {
-  const [channels, streams] = await Promise.all([
+  const [channels, streams, storedProfileImages] = await Promise.all([
     getAllFollowedChannels(
       config.twitchClientId,
       accessToken,
@@ -54,7 +98,16 @@ export async function fetchFollowedChannelsSync(
       twitchUserId,
       config.twitchApiBaseUrl,
     ),
+    db.followedChannels.findProfileImageUrlsByUserId(userId),
   ])
+
+  const profileImageByBroadcasterId = await resolveProfileImages(
+    config,
+    accessToken,
+    channels,
+    storedProfileImages,
+    userId,
+  )
 
   const streamByBroadcasterId = new Map(streams.map((s) => [s.user_id, s]))
 
@@ -63,9 +116,8 @@ export async function fetchFollowedChannelsSync(
       broadcaster_user_id: ch.broadcaster_id,
       broadcaster_login: ch.broadcaster_login,
       broadcaster_display_name: ch.broadcaster_name,
-      // Twitch's followed-channels endpoint doesn't return a profile image;
-      // followedChannels.upsertAll below leaves the column null the same way.
-      broadcaster_profile_image_url: null,
+      broadcaster_profile_image_url:
+        profileImageByBroadcasterId.get(ch.broadcaster_id) ?? null,
       followed_at: ch.followed_at,
     })),
     new Map(
@@ -99,7 +151,12 @@ export async function fetchFollowedChannelsSync(
     ),
   )
 
-  return { channels, streamByBroadcasterId, payload }
+  return {
+    channels,
+    streamByBroadcasterId,
+    profileImageByBroadcasterId,
+    payload,
+  }
 }
 
 /**
@@ -113,10 +170,11 @@ async function persistFollowedChannelsSync(
   db: Database,
   config: AppConfig,
   userId: string,
-  channels: TwitchFollowedChannel[],
-  streamByBroadcasterId: Map<string, TwitchFollowedStream>,
+  fetched: Omit<FollowedChannelsSyncFetch, "payload">,
   now: string,
 ): Promise<void> {
+  const { channels, streamByBroadcasterId, profileImageByBroadcasterId } =
+    fetched
   // followedChannels and channelState write different tables with no
   // dependency on each other's result — run them concurrently instead of
   // stacking two sequential D1 round trips.
@@ -127,6 +185,8 @@ async function persistFollowedChannelsSync(
         broadcasterUserId: ch.broadcaster_id,
         broadcasterLogin: ch.broadcaster_login,
         broadcasterDisplayName: ch.broadcaster_name,
+        broadcasterProfileImageUrl:
+          profileImageByBroadcasterId.get(ch.broadcaster_id) ?? null,
         followedAt: ch.followed_at,
         now,
       })),
@@ -200,17 +260,15 @@ export async function syncFollowedChannels(
   accessToken: string,
 ): Promise<FollowedChannelViewItem[]> {
   const now = new Date().toISOString()
-  const { channels, streamByBroadcasterId, payload } =
-    await fetchFollowedChannelsSync(config, twitchUserId, accessToken)
-  await persistFollowedChannelsSync(
+  const fetched = await fetchFollowedChannelsSync(
     db,
     config,
     userId,
-    channels,
-    streamByBroadcasterId,
-    now,
+    twitchUserId,
+    accessToken,
   )
-  return payload
+  await persistFollowedChannelsSync(db, config, userId, fetched, now)
+  return fetched.payload
 }
 
 /**
@@ -229,14 +287,7 @@ export async function persistFollowedChannelsSyncDeferred(
   now: string,
 ): Promise<void> {
   try {
-    await persistFollowedChannelsSync(
-      db,
-      config,
-      userId,
-      fetched.channels,
-      fetched.streamByBroadcasterId,
-      now,
-    )
+    await persistFollowedChannelsSync(db, config, userId, fetched, now)
   } catch (error) {
     logger.error("Deferred follow sync write failed", {
       userId,

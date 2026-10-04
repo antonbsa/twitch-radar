@@ -1,4 +1,4 @@
-import { and, eq, inArray, sql } from "drizzle-orm"
+import { and, eq, inArray, isNotNull, sql } from "drizzle-orm"
 import { asBatch, type AppDatabase } from "../client"
 import { followedChannels } from "../schema"
 
@@ -64,7 +64,9 @@ export class FollowedChannelsRepository {
             set: {
               broadcasterLogin: sql`excluded.broadcaster_login`,
               broadcasterDisplayName: sql`excluded.broadcaster_display_name`,
-              broadcasterProfileImageUrl: sql`excluded.broadcaster_profile_image_url`,
+              // A null avatar (new follow whose lookup failed) never blanks a
+              // stored one; Twitch always returns a URL, even its default image.
+              broadcasterProfileImageUrl: sql`coalesce(excluded.broadcaster_profile_image_url, followed_channels.broadcaster_profile_image_url)`,
               followedAt: sql`excluded.followed_at`,
               lastSyncedAt: sql`excluded.last_synced_at`,
             },
@@ -105,6 +107,30 @@ export class FollowedChannelsRepository {
       followed_at: row.followedAt,
       last_synced_at: row.lastSyncedAt,
     }
+  }
+
+  /** Stored avatars for a user's follows, keyed by broadcaster id; rows without one are absent. */
+  async findProfileImageUrlsByUserId(
+    userId: string,
+  ): Promise<Map<string, string>> {
+    const rows = await this.db
+      .select({
+        broadcasterUserId: followedChannels.broadcasterUserId,
+        url: followedChannels.broadcasterProfileImageUrl,
+      })
+      .from(followedChannels)
+      .where(
+        and(
+          eq(followedChannels.userId, userId),
+          isNotNull(followedChannels.broadcasterProfileImageUrl),
+        ),
+      )
+      .all()
+    return new Map(
+      rows.flatMap((row) =>
+        row.url ? [[row.broadcasterUserId, row.url]] : [],
+      ),
+    )
   }
 
   async findUserIdsByBroadcasterUserId(

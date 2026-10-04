@@ -329,6 +329,42 @@ export async function getAuthenticatedUser(
   return user
 }
 
+/** Works with a user or an app access token; unknown ids are just absent from the result. */
+export async function getUsersByIds(
+  clientId: string,
+  accessToken: string,
+  userIds: string[],
+  apiBaseUrl = "https://api.twitch.tv",
+): Promise<TwitchUser[]> {
+  // Get Users accepts at most 100 id params per request.
+  const BATCH_SIZE = 100
+  const results: TwitchUser[] = []
+
+  for (let i = 0; i < userIds.length; i += BATCH_SIZE) {
+    const url = new URL(`${apiBaseUrl}/helix/users`)
+    for (const userId of userIds.slice(i, i + BATCH_SIZE)) {
+      url.searchParams.append("id", userId)
+    }
+
+    const res = await fetch(url.toString(), {
+      headers: {
+        "Client-Id": clientId,
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
+    if (!res.ok)
+      throw new TwitchApiError(
+        `Users fetch failed`,
+        res.status,
+        await readErrorBody(res),
+      )
+    const body = (await res.json()) as { data: TwitchUser[] }
+    results.push(...body.data)
+  }
+
+  return results
+}
+
 export async function getAllFollowedChannels(
   clientId: string,
   accessToken: string,
