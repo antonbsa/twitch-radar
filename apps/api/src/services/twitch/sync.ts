@@ -34,8 +34,8 @@ export interface FollowedChannelsSyncFetch {
 
 /**
  * Get Followed Channels has no profile image, so avatars come from D1 and,
- * for follows with none stored yet, from Get Users; stored ones aren't
- * re-fetched, to keep the sync path cheap (issue #34). A failed lookup only
+ * for follows with none stored yet, from Get Users; stored ones are left to
+ * the monthly `refreshBroadcasterAvatars`, keeping sync cheap (issue #34). A failed lookup only
  * costs avatars (letter fallback, retried next sync), never the sync.
  */
 async function resolveProfileImages(

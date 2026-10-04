@@ -149,6 +149,33 @@ export class FollowedChannelsRepository {
     return row?.url ?? null
   }
 
+  async listDistinctBroadcasterUserIds(): Promise<string[]> {
+    const rows = await this.db
+      .selectDistinct({ broadcasterUserId: followedChannels.broadcasterUserId })
+      .from(followedChannels)
+      .all()
+    return rows.map((row) => row.broadcasterUserId)
+  }
+
+  /** Sets the avatar on every follow row of each broadcaster, in one D1 round trip. */
+  async updateProfileImageUrls(
+    updates: Array<{ broadcasterUserId: string; profileImageUrl: string }>,
+  ): Promise<void> {
+    if (updates.length === 0) return
+    await this.db.batch(
+      asBatch(
+        updates.map((update) =>
+          this.db
+            .update(followedChannels)
+            .set({ broadcasterProfileImageUrl: update.profileImageUrl })
+            .where(
+              eq(followedChannels.broadcasterUserId, update.broadcasterUserId),
+            ),
+        ),
+      ),
+    )
+  }
+
   async findUserIdsByBroadcasterUserId(
     broadcasterUserId: string,
   ): Promise<string[]> {
