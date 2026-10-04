@@ -135,7 +135,7 @@ describe("Channels view", () => {
     await expectVisible(row.getByText("In Just Chatting for 1h 23m"))
   })
 
-  it("should show a loading skeleton while channels are being fetched", async ({
+  it("should show a loading skeleton mirroring the filters bar, section headers and live/offline rows", async ({
     authenticatedSession,
   }) => {
     const { page } = authenticatedSession
@@ -149,7 +149,68 @@ describe("Channels view", () => {
     })
 
     await page.goto(WEB_URL)
-    await expectVisible(page.locator('[data-slot="skeleton"]').first())
+    const loading = page.getByTestId("channels-loading")
+    await expectVisible(loading)
+    expect(await loading.getByTestId("channel-row-skeleton").count()).toBe(8)
+  })
+
+  it("should not shift live or offline rows when the skeleton is replaced by loaded channels", async ({
+    authenticatedSession,
+  }) => {
+    const live = broadcasterId("noshift_live")
+    const offline = broadcasterId("noshift_offline")
+    await seedFollowedChannels([
+      {
+        broadcasterUserId: live,
+        broadcasterLogin: "noshiftlive",
+        broadcasterDisplayName: "NoShiftLive",
+      },
+      {
+        broadcasterUserId: offline,
+        broadcasterLogin: "noshiftoffline",
+        broadcasterDisplayName: "NoShiftOffline",
+      },
+    ])
+    await seedChannelState([
+      {
+        broadcasterUserId: live,
+        isLive: true,
+        categoryName: "Just Chatting",
+        viewerCount: 10,
+        startedAt: new Date(Date.now() - 10 * 60_000).toISOString(),
+      },
+    ])
+
+    const { page } = authenticatedSession
+    let release!: () => void
+    const released = new Promise<void>((resolve) => (release = resolve))
+    await page.route("**/api/channels/followed", async (route) => {
+      await released
+      await route.continue()
+    })
+
+    await page.goto(WEB_URL)
+    const skeletonRows = page.getByTestId("channel-row-skeleton")
+    await expectVisible(skeletonRows.first())
+    const liveSkeleton = await skeletonRows.nth(0).boundingBox()
+    const offlineSkeletonHeight = (await skeletonRows.nth(5).boundingBox())
+      ?.height
+
+    release()
+    const liveRow = page.locator(
+      `[data-testid="channel-row"][data-broadcaster-user-id="${live}"]`,
+    )
+    const offlineRow = page.locator(
+      `[data-testid="channel-row"][data-broadcaster-user-id="${offline}"]`,
+    )
+    await expectVisible(liveRow)
+
+    // Earlier tests' channels may sort ahead of ours, so position is checked
+    // on whichever row comes first and height on our own rows.
+    const firstRow = await page.getByTestId("channel-row").first().boundingBox()
+    expect(firstRow?.y).toBe(liveSkeleton?.y)
+    expect((await liveRow.boundingBox())?.height).toBe(liveSkeleton?.height)
+    expect((await offlineRow.boundingBox())?.height).toBe(offlineSkeletonHeight)
   })
 
   it("should show an error state when channels fail to load", async ({

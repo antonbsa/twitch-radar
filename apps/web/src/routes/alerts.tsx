@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { AddChannelDialog } from "@/components/add-channel-dialog"
 import { AddGlobalCategoryDialog } from "@/components/add-global-category-dialog"
 import { ChannelAlertsCard } from "@/components/channel-alerts-card"
+import { ChannelRowSkeleton } from "@/components/channel-row-skeleton"
 import { ChannelPreferencesDialog } from "@/components/channel-preferences-dialog"
 import { GlobalAlertsCard } from "@/components/global-alerts-card"
 import { ReconnectRequired } from "@/components/reconnect-required"
@@ -147,12 +148,15 @@ export function AlertsPage() {
         </div>
       </div>
 
-      {channelSectionLoading && (
-        <div className="space-y-2 px-4">
-          <Skeleton className="h-16 w-full" />
-          <Skeleton className="h-16 w-full" />
-        </div>
-      )}
+      {channelSectionLoading &&
+        [0, 1].map((i) => (
+          <div
+            key={i}
+            className="mx-4 mb-2 rounded-lg border border-border bg-card"
+          >
+            <ChannelRowSkeleton variant="offline" />
+          </div>
+        ))}
 
       {!channelSectionLoading &&
         channelSectionError &&
