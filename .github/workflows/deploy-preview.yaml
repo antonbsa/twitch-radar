@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   # A push to main can be a direct push or the result of merging a PR
-  # (merge/squash/rebase). If it went through a PR, linting.yaml/tests.yaml
+  # (merge/squash/rebase). If it went through a PR, code-quality.yaml/tests.yaml
   # already ran these same checks against that PR's pull_request event -
   # rerunning them here would be pure duplication. Commit-message matching
   # can't reliably tell the two apart (rebase merges carry no PR reference
