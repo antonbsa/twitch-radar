@@ -9,7 +9,7 @@ import { LanguageSelector } from "@/components/language-selector"
 import { WhatsNewSheet } from "@/components/whats-new-sheet"
 import { useAuth } from "@/context/auth-context"
 import { useLanguage } from "@/context/language-context"
-import { useSyncFollows } from "@/hooks/use-channels"
+import { useManualSyncFollows } from "@/hooks/use-channels"
 import { useNavigationPending } from "@/hooks/use-navigation-pending"
 import {
   usePushNotifications,
@@ -38,7 +38,7 @@ export function AccountPage() {
   const [whatsNewOpen, setWhatsNewOpen] = useState(false)
   const push = usePushNotifications()
   const navigate = useNavigate()
-  const syncFollows = useSyncFollows()
+  const syncFollows = useManualSyncFollows()
   const [isReconnecting, markReconnecting] = useNavigationPending()
   // All changelogs share the same version/date; English is enough for the badge.
   const latestVersion = changelogs.en[0]
@@ -117,7 +117,7 @@ export function AccountPage() {
         variant="outline"
         className="mt-6 w-full"
         disabled={syncFollows.isPending}
-        onClick={() => syncFollows.mutate()}
+        onClick={() => syncFollows.sync()}
       >
         {t("account.sync_channels")}
       </Button>

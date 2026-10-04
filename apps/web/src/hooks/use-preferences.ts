@@ -1,5 +1,8 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useLanguage } from "@/context/language-context"
 import { api } from "@/lib/api"
+import { showMutationErrorToast } from "@/lib/error-toast"
+import { showPreferenceToast } from "@/lib/push-toast"
 import { useSessionAwareMutation } from "@/hooks/use-session-aware-mutation"
 import type { Category, PreferencesResponse } from "@/types/preference"
 
@@ -13,9 +16,25 @@ export function usePreferences() {
   })
 }
 
-export function useAddChannelPreference() {
+/**
+ * Feedback shared by every preference mutation. Call sites may add their own
+ * `onSuccess` (e.g. the push-enable prompt), which replaces this success toast.
+ */
+function usePreferenceMutationFeedback(action: "add" | "remove") {
   const queryClient = useQueryClient()
+  const { t } = useLanguage()
 
+  return {
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: PREFERENCES_QUERY_KEY })
+      showPreferenceToast(t(`preferences.${action}_success`))
+    },
+    onError: (error: Error) =>
+      showMutationErrorToast(error, t(`preferences.${action}_error`)),
+  }
+}
+
+export function useAddChannelPreference() {
   return useSessionAwareMutation({
     mutationFn: ({
       broadcasterUserId,
@@ -29,41 +48,31 @@ export function useAddChannelPreference() {
         category_id: category.id,
         category_name: category.name,
       }),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: PREFERENCES_QUERY_KEY }),
+    ...usePreferenceMutationFeedback("add"),
   })
 }
 
 export function useRemoveChannelPreference() {
-  const queryClient = useQueryClient()
-
   return useSessionAwareMutation({
     mutationFn: (id: string) => api.delete(`/preferences/channel/${id}`),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: PREFERENCES_QUERY_KEY }),
+    ...usePreferenceMutationFeedback("remove"),
   })
 }
 
 export function useAddGlobalPreference() {
-  const queryClient = useQueryClient()
-
   return useSessionAwareMutation({
     mutationFn: (category: Category) =>
       api.post("/preferences/global", {
         category_id: category.id,
         category_name: category.name,
       }),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: PREFERENCES_QUERY_KEY }),
+    ...usePreferenceMutationFeedback("add"),
   })
 }
 
 export function useRemoveGlobalPreference() {
-  const queryClient = useQueryClient()
-
   return useSessionAwareMutation({
     mutationFn: (id: string) => api.delete(`/preferences/global/${id}`),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: PREFERENCES_QUERY_KEY }),
+    ...usePreferenceMutationFeedback("remove"),
   })
 }

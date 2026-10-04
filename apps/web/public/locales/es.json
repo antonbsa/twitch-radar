@@ -106,6 +106,14 @@
   "push.banner_prompt": "Activa las notificaciones para no perderte esta alerta.",
   "push.banner_enable_cta": "Activar",
 
+  "preferences.add_success": "Alerta guardada.",
+  "preferences.add_error": "No se pudo guardar la alerta. Inténtalo de nuevo.",
+  "preferences.remove_success": "Alerta eliminada.",
+  "preferences.remove_error": "No se pudo eliminar la alerta. Inténtalo de nuevo.",
+
+  "sync.success": "Canales sincronizados.",
+  "sync.error": "No se pudieron sincronizar los canales. Inténtalo de nuevo.",
+
   "reconnect.message": "Tu conexión con Twitch necesita renovarse.",
   "reconnect.cta": "Reconectar Twitch",
 

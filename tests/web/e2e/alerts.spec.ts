@@ -172,6 +172,9 @@ describe("Alerts view", () => {
     )
     await expectVisible(page.getByText("Minecraft"))
     await expectHidden(page.getByText("No global alerts set."))
+    // The push prompt takes over the "Alert saved." toast's slot (#24).
+    expect(await page.locator("[data-sonner-toast]").count()).toBe(1)
+    expect(await page.getByText("Alert saved.").count()).toBe(0)
 
     const removeButton = page.getByRole("button", { name: "Remove Minecraft" })
     await removeButton.click()
@@ -183,6 +186,49 @@ describe("Alerts view", () => {
     await removeButton.click()
     await expectVisible(page.getByText("No global alerts set."))
     await expectHidden(page.getByText("Minecraft"))
+    // The removal toast replaces the prompt in the same slot without
+    // inheriting its Enable action.
+    await expectVisible(page.getByText("Alert removed."))
+    expect(await page.locator("[data-sonner-toast]").count()).toBe(1)
+    expect(await page.getByRole("button", { name: "Enable" }).count()).toBe(0)
+  })
+
+  it("should show an error toast and keep the dialog open when adding a category fails", async ({
+    authenticatedSession,
+  }) => {
+    const { page } = authenticatedSession
+    await page.route("**/api/categories/search*", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          data: [{ id: "27471", name: "Minecraft", box_art_url: null }],
+        }),
+      }),
+    )
+    await page.route("**/api/preferences/global", (route) =>
+      route.fulfill({
+        status: 500,
+        contentType: "application/json",
+        body: JSON.stringify({
+          error: {
+            code: "internal_error",
+            message: "boom",
+            requestId: "req_e2e",
+          },
+        }),
+      }),
+    )
+
+    await page.goto(`${WEB_URL}/alerts`)
+    await page.getByRole("button", { name: "Add global category" }).click()
+    const dialog = page.getByRole("dialog")
+    await dialog.getByPlaceholder("Search categories").fill("mine")
+    await dialog.getByRole("button", { name: "Minecraft" }).click()
+
+    await expectVisible(page.getByText("Could not save the alert. Try again."))
+    await expectVisible(dialog)
+    expect(await page.getByText("Alert saved.").count()).toBe(0)
   })
 
   // These two run before any test below seeds followed channels: adding a
@@ -267,9 +313,11 @@ describe("Alerts view", () => {
     await dialog.getByPlaceholder("Search categories").fill("music")
     await dialog.getByRole("button", { name: "Music" }).click()
 
-    // No prompt — the sheet closes on success exactly as before #29.
+    // No prompt — the sheet closes on success exactly as before #29, and
+    // the plain success toast stays.
     await expectHidden(dialog)
     await expectVisible(page.getByText("Music"))
+    await expectVisible(page.getByText("Alert saved."))
     expect(
       await page
         .getByText("Enable notifications so you don't miss this alert.")
@@ -366,6 +414,7 @@ describe("Alerts view", () => {
     await expectHidden(page.getByText("GTA V"))
     await expectVisible(page.getByText("Minecraft"))
     await expectVisible(page.getByText("GroupedStreamer"))
+    await expectVisible(page.getByText("Alert removed."))
   })
 
   it("should mark a per-channel category that an active global preference also covers", async ({

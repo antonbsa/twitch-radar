@@ -15,7 +15,7 @@ import {
   isFollowSyncStale,
   useAutoSyncFollowsStatus,
   useFollowedChannels,
-  useSyncFollows,
+  useManualSyncFollows,
 } from "@/hooks/use-channels"
 import {
   applyChannelFilters,
@@ -42,7 +42,7 @@ export function ChannelsPage() {
     autoSyncStatus === "error" &&
     isFollowSyncStale(user?.last_follow_sync_at ?? null)
   const { t } = useLanguage()
-  const syncFollows = useSyncFollows()
+  const syncFollows = useManualSyncFollows()
   const [configuringChannel, setConfiguringChannel] =
     useState<FollowedChannel | null>(null)
   const [filters, setFilters] = useState<ChannelFilters>(
@@ -104,7 +104,7 @@ export function ChannelsPage() {
             variant="outline"
             size="sm"
             disabled={syncFollows.isPending}
-            onClick={() => syncFollows.mutate()}
+            onClick={() => syncFollows.sync()}
           >
             <RefreshCw
               className={cn(

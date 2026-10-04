@@ -1,5 +1,22 @@
-import { toast } from "sonner"
+import { toast, type ExternalToast } from "sonner"
 import type { PushStatus } from "@/hooks/use-push-notifications"
+
+// One slot for "preference saved" and the push-enable prompt that follows it,
+// so the prompt replaces the confirmation instead of stacking under it (#24).
+const PREFERENCE_TOAST_ID = "preference-feedback"
+
+/**
+ * Shows `message` in the shared preference-feedback slot. Sonner merges an
+ * update into the toast already holding the id, so every call sets `action`
+ * and `duration` explicitly: otherwise a prompt's Enable button and infinite
+ * duration would leak into a later "saved" toast.
+ */
+export function showPreferenceToast(
+  message: string,
+  { action, duration }: Pick<ExternalToast, "action" | "duration"> = {},
+): void {
+  toast(message, { id: PREFERENCE_TOAST_ID, action, duration })
+}
 
 interface ShowEnablePushToastArgs {
   status: PushStatus
@@ -30,17 +47,17 @@ export function showEnablePushToast({
   }
 
   if (status === "denied") {
-    toast(t("push.banner_blocked"))
+    showPreferenceToast(t("push.banner_blocked"))
     return
   }
 
-  const id = toast(t("push.banner_prompt"), {
+  showPreferenceToast(t("push.banner_prompt"), {
     duration: Infinity,
     action: {
       label: t("push.banner_enable_cta"),
       onClick: () => {
         enable()
-        toast.dismiss(id)
+        toast.dismiss(PREFERENCE_TOAST_ID)
       },
     },
   })

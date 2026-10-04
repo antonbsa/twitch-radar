@@ -1,0 +1,1 @@
+- [Sonner same-id merge](sonner-same-id-merges.md) — toast with an existing id merges props; set action/duration explicitly, don't dismiss+recreate
