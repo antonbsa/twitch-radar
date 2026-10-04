@@ -1,0 +1,1 @@
+- [Verify scripts without mutating tracked files](feedback_verify_scripts_without_mutating_tracked_files.md) — test check scripts on a scratchpad mirror; edit+git checkout is denied

@@ -21,6 +21,7 @@ Tailwind v4's Preflight doesn't give `<button>` a pointer cursor, so `src/index.
 
 - Every API-backed read/write goes through a hook in `hooks/` built on `useQuery`/`useSessionAwareMutation`, never a raw `fetch` in a component. Mutations invalidate the relevant query key on success (see `hooks/use-preferences.ts`).
 - `useSessionAwareMutation` is what marks a session expired on a 401; don't write a separate 401 handler.
+- A user-triggered mutation reports failure through `showMutationErrorToast` (`lib/error-toast.ts`), which stays silent on a 401 so the reconnect flow is the only feedback. Attach toasts at the user action's `mutate()` call site when the same mutation also runs automatically (e.g. follow sync on load/resume), so background runs stay silent.
 - API calls go through `lib/api.ts`'s `api.get/post/delete` wrapper (same-origin via the Vite dev proxy). Errors are typed with `ApiRequestError`/`ApiErrorBody` from `lib/errors.ts`, matching the API's error envelope (ADR 0009).
 - `types/*.ts` mirror `apps/api`'s snake_case wire shapes by hand instead of importing across the workspace boundary (ADR 0028). When a response shape changes, update the mirrored type too.
 - `hooks/use-push-notifications.ts` is the single state machine (checking/unsupported/denied/not-enabled/enabled) for the enable/disable flow (ADR 0027); extend it rather than adding a second push-state source. `lib/push.ts` holds the Push API mechanics (SW registration, subscribe, the `localStorage` subscription-id cache).
