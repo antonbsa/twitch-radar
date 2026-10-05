@@ -111,7 +111,6 @@
   "preferences.remove_success": "Alert removed.",
   "preferences.remove_error": "Could not remove the alert. Try again.",
 
-  "sync.success": "Channels synced.",
   "sync.error": "Could not sync channels. Try again.",
 
   "reconnect.message": "Your Twitch connection needs to be renewed.",

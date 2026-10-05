@@ -5,7 +5,6 @@ import {
   useQueryClient,
   type MutationStatus,
 } from "@tanstack/react-query"
-import { toast } from "sonner"
 import { useAuth } from "@/context/auth-context"
 import { useLanguage } from "@/context/language-context"
 import { api } from "@/lib/api"
@@ -61,9 +60,10 @@ export function useSyncFollows() {
 }
 
 /**
- * `useSyncFollows` for a Sync button: the user asked for it, so it toasts the
- * outcome. Toasts go on the `mutate()` call, not in `useSyncFollows`, so an
- * automatic background sync stays silent.
+ * `useSyncFollows` for a Sync button: the user asked for it, so a failure
+ * toasts (success is visible in the refreshed list). The toast goes on the
+ * `mutate()` call, not in `useSyncFollows`, so an automatic background sync
+ * stays silent.
  */
 export function useManualSyncFollows() {
   const syncFollows = useSyncFollows()
@@ -73,7 +73,6 @@ export function useManualSyncFollows() {
     isPending: syncFollows.isPending,
     sync: () =>
       syncFollows.mutate(undefined, {
-        onSuccess: () => toast(t("sync.success")),
         onError: (error) => showMutationErrorToast(error, t("sync.error")),
       }),
   }
