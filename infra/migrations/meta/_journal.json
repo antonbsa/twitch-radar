@@ -57,6 +57,13 @@
       "when": 1791163309230,
       "tag": "0008_channel_state_last_live",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1791167836765,
+      "tag": "0009_notification_delivery_cooldown_index",
+      "breakpoints": true
     }
   ]
 }

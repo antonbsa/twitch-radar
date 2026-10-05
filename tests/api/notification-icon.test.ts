@@ -57,6 +57,7 @@ function fakeDb(avatarUrl: string | null) {
       findLanguagesByIds: vi.fn().mockResolvedValue(new Map([["usr_1", "en"]])),
     },
     notificationDeliveries: {
+      findLastSentByUserAndBroadcaster: vi.fn().mockResolvedValue(null),
       insertPendingIfNew: vi
         .fn()
         .mockResolvedValue({ id: "dlv_1", status: "pending" }),

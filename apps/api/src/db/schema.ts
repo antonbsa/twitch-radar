@@ -242,6 +242,13 @@ export const notificationDeliveries = sqliteTable(
       table.userId,
       table.status,
     ),
+    // Serves the send-side cooldown lookup (ADR 0056).
+    index("idx_notification_deliveries_cooldown").on(
+      table.userId,
+      table.broadcasterUserId,
+      table.status,
+      table.sentAt,
+    ),
   ],
 )
 
