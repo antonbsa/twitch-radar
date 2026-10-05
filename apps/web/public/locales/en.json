@@ -134,5 +134,19 @@
   "whats_new.new_heading": "New",
   "whats_new.improved_heading": "Improved",
   "whats_new.fixed_heading": "Fixed",
-  "whats_new.no_user_facing_changes": "No user-facing changes in this version."
+  "whats_new.no_user_facing_changes": "No user-facing changes in this version.",
+  "alerts.pause_label": "Pause all notifications",
+  "alerts.pause_banner_title": "Notifications are paused",
+  "alerts.pause_banner_body": "Nothing will be sent until you turn them back on. Your alerts stay as they are.",
+  "alerts.pause_resume": "Resume",
+  "alerts.pause_error": "Could not update the pause setting. Try again.",
+  "alerts.muted_title": "Muted channels",
+  "alerts.muted_empty": "No muted channels.",
+  "alerts.unmute_aria": "Unmute {channel}",
+  "alerts.unmute": "Unmute",
+  "mute.mute_action": "Mute notifications",
+  "mute.unmute_action": "Unmute",
+  "mute.mute_error": "Could not mute the channel. Try again.",
+  "mute.unmute_error": "Could not unmute the channel. Try again.",
+  "channel_row.muted_aria": "Notifications muted"
 }

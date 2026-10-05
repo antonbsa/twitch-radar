@@ -134,5 +134,19 @@
   "whats_new.new_heading": "Nuevo",
   "whats_new.improved_heading": "Mejorado",
   "whats_new.fixed_heading": "Corregido",
-  "whats_new.no_user_facing_changes": "No hay cambios visibles para el usuario en esta versión."
+  "whats_new.no_user_facing_changes": "No hay cambios visibles para el usuario en esta versión.",
+  "alerts.pause_label": "Pausar todas las notificaciones",
+  "alerts.pause_banner_title": "Las notificaciones están pausadas",
+  "alerts.pause_banner_body": "No se enviará nada hasta que las reactives. Tus alertas siguen como están.",
+  "alerts.pause_resume": "Reanudar",
+  "alerts.pause_error": "No se pudo cambiar la pausa. Inténtalo de nuevo.",
+  "alerts.muted_title": "Canales silenciados",
+  "alerts.muted_empty": "No hay canales silenciados.",
+  "alerts.unmute_aria": "Dejar de silenciar a {channel}",
+  "alerts.unmute": "Dejar de silenciar",
+  "mute.mute_action": "Silenciar notificaciones",
+  "mute.unmute_action": "Dejar de silenciar",
+  "mute.mute_error": "No se pudo silenciar el canal. Inténtalo de nuevo.",
+  "mute.unmute_error": "No se pudo dejar de silenciar el canal. Inténtalo de nuevo.",
+  "channel_row.muted_aria": "Notificaciones silenciadas"
 }

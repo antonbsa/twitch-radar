@@ -1,4 +1,5 @@
 import { createDatabaseClient } from "./client"
+import { BroadcasterMutesRepository } from "./repositories/broadcaster-mutes"
 import { ChannelCategoryPreferencesRepository } from "./repositories/channel-category-preferences"
 import { ChannelStateRepository } from "./repositories/channel-state"
 import { ChannelStateChangesRepository } from "./repositories/channel-state-changes"
@@ -27,6 +28,7 @@ export class Database {
   readonly eventsubSubscriptions: EventsubSubscriptionsRepository
   readonly notificationDeliveries: NotificationDeliveriesRepository
   readonly notificationSnoozes: NotificationSnoozesRepository
+  readonly broadcasterMutes: BroadcasterMutesRepository
 
   constructor(d1: D1Database) {
     const db = createDatabaseClient(d1)
@@ -44,5 +46,6 @@ export class Database {
     this.eventsubSubscriptions = new EventsubSubscriptionsRepository(db)
     this.notificationDeliveries = new NotificationDeliveriesRepository(db)
     this.notificationSnoozes = new NotificationSnoozesRepository(db)
+    this.broadcasterMutes = new BroadcasterMutesRepository(db)
   }
 }

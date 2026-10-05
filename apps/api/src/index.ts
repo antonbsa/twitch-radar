@@ -12,14 +12,21 @@ import { requireAuth } from "./http/middleware/auth"
 import { handleSearchCategories } from "./http/routes/categories"
 import { handleGetFollowedChannels } from "./http/routes/channels"
 import { handleHealth } from "./http/routes/health"
-import { handleGetMe, handleUpdateLanguage } from "./http/routes/me"
+import {
+  handleGetMe,
+  handleUpdateLanguage,
+  handleUpdateNotificationsPaused,
+} from "./http/routes/me"
 import {
   handleAuthCallback,
   handleAuthStart,
   handleLogout,
 } from "./http/routes/auth"
 import {
+  handleCreateBroadcasterMute,
   handleCreateNotificationSnooze,
+  handleDeleteBroadcasterMute,
+  handleListBroadcasterMutes,
   handleListNotificationSnoozes,
 } from "./http/routes/notifications"
 import {
@@ -79,6 +86,11 @@ function buildApp(includeTestSeam: boolean): Hono<HonoEnv> {
   api.post("/auth/logout", requireAuth, handleLogout)
   api.get("/me", requireAuth, handleGetMe)
   api.patch("/me/language", requireAuth, handleUpdateLanguage)
+  api.patch(
+    "/me/notifications-paused",
+    requireAuth,
+    handleUpdateNotificationsPaused,
+  )
   api.post("/sync/follows", requireAuth, handleSyncFollows)
   api.get("/channels/followed", requireAuth, handleGetFollowedChannels)
   api.get("/categories/search", requireAuth, handleSearchCategories)
@@ -97,6 +109,13 @@ function buildApp(includeTestSeam: boolean): Hono<HonoEnv> {
   )
   api.post("/notifications/snooze", requireAuth, handleCreateNotificationSnooze)
   api.get("/notifications/snoozes", requireAuth, handleListNotificationSnoozes)
+  api.get("/notifications/mutes", requireAuth, handleListBroadcasterMutes)
+  api.post("/notifications/mutes", requireAuth, handleCreateBroadcasterMute)
+  api.delete(
+    "/notifications/mutes/:id",
+    requireAuth,
+    handleDeleteBroadcasterMute,
+  )
   // Called by Twitch, not by users — authenticates via HMAC signature.
   api.post("/webhooks/twitch/eventsub", handleEventsubWebhook)
   api.get("/push/vapid-public-key", requireAuth, handleGetVapidPublicKey)

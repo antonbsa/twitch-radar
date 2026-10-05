@@ -7,6 +7,8 @@ import { AddGlobalCategoryDialog } from "@/components/add-global-category-dialog
 import { ChannelAlertsCard } from "@/components/channel-alerts-card"
 import { ChannelRowSkeleton } from "@/components/channel-row-skeleton"
 import { ChannelPreferencesDialog } from "@/components/channel-preferences-dialog"
+import { MutedChannelsSection } from "@/components/muted-channels-section"
+import { PauseNotificationsControl } from "@/components/pause-notifications-control"
 import { GlobalAlertsCard } from "@/components/global-alerts-card"
 import { ReconnectRequired } from "@/components/reconnect-required"
 import { SearchField } from "@/components/search-field"
@@ -86,6 +88,8 @@ export function AlertsPage() {
       <div className="px-4 py-3">
         <h1 className="text-lg font-semibold">{t("alerts.title")}</h1>
       </div>
+
+      <PauseNotificationsControl />
 
       <h2 className="px-4 pt-1 pb-2 text-base font-semibold text-muted-foreground">
         {t("alerts.global_title")}
@@ -192,6 +196,8 @@ export function AlertsPage() {
             onArmChip={armChip}
           />
         ))}
+
+      <MutedChannelsSection channels={channels ?? []} />
 
       <AddGlobalCategoryDialog
         open={addGlobalOpen}

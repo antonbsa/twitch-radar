@@ -16,6 +16,7 @@ import {
   pushSubscriptions,
   twitchTokens,
   users,
+  broadcasterMutes,
 } from "../../db/schema"
 import { base64UrlEncode } from "../../services/base64url"
 import { encryptToken } from "../../services/crypto"
@@ -48,6 +49,7 @@ export interface SeedUserInput {
   // Applied whenever present, null included, so a re-seed resets a value a
   // previous test left on the shared user row; omitted leaves it untouched.
   lastFollowSyncAt?: string | null
+  notificationsPausedAt?: string | null
 }
 
 export interface SeedFollowedChannelInput {
@@ -123,6 +125,10 @@ export interface SeedNotificationSnoozeInput {
   status?: "pending" | "fired" | "expired"
 }
 
+export interface SeedBroadcasterMuteInput {
+  broadcasterUserId: string
+}
+
 export interface SeedRequestBody {
   user?: SeedUserInput
   followedChannels?: SeedFollowedChannelInput[]
@@ -132,6 +138,7 @@ export interface SeedRequestBody {
   monitoredChannels?: SeedMonitoredChannelInput[]
   pushSubscriptions?: SeedPushSubscriptionInput[]
   notificationSnoozes?: SeedNotificationSnoozeInput[]
+  broadcasterMutes?: SeedBroadcasterMuteInput[]
 }
 
 export interface SeedResponse {
@@ -163,6 +170,14 @@ export async function handleTestSeed(c: Context<HonoEnv>): Promise<Response> {
       await c.var.db.users.updateLastFollowSyncAt(
         userId,
         body.user.lastFollowSyncAt,
+        now,
+      )
+    }
+
+    if (body.user.notificationsPausedAt !== undefined) {
+      await c.var.db.users.setNotificationsPausedAt(
+        userId,
+        body.user.notificationsPausedAt,
         now,
       )
     }
@@ -322,6 +337,14 @@ export async function handleTestSeed(c: Context<HonoEnv>): Promise<Response> {
     }
   }
 
+  for (const mute of body.broadcasterMutes ?? []) {
+    await c.var.db.broadcasterMutes.create({
+      userId,
+      broadcasterUserId: mute.broadcasterUserId,
+      now,
+    })
+  }
+
   return jsonResponse({ userId, session } satisfies SeedResponse)
 }
 
@@ -353,6 +376,7 @@ export interface ResetRequestBody {
 }
 
 const ALL_TABLES = [
+  "broadcaster_mutes",
   "notification_snoozes",
   "notification_deliveries",
   "global_category_preferences",
@@ -400,6 +424,10 @@ export async function handleTestReset(c: Context<HonoEnv>): Promise<Response> {
   // FK-dependent tables first, then users, then the broadcaster-keyed tables
   // (channel_state is monitored globally across users, see ADR 0007, so it's
   // scoped by the E2E_BROADCASTER_PREFIX convention instead of a user id).
+  await db
+    .delete(broadcasterMutes)
+    .where(eq(broadcasterMutes.userId, E2E_USER_ID))
+    .run()
   await db
     .delete(notificationSnoozes)
     .where(eq(notificationSnoozes.userId, E2E_USER_ID))

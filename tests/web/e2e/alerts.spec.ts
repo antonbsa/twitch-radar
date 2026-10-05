@@ -889,4 +889,66 @@ describe("Alerts view", () => {
     // The add-channel affordance stays available even with nothing configured.
     await expectVisible(page.getByRole("button", { name: "Add channel" }))
   })
+
+  it("should pause and resume all notifications, keeping the banner while paused", async ({
+    authenticatedSession,
+  }) => {
+    const { page } = authenticatedSession
+    await page.goto(`${WEB_URL}/alerts`)
+
+    const toggle = page.getByRole("switch", {
+      name: "Pause all notifications",
+    })
+    await expectVisible(toggle)
+    expect(await page.getByTestId("pause-banner").count()).toBe(0)
+
+    await toggle.click()
+    const banner = page.getByTestId("pause-banner")
+    await expectVisible(banner)
+
+    // The paused state is persisted, not just local: it survives a reload.
+    await page.reload()
+    await expectVisible(page.getByTestId("pause-banner"))
+
+    await page
+      .getByTestId("pause-banner")
+      .getByRole("button", { name: "Resume" })
+      .click()
+    await expectHidden(page.getByTestId("pause-banner"))
+  })
+
+  it("should mute a channel from its detail modal and unmute it from the Alerts page", async ({
+    authenticatedSession,
+  }) => {
+    const id = broadcasterId("mute")
+    await seedFollowedChannels([
+      {
+        broadcasterUserId: id,
+        broadcasterLogin: "mutestreamer",
+        broadcasterDisplayName: "MuteStreamer",
+      },
+    ])
+    await seedChannelState([{ broadcasterUserId: id, isLive: false }])
+
+    const { page } = authenticatedSession
+    await page.goto(WEB_URL)
+    const row = page.locator(
+      `[data-testid="channel-row"][data-broadcaster-user-id="${id}"]`,
+    )
+    await expectVisible(row)
+    expect(await row.getByTestId("muted-indicator").count()).toBe(0)
+    await row.click()
+
+    const modal = page.getByTestId("channel-detail-modal")
+    await modal.getByRole("button", { name: "Mute notifications" }).click()
+    await expectVisible(modal.getByRole("button", { name: "Unmute" }))
+    await page.keyboard.press("Escape")
+    await expectVisible(row.getByTestId("muted-indicator"))
+
+    await page.goto(`${WEB_URL}/alerts`)
+    const muted = page.getByTestId("muted-channels")
+    await expectVisible(muted.getByText("MuteStreamer"))
+    await muted.getByRole("button", { name: "Unmute MuteStreamer" }).click()
+    await expectVisible(page.getByText("No muted channels."))
+  })
 })

@@ -183,6 +183,18 @@ export async function matchAndCreateDeliveries(
   }
   if (matchedUserIds.size === 0) return
 
+  // ADR 0054: paused users, then users muting this broadcaster, are dropped
+  // before any delivery is staged.
+  const paused = await db.users.findPausedUserIds(Array.from(matchedUserIds))
+  for (const userId of paused) matchedUserIds.delete(userId)
+  if (matchedUserIds.size === 0) return
+  const muted = await db.broadcasterMutes.findMutedUserIds(
+    broadcasterUserId,
+    Array.from(matchedUserIds),
+  )
+  for (const userId of muted) matchedUserIds.delete(userId)
+  if (matchedUserIds.size === 0) return
+
   const [[monitored], broadcasterAvatarUrl] = await Promise.all([
     db.monitoredChannels.findByBroadcasterUserIds([broadcasterUserId]),
     db.followedChannels.findProfileImageUrl(broadcasterUserId),

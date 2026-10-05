@@ -18,6 +18,8 @@ export const users = sqliteTable("users", {
   // UI/notification language preference (ADR 0044): "en" | "pt-BR" | "es",
   // validated at the API layer (zod), not a DB CHECK constraint.
   language: text("language").notNull().default("en"),
+  // ADR 0054: set means no notification of any kind reaches the user.
+  notificationsPausedAt: text("notifications_paused_at"),
 })
 
 export const twitchTokens = sqliteTable(
@@ -272,6 +274,32 @@ export const notificationSnoozes = sqliteTable(
   ],
 )
 
+// ADR 0054: an active row suppresses every notification about the broadcaster
+// for this user, whichever preference would match.
+export const broadcasterMutes = sqliteTable(
+  "broadcaster_mutes",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id),
+    broadcasterUserId: text("broadcaster_user_id").notNull(),
+    createdAt: text("created_at").notNull(),
+    disabledAt: text("disabled_at"),
+  },
+  (table) => [
+    uniqueIndex("broadcaster_mutes_user_id_broadcaster_user_id_unique").on(
+      table.userId,
+      table.broadcasterUserId,
+    ),
+    // Serves "active mutes for this broadcaster among these users" at match time.
+    index("idx_broadcaster_mutes_broadcaster_user_id").on(
+      table.broadcasterUserId,
+      table.userId,
+    ),
+  ],
+)
+
 export const schema = {
   users,
   twitchTokens,
@@ -285,6 +313,7 @@ export const schema = {
   globalCategoryPreferences,
   notificationDeliveries,
   notificationSnoozes,
+  broadcasterMutes,
 }
 
 export type UserRow = typeof users.$inferSelect

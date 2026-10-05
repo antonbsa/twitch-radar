@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, isNull, lt, or } from "drizzle-orm"
+import { and, asc, eq, inArray, isNotNull, isNull, lt, or } from "drizzle-orm"
 import { nanoid } from "nanoid"
 import type { Language, User } from "../../types"
 import type { AppDatabase } from "../client"
@@ -159,6 +159,39 @@ export class UsersRepository {
     }
     return result
   }
+
+  /** ADR 0054: `pausedAt` set pauses all notifications, `null` resumes. */
+  async setNotificationsPausedAt(
+    id: string,
+    pausedAt: string | null,
+    now: string,
+  ): Promise<void> {
+    await this.db
+      .update(users)
+      .set({ notificationsPausedAt: pausedAt, updatedAt: now })
+      .where(eq(users.id, id))
+      .run()
+  }
+
+  /** Subset of the given users that have paused all notifications (ADR 0054). */
+  async findPausedUserIds(ids: string[]): Promise<Set<string>> {
+    const result = new Set<string>()
+    const BATCH_SIZE = 100
+    for (let i = 0; i < ids.length; i += BATCH_SIZE) {
+      const rows = await this.db
+        .select({ id: users.id })
+        .from(users)
+        .where(
+          and(
+            inArray(users.id, ids.slice(i, i + BATCH_SIZE)),
+            isNotNull(users.notificationsPausedAt),
+          ),
+        )
+        .all()
+      for (const row of rows) result.add(row.id)
+    }
+    return result
+  }
 }
 
 function toUser(row: UserRow): User {
@@ -171,5 +204,6 @@ function toUser(row: UserRow): User {
     updated_at: row.updatedAt,
     last_follow_sync_at: row.lastFollowSyncAt,
     language: row.language as Language,
+    notifications_paused_at: row.notificationsPausedAt,
   }
 }

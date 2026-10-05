@@ -17,6 +17,7 @@ import {
   useFollowedChannels,
   useManualSyncFollows,
 } from "@/hooks/use-channels"
+import { useBroadcasterMutes } from "@/hooks/use-notifications"
 import { usePreferences } from "@/hooks/use-preferences"
 import {
   applyChannelFilters,
@@ -34,6 +35,11 @@ export function ChannelsPage() {
     isError,
   } = useFollowedChannels()
   const { data: preferences } = usePreferences()
+  const { data: mutes } = useBroadcasterMutes()
+  const mutedIds = useMemo(
+    () => new Set((mutes ?? []).map((mute) => mute.broadcaster_user_id)),
+    [mutes],
+  )
   const { user, reconnectRequired } = useAuth()
   const autoSyncStatus = useAutoSyncFollowsStatus()
   // An auto-sync only runs when the last sync is stale (issue #88): hold the
@@ -193,6 +199,7 @@ export function ChannelsPage() {
               key={channel.broadcaster_user_id}
               channel={channel}
               preferenceMatch={preferenceMatchFor(channel)}
+              muted={mutedIds.has(channel.broadcaster_user_id)}
               onConfigure={setConfiguringChannel}
               onOpenDetail={setDetailChannel}
             />
@@ -209,6 +216,7 @@ export function ChannelsPage() {
             <ChannelRow
               key={channel.broadcaster_user_id}
               channel={channel}
+              muted={mutedIds.has(channel.broadcaster_user_id)}
               onConfigure={setConfiguringChannel}
               onOpenDetail={setDetailChannel}
             />

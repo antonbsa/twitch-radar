@@ -28,6 +28,9 @@ interface AuthContextValue {
   // since /me is only fetched on load and the auto-sync staleness check
   // (issue #88) reads it on every resume.
   markFollowsSynced: (syncedAt: string) => void
+  // Keeps `user.notifications_paused_at` current after a pause/resume, for the
+  // same reason: /me is only fetched on load.
+  markNotificationsPaused: (pausedAt: string | null) => void
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
@@ -80,6 +83,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     )
   }, [])
 
+  const markNotificationsPaused = useCallback((pausedAt: string | null) => {
+    setUser((current) =>
+      current ? { ...current, notifications_paused_at: pausedAt } : current,
+    )
+  }, [])
+
   const reconnectRequired = useMemo(
     () =>
       mutationReconnectRequired || (user?.twitch_reconnect_required ?? false),
@@ -96,6 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       markReconnectRequired,
       markFollowsSynced,
+      markNotificationsPaused,
     }),
     [
       user,
@@ -105,6 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       markReconnectRequired,
       markFollowsSynced,
+      markNotificationsPaused,
     ],
   )
 
