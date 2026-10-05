@@ -50,7 +50,9 @@ Publishing a GitHub release **is** the production deploy: [`deploy-release.yaml`
 
    This is the first artifact of the release, not a byproduct of it (ADR 0050) - the tag and the GitHub Release both point at the commit that adds this entry. The GitHub Release body itself (step 10) is built from the English file only - the translated siblings exist for the in-app widget, not for GitHub.
 
-9. **Confirm the target commit is on the remote.** `git rev-parse HEAD` vs `git rev-parse origin/main` (after `git fetch origin`) - the push in step 8 should already cover this, but re-check before tagging. If `main` is still ahead of `origin/main` for any reason, `gh release create` will fail against an unpushed SHA (observed as a bare `HTTP 500` with no useful message, not a clean validation error).
+9. **Confirm the target commit is on the remote and contains the release.** The target is the commit step 8 pushed, never a SHA noted earlier in the session.
+   - On the remote: `git rev-parse HEAD` vs `git rev-parse origin/main` (after `git fetch origin`). If `main` is still ahead of `origin/main` for any reason, `gh release create` will fail against an unpushed SHA (observed as a bare `HTTP 500` with no useful message, not a clean validation error).
+   - Contains the release: `git show <target>:CHANGELOG.md` prints the new `## vX.Y.Z` heading, and `git merge-base --is-ancestor <mergeCommit> <target>` succeeds for every PR gathered in step 2 (`gh pr view <n> --json mergeCommit`). A target that misses them deploys cleanly and still ships without that work: `v0.2.0` was tagged on a commit that predated its own PRs and CHANGELOG entry, and nothing failed. If `origin/main` moved since step 2, re-run step 2 over the new commits before tagging.
 
 10. **Create the release as a draft - body is the committed `CHANGELOG.md` entry (plus deploy notes from step 4, if any), with GitHub's generated PR list appended; title is the version string alone (`v0.1.0`, not `v0.1.0 - <name>`):**
 
@@ -81,6 +83,7 @@ gh label create skip-changelog --color ededed --description "Omit from generated
 
 - Flipping the draft to published (`--draft=false`): that ships to production and stays with the human.
 - Tagging before the CHANGELOG entry is committed and pushed to `main`: an unpushed target SHA surfaces as an opaque `HTTP 500` from the releases API.
+- Targeting a commit that predates the release's own PRs or CHANGELOG entry: the deploy succeeds, so only step 9's ancestry check catches it.
 - Copying PR titles or numbers into `CHANGELOG.md`: that list comes from `--generate-notes`; the file is plain user-facing language.
 - Passing only one of `--notes` / `--generate-notes`: the body needs both halves.
 - Committing `CHANGELOG.md` without its `pt-BR`/`es` translations (ADR 0050).
