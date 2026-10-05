@@ -2,6 +2,7 @@ import { z } from "zod"
 import type { Context } from "hono"
 import type { HonoEnv } from "../../env"
 import { ApiError } from "../errors"
+import type { BroadcasterMuteRecord } from "../../db/repositories/broadcaster-mutes"
 import { jsonResponse } from "../response"
 
 const SNOOZE_DURATION_MS = 15 * 60 * 1000
@@ -59,4 +60,74 @@ export async function handleListNotificationSnoozes(
     c.var.userId,
   )
   return jsonResponse({ data: records })
+}
+
+const CreateMuteSchema = z.object({ broadcaster_user_id: z.string().min(1) })
+
+/** Wire shape omits user_id (implied by the session) and disabled_at (list is active only). */
+function toMuteItem(record: BroadcasterMuteRecord) {
+  return {
+    id: record.id,
+    broadcaster_user_id: record.broadcaster_user_id,
+    created_at: record.created_at,
+  }
+}
+
+/** ADR 0054: the user's active broadcaster mutes. */
+export async function handleListBroadcasterMutes(
+  c: Context<HonoEnv>,
+): Promise<Response> {
+  const records = await c.var.db.broadcasterMutes.listActiveByUserId(
+    c.var.userId,
+  )
+  return jsonResponse({ data: records.map(toMuteItem) })
+}
+
+/**
+ * Idempotent create/revive (ADR 0054, ADR 0029): `201` for a new mute, `200`
+ * when it already exists, whether active or soft-disabled.
+ */
+export async function handleCreateBroadcasterMute(
+  c: Context<HonoEnv>,
+): Promise<Response> {
+  const body = await c.req.json().catch(() => null)
+  const parsed = CreateMuteSchema.safeParse(body)
+  if (!parsed.success) {
+    throw new ApiError(400, "invalid_request", "Invalid mute payload")
+  }
+  const broadcasterUserId = parsed.data.broadcaster_user_id
+
+  const existing = await c.var.db.broadcasterMutes.findByUserAndBroadcaster(
+    c.var.userId,
+    broadcasterUserId,
+  )
+  if (existing) {
+    if (existing.disabled_at) {
+      await c.var.db.broadcasterMutes.reactivate(existing.id)
+    }
+    return jsonResponse({ data: toMuteItem(existing) })
+  }
+
+  const record = await c.var.db.broadcasterMutes.create({
+    userId: c.var.userId,
+    broadcasterUserId,
+    now: new Date().toISOString(),
+  })
+  return jsonResponse({ data: toMuteItem(record) }, { status: 201 })
+}
+
+export async function handleDeleteBroadcasterMute(
+  c: Context<HonoEnv>,
+): Promise<Response> {
+  const id = c.req.param("id")
+  const record = id ? await c.var.db.broadcasterMutes.findById(id) : null
+  if (!record || record.user_id !== c.var.userId) {
+    throw new ApiError(404, "not_found", "Mute not found")
+  }
+
+  // Soft disable; repeating the delete is a no-op.
+  if (!record.disabled_at) {
+    await c.var.db.broadcasterMutes.disable(record.id, new Date().toISOString())
+  }
+  return new Response(null, { status: 204 })
 }

@@ -39,16 +39,22 @@ Every error response has the same shape:
 | POST | `/auth/logout` | yes | deletes the current session |
 | GET | `/me` | yes | current user, including `twitch_reconnect_required` (ADR 0036) |
 | PATCH | `/me/language` | yes | sets the user's language preference (ADR 0044) |
+| PATCH | `/me/notifications-paused` | yes | pauses or resumes all notifications with `{ paused }`; `GET /me` exposes `notifications_paused_at` (ADR 0054) |
 | POST | `/sync/follows` | yes | re-syncs the user's followed channels from Twitch |
 | GET | `/channels/followed` | yes | the user's followed channels with current live/category state |
 | GET | `/categories/search` | yes | proxies Twitch category search with the user's token |
-| GET | `/preferences` | yes | the user's active channel and global category preferences |
+| GET | `/preferences` | yes | the user's active channel and global category preferences; each global preference embeds its active `exclusions` (ADR 0054) |
 | POST | `/preferences/channel` | yes | creates/revives a channel-scoped category preference (ADR 0029) |
 | DELETE | `/preferences/channel/:id` | yes | soft-disables a channel-scoped preference |
 | POST | `/preferences/global` | yes | creates/revives a global (all-channels) category preference (ADR 0029) |
 | DELETE | `/preferences/global/:id` | yes | soft-disables a global preference |
+| POST | `/preferences/global/:id/exclusions` | yes | excludes a followed broadcaster from that global preference: `201` new, `200` existing/revived (ADR 0054) |
+| DELETE | `/preferences/global/:id/exclusions/:exclusionId` | yes | soft-disables an exclusion |
 | POST | `/notifications/snooze` | yes | creates a pending 15-minute reminder for a broadcaster/category (ADR 0048) |
 | GET | `/notifications/snoozes` | yes | the user's pending snooze reminders |
+| GET | `/notifications/mutes` | yes | the user's active broadcaster mutes (ADR 0054) |
+| POST | `/notifications/mutes` | yes | creates/revives a broadcaster mute: `201` new, `200` existing (ADR 0054) |
+| DELETE | `/notifications/mutes/:id` | yes | soft-disables a broadcaster mute |
 | POST | `/webhooks/twitch/eventsub` | HMAC | Twitch EventSub notification/challenge/revocation (ADR 0032) |
 | GET | `/push/vapid-public-key` | yes | the VAPID public key for Web Push subscription |
 | POST | `/push-subscriptions` | yes | creates/upserts a push subscription by endpoint (ADR 0027) |

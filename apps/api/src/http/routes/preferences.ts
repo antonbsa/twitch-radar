@@ -3,6 +3,7 @@ import type { Context } from "hono"
 import type { HonoEnv } from "../../env"
 import type { ChannelPreferenceRecord } from "../../db/repositories/channel-category-preferences"
 import type { GlobalPreferenceRecord } from "../../db/repositories/global-category-preferences"
+import type { GlobalPreferenceExclusionRecord } from "../../db/repositories/global-category-preference-exclusions"
 import { ApiError } from "../errors"
 import { jsonResponse } from "../response"
 import {
@@ -35,14 +36,30 @@ function toChannelPreferenceItem(record: ChannelPreferenceRecord) {
   }
 }
 
-function toGlobalPreferenceItem(record: GlobalPreferenceRecord) {
+function toExclusionItem(record: GlobalPreferenceExclusionRecord) {
+  return {
+    id: record.id,
+    broadcaster_user_id: record.broadcaster_user_id,
+    created_at: record.created_at,
+  }
+}
+
+function toGlobalPreferenceItem(
+  record: GlobalPreferenceRecord,
+  exclusions: GlobalPreferenceExclusionRecord[] = [],
+) {
   return {
     id: record.id,
     category_id: record.category_id,
     category_name: record.category_name,
     created_at: record.created_at,
+    exclusions: exclusions.map(toExclusionItem),
   }
 }
+
+const CreateExclusionSchema = z.object({
+  broadcaster_user_id: z.string().min(1),
+})
 
 export async function handleGetPreferences(
   c: Context<HonoEnv>,
@@ -52,10 +69,22 @@ export async function handleGetPreferences(
     c.var.db.globalCategoryPreferences.listActiveByUserId(c.var.userId),
   ])
 
+  // Exclusions are embedded per global preference, with no separate list
+  // endpoint (ADR 0054).
+  const exclusions =
+    await c.var.db.globalCategoryPreferenceExclusions.listActiveByPreferenceIds(
+      global.map((record) => record.id),
+    )
+
   return jsonResponse({
     data: {
       channel: channel.map(toChannelPreferenceItem),
-      global: global.map(toGlobalPreferenceItem),
+      global: global.map((record) =>
+        toGlobalPreferenceItem(
+          record,
+          exclusions.filter((e) => e.preference_id === record.id),
+        ),
+      ),
     },
   })
 }
@@ -228,8 +257,12 @@ export async function handleCreateGlobalPreference(
     "global_preference",
   )
 
+  const exclusions =
+    await c.var.db.globalCategoryPreferenceExclusions.listActiveByPreferenceIds(
+      [record.id],
+    )
   return jsonResponse(
-    { data: toGlobalPreferenceItem(record) },
+    { data: toGlobalPreferenceItem(record, exclusions) },
     { status: existing ? 200 : 201 },
   )
 }
@@ -259,5 +292,85 @@ export async function handleDeleteGlobalPreference(
     followed.map((channel) => channel.broadcaster_user_id),
   )
 
+  return new Response(null, { status: 204 })
+}
+
+async function findOwnedGlobalPreference(c: Context<HonoEnv>) {
+  const id = c.req.param("id")
+  const record = id
+    ? await c.var.db.globalCategoryPreferences.findById(id)
+    : null
+  if (!record || record.user_id !== c.var.userId) {
+    throw new ApiError(404, "not_found", "Preference not found")
+  }
+  return record
+}
+
+/**
+ * Idempotent create/revive of an exclusion (ADR 0054, ADR 0029): `201` for a
+ * new one, `200` when it already exists, whether active or soft-disabled.
+ */
+export async function handleCreateGlobalPreferenceExclusion(
+  c: Context<HonoEnv>,
+): Promise<Response> {
+  const preference = await findOwnedGlobalPreference(c)
+  const body = await c.req.json().catch(() => null)
+  const parsed = CreateExclusionSchema.safeParse(body)
+  if (!parsed.success) {
+    throw new ApiError(400, "invalid_request", "Invalid exclusion payload")
+  }
+  const broadcasterUserId = parsed.data.broadcaster_user_id
+
+  const followed = await c.var.db.followedChannels.findOne(
+    c.var.userId,
+    broadcasterUserId,
+  )
+  if (!followed) {
+    throw new ApiError(
+      400,
+      "invalid_request",
+      "Broadcaster is not a followed channel",
+    )
+  }
+
+  const existing =
+    await c.var.db.globalCategoryPreferenceExclusions.findByPreferenceAndBroadcaster(
+      preference.id,
+      broadcasterUserId,
+    )
+  if (existing) {
+    if (existing.disabled_at) {
+      await c.var.db.globalCategoryPreferenceExclusions.reactivate(existing.id)
+    }
+    return jsonResponse({ data: toExclusionItem(existing) })
+  }
+
+  const record = await c.var.db.globalCategoryPreferenceExclusions.create({
+    preferenceId: preference.id,
+    broadcasterUserId,
+    now: new Date().toISOString(),
+  })
+  return jsonResponse({ data: toExclusionItem(record) }, { status: 201 })
+}
+
+export async function handleDeleteGlobalPreferenceExclusion(
+  c: Context<HonoEnv>,
+): Promise<Response> {
+  const preference = await findOwnedGlobalPreference(c)
+  const exclusionId = c.req.param("exclusionId")
+  const record = exclusionId
+    ? await c.var.db.globalCategoryPreferenceExclusions.findById(exclusionId)
+    : null
+  if (!record || record.preference_id !== preference.id) {
+    throw new ApiError(404, "not_found", "Exclusion not found")
+  }
+
+  // Soft disable; repeating the delete is a no-op.
+  if (!record.disabled_at) {
+    await c.var.db.globalCategoryPreferenceExclusions.disable(
+      record.id,
+      new Date().toISOString(),
+    )
+  }
   return new Response(null, { status: 204 })
 }

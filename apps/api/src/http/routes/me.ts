@@ -9,6 +9,8 @@ const UpdateLanguageSchema = z.object({
   language: z.enum(SUPPORTED_LANGUAGES),
 })
 
+const UpdateNotificationsPausedSchema = z.object({ paused: z.boolean() })
+
 export async function handleGetMe(c: Context<HonoEnv>): Promise<Response> {
   const user = await c.var.db.users.findById(c.var.userId)
   if (!user) throw new ApiError(404, "user_not_found", "User not found")
@@ -45,4 +47,29 @@ export async function handleUpdateLanguage(
   return jsonResponse({
     data: { ...user, language: parsed.data.language },
   })
+}
+
+/**
+ * ADR 0054: pauses (`paused: true`) or resumes all notifications. Pausing an
+ * already-paused user keeps the original timestamp.
+ */
+export async function handleUpdateNotificationsPaused(
+  c: Context<HonoEnv>,
+): Promise<Response> {
+  const body = await c.req.json().catch(() => null)
+  const parsed = UpdateNotificationsPausedSchema.safeParse(body)
+  if (!parsed.success) {
+    throw new ApiError(400, "invalid_request", "Invalid pause payload")
+  }
+
+  const user = await c.var.db.users.findById(c.var.userId)
+  if (!user) throw new ApiError(404, "user_not_found", "User not found")
+
+  const now = new Date().toISOString()
+  const pausedAt = parsed.data.paused
+    ? (user.notifications_paused_at ?? now)
+    : null
+  await c.var.db.users.setNotificationsPausedAt(c.var.userId, pausedAt, now)
+
+  return jsonResponse({ data: { ...user, notifications_paused_at: pausedAt } })
 }

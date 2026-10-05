@@ -94,6 +94,7 @@ export interface User {
   updated_at: string
   last_follow_sync_at: string | null
   language: Language
+  notifications_paused_at: string | null
 }
 
 export interface PushSubscriptionRecord {

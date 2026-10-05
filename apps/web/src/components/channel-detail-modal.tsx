@@ -4,6 +4,7 @@ import {
   AlarmClockIcon,
   BellCheckIcon,
   BellIcon,
+  BellOffIcon,
   ExternalLinkIcon,
   Loader2Icon,
 } from "lucide-react"
@@ -18,8 +19,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/context/language-context"
 import {
+  useBroadcasterMutes,
+  useMuteBroadcaster,
   useNotificationSnoozes,
   useSnoozeNotification,
+  useUnmuteBroadcaster,
 } from "@/hooks/use-notifications"
 import { interpolateNodes } from "@/lib/i18n-react"
 import {
@@ -74,6 +78,12 @@ export function ChannelDetailModal({
   const push = usePushNotifications()
   const snoozeNotification = useSnoozeNotification()
   const { data: pendingSnoozes } = useNotificationSnoozes()
+  const { data: mutes } = useBroadcasterMutes()
+  const muteBroadcaster = useMuteBroadcaster()
+  const unmuteBroadcaster = useUnmuteBroadcaster()
+  const activeMute = (mutes ?? []).find(
+    (mute) => mute.broadcaster_user_id === channel?.broadcaster_user_id,
+  )
 
   // Each open is a fresh channel — drop any pending/success/error state left
   // over from a previous one before it's shown for a new broadcaster.
@@ -150,6 +160,14 @@ export function ChannelDetailModal({
               </AvatarFallback>
             </Avatar>
             <SheetTitle>{channel?.broadcaster_display_name}</SheetTitle>
+            {activeMute && (
+              <BellOffIcon
+                role="img"
+                aria-label={t("channel_row.muted_aria")}
+                data-testid="muted-indicator"
+                className="size-3.5 shrink-0 text-muted-foreground"
+              />
+            )}
           </div>
           {channel?.is_live ? (
             <div className="flex items-center justify-between gap-2">
@@ -255,6 +273,50 @@ export function ChannelDetailModal({
                     {t("channel_detail.snooze_action")}
                   </Button>
                 ))}
+
+              {activeMute ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="lg"
+                  disabled={unmuteBroadcaster.isPending}
+                  className="w-full gap-1.5 sm:w-fit sm:max-w-xs"
+                  onClick={() =>
+                    unmuteBroadcaster.mutate(activeMute.id, {
+                      onSuccess: () =>
+                        toast(
+                          t("mute.unmuted_toast", {
+                            channel: channel.broadcaster_display_name,
+                          }),
+                        ),
+                    })
+                  }
+                >
+                  <BellIcon />
+                  {t("mute.unmute_action")}
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="lg"
+                  disabled={muteBroadcaster.isPending}
+                  className="w-full gap-1.5 sm:w-fit sm:max-w-xs"
+                  onClick={() =>
+                    muteBroadcaster.mutate(channel.broadcaster_user_id, {
+                      onSuccess: () =>
+                        toast(
+                          t("mute.muted_toast", {
+                            channel: channel.broadcaster_display_name,
+                          }),
+                        ),
+                    })
+                  }
+                >
+                  <BellOffIcon />
+                  {t("mute.mute_action")}
+                </Button>
+              )}
 
               <Button size="lg" asChild className="w-full sm:w-fit sm:max-w-xs">
                 <a

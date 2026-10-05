@@ -1,5 +1,6 @@
 import type {
   InspectRequestBody,
+  SeedBroadcasterMuteInput,
   ResetRequestBody,
   SeedChannelStateInput,
   SeedEventsubSubscriptionInput,
@@ -26,6 +27,7 @@ export {
 } from "../../apps/api/src/http/routes/_tests"
 
 export type {
+  SeedBroadcasterMuteInput,
   SeedChannelStateInput,
   SeedEventsubSubscriptionInput,
   SeedFollowedChannelInput,
@@ -143,6 +145,12 @@ export function createSeamClient({ baseUrl }: SeamClientOptions) {
       subscriptions: SeedEventsubSubscriptionInput[],
     ): Promise<void> {
       await seed({ eventsubSubscriptions: subscriptions })
+    },
+
+    async seedBroadcasterMutes(
+      mutes: SeedBroadcasterMuteInput[],
+    ): Promise<void> {
+      await seed({ broadcasterMutes: mutes })
     },
 
     async seedNotificationSnoozes(
