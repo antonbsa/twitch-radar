@@ -6,8 +6,8 @@ export function AuthenticatedLayout() {
   useAutoSyncFollows()
 
   return (
-    <div className="flex min-h-dvh flex-col">
-      <main className="flex-1 overflow-y-auto pb-[calc(4rem+env(safe-area-inset-bottom))]">
+    <div className="flex h-dvh flex-col">
+      <main className="min-h-0 flex-1 overflow-y-auto">
         <Outlet />
       </main>
       <BottomTabBar />
