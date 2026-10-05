@@ -668,7 +668,7 @@ describe("Alerts view", () => {
     await page.goto(`${WEB_URL}/alerts`)
     await expectVisible(page.getByText("No per-channel alerts set."))
 
-    await page.getByRole("button", { name: "Add channel" }).click()
+    await page.getByRole("button", { name: "Add channel", exact: true }).click()
     const picker = page.getByRole("dialog")
     await expectVisible(picker)
     await expectVisible(picker.getByText("Add channel"))
@@ -891,7 +891,9 @@ describe("Alerts view", () => {
       await page.getByRole("textbox", { name: "Search channels" }).count(),
     ).toBe(0)
     // The add-channel affordance stays available even with nothing configured.
-    await expectVisible(page.getByRole("button", { name: "Add channel" }))
+    await expectVisible(
+      page.getByRole("button", { name: "Add channel", exact: true }),
+    )
   })
 
   it("should pause and resume all notifications, keeping the description while paused", async ({
