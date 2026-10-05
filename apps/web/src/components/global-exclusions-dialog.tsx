@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { SearchField } from "@/components/search-field"
 import { useLanguage } from "@/context/language-context"
 import {
+  isOptimisticExclusion,
   useAddGlobalPreferenceExclusion,
   useRemoveGlobalPreferenceExclusion,
 } from "@/hooks/use-preferences"
@@ -120,7 +121,8 @@ export function GlobalExclusionsDialog({
                     <Button
                       variant="ghost"
                       type="button"
-                      disabled={removeExclusion.isPending}
+                      // An unconfirmed add has no real id to delete yet.
+                      disabled={isOptimisticExclusion(exclusionId)}
                       aria-label={t("exclusions.remove_aria", {
                         channel: channel.broadcaster_display_name,
                       })}
@@ -167,7 +169,6 @@ export function GlobalExclusionsDialog({
                     <Button
                       variant="ghost"
                       type="button"
-                      disabled={addExclusion.isPending}
                       aria-label={t("exclusions.add_aria", {
                         channel: channel.broadcaster_display_name,
                       })}

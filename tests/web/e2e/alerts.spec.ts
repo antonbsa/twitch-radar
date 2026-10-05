@@ -1007,4 +1007,65 @@ describe("Alerts view", () => {
       .click()
     await expectVisible(page.getByText("No channels excluded."))
   })
+  it("should update the exclusions list before the API responds and revert on failure", async ({
+    authenticatedSession,
+  }) => {
+    const id = broadcasterId("optimistic")
+    await seedFollowedChannels([
+      {
+        broadcasterUserId: id,
+        broadcasterLogin: "optimisticstreamer",
+        broadcasterDisplayName: "OptimisticStreamer",
+      },
+    ])
+    await seedPreferences({
+      global: [
+        { categoryId: "optimistic_cat", categoryName: "Optimistic Category" },
+      ],
+    })
+
+    const { page } = authenticatedSession
+    await page.goto(`${WEB_URL}/alerts`)
+    await page
+      .getByRole("button", {
+        name: "Excluded channels for Optimistic Category",
+      })
+      .click()
+    const dialog = page.getByTestId("exclusions-dialog")
+
+    // Hold the POST: the row must already be in the excluded list.
+    let release: () => void = () => {}
+    const held = new Promise<void>((resolve) => (release = resolve))
+    await page.route(
+      "**/api/preferences/global/*/exclusions",
+      async (route) => {
+        await held
+        await route.continue()
+      },
+    )
+    await dialog
+      .getByRole("button", { name: "Exclude OptimisticStreamer" })
+      .click()
+    await expectVisible(
+      dialog.getByTestId("excluded-channels").getByText("OptimisticStreamer"),
+    )
+    const posted = page.waitForResponse(
+      (res) =>
+        res.request().method() === "POST" && res.url().includes("/exclusions"),
+    )
+    release()
+    await posted
+    await page.unroute("**/api/preferences/global/*/exclusions")
+
+    // A failing DELETE puts the row back once the refetch lands.
+    await page.route("**/api/preferences/global/*/exclusions/*", (route) =>
+      route.fulfill({ status: 500, body: "{}" }),
+    )
+    await dialog
+      .getByRole("button", { name: "Stop excluding OptimisticStreamer" })
+      .click()
+    await expectVisible(
+      dialog.getByTestId("excluded-channels").getByText("OptimisticStreamer"),
+    )
+  })
 })

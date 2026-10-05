@@ -1,10 +1,18 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import {
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+} from "@tanstack/react-query"
 import { useLanguage } from "@/context/language-context"
 import { api } from "@/lib/api"
 import { showMutationErrorToast } from "@/lib/error-toast"
 import { showPreferenceToast } from "@/lib/push-toast"
 import { useSessionAwareMutation } from "@/hooks/use-session-aware-mutation"
-import type { Category, PreferencesResponse } from "@/types/preference"
+import type {
+  Category,
+  GlobalPreferenceExclusion,
+  PreferencesResponse,
+} from "@/types/preference"
 
 const PREFERENCES_QUERY_KEY = ["preferences"]
 
@@ -34,17 +42,64 @@ function usePreferenceMutationFeedback(action: "add" | "remove") {
   }
 }
 
-/** Like the preference feedback, minus the success toast: the dialog list is the feedback. */
+const EXCLUSION_MUTATION_KEY = ["global-exclusion"]
+const OPTIMISTIC_EXCLUSION_PREFIX = "optimistic-"
+
+/** True for an exclusion row shown before the API confirmed it (no real id yet). */
+export function isOptimisticExclusion(exclusionId: string): boolean {
+  return exclusionId.startsWith(OPTIMISTIC_EXCLUSION_PREFIX)
+}
+
+type CachedPreferences = { data: PreferencesResponse }
+
+/**
+ * Optimistic feedback for exclusion add/remove: the dialog list updates on
+ * click, there is no success toast, and the cache is refetched once the last
+ * in-flight exclusion mutation settles. On failure the refetch also reverts
+ * the optimistic change, so no snapshot is kept that could clobber a
+ * concurrent click.
+ */
 function useExclusionMutationFeedback(action: "add" | "remove") {
   const queryClient = useQueryClient()
   const { t } = useLanguage()
 
   return {
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: PREFERENCES_QUERY_KEY }),
+    mutationKey: EXCLUSION_MUTATION_KEY,
     onError: (error: Error) =>
       showMutationErrorToast(error, t(`exclusions.${action}_error`)),
+    onSettled: () => {
+      // This mutation still counts as in flight inside onSettled.
+      if (queryClient.isMutating({ mutationKey: EXCLUSION_MUTATION_KEY }) > 1) {
+        return
+      }
+      return queryClient.invalidateQueries({ queryKey: PREFERENCES_QUERY_KEY })
+    },
   }
+}
+
+/** Rewrites one global preference's exclusions in the cached preferences. */
+async function updateCachedExclusions(
+  queryClient: QueryClient,
+  preferenceId: string,
+  update: (
+    exclusions: GlobalPreferenceExclusion[],
+  ) => GlobalPreferenceExclusion[],
+) {
+  await queryClient.cancelQueries({ queryKey: PREFERENCES_QUERY_KEY })
+  queryClient.setQueryData<CachedPreferences>(
+    PREFERENCES_QUERY_KEY,
+    (old) =>
+      old && {
+        data: {
+          ...old.data,
+          global: old.data.global.map((pref) =>
+            pref.id === preferenceId
+              ? { ...pref, exclusions: update(pref.exclusions) }
+              : pref,
+          ),
+        },
+      },
+  )
 }
 
 export function useAddChannelPreference() {
@@ -91,6 +146,8 @@ export function useRemoveGlobalPreference() {
 }
 
 export function useAddGlobalPreferenceExclusion() {
+  const queryClient = useQueryClient()
+
   return useSessionAwareMutation({
     mutationFn: ({
       preferenceId,
@@ -102,11 +159,22 @@ export function useAddGlobalPreferenceExclusion() {
       api.post(`/preferences/global/${preferenceId}/exclusions`, {
         broadcaster_user_id: broadcasterUserId,
       }),
+    onMutate: ({ preferenceId, broadcasterUserId }) =>
+      updateCachedExclusions(queryClient, preferenceId, (exclusions) => [
+        ...exclusions,
+        {
+          id: `${OPTIMISTIC_EXCLUSION_PREFIX}${broadcasterUserId}`,
+          broadcaster_user_id: broadcasterUserId,
+          created_at: new Date().toISOString(),
+        },
+      ]),
     ...useExclusionMutationFeedback("add"),
   })
 }
 
 export function useRemoveGlobalPreferenceExclusion() {
+  const queryClient = useQueryClient()
+
   return useSessionAwareMutation({
     mutationFn: ({
       preferenceId,
@@ -117,6 +185,10 @@ export function useRemoveGlobalPreferenceExclusion() {
     }) =>
       api.delete(
         `/preferences/global/${preferenceId}/exclusions/${exclusionId}`,
+      ),
+    onMutate: ({ preferenceId, exclusionId }) =>
+      updateCachedExclusions(queryClient, preferenceId, (exclusions) =>
+        exclusions.filter((e) => e.id !== exclusionId),
       ),
     ...useExclusionMutationFeedback("remove"),
   })
