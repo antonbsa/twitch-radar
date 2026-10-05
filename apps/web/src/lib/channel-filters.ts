@@ -15,15 +15,27 @@ export const DEFAULT_CHANNEL_FILTERS: ChannelFilters = {
   sort: "viewers",
 }
 
-/** Distinct category names present across the given channels' live state, alphabetically sorted. */
-export function deriveLiveCategories(channels: FollowedChannel[]): string[] {
-  const seen = new Set<string>()
+export interface LiveCategory {
+  name: string
+  liveCount: number
+}
+
+/** Categories of the live channels with how many are live in each, most broadcasters first, then alphabetically. */
+export function deriveLiveCategories(
+  channels: FollowedChannel[],
+): LiveCategory[] {
+  const counts = new Map<string, number>()
   for (const channel of channels) {
     if (channel.is_live && channel.category_name) {
-      seen.add(channel.category_name)
+      counts.set(
+        channel.category_name,
+        (counts.get(channel.category_name) ?? 0) + 1,
+      )
     }
   }
-  return Array.from(seen).sort((a, b) => a.localeCompare(b))
+  return Array.from(counts, ([name, liveCount]) => ({ name, liveCount })).sort(
+    (a, b) => b.liveCount - a.liveCount || a.name.localeCompare(b.name),
+  )
 }
 
 function matchesSearch(channel: FollowedChannel, search: string): boolean {

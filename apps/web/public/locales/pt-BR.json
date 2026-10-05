@@ -111,7 +111,6 @@
   "preferences.remove_success": "Alerta removido.",
   "preferences.remove_error": "Não foi possível remover o alerta. Tente novamente.",
 
-  "sync.success": "Canais sincronizados.",
   "sync.error": "Não foi possível sincronizar os canais. Tente novamente.",
 
   "reconnect.message": "Sua conexão com a Twitch precisa ser renovada.",

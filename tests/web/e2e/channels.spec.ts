@@ -236,7 +236,7 @@ describe("Channels view", () => {
     )
   })
 
-  it("should disable the sync button in-flight and update channels from the sync response", async ({
+  it("should disable the sync button in-flight and update channels from the sync response without a toast", async ({
     authenticatedSession,
   }) => {
     const { page } = authenticatedSession
@@ -296,7 +296,7 @@ describe("Channels view", () => {
       .toBe(false)
     await expectVisible(page.getByText("PulledStreamer"))
     expect(followedCalls).toBe(callsBeforeSync)
-    await expectVisible(page.getByText("Channels synced."))
+    expect(await page.locator("[data-sonner-toast]").count()).toBe(0)
   })
 
   it("should show an error toast when a manual sync fails", async ({
@@ -321,7 +321,6 @@ describe("Channels view", () => {
     await page.getByRole("button", { name: /sync/i }).click()
 
     await expectVisible(page.getByText("Could not sync channels. Try again."))
-    expect(await page.getByText("Channels synced.").count()).toBe(0)
   })
 
   it("should open the per-channel preference sheet from the config button", async ({
