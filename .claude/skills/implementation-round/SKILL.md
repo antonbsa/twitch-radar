@@ -48,7 +48,7 @@ Given a list of inputs to implement together - any mix of spec paths (`specs/mil
    - Test-run contention: both tiers use fixed ports shared by every worktree, so wrap each tier run in `flock /tmp/twitch-radar-tests.lock <command>` to serialize across groups. Never kill another session's servers.
    - A short report contract: status (`DONE`/`BLOCKED`), commit hash(es), handoff doc path(s).
 
-6. **Report the whole batch once every subagent returns.** One consolidated summary, per group: worktree path, branch, items covered, commit hash(es), handoff doc path(s) (`.agents/handoff-<slug>.md`, inside that worktree), and status. Leave every worktree in place - this skill never deletes or merges them, and never pushes or opens a PR. Point the user at `creating-pull-requests` for whichever branches they want to open next, one at a time.
+6. **Report the whole batch once every subagent returns.** One consolidated summary, per group: worktree path, branch, items covered, commit hash(es), handoff doc path(s) (`.agents/handoff-<slug>.md`, inside that worktree), and status. End each group with its own fenced `bash` block holding only `code -r <absolute worktree path>`: the desktop app gives each shell block a Run button, so the user opens that worktree in VS Code in one click, reusing the current window. Leave every worktree in place - this skill never deletes or merges them, and never pushes or opens a PR. Point the user at `creating-pull-requests` for whichever branches they want to open next, one at a time.
 
 ## Common mistakes
 
