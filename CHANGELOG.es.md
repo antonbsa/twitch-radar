@@ -2,6 +2,30 @@
 
 Qué cambió para quienes usan Twitch Radar, una sección por versión publicada. Escrito en lenguaje simple para el panel "Novedades" de la app — sin números de PR, prefijos de commit ni cambios internos; la lista técnica completa vive en cada GitHub Release, generada a partir de las labels de los PRs (ver [ADR 0050](docs/decisions/0050-changelog-as-source-of-truth-for-release-notes.md)). Una sección `## Unreleased`, cuando existe, es ignorada por el panel y por el parser de build.
 
+## v0.3.0 — 2026-10-04
+
+Las notificaciones son mucho más útiles: foto del canal, botón Ver y un texto que realmente dice qué cambió.
+
+### New
+
+- Las notificaciones ahora tienen un botón "Ver" que abre el canal en Twitch y pueden mostrar una vista previa de la transmisión.
+- Las notificaciones, la lista de canales y los detalles del canal ahora muestran la foto de perfil del streamer.
+- El panel "Novedades" muestra qué cambió en cada versión y se puede abrir desde el número de versión en la app.
+
+### Improved
+
+- El texto de las notificaciones ahora aporta información nueva, como cuánto tiempo lleva el canal en vivo, a qué estaba jugando antes o el título de la transmisión, en lugar de repetir el título de la notificación.
+- Varias alertas seguidas del mismo canal ahora se reemplazan entre sí en lugar de acumularse.
+- Tus canales seguidos ahora se sincronizan automáticamente al abrir la app o al volver a ella después de un rato.
+- El filtro de categorías en Canales muestra cuántos canales están en vivo en cada categoría.
+- Buscar una categoría o añadir un canal ahora abre una pantalla completa que no queda tapada por el teclado, con tus categorías guardadas primero.
+- La app ahora confirma cuando se guarda una preferencia o cuando un cambio falla.
+
+### Fixed
+
+- Las repeticiones, playlists y watch parties ya no envían alertas como si el canal acabara de entrar en vivo.
+- La barra de pestañas inferior y los paneles ya no quedan debajo del indicador de inicio del iPhone, y las listas ya no se desplazan por detrás de la barra de pestañas.
+
 ## v0.2.0 — 2026-09-28
 
 Twitch Radar ahora está disponible en español y portugués de Brasil, junto con una página de Alertas rediseñada y nuevas formas de reaccionar a las notificaciones de canales en vivo.

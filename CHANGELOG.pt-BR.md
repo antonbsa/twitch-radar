@@ -2,6 +2,30 @@
 
 O que mudou para quem usa o Twitch Radar, uma seção por versão lançada. Escrito em linguagem simples para o painel "Novidades" do app — sem números de PR, prefixos de commit ou mudanças internas; a lista técnica completa fica em cada GitHub Release, gerada a partir das labels dos PRs (ver [ADR 0050](docs/decisions/0050-changelog-as-source-of-truth-for-release-notes.md)). Uma seção `## Unreleased`, quando presente, é ignorada pelo painel e pelo parser de build.
 
+## v0.3.0 — 2026-10-04
+
+As notificações ficaram muito mais úteis: foto do canal, botão Assistir e um texto que realmente diz o que mudou.
+
+### New
+
+- As notificações agora têm um botão "Assistir" que abre o canal na Twitch e podem mostrar uma prévia da transmissão.
+- As notificações, a lista de canais e os detalhes do canal agora mostram a foto de perfil do streamer.
+- O painel "Novidades" mostra o que mudou em cada versão e pode ser aberto pelo número da versão no app.
+
+### Improved
+
+- O texto das notificações agora traz informação nova, como há quanto tempo o canal está ao vivo, o que estava jogando antes ou o título da transmissão, em vez de repetir o título da notificação.
+- Vários alertas seguidos do mesmo canal agora se substituem em vez de se acumularem.
+- Seus canais seguidos agora sincronizam automaticamente quando você abre o app ou volta a ele depois de um tempo.
+- O filtro de categorias em Canais mostra quantos canais estão ao vivo em cada categoria.
+- Buscar uma categoria ou adicionar um canal agora abre uma tela cheia que não fica escondida pelo teclado, com suas categorias salvas aparecendo primeiro.
+- O app agora confirma quando uma configuração é salva ou quando uma alteração falha.
+
+### Fixed
+
+- Reprises, playlists e watch parties não enviam mais alertas como se o canal tivesse acabado de entrar ao vivo.
+- A barra de abas inferior e os painéis não ficam mais por baixo do indicador de início do iPhone, e as listas não rolam mais por trás da barra de abas.
+
 ## v0.2.0 — 2026-09-28
 
 O Twitch Radar agora está disponível em espanhol e português brasileiro, além de uma página de Alertas redesenhada e novas formas de reagir às notificações de canais ao vivo.

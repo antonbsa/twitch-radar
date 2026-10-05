@@ -2,6 +2,30 @@
 
 What changed for people using Twitch Radar, one section per released version. Written in plain language for the in-app "What's New" sheet — no PR numbers, commit prefixes, or internal-only changes; the full engineering list lives in each GitHub Release, generated from PR labels below this entry (see [ADR 0050](docs/decisions/0050-changelog-as-source-of-truth-for-release-notes.md)). An `## Unreleased` section, when present, is ignored by the widget and its build-time parser.
 
+## v0.3.0 — 2026-10-04
+
+Notifications get a lot more useful: channel pictures, a Watch button, and text that actually tells you what changed.
+
+### New
+
+- Notifications now have a "Watch" button that opens the channel on Twitch, and can show a preview of the stream.
+- Notifications, the channel list, and channel details now show the streamer's profile picture.
+- A "What's New" sheet shows what changed in each version, and you can open it from the version number in the app.
+
+### Improved
+
+- Notification text now says something new, such as how long the channel has been live, what it was playing before, or the stream title, instead of repeating the headline.
+- Several alerts in a row from the same channel now replace each other instead of piling up.
+- Your followed channels now sync automatically when you open the app or come back to it after a while.
+- The category filter on Channels shows how many channels are live in each category.
+- Searching for a category or adding a channel now opens a full-screen view that stays clear of the keyboard, with your saved categories listed first.
+- The app now confirms when a setting is saved or a change fails.
+
+### Fixed
+
+- Reruns, playlists, and watch parties no longer send alerts as if the channel had just gone live.
+- The bottom tab bar and sheets no longer sit under the iPhone home indicator, and lists no longer scroll behind the tab bar.
+
 ## v0.2.0 — 2026-09-28
 
 Twitch Radar is now available in Spanish and Brazilian Portuguese, alongside a redesigned Alerts page and new ways to react to live notifications.
