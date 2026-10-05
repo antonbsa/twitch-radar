@@ -55,6 +55,10 @@ function fakeDb(avatarUrl: string | null) {
     },
     users: {
       findLanguagesByIds: vi.fn().mockResolvedValue(new Map([["usr_1", "en"]])),
+      findPausedUserIds: vi.fn().mockResolvedValue(new Set()),
+    },
+    broadcasterMutes: {
+      findMutedUserIds: vi.fn().mockResolvedValue(new Set()),
     },
     notificationDeliveries: {
       insertPendingIfNew: vi
