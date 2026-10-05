@@ -69,6 +69,9 @@ export interface SeedChannelStateInput {
   viewerCount?: number | null
   startedAt?: string | null
   streamType?: string | null
+  lastLiveAt?: string | null
+  lastCategoryId?: string | null
+  lastCategoryName?: string | null
 }
 
 export interface SeedPreferencesInput {
@@ -216,6 +219,9 @@ export async function handleTestSeed(c: Context<HonoEnv>): Promise<Response> {
         viewerCount: state.viewerCount ?? null,
         startedAt: state.startedAt ?? null,
         streamType: state.streamType ?? null,
+        lastLiveAt: state.lastLiveAt ?? null,
+        lastCategoryId: state.lastCategoryId ?? null,
+        lastCategoryName: state.lastCategoryName ?? null,
         now,
       })),
     )

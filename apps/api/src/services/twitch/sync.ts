@@ -136,6 +136,9 @@ export async function fetchFollowedChannelsSync(
                 thumbnail_url: resolveThumbnailUrl(stream.thumbnail_url),
                 viewer_count: stream.viewer_count,
                 started_at: stream.started_at,
+                last_live_at: null,
+                last_category_id: null,
+                last_category_name: null,
               }
             : {
                 is_live: false,
@@ -146,6 +149,9 @@ export async function fetchFollowedChannelsSync(
                 thumbnail_url: null,
                 viewer_count: null,
                 started_at: null,
+                last_live_at: null,
+                last_category_id: null,
+                last_category_name: null,
               },
         ]
       }),

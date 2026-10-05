@@ -13,6 +13,11 @@ export interface UpsertChannelStateInput {
   viewerCount?: number | null
   startedAt?: string | null
   streamType?: string | null
+  // Explicit values win over the live→offline capture in `upsertAll`; seeds
+  // set them directly, EventSub offline passes its own event timestamp.
+  lastLiveAt?: string | null
+  lastCategoryId?: string | null
+  lastCategoryName?: string | null
   // Twitch's message timestamp when the write comes from an EventSub event;
   // the stale-event guard compares against it (ADR 0033). Seeding leaves it
   // unset so the first event for a seeded channel always processes.
@@ -31,6 +36,9 @@ export interface ChannelStateRecord {
   viewer_count: number | null
   started_at: string | null
   stream_type: string | null
+  last_live_at: string | null
+  last_category_id: string | null
+  last_category_name: string | null
   updated_from_event_at: string | null
   updated_at: string
 }
@@ -44,11 +52,12 @@ export class ChannelStateRepository {
 
   async upsertAll(inputs: UpsertChannelStateInput[]): Promise<void> {
     if (inputs.length === 0) return
-    // 12 bound params per row (broadcasterUserId, isLive, streamId,
+    // 15 bound params per row (broadcasterUserId, isLive, streamId,
     // categoryId, categoryName, title, thumbnailUrl, viewerCount, startedAt,
-    // streamType, updatedFromEventAt, updatedAt); D1 caps bound params at
-    // 100 per query, so 8 rows/batch (96 params) stays safely under that limit.
-    const BATCH_SIZE = 8
+    // streamType, lastLiveAt, lastCategoryId, lastCategoryName,
+    // updatedFromEventAt, updatedAt); D1 caps bound params at 100 per query,
+    // so 6 rows/batch (90 params) stays safely under that limit.
+    const BATCH_SIZE = 6
     const statements = []
     for (let i = 0; i < inputs.length; i += BATCH_SIZE) {
       const batch = inputs.slice(i, i + BATCH_SIZE)
@@ -67,6 +76,9 @@ export class ChannelStateRepository {
               viewerCount: input.viewerCount ?? null,
               startedAt: input.startedAt ?? null,
               streamType: input.streamType ?? null,
+              lastLiveAt: input.lastLiveAt ?? null,
+              lastCategoryId: input.lastCategoryId ?? null,
+              lastCategoryName: input.lastCategoryName ?? null,
               updatedFromEventAt: input.updatedFromEventAt ?? null,
               updatedAt: input.now,
             })),
@@ -83,6 +95,12 @@ export class ChannelStateRepository {
               viewerCount: sql`excluded.viewer_count`,
               startedAt: sql`excluded.started_at`,
               streamType: sql`excluded.stream_type`,
+              // On a live→offline transition, capture when and what it last
+              // streamed from the row being replaced, in the same upsert (no
+              // extra read). Any other write keeps the stored values.
+              lastLiveAt: sql`CASE WHEN ${channelState.isLive} = 1 AND excluded.is_live = 0 THEN COALESCE(excluded.last_live_at, excluded.updated_at) ELSE COALESCE(excluded.last_live_at, ${channelState.lastLiveAt}) END`,
+              lastCategoryId: sql`CASE WHEN ${channelState.isLive} = 1 AND excluded.is_live = 0 THEN COALESCE(excluded.last_category_id, ${channelState.categoryId}) ELSE COALESCE(excluded.last_category_id, ${channelState.lastCategoryId}) END`,
+              lastCategoryName: sql`CASE WHEN ${channelState.isLive} = 1 AND excluded.is_live = 0 THEN COALESCE(excluded.last_category_name, ${channelState.categoryName}) ELSE COALESCE(excluded.last_category_name, ${channelState.lastCategoryName}) END`,
               updatedFromEventAt: sql`excluded.updated_from_event_at`,
               updatedAt: sql`excluded.updated_at`,
             },
@@ -119,6 +137,9 @@ export class ChannelStateRepository {
           viewer_count: row.viewerCount,
           started_at: row.startedAt,
           stream_type: row.streamType,
+          last_live_at: row.lastLiveAt,
+          last_category_id: row.lastCategoryId,
+          last_category_name: row.lastCategoryName,
           updated_from_event_at: row.updatedFromEventAt,
           updated_at: row.updatedAt,
         })

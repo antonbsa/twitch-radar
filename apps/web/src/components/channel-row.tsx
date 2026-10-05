@@ -1,4 +1,4 @@
-import { Settings } from "lucide-react"
+import { Globe, Settings } from "lucide-react"
 import {
   Avatar,
   AvatarBadge,
@@ -8,21 +8,29 @@ import {
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/context/language-context"
 import { cn } from "@/lib/utils"
-import { formatLiveDuration, formatViewerCount } from "@/lib/format"
+import {
+  formatLiveDuration,
+  formatTimeAgo,
+  formatViewerCount,
+} from "@/lib/format"
 import type { FollowedChannel } from "@/types/channel"
 
 interface ChannelRowProps {
   channel: FollowedChannel
   onConfigure: (channel: FollowedChannel) => void
   onOpenDetail: (channel: FollowedChannel) => void
+  /** Set when a live channel's category matches an active preference. */
+  preferenceMatch?: "channel" | "global" | null
 }
 
 export function ChannelRow({
   channel,
   onConfigure,
   onOpenDetail,
+  preferenceMatch = null,
 }: ChannelRowProps) {
   const { t } = useLanguage()
+  const categoryName = channel.category_name ?? t("channel_row.no_category")
   return (
     <div
       data-testid="channel-row"
@@ -45,30 +53,47 @@ export function ChannelRow({
       </Avatar>
 
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">
-          {channel.broadcaster_display_name}
-        </p>
-        {channel.is_live ? (
-          <>
-            <p className="truncate text-xs text-muted-foreground">
-              {channel.category_name ?? t("channel_row.no_category")} ·{" "}
+        <div className="flex items-baseline gap-2">
+          <p className="truncate text-sm font-medium">
+            {channel.broadcaster_display_name}
+          </p>
+          {channel.is_live && (
+            <p className="shrink-0 text-xs text-muted-foreground">
               {t("channel_row.viewers_count", {
                 count: formatViewerCount(channel.viewer_count ?? 0),
               })}
             </p>
-            {channel.started_at && (
-              <p className="truncate text-xs text-muted-foreground">
-                {t("channel_row.live_for", {
-                  category:
-                    channel.category_name ?? t("channel_row.no_category"),
-                  duration: formatLiveDuration(channel.started_at),
-                })}
-              </p>
+          )}
+        </div>
+        {channel.is_live ? (
+          <p
+            data-preference-match={preferenceMatch ?? undefined}
+            className={cn(
+              "flex items-center gap-1 text-xs text-muted-foreground",
+              preferenceMatch && "font-medium text-[#f09d22]",
             )}
-          </>
+          >
+            {preferenceMatch === "global" && (
+              <Globe aria-hidden="true" className="size-3 shrink-0" />
+            )}
+            <span className="truncate">
+              {channel.started_at
+                ? t("channel_row.live_for", {
+                    category: categoryName,
+                    duration: formatLiveDuration(channel.started_at),
+                  })
+                : categoryName}
+            </span>
+          </p>
         ) : (
-          <p className="text-xs text-muted-foreground">
-            {t("channel_row.offline")}
+          <p className="truncate text-xs text-muted-foreground">
+            {channel.last_live_at
+              ? t("channel_row.last_live", {
+                  category:
+                    channel.last_category_name ?? t("channel_row.no_category"),
+                  duration: formatTimeAgo(channel.last_live_at),
+                })
+              : t("channel_row.offline")}
           </p>
         )}
       </div>

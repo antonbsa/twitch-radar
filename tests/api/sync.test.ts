@@ -165,7 +165,7 @@ describe("POST /api/sync/follows", () => {
   it("should batch a large followed list across multiple chunks and stay idempotent on retry", async () => {
     const { cookie } = await orchestrator.createAuthenticatedSession()
     // Large enough to require multiple batches under followedChannels'
-    // 8-rows-per-chunk and channelState's 10-rows-per-chunk limits, so this
+    // 8-rows-per-chunk and channelState's 6-rows-per-chunk limits, so this
     // exercises both the multi-row upsert and the single db.batch() call
     // per repository instead of just a single chunk.
     const BROADCASTER_COUNT = 40
@@ -265,6 +265,47 @@ describe("POST /api/sync/follows", () => {
         ),
     )
     expect(persisted).toHaveLength(BROADCASTER_COUNT)
+
+    // The live→offline transition retains what it last streamed and when;
+    // a channel that was never live has nothing to retain.
+    const wentOffline = persisted.find(
+      (c) => c.broadcaster_user_id === channels[0]!.broadcaster_id,
+    )!
+    const neverLive = persisted.find(
+      (c) => c.broadcaster_user_id === channels[1]!.broadcaster_id,
+    )!
+    expect(wentOffline).toMatchObject({
+      last_category_id: "game_1",
+      last_category_name: "Minecraft",
+    })
+    expect(typeof wentOffline.last_live_at).toBe("string")
+    expect(neverLive).toMatchObject({
+      last_live_at: null,
+      last_category_name: null,
+    })
+
+    // A further offline sync must not overwrite or zero the retained data.
+    await orchestrator.mockTwitch.reset()
+    await orchestrator.mockTwitch.onFollowedChannels(updatedChannels)
+    await orchestrator.mockTwitch.onFollowedStreams([])
+    const res3 = await fetch(`${orchestrator.baseUrl}/api/sync/follows`, {
+      method: "POST",
+      headers: { Cookie: cookie },
+    })
+    expect(res3.status).toBe(200)
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    const afterRepeat = await orchestrator.waitForFollowedChannels(
+      cookie,
+      () => true,
+    )
+    expect(
+      afterRepeat.find(
+        (c) => c.broadcaster_user_id === channels[0]!.broadcaster_id,
+      ),
+    ).toMatchObject({
+      last_live_at: wentOffline.last_live_at,
+      last_category_name: "Minecraft",
+    })
   }, 30_000)
 })
 

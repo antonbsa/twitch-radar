@@ -18,3 +18,14 @@ export function formatLiveDuration(startedAt: string): string {
   const minutes = totalMinutes % 60
   return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`
 }
+
+/** Coarsest whole unit since `isoTime` ("5m", "3h", "2d"), for "… ago" copy. */
+export function formatTimeAgo(isoTime: string): string {
+  const minutes = Math.max(
+    0,
+    Math.floor((Date.now() - new Date(isoTime).getTime()) / 60_000),
+  )
+  if (minutes < 60) return `${minutes}m`
+  const hours = Math.floor(minutes / 60)
+  return hours < 24 ? `${hours}h` : `${Math.floor(hours / 24)}d`
+}

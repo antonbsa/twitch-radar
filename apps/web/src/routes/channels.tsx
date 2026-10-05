@@ -17,6 +17,7 @@ import {
   useFollowedChannels,
   useManualSyncFollows,
 } from "@/hooks/use-channels"
+import { usePreferences } from "@/hooks/use-preferences"
 import {
   applyChannelFilters,
   DEFAULT_CHANNEL_FILTERS,
@@ -32,6 +33,7 @@ export function ChannelsPage() {
     isLoading: isChannelsLoading,
     isError,
   } = useFollowedChannels()
+  const { data: preferences } = usePreferences()
   const { user, reconnectRequired } = useAuth()
   const autoSyncStatus = useAutoSyncFollowsStatus()
   // An auto-sync only runs when the last sync is stale (issue #88): hold the
@@ -63,6 +65,30 @@ export function ChannelsPage() {
     () => applyChannelFilters(channels ?? [], filters),
     [channels, filters],
   )
+
+  const globalCategoryIds = useMemo(
+    () => new Set(preferences?.global.map((p) => p.category_id)),
+    [preferences],
+  )
+  const channelCategoryKeys = useMemo(
+    () =>
+      new Set(
+        preferences?.channel.map(
+          (p) => `${p.broadcaster_user_id}:${p.category_id}`,
+        ),
+      ),
+    [preferences],
+  )
+
+  function preferenceMatchFor(channel: FollowedChannel) {
+    if (!channel.is_live || !channel.category_id) return null
+    if (globalCategoryIds.has(channel.category_id)) return "global"
+    return channelCategoryKeys.has(
+      `${channel.broadcaster_user_id}:${channel.category_id}`,
+    )
+      ? "channel"
+      : null
+  }
 
   const hasChannels = (channels?.length ?? 0) > 0
   const hasVisibleResults = live.length > 0 || offline.length > 0
@@ -166,6 +192,7 @@ export function ChannelsPage() {
             <ChannelRow
               key={channel.broadcaster_user_id}
               channel={channel}
+              preferenceMatch={preferenceMatchFor(channel)}
               onConfigure={setConfiguringChannel}
               onOpenDetail={setDetailChannel}
             />
@@ -223,18 +250,18 @@ function ChannelsLoadingSkeleton() {
       <div className="px-4 pt-2 pb-1">
         <Skeleton className="h-4 w-10" />
       </div>
-      <ChannelRowSkeleton variant="live" />
-      <ChannelRowSkeleton variant="live" />
-      <ChannelRowSkeleton variant="live" />
-      <ChannelRowSkeleton variant="live" />
-      <ChannelRowSkeleton variant="live" />
+      <ChannelRowSkeleton />
+      <ChannelRowSkeleton />
+      <ChannelRowSkeleton />
+      <ChannelRowSkeleton />
+      <ChannelRowSkeleton />
 
       <div className="px-4 pt-4 pb-1">
         <Skeleton className="h-4 w-14" />
       </div>
-      <ChannelRowSkeleton variant="offline" />
-      <ChannelRowSkeleton variant="offline" />
-      <ChannelRowSkeleton variant="offline" />
+      <ChannelRowSkeleton />
+      <ChannelRowSkeleton />
+      <ChannelRowSkeleton />
     </div>
   )
 }

@@ -154,7 +154,7 @@ export function AlertsPage() {
             key={i}
             className="mx-4 mb-2 rounded-lg border border-border bg-card"
           >
-            <ChannelRowSkeleton variant="offline" />
+            <ChannelRowSkeleton />
           </div>
         ))}
 
