@@ -15,6 +15,8 @@ interface AddChannelDialogProps {
   onOpenChange: (open: boolean) => void
   channels: FollowedChannel[]
   onSelect: (channel: FollowedChannel) => void
+  /** Overrides the default "Add channel" heading. */
+  title?: string
 }
 
 export function AddChannelDialog({
@@ -22,6 +24,7 @@ export function AddChannelDialog({
   onOpenChange,
   channels,
   onSelect,
+  title,
 }: AddChannelDialogProps) {
   const [query, setQuery] = useState("")
   const { t } = useLanguage()
@@ -48,7 +51,7 @@ export function AddChannelDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent fullScreen>
         <DialogHeader className="h-14 justify-center px-4 pr-14">
-          <DialogTitle>{t("alerts.add_channel")}</DialogTitle>
+          <DialogTitle>{title ?? t("alerts.add_channel")}</DialogTitle>
         </DialogHeader>
         <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-4 pt-1 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <SearchField

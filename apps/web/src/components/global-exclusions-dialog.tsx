@@ -93,7 +93,7 @@ export function GlobalExclusionsDialog({
       }}
     >
       <DialogContent fullScreen data-testid="exclusions-dialog">
-        <DialogHeader className="min-h-14 justify-center px-4 pr-14">
+        <DialogHeader className="min-h-14 justify-center px-4 py-3 pr-14">
           <DialogTitle>
             {t("exclusions.title", {
               category: preference?.category_name ?? "",
@@ -116,18 +116,10 @@ export function GlobalExclusionsDialog({
                 className="rounded-lg border border-border"
               >
                 {excluded.map(({ channel, exclusionId }) => (
-                  <li
-                    key={channel.broadcaster_user_id}
-                    className="flex min-h-11 items-center gap-2 px-3 py-1"
-                  >
-                    <ChannelAvatar channel={channel} />
-                    <span className="flex-1 truncate text-sm">
-                      {channel.broadcaster_display_name}
-                    </span>
+                  <li key={channel.broadcaster_user_id}>
                     <Button
-                      type="button"
                       variant="ghost"
-                      size="icon-sm"
+                      type="button"
                       disabled={removeExclusion.isPending}
                       aria-label={t("exclusions.remove_aria", {
                         channel: channel.broadcaster_display_name,
@@ -139,8 +131,13 @@ export function GlobalExclusionsDialog({
                           exclusionId,
                         })
                       }
+                      className="h-auto min-h-11 w-full justify-start gap-2 rounded-none px-3 py-2 text-left"
                     >
-                      <XIcon className="size-4" />
+                      <ChannelAvatar channel={channel} />
+                      <span className="flex-1 truncate">
+                        {channel.broadcaster_display_name}
+                      </span>
+                      <XIcon className="size-4 text-muted-foreground" />
                     </Button>
                   </li>
                 ))}
@@ -167,7 +164,8 @@ export function GlobalExclusionsDialog({
               <ul className="rounded-lg border border-border">
                 {candidates.map((channel) => (
                   <li key={channel.broadcaster_user_id}>
-                    <button
+                    <Button
+                      variant="ghost"
                       type="button"
                       disabled={addExclusion.isPending}
                       aria-label={t("exclusions.add_aria", {
@@ -180,14 +178,14 @@ export function GlobalExclusionsDialog({
                           broadcasterUserId: channel.broadcaster_user_id,
                         })
                       }
-                      className="flex min-h-11 w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted"
+                      className="h-auto min-h-11 w-full justify-start gap-2 rounded-none px-3 py-2 text-left"
                     >
                       <ChannelAvatar channel={channel} />
                       <span className="flex-1 truncate">
                         {channel.broadcaster_display_name}
                       </span>
                       <PlusIcon className="size-4 text-muted-foreground" />
-                    </button>
+                    </Button>
                   </li>
                 ))}
               </ul>

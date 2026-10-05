@@ -1,24 +1,43 @@
-import { BellOffIcon } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { BellOffIcon, BellRingIcon } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
 import { useLanguage } from "@/context/language-context"
 import { useSetNotificationsPaused } from "@/hooks/use-notifications"
 import { cn } from "@/lib/utils"
 
 /**
- * "Pause all notifications" switch plus, while paused, a persistent banner
- * with a resume action. ADR 0054 requires the paused state to stay visible.
+ * "Pause all notifications" switch. While paused it shows the bell-off icon
+ * and an explanation, so the state stays visible (ADR 0054).
  */
 export function PauseNotificationsControl() {
   const { user } = useAuth()
   const { t } = useLanguage()
   const setPaused = useSetNotificationsPaused()
   const paused = user?.notifications_paused_at != null
+  const Icon = paused ? BellOffIcon : BellRingIcon
 
   return (
-    <div className="space-y-2 px-4 pb-2">
-      <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2.5">
-        <span className="text-sm font-medium">{t("alerts.pause_label")}</span>
+    <div className="px-4 pb-2">
+      <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-3 py-2.5">
+        <Icon
+          aria-hidden="true"
+          data-testid="pause-icon"
+          className={cn(
+            "size-4 shrink-0",
+            paused ? "text-destructive" : "text-muted-foreground",
+          )}
+        />
+        <div className="min-w-0 flex-1">
+          <span className="text-sm font-medium">{t("alerts.pause_label")}</span>
+          {paused && (
+            <p
+              role="status"
+              data-testid="pause-description"
+              className="text-xs text-muted-foreground"
+            >
+              {t("alerts.pause_description")}
+            </p>
+          )}
+        </div>
         <button
           type="button"
           role="switch"
@@ -39,33 +58,6 @@ export function PauseNotificationsControl() {
           />
         </button>
       </div>
-
-      {paused && (
-        <div
-          role="status"
-          data-testid="pause-banner"
-          className="flex items-start gap-3 rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-2.5"
-        >
-          <BellOffIcon className="mt-0.5 size-4 shrink-0 text-destructive" />
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium">
-              {t("alerts.pause_banner_title")}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {t("alerts.pause_banner_body")}
-            </p>
-          </div>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            disabled={setPaused.isPending}
-            onClick={() => setPaused.mutate(false)}
-          >
-            {t("alerts.pause_resume")}
-          </Button>
-        </div>
-      )}
     </div>
   )
 }

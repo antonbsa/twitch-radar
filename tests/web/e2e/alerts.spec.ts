@@ -894,7 +894,7 @@ describe("Alerts view", () => {
     await expectVisible(page.getByRole("button", { name: "Add channel" }))
   })
 
-  it("should pause and resume all notifications, keeping the banner while paused", async ({
+  it("should pause and resume all notifications, keeping the description while paused", async ({
     authenticatedSession,
   }) => {
     const { page } = authenticatedSession
@@ -904,21 +904,17 @@ describe("Alerts view", () => {
       name: "Pause all notifications",
     })
     await expectVisible(toggle)
-    expect(await page.getByTestId("pause-banner").count()).toBe(0)
+    expect(await page.getByTestId("pause-description").count()).toBe(0)
 
     await toggle.click()
-    const banner = page.getByTestId("pause-banner")
-    await expectVisible(banner)
+    await expectVisible(page.getByTestId("pause-description"))
 
     // The paused state is persisted, not just local: it survives a reload.
     await page.reload()
-    await expectVisible(page.getByTestId("pause-banner"))
+    await expectVisible(page.getByTestId("pause-description"))
 
-    await page
-      .getByTestId("pause-banner")
-      .getByRole("button", { name: "Resume" })
-      .click()
-    await expectHidden(page.getByTestId("pause-banner"))
+    await page.getByRole("switch", { name: "Pause all notifications" }).click()
+    await expectHidden(page.getByTestId("pause-description"))
   })
 
   it("should mute a channel from its detail modal and unmute it from the Alerts page", async ({
@@ -946,6 +942,8 @@ describe("Alerts view", () => {
     const modal = page.getByTestId("channel-detail-modal")
     await modal.getByRole("button", { name: "Mute notifications" }).click()
     await expectVisible(modal.getByRole("button", { name: "Unmute" }))
+    await expectVisible(modal.getByTestId("muted-indicator"))
+    await expectVisible(page.getByText("MuteStreamer muted"))
     await page.keyboard.press("Escape")
     await expectVisible(row.getByTestId("muted-indicator"))
 
@@ -954,6 +952,12 @@ describe("Alerts view", () => {
     await expectVisible(muted.getByText("MuteStreamer"))
     await muted.getByRole("button", { name: "Unmute MuteStreamer" }).click()
     await expectVisible(page.getByText("No muted channels."))
+    await expectVisible(page.getByText("MuteStreamer unmuted"))
+
+    // The add button mutes straight from the picker.
+    await muted.getByRole("button", { name: "Add channel to mute" }).click()
+    await page.getByRole("button", { name: "MuteStreamer" }).click()
+    await expectVisible(muted.getByText("MuteStreamer"))
   })
 
   it("should add and remove a global category exclusion from the chip's dialog", async ({

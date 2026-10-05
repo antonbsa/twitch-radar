@@ -160,6 +160,14 @@ export function ChannelDetailModal({
               </AvatarFallback>
             </Avatar>
             <SheetTitle>{channel?.broadcaster_display_name}</SheetTitle>
+            {activeMute && (
+              <BellOffIcon
+                role="img"
+                aria-label={t("channel_row.muted_aria")}
+                data-testid="muted-indicator"
+                className="size-3.5 shrink-0 text-muted-foreground"
+              />
+            )}
           </div>
           {channel?.is_live ? (
             <div className="flex items-center justify-between gap-2">
@@ -273,7 +281,16 @@ export function ChannelDetailModal({
                   size="lg"
                   disabled={unmuteBroadcaster.isPending}
                   className="w-full gap-1.5 sm:w-fit sm:max-w-xs"
-                  onClick={() => unmuteBroadcaster.mutate(activeMute.id)}
+                  onClick={() =>
+                    unmuteBroadcaster.mutate(activeMute.id, {
+                      onSuccess: () =>
+                        toast(
+                          t("mute.unmuted_toast", {
+                            channel: channel.broadcaster_display_name,
+                          }),
+                        ),
+                    })
+                  }
                 >
                   <BellIcon />
                   {t("mute.unmute_action")}
@@ -286,7 +303,14 @@ export function ChannelDetailModal({
                   disabled={muteBroadcaster.isPending}
                   className="w-full gap-1.5 sm:w-fit sm:max-w-xs"
                   onClick={() =>
-                    muteBroadcaster.mutate(channel.broadcaster_user_id)
+                    muteBroadcaster.mutate(channel.broadcaster_user_id, {
+                      onSuccess: () =>
+                        toast(
+                          t("mute.muted_toast", {
+                            channel: channel.broadcaster_display_name,
+                          }),
+                        ),
+                    })
                   }
                 >
                   <BellOffIcon />
