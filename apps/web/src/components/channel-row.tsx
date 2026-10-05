@@ -29,7 +29,7 @@ export function ChannelRow({
   onOpenDetail,
   preferenceMatch = null,
 }: ChannelRowProps) {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   const categoryName = channel.category_name ?? t("channel_row.no_category")
   return (
     <div
@@ -91,7 +91,7 @@ export function ChannelRow({
               ? t("channel_row.last_live", {
                   category:
                     channel.last_category_name ?? t("channel_row.no_category"),
-                  duration: formatTimeAgo(channel.last_live_at),
+                  time: formatTimeAgo(channel.last_live_at, language),
                 })
               : t("channel_row.offline")}
           </p>

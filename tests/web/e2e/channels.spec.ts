@@ -257,7 +257,9 @@ describe("Channels view", () => {
       page.locator(
         `[data-testid="channel-row"][data-broadcaster-user-id="${id}"]`,
       )
-    await expectVisible(row(withLast).getByText("Was in Apex Legends 3h ago"))
+    await expectVisible(
+      row(withLast).getByText("Was in Apex Legends 3 hours ago"),
+    )
     await expectVisible(row(withoutLast).getByText("Offline"))
   })
 

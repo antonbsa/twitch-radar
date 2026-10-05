@@ -19,13 +19,15 @@ export function formatLiveDuration(startedAt: string): string {
   return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`
 }
 
-/** Coarsest whole unit since `isoTime` ("5m", "3h", "2d"), for "… ago" copy. */
-export function formatTimeAgo(isoTime: string): string {
+/** Localized "5 minutes ago" / "3 hours ago" / "2 days ago": the coarsest whole unit since `isoTime`. */
+export function formatTimeAgo(isoTime: string, locale: string): string {
   const minutes = Math.max(
     0,
     Math.floor((Date.now() - new Date(isoTime).getTime()) / 60_000),
   )
-  if (minutes < 60) return `${minutes}m`
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "always" })
+  if (minutes < 60) return rtf.format(-minutes, "minute")
   const hours = Math.floor(minutes / 60)
-  return hours < 24 ? `${hours}h` : `${Math.floor(hours / 24)}d`
+  if (hours < 24) return rtf.format(-hours, "hour")
+  return rtf.format(-Math.floor(hours / 24), "day")
 }
