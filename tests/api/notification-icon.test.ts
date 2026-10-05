@@ -22,6 +22,9 @@ const LIVE_STATE: ChannelStateRecord = {
   viewer_count: null,
   started_at: null,
   stream_type: "live",
+  last_live_at: null,
+  last_category_id: null,
+  last_category_name: null,
   updated_from_event_at: null,
   updated_at: "2024-06-01T12:00:00Z",
 }

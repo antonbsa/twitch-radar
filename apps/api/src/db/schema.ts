@@ -133,6 +133,11 @@ export const channelState = sqliteTable("channel_state", {
   // ADR 0050): null means "unknown" (rows written before this column
   // existed) and is treated as live rather than silently suppressed.
   streamType: text("stream_type"),
+  // What the channel was last streaming and when it ended; kept across
+  // offline syncs, overwritten only by the next live→offline transition.
+  lastLiveAt: text("last_live_at"),
+  lastCategoryId: text("last_category_id"),
+  lastCategoryName: text("last_category_name"),
   updatedFromEventAt: text("updated_from_event_at"),
   updatedAt: text("updated_at").notNull(),
 })

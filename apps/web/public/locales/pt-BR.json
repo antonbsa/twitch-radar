@@ -34,6 +34,7 @@
   "channel_row.no_category": "Sem categoria",
   "channel_row.viewers_count": "{count} espectadores",
   "channel_row.live_for": "Em {category} há {duration}",
+  "channel_row.last_live": "Esteve em {category} {time}",
   "channel_row.configure_aria": "Configurar {name}",
 
   "channel_preferences.saved_for_channel": "Salvo para este canal",

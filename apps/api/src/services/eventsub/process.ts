@@ -179,6 +179,9 @@ async function processStreamOffline(
       // Not stream info to invent while offline — carried forward like
       // category/title above; overwritten on the next stream_started anyway.
       streamType: previous?.stream_type ?? null,
+      // The event's own time beats the write time on a live→offline
+      // transition; null otherwise so a repeat offline keeps the stored one.
+      lastLiveAt: previous?.is_live ? message.messageTimestamp : null,
       updatedFromEventAt: message.messageTimestamp,
       now,
     },

@@ -387,7 +387,11 @@ describe("EventSub queue processing", () => {
       started_at: null,
       // Category is channel info, not stream info — it persists offline.
       category_id: "27471",
+      // The transition retains the last stream for the channels list.
+      last_category_id: "27471",
+      last_category_name: "Minecraft",
     })
+    expect(typeof state.channelState[0]!.last_live_at).toBe("string")
   })
 
   it("should not record stream_ended when the channel is already offline", async () => {

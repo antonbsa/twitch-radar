@@ -132,8 +132,135 @@ describe("Channels view", () => {
       `[data-testid="channel-row"][data-broadcaster-user-id="${id}"]`,
     )
     await expectVisible(row.locator('[data-slot="avatar-badge"]'))
-    await expectVisible(row.getByText("Just Chatting · 1.2K viewers"))
+    await expectVisible(row.getByText("1.2K viewers"))
     await expectVisible(row.getByText("In Just Chatting for 1h 23m"))
+    // The category appears once, inside the "In … for …" line.
+    expect(
+      ((await row.textContent()) ?? "").match(/Just Chatting/g),
+    ).toHaveLength(1)
+  })
+
+  it("should highlight a live channel in a preferred category, marking global matches with a globe", async ({
+    authenticatedSession,
+  }) => {
+    const specific = broadcasterId("pref_specific")
+    const global = broadcasterId("pref_global")
+    const plain = broadcasterId("pref_plain")
+    const startedAt = new Date(Date.now() - 10 * 60_000).toISOString()
+
+    await seedFollowedChannels(
+      [
+        [specific, "PrefSpecific"],
+        [global, "PrefGlobal"],
+        [plain, "PrefPlain"],
+      ].map(([id, name]) => ({
+        broadcasterUserId: id!,
+        broadcasterLogin: name!.toLowerCase(),
+        broadcasterDisplayName: name!,
+      })),
+    )
+    await seedChannelState([
+      {
+        broadcasterUserId: specific,
+        isLive: true,
+        categoryId: "apex",
+        categoryName: "Apex Legends",
+        viewerCount: 30,
+        startedAt,
+      },
+      {
+        broadcasterUserId: global,
+        isLive: true,
+        categoryId: "chat",
+        categoryName: "Just Chatting",
+        viewerCount: 20,
+        startedAt,
+      },
+      {
+        broadcasterUserId: plain,
+        isLive: true,
+        categoryId: "mc",
+        categoryName: "Minecraft",
+        viewerCount: 10,
+        startedAt,
+      },
+    ])
+    await seedPreferences({
+      channel: [
+        {
+          broadcasterUserId: specific,
+          categoryId: "apex",
+          categoryName: "Apex Legends",
+        },
+        // A preference for another channel must not highlight this one.
+        {
+          broadcasterUserId: plain,
+          categoryId: "apex",
+          categoryName: "Apex Legends",
+        },
+      ],
+      global: [{ categoryId: "chat", categoryName: "Just Chatting" }],
+    })
+
+    const { page } = authenticatedSession
+    await page.goto(WEB_URL)
+
+    const match = (id: string) =>
+      page.locator(
+        `[data-testid="channel-row"][data-broadcaster-user-id="${id}"] [data-preference-match]`,
+      )
+    await expectVisible(match(specific))
+    expect(await match(specific).getAttribute("data-preference-match")).toBe(
+      "channel",
+    )
+    expect(await match(specific).locator("svg").count()).toBe(0)
+    expect(await match(global).getAttribute("data-preference-match")).toBe(
+      "global",
+    )
+    expect(await match(global).locator("svg").count()).toBe(1)
+    expect(await match(plain).count()).toBe(0)
+  })
+
+  it("should show what an offline channel was last streaming, falling back to Offline without data", async ({
+    authenticatedSession,
+  }) => {
+    const withLast = broadcasterId("last_live")
+    const withoutLast = broadcasterId("no_last_live")
+
+    await seedFollowedChannels([
+      {
+        broadcasterUserId: withLast,
+        broadcasterLogin: "lastlive",
+        broadcasterDisplayName: "LastLive",
+      },
+      {
+        broadcasterUserId: withoutLast,
+        broadcasterLogin: "nolastlive",
+        broadcasterDisplayName: "NoLastLive",
+      },
+    ])
+    await seedChannelState([
+      {
+        broadcasterUserId: withLast,
+        isLive: false,
+        lastLiveAt: new Date(Date.now() - 3 * 3_600_000 - 60_000).toISOString(),
+        lastCategoryId: "apex",
+        lastCategoryName: "Apex Legends",
+      },
+      { broadcasterUserId: withoutLast, isLive: false },
+    ])
+
+    const { page } = authenticatedSession
+    await page.goto(WEB_URL)
+
+    const row = (id: string) =>
+      page.locator(
+        `[data-testid="channel-row"][data-broadcaster-user-id="${id}"]`,
+      )
+    await expectVisible(
+      row(withLast).getByText("Was in Apex Legends 3 hours ago"),
+    )
+    await expectVisible(row(withoutLast).getByText("Offline"))
   })
 
   it("should show a loading skeleton mirroring the filters bar, section headers and live/offline rows", async ({

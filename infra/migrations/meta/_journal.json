@@ -50,6 +50,13 @@
       "when": 1790642485763,
       "tag": "0007_channel_state_stream_type",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1791163309230,
+      "tag": "0008_channel_state_last_live",
+      "breakpoints": true
     }
   ]
 }
