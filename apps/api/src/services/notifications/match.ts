@@ -179,12 +179,34 @@ export async function matchAndCreateDeliveries(
         broadcasterUserId,
       ),
     )
+    // ADR 0054: an active exclusion drops the broadcaster from that one
+    // global preference only; channel preferences matched above are untouched.
+    const excludingPreferenceIds =
+      await db.globalCategoryPreferenceExclusions.findExcludingPreferenceIds(
+        broadcasterUserId,
+        globalPreferences.map((preference) => preference.id),
+      )
     for (const preference of globalPreferences) {
-      if (followerUserIds.has(preference.user_id)) {
+      if (
+        followerUserIds.has(preference.user_id) &&
+        !excludingPreferenceIds.has(preference.id)
+      ) {
         matchedUserIds.add(preference.user_id)
       }
     }
   }
+  if (matchedUserIds.size === 0) return
+
+  // ADR 0054: paused users, then users muting this broadcaster, are dropped
+  // before any delivery is staged.
+  const paused = await db.users.findPausedUserIds(Array.from(matchedUserIds))
+  for (const userId of paused) matchedUserIds.delete(userId)
+  if (matchedUserIds.size === 0) return
+  const muted = await db.broadcasterMutes.findMutedUserIds(
+    broadcasterUserId,
+    Array.from(matchedUserIds),
+  )
+  for (const userId of muted) matchedUserIds.delete(userId)
   if (matchedUserIds.size === 0) return
 
   const [[monitored], broadcasterAvatarUrl] = await Promise.all([

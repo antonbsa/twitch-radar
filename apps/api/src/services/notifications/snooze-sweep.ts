@@ -45,7 +45,26 @@ export async function sweepNotificationSnoozes(
       due.map((snooze) => snooze.user_id),
     )
 
+    // ADR 0054: pause and mute also suppress snooze reminders.
+    const pausedUserIds = await db.users.findPausedUserIds([
+      ...new Set(due.map((snooze) => snooze.user_id)),
+    ])
+
     for (const snooze of due) {
+      const suppressed =
+        pausedUserIds.has(snooze.user_id) ||
+        (
+          await db.broadcasterMutes.findMutedUserIds(
+            snooze.broadcaster_user_id,
+            [snooze.user_id],
+          )
+        ).size > 0
+      if (suppressed) {
+        await db.notificationSnoozes.markExpired(snooze.id)
+        expired += 1
+        continue
+      }
+
       const channelState = await db.channelState.findByBroadcasterUserId(
         snooze.broadcaster_user_id,
       )

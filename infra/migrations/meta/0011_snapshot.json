@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "b6a1c023-8b1a-49e1-a89b-1b22f5cf3aec",
-  "prevId": "4d7e4543-5243-4afe-8e89-5b04f023be49",
+  "id": "7a04dfd0-4294-4620-9054-7beaf84a108f",
+  "prevId": "7932942c-e37c-44e4-bdc0-2f1a3495f627",
   "tables": {
     "broadcaster_mutes": {
       "name": "broadcaster_mutes",
@@ -617,6 +617,74 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
+    "global_category_preference_exclusions": {
+      "name": "global_category_preference_exclusions",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "preference_id": {
+          "name": "preference_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "broadcaster_user_id": {
+          "name": "broadcaster_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "disabled_at": {
+          "name": "disabled_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "global_category_preference_exclusions_preference_id_broadcaster_user_id_unique": {
+          "name": "global_category_preference_exclusions_preference_id_broadcaster_user_id_unique",
+          "columns": [
+            "preference_id",
+            "broadcaster_user_id"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "global_category_preference_exclusions_preference_id_global_category_preferences_id_fk": {
+          "name": "global_category_preference_exclusions_preference_id_global_category_preferences_id_fk",
+          "tableFrom": "global_category_preference_exclusions",
+          "tableTo": "global_category_preferences",
+          "columnsFrom": [
+            "preference_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
     "global_category_preferences": {
       "name": "global_category_preferences",
       "columns": {
@@ -863,6 +931,16 @@
           "columns": [
             "user_id",
             "status"
+          ],
+          "isUnique": false
+        },
+        "idx_notification_deliveries_cooldown": {
+          "name": "idx_notification_deliveries_cooldown",
+          "columns": [
+            "user_id",
+            "broadcaster_user_id",
+            "status",
+            "sent_at"
           ],
           "isUnique": false
         }

@@ -1,4 +1,4 @@
-import { eq, like } from "drizzle-orm"
+import { eq, inArray, like } from "drizzle-orm"
 import { nanoid } from "nanoid"
 import type { Context } from "hono"
 import type { HonoEnv } from "../../env"
@@ -16,6 +16,8 @@ import {
   pushSubscriptions,
   twitchTokens,
   users,
+  broadcasterMutes,
+  globalCategoryPreferenceExclusions,
 } from "../../db/schema"
 import { base64UrlEncode } from "../../services/base64url"
 import { encryptToken } from "../../services/crypto"
@@ -48,6 +50,7 @@ export interface SeedUserInput {
   // Applied whenever present, null included, so a re-seed resets a value a
   // previous test left on the shared user row; omitted leaves it untouched.
   lastFollowSyncAt?: string | null
+  notificationsPausedAt?: string | null
 }
 
 export interface SeedFollowedChannelInput {
@@ -80,7 +83,12 @@ export interface SeedPreferencesInput {
     categoryId: string
     categoryName: string
   }[]
-  global?: { categoryId: string; categoryName: string }[]
+  global?: {
+    categoryId: string
+    categoryName: string
+    // Broadcasters excluded from this global preference (ADR 0054).
+    excludedBroadcasterUserIds?: string[]
+  }[]
 }
 
 export interface SeedEventsubSubscriptionInput {
@@ -123,6 +131,10 @@ export interface SeedNotificationSnoozeInput {
   status?: "pending" | "fired" | "expired"
 }
 
+export interface SeedBroadcasterMuteInput {
+  broadcasterUserId: string
+}
+
 export interface SeedRequestBody {
   user?: SeedUserInput
   followedChannels?: SeedFollowedChannelInput[]
@@ -132,6 +144,7 @@ export interface SeedRequestBody {
   monitoredChannels?: SeedMonitoredChannelInput[]
   pushSubscriptions?: SeedPushSubscriptionInput[]
   notificationSnoozes?: SeedNotificationSnoozeInput[]
+  broadcasterMutes?: SeedBroadcasterMuteInput[]
 }
 
 export interface SeedResponse {
@@ -163,6 +176,14 @@ export async function handleTestSeed(c: Context<HonoEnv>): Promise<Response> {
       await c.var.db.users.updateLastFollowSyncAt(
         userId,
         body.user.lastFollowSyncAt,
+        now,
+      )
+    }
+
+    if (body.user.notificationsPausedAt !== undefined) {
+      await c.var.db.users.setNotificationsPausedAt(
+        userId,
+        body.user.notificationsPausedAt,
         now,
       )
     }
@@ -238,12 +259,19 @@ export async function handleTestSeed(c: Context<HonoEnv>): Promise<Response> {
       })
     }
     for (const pref of body.preferences.global ?? []) {
-      await c.var.db.globalCategoryPreferences.create({
+      const preferenceId = await c.var.db.globalCategoryPreferences.create({
         userId,
         categoryId: pref.categoryId,
         categoryName: pref.categoryName,
         now,
       })
+      for (const broadcasterUserId of pref.excludedBroadcasterUserIds ?? []) {
+        await c.var.db.globalCategoryPreferenceExclusions.create({
+          preferenceId,
+          broadcasterUserId,
+          now,
+        })
+      }
     }
   }
 
@@ -322,6 +350,14 @@ export async function handleTestSeed(c: Context<HonoEnv>): Promise<Response> {
     }
   }
 
+  for (const mute of body.broadcasterMutes ?? []) {
+    await c.var.db.broadcasterMutes.create({
+      userId,
+      broadcasterUserId: mute.broadcasterUserId,
+      now,
+    })
+  }
+
   return jsonResponse({ userId, session } satisfies SeedResponse)
 }
 
@@ -353,6 +389,8 @@ export interface ResetRequestBody {
 }
 
 const ALL_TABLES = [
+  "global_category_preference_exclusions",
+  "broadcaster_mutes",
   "notification_snoozes",
   "notification_deliveries",
   "global_category_preferences",
@@ -401,6 +439,10 @@ export async function handleTestReset(c: Context<HonoEnv>): Promise<Response> {
   // (channel_state is monitored globally across users, see ADR 0007, so it's
   // scoped by the E2E_BROADCASTER_PREFIX convention instead of a user id).
   await db
+    .delete(broadcasterMutes)
+    .where(eq(broadcasterMutes.userId, E2E_USER_ID))
+    .run()
+  await db
     .delete(notificationSnoozes)
     .where(eq(notificationSnoozes.userId, E2E_USER_ID))
     .run()
@@ -411,6 +453,18 @@ export async function handleTestReset(c: Context<HonoEnv>): Promise<Response> {
   await db
     .delete(channelCategoryPreferences)
     .where(eq(channelCategoryPreferences.userId, E2E_USER_ID))
+    .run()
+  await db
+    .delete(globalCategoryPreferenceExclusions)
+    .where(
+      inArray(
+        globalCategoryPreferenceExclusions.preferenceId,
+        db
+          .select({ id: globalCategoryPreferences.id })
+          .from(globalCategoryPreferences)
+          .where(eq(globalCategoryPreferences.userId, E2E_USER_ID)),
+      ),
+    )
     .run()
   await db
     .delete(globalCategoryPreferences)

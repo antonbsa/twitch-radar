@@ -4,6 +4,7 @@ import {
   resetState,
   seedChannelState,
   seedFollowedChannels,
+  seedPreferences,
 } from "./orchestrator/test-seam-client"
 import { WEB_URL } from "./setup/browser"
 import { it } from "./setup/fixtures"
@@ -451,6 +452,7 @@ describe("Alerts view", () => {
                 category_id: "27471",
                 category_name: "Minecraft",
                 created_at: new Date().toISOString(),
+                exclusions: [],
               },
             ],
           },
@@ -574,6 +576,7 @@ describe("Alerts view", () => {
                 category_id: "27471",
                 category_name: "Minecraft",
                 created_at: new Date().toISOString(),
+                exclusions: [],
               },
             ],
           },
@@ -665,7 +668,7 @@ describe("Alerts view", () => {
     await page.goto(`${WEB_URL}/alerts`)
     await expectVisible(page.getByText("No per-channel alerts set."))
 
-    await page.getByRole("button", { name: "Add channel" }).click()
+    await page.getByRole("button", { name: "Add channel", exact: true }).click()
     const picker = page.getByRole("dialog")
     await expectVisible(picker)
     await expectVisible(picker.getByText("Add channel"))
@@ -724,6 +727,7 @@ describe("Alerts view", () => {
                 category_id: "509658",
                 category_name: "Just Chatting",
                 created_at: new Date().toISOString(),
+                exclusions: [],
               },
             ],
           },
@@ -887,6 +891,183 @@ describe("Alerts view", () => {
       await page.getByRole("textbox", { name: "Search channels" }).count(),
     ).toBe(0)
     // The add-channel affordance stays available even with nothing configured.
-    await expectVisible(page.getByRole("button", { name: "Add channel" }))
+    await expectVisible(
+      page.getByRole("button", { name: "Add channel", exact: true }),
+    )
+  })
+
+  it("should pause and resume all notifications, keeping the description while paused", async ({
+    authenticatedSession,
+  }) => {
+    const { page } = authenticatedSession
+    await page.goto(`${WEB_URL}/alerts`)
+
+    const toggle = page.getByRole("switch", {
+      name: "Pause all notifications",
+    })
+    await expectVisible(toggle)
+    expect(await page.getByTestId("pause-description").count()).toBe(0)
+
+    await toggle.click()
+    await expectVisible(page.getByTestId("pause-description"))
+
+    // The paused state is persisted, not just local: it survives a reload.
+    await page.reload()
+    await expectVisible(page.getByTestId("pause-description"))
+
+    await page.getByRole("switch", { name: "Pause all notifications" }).click()
+    await expectHidden(page.getByTestId("pause-description"))
+  })
+
+  it("should mute a channel from its detail modal and unmute it from the Alerts page", async ({
+    authenticatedSession,
+  }) => {
+    const id = broadcasterId("mute")
+    await seedFollowedChannels([
+      {
+        broadcasterUserId: id,
+        broadcasterLogin: "mutestreamer",
+        broadcasterDisplayName: "MuteStreamer",
+      },
+    ])
+    await seedChannelState([{ broadcasterUserId: id, isLive: false }])
+
+    const { page } = authenticatedSession
+    await page.goto(WEB_URL)
+    const row = page.locator(
+      `[data-testid="channel-row"][data-broadcaster-user-id="${id}"]`,
+    )
+    await expectVisible(row)
+    expect(await row.getByTestId("muted-indicator").count()).toBe(0)
+    await row.click()
+
+    const modal = page.getByTestId("channel-detail-modal")
+    await modal.getByRole("button", { name: "Mute notifications" }).click()
+    await expectVisible(modal.getByRole("button", { name: "Unmute" }))
+    await expectVisible(modal.getByTestId("muted-indicator"))
+    await expectVisible(page.getByText("MuteStreamer muted"))
+    await page.keyboard.press("Escape")
+    await expectVisible(row.getByTestId("muted-indicator"))
+
+    await page.goto(`${WEB_URL}/alerts`)
+    const muted = page.getByTestId("muted-channels")
+    await expectVisible(muted.getByText("MuteStreamer"))
+    await muted.getByRole("button", { name: "Unmute MuteStreamer" }).click()
+    await expectVisible(page.getByText("No muted channels."))
+    await expectVisible(page.getByText("MuteStreamer unmuted"))
+
+    // The add button mutes straight from the picker.
+    await muted.getByRole("button", { name: "Add channel to mute" }).click()
+    await page.getByRole("button", { name: "MuteStreamer" }).click()
+    await expectVisible(muted.getByText("MuteStreamer"))
+  })
+
+  it("should add and remove a global category exclusion from the chip's dialog", async ({
+    authenticatedSession,
+  }) => {
+    const id = broadcasterId("exclusion")
+    await seedFollowedChannels([
+      {
+        broadcasterUserId: id,
+        broadcasterLogin: "exclusionstreamer",
+        broadcasterDisplayName: "ExclusionStreamer",
+      },
+    ])
+    // Own category: soft-disabled rows from earlier tests keep their unique slot.
+    await seedPreferences({
+      global: [
+        { categoryId: "exclusion_cat", categoryName: "Exclusion Category" },
+      ],
+    })
+
+    const { page } = authenticatedSession
+    await page.goto(`${WEB_URL}/alerts`)
+    await page
+      .getByRole("button", { name: "Excluded channels for Exclusion Category" })
+      .click()
+
+    const dialog = page.getByTestId("exclusions-dialog")
+    await expectVisible(dialog.getByText("No channels excluded."))
+
+    await dialog
+      .getByRole("button", { name: "Exclude ExclusionStreamer" })
+      .click()
+    const excluded = dialog.getByTestId("excluded-channels")
+    await expectVisible(excluded.getByText("ExclusionStreamer"))
+
+    // Persisted: the exclusion survives a reload.
+    await page.reload()
+    await page
+      .getByRole("button", { name: "Excluded channels for Exclusion Category" })
+      .click()
+    await expectVisible(
+      page.getByTestId("excluded-channels").getByText("ExclusionStreamer"),
+    )
+
+    await page
+      .getByRole("button", { name: "Stop excluding ExclusionStreamer" })
+      .click()
+    await expectVisible(page.getByText("No channels excluded."))
+  })
+  it("should update the exclusions list before the API responds and revert on failure", async ({
+    authenticatedSession,
+  }) => {
+    const id = broadcasterId("optimistic")
+    await seedFollowedChannels([
+      {
+        broadcasterUserId: id,
+        broadcasterLogin: "optimisticstreamer",
+        broadcasterDisplayName: "OptimisticStreamer",
+      },
+    ])
+    await seedPreferences({
+      global: [
+        { categoryId: "optimistic_cat", categoryName: "Optimistic Category" },
+      ],
+    })
+
+    const { page } = authenticatedSession
+    await page.goto(`${WEB_URL}/alerts`)
+    await page
+      .getByRole("button", {
+        name: "Excluded channels for Optimistic Category",
+      })
+      .click()
+    const dialog = page.getByTestId("exclusions-dialog")
+
+    // Hold the POST: the row must already be in the excluded list.
+    let release: () => void = () => {}
+    const held = new Promise<void>((resolve) => (release = resolve))
+    await page.route(
+      "**/api/preferences/global/*/exclusions",
+      async (route) => {
+        await held
+        await route.continue()
+      },
+    )
+    await dialog
+      .getByRole("button", { name: "Exclude OptimisticStreamer" })
+      .click()
+    await expectVisible(
+      dialog.getByTestId("excluded-channels").getByText("OptimisticStreamer"),
+    )
+    const posted = page.waitForResponse(
+      (res) =>
+        res.request().method() === "POST" && res.url().includes("/exclusions"),
+    )
+    release()
+    await posted
+    await page.unroute("**/api/preferences/global/*/exclusions")
+
+    // A failing DELETE puts the row back once the refetch lands.
+    await page.route("**/api/preferences/global/*/exclusions/*", (route) =>
+      route.fulfill({ status: 500, body: "{}" }),
+    )
+    await dialog
+      .getByRole("button", { name: "Stop excluding OptimisticStreamer" })
+      .click()
+    await expectVisible(
+      dialog.getByTestId("excluded-channels").getByText("OptimisticStreamer"),
+    )
   })
 })

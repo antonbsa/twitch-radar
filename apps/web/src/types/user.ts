@@ -13,4 +13,6 @@ export interface User {
   twitch_reconnect_required: boolean
   // UI/notification language preference (ADR 0044).
   language: Language
+  // ISO timestamp while all notifications are paused, else null (ADR 0054).
+  notifications_paused_at: string | null
 }

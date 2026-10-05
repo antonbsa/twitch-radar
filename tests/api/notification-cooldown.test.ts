@@ -50,6 +50,10 @@ function fakeDb(lastSentAt: string | null) {
     },
     users: {
       findLanguagesByIds: vi.fn().mockResolvedValue(new Map()),
+      findPausedUserIds: vi.fn().mockResolvedValue(new Set()),
+    },
+    broadcasterMutes: {
+      findMutedUserIds: vi.fn().mockResolvedValue(new Set()),
     },
     notificationDeliveries: {
       findLastSentByUserAndBroadcaster: findLastSent,

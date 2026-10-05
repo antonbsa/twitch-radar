@@ -1,4 +1,4 @@
-import { Globe, Settings } from "lucide-react"
+import { BellOffIcon, Globe, Settings } from "lucide-react"
 import {
   Avatar,
   AvatarBadge,
@@ -21,6 +21,8 @@ interface ChannelRowProps {
   onOpenDetail: (channel: FollowedChannel) => void
   /** Set when a live channel's category matches an active preference. */
   preferenceMatch?: "channel" | "global" | null
+  /** The user muted this broadcaster (ADR 0054). */
+  muted?: boolean
 }
 
 export function ChannelRow({
@@ -28,6 +30,7 @@ export function ChannelRow({
   onConfigure,
   onOpenDetail,
   preferenceMatch = null,
+  muted = false,
 }: ChannelRowProps) {
   const { t, language } = useLanguage()
   const categoryName = channel.category_name ?? t("channel_row.no_category")
@@ -57,6 +60,14 @@ export function ChannelRow({
           <p className="truncate text-sm font-medium">
             {channel.broadcaster_display_name}
           </p>
+          {muted && (
+            <BellOffIcon
+              role="img"
+              aria-label={t("channel_row.muted_aria")}
+              data-testid="muted-indicator"
+              className="size-3 shrink-0 self-center text-muted-foreground"
+            />
+          )}
           {channel.is_live && (
             <p className="shrink-0 text-xs text-muted-foreground">
               {t("channel_row.viewers_count", {
