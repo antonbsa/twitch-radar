@@ -175,8 +175,18 @@ export async function matchAndCreateDeliveries(
         broadcasterUserId,
       ),
     )
+    // ADR 0054: an active exclusion drops the broadcaster from that one
+    // global preference only; channel preferences matched above are untouched.
+    const excludingPreferenceIds =
+      await db.globalCategoryPreferenceExclusions.findExcludingPreferenceIds(
+        broadcasterUserId,
+        globalPreferences.map((preference) => preference.id),
+      )
     for (const preference of globalPreferences) {
-      if (followerUserIds.has(preference.user_id)) {
+      if (
+        followerUserIds.has(preference.user_id) &&
+        !excludingPreferenceIds.has(preference.id)
+      ) {
         matchedUserIds.add(preference.user_id)
       }
     }

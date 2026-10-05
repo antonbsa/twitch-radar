@@ -148,5 +148,15 @@
   "mute.unmute_action": "Unmute",
   "mute.mute_error": "Could not mute the channel. Try again.",
   "mute.unmute_error": "Could not unmute the channel. Try again.",
-  "channel_row.muted_aria": "Notifications muted"
+  "channel_row.muted_aria": "Notifications muted",
+  "exclusions.open_aria": "Excluded channels for {category}",
+  "exclusions.title": "Exclude channels from {category}",
+  "exclusions.description": "These channels won't notify you through this All channels alert.",
+  "exclusions.excluded_title": "Excluded",
+  "exclusions.empty": "No channels excluded.",
+  "exclusions.add_title": "Add a channel",
+  "exclusions.remove_aria": "Stop excluding {channel}",
+  "exclusions.add_aria": "Exclude {channel}",
+  "exclusions.add_error": "Could not exclude the channel. Try again.",
+  "exclusions.remove_error": "Could not remove the exclusion. Try again."
 }

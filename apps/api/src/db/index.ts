@@ -5,6 +5,7 @@ import { ChannelStateRepository } from "./repositories/channel-state"
 import { ChannelStateChangesRepository } from "./repositories/channel-state-changes"
 import { EventsubSubscriptionsRepository } from "./repositories/eventsub-subscriptions"
 import { FollowedChannelsRepository } from "./repositories/followed-channels"
+import { GlobalCategoryPreferenceExclusionsRepository } from "./repositories/global-category-preference-exclusions"
 import { GlobalCategoryPreferencesRepository } from "./repositories/global-category-preferences"
 import { MonitoredChannelsRepository } from "./repositories/monitored-channels"
 import { NotificationDeliveriesRepository } from "./repositories/notification-deliveries"
@@ -29,6 +30,7 @@ export class Database {
   readonly notificationDeliveries: NotificationDeliveriesRepository
   readonly notificationSnoozes: NotificationSnoozesRepository
   readonly broadcasterMutes: BroadcasterMutesRepository
+  readonly globalCategoryPreferenceExclusions: GlobalCategoryPreferenceExclusionsRepository
 
   constructor(d1: D1Database) {
     const db = createDatabaseClient(d1)
@@ -47,5 +49,7 @@ export class Database {
     this.notificationDeliveries = new NotificationDeliveriesRepository(db)
     this.notificationSnoozes = new NotificationSnoozesRepository(db)
     this.broadcasterMutes = new BroadcasterMutesRepository(db)
+    this.globalCategoryPreferenceExclusions =
+      new GlobalCategoryPreferenceExclusionsRepository(db)
   }
 }

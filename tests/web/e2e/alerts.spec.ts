@@ -4,6 +4,7 @@ import {
   resetState,
   seedChannelState,
   seedFollowedChannels,
+  seedPreferences,
 } from "./orchestrator/test-seam-client"
 import { WEB_URL } from "./setup/browser"
 import { it } from "./setup/fixtures"
@@ -451,6 +452,7 @@ describe("Alerts view", () => {
                 category_id: "27471",
                 category_name: "Minecraft",
                 created_at: new Date().toISOString(),
+                exclusions: [],
               },
             ],
           },
@@ -574,6 +576,7 @@ describe("Alerts view", () => {
                 category_id: "27471",
                 category_name: "Minecraft",
                 created_at: new Date().toISOString(),
+                exclusions: [],
               },
             ],
           },
@@ -724,6 +727,7 @@ describe("Alerts view", () => {
                 category_id: "509658",
                 category_name: "Just Chatting",
                 created_at: new Date().toISOString(),
+                exclusions: [],
               },
             ],
           },
@@ -950,5 +954,53 @@ describe("Alerts view", () => {
     await expectVisible(muted.getByText("MuteStreamer"))
     await muted.getByRole("button", { name: "Unmute MuteStreamer" }).click()
     await expectVisible(page.getByText("No muted channels."))
+  })
+
+  it("should add and remove a global category exclusion from the chip's dialog", async ({
+    authenticatedSession,
+  }) => {
+    const id = broadcasterId("exclusion")
+    await seedFollowedChannels([
+      {
+        broadcasterUserId: id,
+        broadcasterLogin: "exclusionstreamer",
+        broadcasterDisplayName: "ExclusionStreamer",
+      },
+    ])
+    // Own category: soft-disabled rows from earlier tests keep their unique slot.
+    await seedPreferences({
+      global: [
+        { categoryId: "exclusion_cat", categoryName: "Exclusion Category" },
+      ],
+    })
+
+    const { page } = authenticatedSession
+    await page.goto(`${WEB_URL}/alerts`)
+    await page
+      .getByRole("button", { name: "Excluded channels for Exclusion Category" })
+      .click()
+
+    const dialog = page.getByTestId("exclusions-dialog")
+    await expectVisible(dialog.getByText("No channels excluded."))
+
+    await dialog
+      .getByRole("button", { name: "Exclude ExclusionStreamer" })
+      .click()
+    const excluded = dialog.getByTestId("excluded-channels")
+    await expectVisible(excluded.getByText("ExclusionStreamer"))
+
+    // Persisted: the exclusion survives a reload.
+    await page.reload()
+    await page
+      .getByRole("button", { name: "Excluded channels for Exclusion Category" })
+      .click()
+    await expectVisible(
+      page.getByTestId("excluded-channels").getByText("ExclusionStreamer"),
+    )
+
+    await page
+      .getByRole("button", { name: "Stop excluding ExclusionStreamer" })
+      .click()
+    await expectVisible(page.getByText("No channels excluded."))
   })
 })

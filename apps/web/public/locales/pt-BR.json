@@ -148,5 +148,15 @@
   "mute.unmute_action": "Reativar",
   "mute.mute_error": "Não foi possível silenciar o canal. Tente novamente.",
   "mute.unmute_error": "Não foi possível reativar o canal. Tente novamente.",
-  "channel_row.muted_aria": "Notificações silenciadas"
+  "channel_row.muted_aria": "Notificações silenciadas",
+  "exclusions.open_aria": "Canais excluídos de {category}",
+  "exclusions.title": "Excluir canais de {category}",
+  "exclusions.description": "Esses canais não vão te notificar por este alerta de Todos os canais.",
+  "exclusions.excluded_title": "Excluídos",
+  "exclusions.empty": "Nenhum canal excluído.",
+  "exclusions.add_title": "Adicionar um canal",
+  "exclusions.remove_aria": "Parar de excluir {channel}",
+  "exclusions.add_aria": "Excluir {channel}",
+  "exclusions.add_error": "Não foi possível excluir o canal. Tente novamente.",
+  "exclusions.remove_error": "Não foi possível remover a exclusão. Tente novamente."
 }

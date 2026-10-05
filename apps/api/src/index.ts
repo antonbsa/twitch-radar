@@ -37,8 +37,10 @@ import {
 import {
   handleCreateChannelPreference,
   handleCreateGlobalPreference,
+  handleCreateGlobalPreferenceExclusion,
   handleDeleteChannelPreference,
   handleDeleteGlobalPreference,
+  handleDeleteGlobalPreferenceExclusion,
   handleGetPreferences,
 } from "./http/routes/preferences"
 import { handleSyncFollows } from "./http/routes/sync"
@@ -106,6 +108,16 @@ function buildApp(includeTestSeam: boolean): Hono<HonoEnv> {
     "/preferences/global/:id",
     requireAuth,
     handleDeleteGlobalPreference,
+  )
+  api.post(
+    "/preferences/global/:id/exclusions",
+    requireAuth,
+    handleCreateGlobalPreferenceExclusion,
+  )
+  api.delete(
+    "/preferences/global/:id/exclusions/:exclusionId",
+    requireAuth,
+    handleDeleteGlobalPreferenceExclusion,
   )
   api.post("/notifications/snooze", requireAuth, handleCreateNotificationSnooze)
   api.get("/notifications/snoozes", requireAuth, handleListNotificationSnoozes)

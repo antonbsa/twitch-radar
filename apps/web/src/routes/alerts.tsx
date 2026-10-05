@@ -9,6 +9,7 @@ import { ChannelRowSkeleton } from "@/components/channel-row-skeleton"
 import { ChannelPreferencesDialog } from "@/components/channel-preferences-dialog"
 import { MutedChannelsSection } from "@/components/muted-channels-section"
 import { PauseNotificationsControl } from "@/components/pause-notifications-control"
+import { GlobalExclusionsDialog } from "@/components/global-exclusions-dialog"
 import { GlobalAlertsCard } from "@/components/global-alerts-card"
 import { ReconnectRequired } from "@/components/reconnect-required"
 import { SearchField } from "@/components/search-field"
@@ -40,6 +41,9 @@ export function AlertsPage() {
   const removeChannelPreference = useRemoveChannelPreference()
   const [addGlobalOpen, setAddGlobalOpen] = useState(false)
   const [addChannelOpen, setAddChannelOpen] = useState(false)
+  const [exclusionsPreferenceId, setExclusionsPreferenceId] = useState<
+    string | null
+  >(null)
   const [channelSearch, setChannelSearch] = useState("")
   const [configuringChannel, setConfiguringChannel] =
     useState<FollowedChannel | null>(null)
@@ -114,6 +118,7 @@ export function AlertsPage() {
           preferences={globalPreferences}
           onAdd={() => setAddGlobalOpen(true)}
           onRemove={(id) => removeGlobalPreference.mutate(id)}
+          onEditExclusions={(pref) => setExclusionsPreferenceId(pref.id)}
           armedChipId={armedChipId}
           onArmChip={armChip}
         />
@@ -196,6 +201,19 @@ export function AlertsPage() {
             onArmChip={armChip}
           />
         ))}
+
+      <GlobalExclusionsDialog
+        // Looked up by id so the open dialog follows the refreshed preference.
+        preference={
+          globalPreferences.find(
+            (pref) => pref.id === exclusionsPreferenceId,
+          ) ?? null
+        }
+        onOpenChange={(open) => {
+          if (!open) setExclusionsPreferenceId(null)
+        }}
+        channels={channels ?? []}
+      />
 
       <MutedChannelsSection channels={channels ?? []} />
 

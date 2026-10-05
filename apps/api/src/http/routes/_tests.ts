@@ -1,4 +1,4 @@
-import { eq, like } from "drizzle-orm"
+import { eq, inArray, like } from "drizzle-orm"
 import { nanoid } from "nanoid"
 import type { Context } from "hono"
 import type { HonoEnv } from "../../env"
@@ -17,6 +17,7 @@ import {
   twitchTokens,
   users,
   broadcasterMutes,
+  globalCategoryPreferenceExclusions,
 } from "../../db/schema"
 import { base64UrlEncode } from "../../services/base64url"
 import { encryptToken } from "../../services/crypto"
@@ -82,7 +83,12 @@ export interface SeedPreferencesInput {
     categoryId: string
     categoryName: string
   }[]
-  global?: { categoryId: string; categoryName: string }[]
+  global?: {
+    categoryId: string
+    categoryName: string
+    // Broadcasters excluded from this global preference (ADR 0054).
+    excludedBroadcasterUserIds?: string[]
+  }[]
 }
 
 export interface SeedEventsubSubscriptionInput {
@@ -253,12 +259,19 @@ export async function handleTestSeed(c: Context<HonoEnv>): Promise<Response> {
       })
     }
     for (const pref of body.preferences.global ?? []) {
-      await c.var.db.globalCategoryPreferences.create({
+      const preferenceId = await c.var.db.globalCategoryPreferences.create({
         userId,
         categoryId: pref.categoryId,
         categoryName: pref.categoryName,
         now,
       })
+      for (const broadcasterUserId of pref.excludedBroadcasterUserIds ?? []) {
+        await c.var.db.globalCategoryPreferenceExclusions.create({
+          preferenceId,
+          broadcasterUserId,
+          now,
+        })
+      }
     }
   }
 
@@ -376,6 +389,7 @@ export interface ResetRequestBody {
 }
 
 const ALL_TABLES = [
+  "global_category_preference_exclusions",
   "broadcaster_mutes",
   "notification_snoozes",
   "notification_deliveries",
@@ -439,6 +453,18 @@ export async function handleTestReset(c: Context<HonoEnv>): Promise<Response> {
   await db
     .delete(channelCategoryPreferences)
     .where(eq(channelCategoryPreferences.userId, E2E_USER_ID))
+    .run()
+  await db
+    .delete(globalCategoryPreferenceExclusions)
+    .where(
+      inArray(
+        globalCategoryPreferenceExclusions.preferenceId,
+        db
+          .select({ id: globalCategoryPreferences.id })
+          .from(globalCategoryPreferences)
+          .where(eq(globalCategoryPreferences.userId, E2E_USER_ID)),
+      ),
+    )
     .run()
   await db
     .delete(globalCategoryPreferences)

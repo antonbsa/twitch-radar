@@ -34,6 +34,19 @@ function usePreferenceMutationFeedback(action: "add" | "remove") {
   }
 }
 
+/** Like the preference feedback, minus the success toast: the dialog list is the feedback. */
+function useExclusionMutationFeedback(action: "add" | "remove") {
+  const queryClient = useQueryClient()
+  const { t } = useLanguage()
+
+  return {
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: PREFERENCES_QUERY_KEY }),
+    onError: (error: Error) =>
+      showMutationErrorToast(error, t(`exclusions.${action}_error`)),
+  }
+}
+
 export function useAddChannelPreference() {
   return useSessionAwareMutation({
     mutationFn: ({
@@ -74,5 +87,37 @@ export function useRemoveGlobalPreference() {
   return useSessionAwareMutation({
     mutationFn: (id: string) => api.delete(`/preferences/global/${id}`),
     ...usePreferenceMutationFeedback("remove"),
+  })
+}
+
+export function useAddGlobalPreferenceExclusion() {
+  return useSessionAwareMutation({
+    mutationFn: ({
+      preferenceId,
+      broadcasterUserId,
+    }: {
+      preferenceId: string
+      broadcasterUserId: string
+    }) =>
+      api.post(`/preferences/global/${preferenceId}/exclusions`, {
+        broadcaster_user_id: broadcasterUserId,
+      }),
+    ...useExclusionMutationFeedback("add"),
+  })
+}
+
+export function useRemoveGlobalPreferenceExclusion() {
+  return useSessionAwareMutation({
+    mutationFn: ({
+      preferenceId,
+      exclusionId,
+    }: {
+      preferenceId: string
+      exclusionId: string
+    }) =>
+      api.delete(
+        `/preferences/global/${preferenceId}/exclusions/${exclusionId}`,
+      ),
+    ...useExclusionMutationFeedback("remove"),
   })
 }

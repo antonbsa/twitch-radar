@@ -1,4 +1,5 @@
-import { Globe } from "lucide-react"
+import { Ban, Globe } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { AddCategoryChip } from "@/components/add-category-chip"
 import { CategoryChip } from "@/components/category-chip"
 import { useLanguage } from "@/context/language-context"
@@ -8,6 +9,7 @@ interface GlobalAlertsCardProps {
   preferences: GlobalPreference[]
   onAdd: () => void
   onRemove: (preferenceId: string) => void
+  onEditExclusions: (preference: GlobalPreference) => void
   armedChipId: string | null
   onArmChip: (preferenceId: string) => void
 }
@@ -16,6 +18,7 @@ export function GlobalAlertsCard({
   preferences,
   onAdd,
   onRemove,
+  onEditExclusions,
   armedChipId,
   onArmChip,
 }: GlobalAlertsCardProps) {
@@ -40,16 +43,34 @@ export function GlobalAlertsCard({
 
       <div className="flex flex-wrap gap-1.5 px-3 pb-3">
         {preferences.map((pref) => (
-          <CategoryChip
-            key={pref.id}
-            label={pref.category_name}
-            armed={armedChipId === pref.id}
-            onArm={() => onArmChip(pref.id)}
-            onRemove={() => onRemove(pref.id)}
-            removeLabel={t("alerts.remove_aria", {
-              category: pref.category_name,
-            })}
-          />
+          <div key={pref.id} className="flex items-center gap-0.5">
+            <CategoryChip
+              label={pref.category_name}
+              armed={armedChipId === pref.id}
+              onArm={() => onArmChip(pref.id)}
+              onRemove={() => onRemove(pref.id)}
+              removeLabel={t("alerts.remove_aria", {
+                category: pref.category_name,
+              })}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => onEditExclusions(pref)}
+              aria-label={t("exclusions.open_aria", {
+                category: pref.category_name,
+              })}
+              className="relative"
+            >
+              <Ban className="size-3.5" />
+              {pref.exclusions.length > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 flex size-3.5 items-center justify-center rounded-full bg-primary text-[9px] text-primary-foreground">
+                  {pref.exclusions.length}
+                </span>
+              )}
+            </Button>
+          </div>
         ))}
         <AddCategoryChip
           onClick={onAdd}

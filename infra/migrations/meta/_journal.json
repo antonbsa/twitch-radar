@@ -64,6 +64,13 @@
       "when": 1791167874395,
       "tag": "0009_notification_pause_and_mutes",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1791168141398,
+      "tag": "0010_global_category_preference_exclusions",
+      "breakpoints": true
     }
   ]
 }

@@ -274,6 +274,27 @@ export const notificationSnoozes = sqliteTable(
   ],
 )
 
+// ADR 0054: an active row removes the broadcaster from that one global
+// preference's matches. Hangs off the preference so it survives disabling and
+// reviving it.
+export const globalCategoryPreferenceExclusions = sqliteTable(
+  "global_category_preference_exclusions",
+  {
+    id: text("id").primaryKey(),
+    preferenceId: text("preference_id")
+      .notNull()
+      .references(() => globalCategoryPreferences.id),
+    broadcasterUserId: text("broadcaster_user_id").notNull(),
+    createdAt: text("created_at").notNull(),
+    disabledAt: text("disabled_at"),
+  },
+  (table) => [
+    uniqueIndex(
+      "global_category_preference_exclusions_preference_id_broadcaster_user_id_unique",
+    ).on(table.preferenceId, table.broadcasterUserId),
+  ],
+)
+
 // ADR 0054: an active row suppresses every notification about the broadcaster
 // for this user, whichever preference would match.
 export const broadcasterMutes = sqliteTable(
@@ -314,6 +335,7 @@ export const schema = {
   notificationDeliveries,
   notificationSnoozes,
   broadcasterMutes,
+  globalCategoryPreferenceExclusions,
 }
 
 export type UserRow = typeof users.$inferSelect
