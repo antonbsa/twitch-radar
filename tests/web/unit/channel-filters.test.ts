@@ -25,7 +25,7 @@ function channel(overrides: Partial<FollowedChannel> = {}): FollowedChannel {
 }
 
 describe("deriveLiveCategories", () => {
-  it("should return distinct category names from live channels only, alphabetically sorted", () => {
+  it("should count live channels per category, ordered by count then alphabetically", () => {
     const channels = [
       channel({
         broadcaster_user_id: "1",
@@ -48,9 +48,18 @@ describe("deriveLiveCategories", () => {
         category_name: "Art",
       }),
       channel({ broadcaster_user_id: "5", is_live: true, category_name: null }),
+      channel({
+        broadcaster_user_id: "6",
+        is_live: true,
+        category_name: "Art",
+      }),
     ]
 
-    expect(deriveLiveCategories(channels)).toEqual(["Just Chatting", "Music"])
+    expect(deriveLiveCategories(channels)).toEqual([
+      { name: "Music", liveCount: 2 },
+      { name: "Art", liveCount: 1 },
+      { name: "Just Chatting", liveCount: 1 },
+    ])
   })
 })
 

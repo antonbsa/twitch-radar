@@ -15,7 +15,11 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useLanguage } from "@/context/language-context"
-import type { ChannelFilters, ChannelSort } from "@/lib/channel-filters"
+import type {
+  ChannelFilters,
+  ChannelSort,
+  LiveCategory,
+} from "@/lib/channel-filters"
 
 // 44px touch-target height; responsive width (narrow on mobile, full label width at md+)
 const CATEGORY_TRIGGER_CLASSNAME =
@@ -24,7 +28,7 @@ const CATEGORY_TRIGGER_CLASSNAME =
 interface ChannelFiltersBarProps {
   filters: ChannelFilters
   onChange: (patch: Partial<ChannelFilters>) => void
-  categories: string[]
+  categories: LiveCategory[]
 }
 
 export function ChannelFiltersBar({
@@ -79,14 +83,15 @@ export function ChannelFiltersBar({
               {t("channels.all_categories")}
             </DropdownMenuCheckboxItem>
             <DropdownMenuSeparator />
-            {categories.map((category) => (
+            {categories.map(({ name, liveCount }) => (
               <DropdownMenuCheckboxItem
-                key={category}
-                checked={filters.categories.includes(category)}
-                onCheckedChange={() => toggleCategory(category)}
+                key={name}
+                checked={filters.categories.includes(name)}
+                onCheckedChange={() => toggleCategory(name)}
                 onSelect={(e) => e.preventDefault()}
               >
-                {category}
+                {name}
+                <span className="text-muted-foreground">({liveCount})</span>
               </DropdownMenuCheckboxItem>
             ))}
           </DropdownMenuContent>
@@ -112,7 +117,7 @@ export function ChannelFiltersBar({
             )}
           </SelectValue>
         </SelectTrigger>
-        <SelectContent size="lg">
+        <SelectContent size="lg" position="popper" align="end">
           <SelectItem value="viewers">{t("channels.sort_viewers")}</SelectItem>
           <SelectItem value="alphabetical">
             {t("channels.sort_alphabetical")}
