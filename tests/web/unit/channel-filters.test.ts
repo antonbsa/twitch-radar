@@ -3,7 +3,7 @@ import {
   applyChannelFilters,
   DEFAULT_CHANNEL_FILTERS,
   deriveLiveCategories,
-} from "../../../apps/web/src/lib/channel-filters"
+} from "../../../apps/web/src/routes/channels/channel-filters"
 import type { FollowedChannel } from "../../../apps/web/src/types/channel"
 
 function channel(overrides: Partial<FollowedChannel> = {}): FollowedChannel {

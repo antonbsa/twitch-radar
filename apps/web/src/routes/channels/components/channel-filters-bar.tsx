@@ -19,7 +19,7 @@ import type {
   ChannelFilters,
   ChannelSort,
   LiveCategoryCount,
-} from "@/lib/channel-filters"
+} from "@/routes/channels/channel-filters"
 
 // 44px touch-target height; responsive width (narrow on mobile, full label width at md+)
 const CATEGORY_TRIGGER_CLASSNAME =

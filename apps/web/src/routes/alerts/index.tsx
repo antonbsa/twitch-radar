@@ -20,7 +20,7 @@ import { useFollowedChannels } from "@/hooks/use-channels"
 import {
   buildChannelAlertGroups,
   filterChannelAlertGroups,
-} from "@/lib/alert-groups"
+} from "@/routes/alerts/alert-groups"
 import {
   usePreferences,
   useRemoveChannelPreference,

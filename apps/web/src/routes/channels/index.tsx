@@ -25,7 +25,7 @@ import {
   DEFAULT_CHANNEL_FILTERS,
   deriveLiveCategories,
   type ChannelFilters,
-} from "@/lib/channel-filters"
+} from "@/routes/channels/channel-filters"
 import { cn } from "@/lib/utils"
 import type { FollowedChannel } from "@/types/channel"
 

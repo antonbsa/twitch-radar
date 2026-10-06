@@ -6,7 +6,7 @@ import {
   useSnoozeNotification,
 } from "@/hooks/use-notifications"
 import { interpolateNodes } from "@/lib/i18n-react"
-import type { LiveCategory } from "./live-category"
+import type { LiveCategory } from "@/routes/channels/live-category"
 import type { FollowedChannel } from "@/types/channel"
 
 /** "Remind me in 15m" state and action for a live channel. */

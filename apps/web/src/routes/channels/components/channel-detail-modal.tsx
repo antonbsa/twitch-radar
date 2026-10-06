@@ -27,9 +27,9 @@ import {
 import { formatViewerCount } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import type { FollowedChannel } from "@/types/channel"
-import { getLiveCategory } from "../live-category"
-import { useChannelCategoryNotify } from "../use-channel-category-notify"
-import { useChannelSnooze } from "../use-channel-snooze"
+import { getLiveCategory } from "@/routes/channels/live-category"
+import { useChannelCategoryNotify } from "@/routes/channels/use-channel-category-notify"
+import { useChannelSnooze } from "@/routes/channels/use-channel-snooze"
 
 interface ChannelDetailModalProps {
   channel: FollowedChannel | null

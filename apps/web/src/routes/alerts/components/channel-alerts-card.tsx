@@ -7,7 +7,7 @@ import {
 import { AddCategoryChip } from "@/components/categories/add-category-chip"
 import { CategoryChip } from "@/components/categories/category-chip"
 import { useLanguage } from "@/context/language-context"
-import type { ChannelAlertGroup } from "@/lib/alert-groups"
+import type { ChannelAlertGroup } from "@/routes/alerts/alert-groups"
 
 interface ChannelAlertsCardProps {
   group: ChannelAlertGroup

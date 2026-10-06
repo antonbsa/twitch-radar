@@ -5,7 +5,7 @@ import {
 } from "@/hooks/use-preferences"
 import { usePushNotifications } from "@/hooks/use-push-notifications"
 import { showEnablePushToast } from "@/lib/push-toast"
-import type { LiveCategory } from "./live-category"
+import type { LiveCategory } from "@/routes/channels/live-category"
 import type { FollowedChannel } from "@/types/channel"
 
 /** "Notify me for this category" state and action for a live channel. */
