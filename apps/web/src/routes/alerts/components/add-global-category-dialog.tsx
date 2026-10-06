@@ -4,7 +4,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { CategorySearchList } from "@/components/category-search-list"
+import { CategorySearchList } from "@/components/categories/category-search-list"
 import { useLanguage } from "@/context/language-context"
 import { useAddGlobalPreference } from "@/hooks/use-preferences"
 import { usePushNotifications } from "@/hooks/use-push-notifications"

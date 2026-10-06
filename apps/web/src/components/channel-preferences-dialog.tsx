@@ -5,8 +5,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Skeleton } from "@/components/ui/skeleton"
-import { CategorySearchList } from "@/components/category-search-list"
-import { CategoryChip } from "@/components/category-chip"
+import { CategorySearchList } from "@/components/categories/category-search-list"
+import { CategoryChip } from "@/components/categories/category-chip"
 import { useLanguage } from "@/context/language-context"
 import { useArmedChip } from "@/hooks/use-armed-chip"
 import {

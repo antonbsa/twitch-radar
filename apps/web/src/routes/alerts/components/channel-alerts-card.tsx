@@ -4,8 +4,8 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar"
-import { AddCategoryChip } from "@/components/add-category-chip"
-import { CategoryChip } from "@/components/category-chip"
+import { AddCategoryChip } from "@/components/categories/add-category-chip"
+import { CategoryChip } from "@/components/categories/category-chip"
 import { useLanguage } from "@/context/language-context"
 import type { ChannelAlertGroup } from "@/lib/alert-groups"
 

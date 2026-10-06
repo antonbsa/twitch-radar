@@ -1,7 +1,7 @@
 import type { ReactNode } from "react"
 import { Navigate } from "react-router"
 import { useAuth } from "@/context/auth-context"
-import { FullScreenLoader } from "@/components/full-screen-loader"
+import { FullScreenLoader } from "@/components/shell/full-screen-loader"
 
 interface AuthGateProps {
   when: "authenticated" | "guest"

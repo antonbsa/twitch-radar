@@ -1,5 +1,5 @@
 import { Outlet } from "react-router"
-import { BottomTabBar } from "@/components/bottom-tab-bar"
+import { BottomTabBar } from "@/components/shell/bottom-tab-bar"
 import { useAutoSyncFollows } from "@/hooks/use-channels"
 
 export function AuthenticatedLayout() {

@@ -1,6 +1,6 @@
 import { useEffect } from "react"
 import { Navigate, Route, Routes } from "react-router"
-import { AuthGate } from "@/components/auth-gate"
+import { AuthGate } from "@/components/shell/auth-gate"
 import { Toaster } from "@/components/ui/sonner"
 import { AuthenticatedLayout } from "@/routes/authenticated-layout"
 import { useAuth } from "@/context/auth-context"

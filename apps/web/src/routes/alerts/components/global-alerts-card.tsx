@@ -1,7 +1,7 @@
 import { Ban, Globe } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { AddCategoryChip } from "@/components/add-category-chip"
-import { CategoryChip } from "@/components/category-chip"
+import { AddCategoryChip } from "@/components/categories/add-category-chip"
+import { CategoryChip } from "@/components/categories/category-chip"
 import { useLanguage } from "@/context/language-context"
 import type { GlobalPreference } from "@/types/preference"
 

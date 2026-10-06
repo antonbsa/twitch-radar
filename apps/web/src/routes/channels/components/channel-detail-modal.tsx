@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/sheet"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { ToggleActionButton } from "@/components/toggle-action-button"
+import { ToggleActionButton } from "@/routes/channels/components/toggle-action-button"
 import { useLanguage } from "@/context/language-context"
 import {
   useBroadcasterMutes,

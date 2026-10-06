@@ -13,6 +13,7 @@ Frontend conventions for the React/Vite PWA (Tailwind v4, shadcn/ui, TanStack Qu
 
 - A component used by one page lives in `src/routes/<page>/components/`; `routes/<page>/index.tsx` is the page itself. Page-only hooks and helpers sit beside `index.tsx`.
 - `src/components/` holds only what two or more pages (or the app shell) import, plus `ui/`. A page-only component left there, or dropped next to `index.tsx`, passes typecheck and lint, so check importers before placing one: `grep -rn "/<name>\"" apps/web/src`.
+- Shared components with a clear theme are grouped: `components/shell/` (auth gate, tab bar, loader: app shell, never imported by a page) and `components/categories/` (category chips and search list). The rest stay flat.
 - When a second page starts importing a page-local component, move it to `src/components/` in the same change.
 
 ## Buttons and cursor
