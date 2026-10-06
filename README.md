@@ -199,16 +199,13 @@ This project relies on two Cloudflare-specific runtime primitives beyond the Wor
 
 Both consumers are configured with `max_batch_size: 10` and `max_batch_timeout: 1` — a one-second timeout rather than waiting for a fuller batch, since notifications are time-sensitive and shouldn't sit in a partially-filled batch window.
 
-**Cron Triggers.** Four cron expressions in `triggers.crons`, dispatched via `controller.cron` in `apps/api/src/index.ts`:
+**Cron Triggers.** One cron per environment, `* * * * *`, dispatched by the scheduled time in `apps/api/src/scheduled.ts` ([ADR 0057](docs/decisions/0057-single-minutely-cron-trigger.md)). Every invocation creates pending EventSub subscriptions ([ADR 0031](docs/decisions/0031-eventsub-subscription-creation-and-lifecycle.md)) and runs the snooze sweep; on top of that:
 
-- `* * * * *` — every minute, creates pending EventSub subscriptions (the default branch of the subscription lifecycle — see [ADR 0031](docs/decisions/0031-eventsub-subscription-creation-and-lifecycle.md)).
-- `*/30 * * * *` — every 30 minutes, EventSub reconciliation.
-- `5,35 * * * *` — twice an hour, Twitch token refresh sweep.
-- `10 * * * *` — hourly, stale follow re-sync.
+- minutes 0 and 30 — EventSub reconciliation.
+- minutes 5 and 35 — Twitch token refresh sweep.
+- minute 10 — stale follow re-sync (and the monthly avatar refresh).
 
-See [ADR 0036](docs/decisions/0036-scheduled-ops-jobs.md) for the rationale behind each job.
-
-**The account-wide 5-cron cap.** Cloudflare caps Cron Triggers at 5 **per account**, not per Worker. Production registers all 4 crons above, leaving only 1 free — so the `preview` environment gets just the minutely pending-subscription job and none of the other three scheduled jobs. Those can still be exercised manually against preview via `wrangler deploy --env preview` plus a manual `/__scheduled?cron=...` request.
+See [ADR 0036](docs/decisions/0036-scheduled-ops-jobs.md) for the rationale behind each job. Cloudflare caps Cron Triggers at 5 **per account**, which is why jobs share one trigger instead of owning one each.
 
 </details>
 

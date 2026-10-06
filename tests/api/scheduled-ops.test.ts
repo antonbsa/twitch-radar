@@ -1,9 +1,4 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest"
-import {
-  CRON_EVENTSUB_RECONCILE,
-  CRON_FOLLOW_SYNC,
-  CRON_TOKEN_REFRESH,
-} from "../../apps/api/src/crons"
 import { orchestrator } from "./setup/orchestrator"
 
 const BROADCASTER_ID = "300"
@@ -40,6 +35,30 @@ afterAll(async () => {
 })
 
 describe("EventSub reconciliation", () => {
+  it("should not reconcile on a minute where only the minutely jobs are due", async () => {
+    await orchestrator.seed({
+      monitoredChannels: [{ broadcasterUserId: BROADCASTER_ID }],
+      eventsubSubscriptions: [
+        {
+          broadcasterUserId: BROADCASTER_ID,
+          eventType: "stream.online",
+          status: "enabled",
+          twitchSubscriptionId: "tsub_r1",
+        },
+      ],
+    })
+    await orchestrator.mockTwitch.onAppToken()
+    await orchestrator.mockTwitch.onEventsubSubscriptionList([])
+
+    await orchestrator.runScheduled()
+
+    const state = await orchestrator.inspect([BROADCASTER_ID])
+    const online = state.eventsubSubscriptions.find(
+      (s) => s.event_type === "stream.online",
+    )
+    expect(online).toMatchObject({ status: "enabled" })
+  })
+
   it("should reset a row to pending when its Twitch subscription is missing", async () => {
     await orchestrator.seed({
       monitoredChannels: [{ broadcasterUserId: BROADCASTER_ID }],
@@ -55,7 +74,7 @@ describe("EventSub reconciliation", () => {
     await orchestrator.mockTwitch.onAppToken()
     await orchestrator.mockTwitch.onEventsubSubscriptionList([])
 
-    await orchestrator.runScheduled(CRON_EVENTSUB_RECONCILE)
+    await orchestrator.runScheduled("eventsub-reconcile")
 
     const state = await orchestrator.inspect([BROADCASTER_ID])
     const online = state.eventsubSubscriptions.find(
@@ -74,7 +93,7 @@ describe("EventSub reconciliation", () => {
     await orchestrator.mockTwitch.onAppToken()
     await orchestrator.mockTwitch.onEventsubSubscriptionList([])
 
-    await orchestrator.runScheduled(CRON_EVENTSUB_RECONCILE)
+    await orchestrator.runScheduled("eventsub-reconcile")
 
     const state = await orchestrator.inspect([BROADCASTER_ID])
     expect(state.eventsubSubscriptions).toHaveLength(3)
@@ -108,7 +127,7 @@ describe("EventSub reconciliation", () => {
     await orchestrator.mockTwitch.onEventsubSubscriptionList([remoteSub()])
     await orchestrator.mockTwitch.onEventsubSubscriptionDelete()
 
-    await orchestrator.runScheduled(CRON_EVENTSUB_RECONCILE)
+    await orchestrator.runScheduled("eventsub-reconcile")
 
     const state = await orchestrator.inspect([BROADCASTER_ID])
     expect(state.eventsubSubscriptions).toHaveLength(0)
@@ -131,7 +150,7 @@ describe("EventSub reconciliation", () => {
       remoteSub({ status: "enabled" }),
     ])
 
-    await orchestrator.runScheduled(CRON_EVENTSUB_RECONCILE)
+    await orchestrator.runScheduled("eventsub-reconcile")
 
     const state = await orchestrator.inspect([BROADCASTER_ID])
     const online = state.eventsubSubscriptions.find(
@@ -158,7 +177,7 @@ describe("EventSub reconciliation", () => {
     ])
     await orchestrator.mockTwitch.onEventsubSubscriptionDelete()
 
-    await orchestrator.runScheduled(CRON_EVENTSUB_RECONCILE)
+    await orchestrator.runScheduled("eventsub-reconcile")
 
     const state = await orchestrator.inspect([BROADCASTER_ID])
     const online = state.eventsubSubscriptions.find(
@@ -192,7 +211,7 @@ describe("EventSub reconciliation", () => {
       }),
     ])
 
-    await orchestrator.runScheduled(CRON_EVENTSUB_RECONCILE)
+    await orchestrator.runScheduled("eventsub-reconcile")
 
     const state = await orchestrator.inspect([BROADCASTER_ID])
     const online = state.eventsubSubscriptions.find(
@@ -221,7 +240,7 @@ describe("EventSub reconciliation", () => {
     await orchestrator.mockTwitch.onAppToken()
     await orchestrator.mockTwitch.onEventsubSubscriptionList([])
 
-    await orchestrator.runScheduled(CRON_EVENTSUB_RECONCILE)
+    await orchestrator.runScheduled("eventsub-reconcile")
 
     const state = await orchestrator.inspect([BROADCASTER_ID])
     const online = state.eventsubSubscriptions.find(
@@ -251,7 +270,7 @@ describe("EventSub reconciliation", () => {
     await orchestrator.mockTwitch.onAppToken()
     await orchestrator.mockTwitch.onEventsubSubscriptionList([])
 
-    await orchestrator.runScheduled(CRON_EVENTSUB_RECONCILE)
+    await orchestrator.runScheduled("eventsub-reconcile")
 
     const state = await orchestrator.inspect([BROADCASTER_ID])
     const online = state.eventsubSubscriptions.find(
@@ -274,7 +293,7 @@ describe("Twitch token refresh", () => {
       token_type: "bearer",
     })
 
-    await orchestrator.runScheduled(CRON_TOKEN_REFRESH)
+    await orchestrator.runScheduled("token-refresh")
 
     const me = await fetch(`${orchestrator.baseUrl}/api/me`, {
       headers: { Cookie: cookie },
@@ -306,7 +325,7 @@ describe("Twitch token refresh", () => {
       400,
     )
 
-    await orchestrator.runScheduled(CRON_TOKEN_REFRESH)
+    await orchestrator.runScheduled("token-refresh")
 
     const me = await fetch(`${orchestrator.baseUrl}/api/me`, {
       headers: { Cookie: cookie },
@@ -362,7 +381,7 @@ describe("scheduled follow sync", () => {
     ])
     await orchestrator.mockTwitch.onFollowedStreams([])
 
-    await orchestrator.runScheduled(CRON_FOLLOW_SYNC)
+    await orchestrator.runScheduled("follow-sync")
 
     const state = await orchestrator.inspect([BROADCASTER_ID])
     expect(state.monitoredChannels).toHaveLength(1)
@@ -396,7 +415,7 @@ describe("scheduled follow sync", () => {
     ])
     await orchestrator.mockTwitch.onFollowedStreams([])
 
-    await orchestrator.runScheduled(CRON_FOLLOW_SYNC)
+    await orchestrator.runScheduled("follow-sync")
 
     const me = await fetch(`${orchestrator.baseUrl}/api/me`, {
       headers: { Cookie: cookie },

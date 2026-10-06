@@ -24,4 +24,4 @@ T-006 stages local `eventsub_subscriptions` rows with `status: "pending"` (ADR 0
 - Subscription creation is eventually consistent: a broadcaster is actually covered only after cron pickup plus challenge round-trip. Acceptable for an alerting MVP; the UI never promises instant coverage.
 - Pending rows for broadcasters that were disabled before pickup are still created (creation does not re-check `monitored_channels.disabled_at`); T-008 reconciliation is the janitor that removes unneeded subscriptions, per ADR 0030.
 - Local Twitch subscription counts are bounded by Twitch's max_total_cost for webhook subscriptions (10 000 by default) — the "subscription count grows with monitored broadcasters" risk from the architecture spec lives here.
-- The API test tier triggers the cron deterministically via `wrangler dev --test-scheduled` and `GET /__scheduled`.
+- The API test tier triggers the cron deterministically through Miniflare's `/cdn-cgi/local/scheduled` endpoint (ADR 0057).

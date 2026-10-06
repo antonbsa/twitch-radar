@@ -1,37 +1,52 @@
-// Cron expressions must match wrangler.jsonc's `triggers.crons` exactly —
-// `controller.cron` is the raw matched expression the scheduled() handler
-// dispatches on (ADR 0036). Kept in their own module so tests can address a
-// specific job through `/__scheduled?cron=...` without importing the worker.
-// `scheduled()` still reaches CRON_MINUTELY's jobs through its `default`
-// branch, so a bare `/__scheduled` (no cron) runs them too.
+// The Worker has one cron trigger per environment, firing every minute, and
+// `scheduled()` decides which jobs are due from `controller.scheduledTime`
+// (ADR 0057): Cloudflare caps cron triggers account-wide, so one trigger per
+// environment replaces one per job. Kept in its own module so tests can
+// import the schedule without the worker. Must match wrangler.jsonc's
+// `triggers.crons` in every environment.
 export const CRON_MINUTELY = "* * * * *"
-export const CRON_EVENTSUB_RECONCILE = "*/30 * * * *"
-export const CRON_TOKEN_REFRESH = "5,35 * * * *"
-export const CRON_FOLLOW_SYNC = "10 * * * *"
 
-// Stable job names for Workers Logs filtering (ADR 0053). One entry per job,
-// not per cron: the minutely schedule runs two jobs.
-const SCHEDULED_JOB_CRONS = {
-  "eventsub-create": CRON_MINUTELY,
-  "snooze-sweep": CRON_MINUTELY,
-  "eventsub-reconcile": CRON_EVENTSUB_RECONCILE,
-  "token-refresh": CRON_TOKEN_REFRESH,
-  "follow-sync": CRON_FOLLOW_SYNC,
-  // Monthly, gated inside the hourly follow-sync trigger: no free trigger
-  // slot under the account-wide cron cap (ADR 0048).
-  "avatar-refresh": CRON_FOLLOW_SYNC,
+// Jobs that run on every invocation.
+const MINUTELY_JOBS = ["eventsub-create", "snooze-sweep"] as const
+
+// UTC minutes of the hour each periodic job runs at. They never share a
+// minute, so an invocation runs at most one of them next to the minutely jobs.
+export const PERIODIC_JOB_MINUTES = {
+  "eventsub-reconcile": [0, 30],
+  "token-refresh": [5, 35],
+  "follow-sync": [10],
 } as const
 
-export type ScheduledJobName = keyof typeof SCHEDULED_JOB_CRONS
+export type PeriodicJobName = keyof typeof PERIODIC_JOB_MINUTES
+
+// Stable job names for Workers Logs filtering (ADR 0053). "avatar-refresh"
+// is monthly, gated inside the hourly follow-sync slot (ADR 0048).
+export type ScheduledJobName =
+  (typeof MINUTELY_JOBS)[number] | PeriodicJobName | "avatar-refresh"
+
+/** Whether `job` is due at the UTC minute of `scheduledTime` (epoch ms). */
+export function isPeriodicJobDue(
+  job: PeriodicJobName,
+  scheduledTime: number,
+): boolean {
+  const minute = new Date(scheduledTime).getUTCMinutes()
+  return (PERIODIC_JOB_MINUTES[job] as readonly number[]).includes(minute)
+}
+
+/** Whether any periodic job is due, i.e. this invocation does more than the minutely jobs. */
+export function isAnyPeriodicJobDue(scheduledTime: number): boolean {
+  return (Object.keys(PERIODIC_JOB_MINUTES) as PeriodicJobName[]).some((job) =>
+    isPeriodicJobDue(job, scheduledTime),
+  )
+}
 
 /**
- * `{ job, cron }` fields every scheduled job spreads into its summary and
- * failure logs, so Workers Logs can be filtered by job instead of by
- * free-text message.
+ * `{ job }` field every scheduled job spreads into its summary and failure
+ * logs, so Workers Logs can be filtered by job instead of by free-text
+ * message.
  */
 export function scheduledJobLogFields(job: ScheduledJobName): {
   job: ScheduledJobName
-  cron: string
 } {
-  return { job, cron: SCHEDULED_JOB_CRONS[job] }
+  return { job }
 }

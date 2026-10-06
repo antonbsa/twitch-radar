@@ -59,6 +59,7 @@ Other project documents may state goals, requirements, task scope, validation st
 - [0052 - Agent Instructions: Nested AGENTS.md For Conventions, Subagents For Persona And Boundaries](0052-nested-agents-md-and-slim-subagents.md)
 - [0053 - Self-Describing Scheduled Job Logs](0053-self-describing-scheduled-job-logs.md)
 - [0056 - Send-Side Notification Cooldown Per User And Broadcaster](0056-send-side-notification-cooldown.md)
+- [0057 - Single Minutely Cron Trigger With Time-Based Job Dispatch](0057-single-minutely-cron-trigger.md)
 
 ## Proposed ADRs
 
