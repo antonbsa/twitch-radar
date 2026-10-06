@@ -1,4 +1,4 @@
-import { logger, serializeError } from "../logger"
+import { logger, serializeError } from "../lib/logger"
 import { jsonResponse } from "./response"
 
 export interface ErrorBody {

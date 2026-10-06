@@ -37,11 +37,19 @@ for (let i = 0; i < ids.length; i += BATCH_SIZE) {
 - Anything that mutates data or schema (`INSERT`, `UPDATE`, `DELETE`, `DROP`, "seed a test row", "reset this field to test X") needs explicit confirmation every time, even against local state: say what it does and what it targets first.
 - Never target `twitch-radar-dev` without `--local`. Remote `d1 execute` is denied in `.claude/settings.json` and is never run from an agent session.
 
+## Source layout
+
+- Code is grouped by feature in `src/features/<name>/`: `routes.ts` (handlers; `sync-routes.ts` when a feature has a second router), plus that feature's services, queue/cron jobs and types, each next to its owner. A new endpoint goes in its feature's folder, and `app.ts` mounts it.
+- Anything two or more features use goes in `src/lib/` (`crypto`, `base64url`, `logger`) or `src/http/` (`handlers.ts`, `errors.ts`, `response.ts`). The Twitch API client and its sync/token jobs stay in `services/twitch/`, one file per resource (`oauth`, `eventsub`, `users`, `streams`, `categories`, shared `errors`).
+- Types live with their owner: a row shape in its `db/repositories/<entity>.ts`, a queue message in its feature's `types.ts`. There is no shared `types.ts`; repeating a repository record type elsewhere lets the two drift without a compile error.
+- `db/repositories` stays flat, not grouped by feature: repositories are shared across features (`notifications/match.ts` reads preferences, snoozes, mutes, deliveries and channel state), so grouping them would make features depend on each other's folders.
+- `index.ts` only composes `app.ts`, `queues/*` and `scheduled.ts`; route, consumer and cron logic goes in those modules, and it stays the wrangler `main`.
+
 ## Route handlers
 
-- Validate input with a local `zod` schema and `.safeParse`, throw `ApiError(status, code, message)` on failure, respond with `jsonResponse(...)`. See `http/routes/preferences.ts`.
+- Validate input with a local `zod` schema and `.safeParse`, throw `ApiError(status, code, message)` on failure, respond with `jsonResponse(...)`. See `features/preferences/routes.ts`. Shared helpers (`parseBody`, `findOwnedRecord`, `authedRouter`) live in `http/handlers.ts`; mount each authenticated route group on an `authedRouter()` instead of repeating `requireAuth`.
 - Preference- and subscription-like rows (`channel_category_preferences`, `global_category_preferences`, `eventsub_subscriptions`, `monitored_channels`) are idempotent lifecycle resources: create is an upsert that revives a disabled row, delete is a soft-disable via `disabled_at`, never a hard delete (ADRs 0029, 0030). A new resource of that shape matches this lifecycle.
-- `TwitchEventQueueMessage` and `NotificationJobMessage` in `types.ts` are discriminated unions (ADRs 0032, 0034): extend the union for a new event/job shape instead of adding a parallel message type.
+- `TwitchEventQueueMessage` and `NotificationJobMessage` (in `features/eventsub/types.ts` and `features/notifications/types.ts`) are discriminated unions (ADRs 0032, 0034): extend the union for a new event/job shape instead of adding a parallel message type.
 - Read validated config through `AppConfig` (derived in `env.ts`), never `process.env`.
 
 ## API contract doc

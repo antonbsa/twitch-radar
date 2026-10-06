@@ -1,8 +1,24 @@
 import { and, asc, eq, inArray, isNotNull, isNull, lt, or } from "drizzle-orm"
 import { nanoid } from "nanoid"
-import type { Language, User } from "../../types"
 import type { AppDatabase } from "../client"
 import { twitchTokens, users, type UserRow } from "../schema"
+
+// Language preference values (ADR 0044): stored on users.language, validated
+// at the API layer via zod, mirrored on the web side (apps/web/src/types/user.ts).
+export const SUPPORTED_LANGUAGES = ["en", "pt-BR", "es"] as const
+export type Language = (typeof SUPPORTED_LANGUAGES)[number]
+
+export interface User {
+  id: string
+  twitch_user_id: string
+  twitch_login: string
+  twitch_display_name: string
+  created_at: string
+  updated_at: string
+  last_follow_sync_at: string | null
+  language: Language
+  notifications_paused_at: string | null
+}
 
 export interface UpsertUserInput {
   id: string

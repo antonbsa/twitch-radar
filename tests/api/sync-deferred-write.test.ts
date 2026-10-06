@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import type { Database } from "../../apps/api/src/db"
 import type { AppConfig } from "../../apps/api/src/env"
-import { logger } from "../../apps/api/src/logger"
+import { logger } from "../../apps/api/src/lib/logger"
 import { persistFollowedChannelsSyncDeferred } from "../../apps/api/src/services/twitch/sync"
 
 // Unit-level coverage for the waitUntil failure path (issue #83): once

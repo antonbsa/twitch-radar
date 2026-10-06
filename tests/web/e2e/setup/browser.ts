@@ -4,7 +4,7 @@ import {
   type BrowserContext,
   type Page,
 } from "playwright"
-import { SESSION_COOKIE_NAME } from "../../../../apps/api/src/services/session"
+import { SESSION_COOKIE_NAME } from "../../../../apps/api/src/features/auth/session"
 import { E2E_WEB_URL } from "./ports"
 
 export const MOBILE_VIEWPORT = { width: 390, height: 844 }

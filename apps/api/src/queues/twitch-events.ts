@@ -1,9 +1,9 @@
 import type { Database } from "../db"
 import type { AppConfig, Env } from "../env"
-import { logger, serializeError } from "../logger"
-import { processTwitchEventMessage } from "../services/eventsub/process"
-import { matchAndCreateDeliveries } from "../services/notifications/match"
-import type { TwitchEventQueueMessage } from "../types"
+import { logger, serializeError } from "../lib/logger"
+import { processTwitchEventMessage } from "../features/eventsub/process"
+import { matchAndCreateDeliveries } from "../features/notifications/match"
+import type { TwitchEventQueueMessage } from "../features/eventsub/types"
 
 /**
  * Ack/retry per message so one failure doesn't replay the whole batch

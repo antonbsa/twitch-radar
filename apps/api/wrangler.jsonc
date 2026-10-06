@@ -66,7 +66,7 @@
       // top-level `name` with the environment name. Set explicitly to
       // pin the exact *.workers.dev hostname.
       "name": "twitch-radar",
-      // Captures console.* output (structured JSON from apps/api/src/logger.ts)
+      // Captures console.* output (structured JSON from apps/api/src/lib/logger.ts)
       // in the Cloudflare dashboard's Workers Logs. Full capture (no
       // sampling) until real production volume is observed to justify
       // sampling below 1 — see specs/milestones/0-foundations/
@@ -79,7 +79,7 @@
       // Cloudflare Pages project) so the PWA and the API share one
       // *.workers.dev origin with no custom domain — required by the
       // session cookie having no Domain attribute and there being no CORS
-      // handling (see apps/api/src/services/session.ts). Scoped to this
+      // handling (see apps/api/src/features/auth/session.ts). Scoped to this
       // environment only (not top-level) - `wrangler dev` (default/dev
       // env, used by local dev and the E2E test tier) never builds
       // apps/web, so a top-level `assets` block made it fail outright

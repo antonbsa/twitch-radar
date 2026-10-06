@@ -19,7 +19,7 @@ import type { EventsubSubscriptionRecord } from "../../apps/api/src/db/repositor
 import type { MonitoredChannelRecord } from "../../apps/api/src/db/repositories/monitored-channels"
 import type { NotificationDeliveryRecord } from "../../apps/api/src/db/repositories/notification-deliveries"
 import type { NotificationSnoozeRecord } from "../../apps/api/src/db/repositories/notification-snoozes"
-import type { PushSubscriptionRecord } from "../../apps/api/src/types"
+import type { PushSubscriptionRecord } from "../../apps/api/src/db/repositories/push-subscriptions"
 
 export {
   E2E_BROADCASTER_PREFIX,

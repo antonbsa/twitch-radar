@@ -1,0 +1,264 @@
+import type { AppConfig } from "../../env"
+import type { Database } from "../../db"
+import type { ChannelStateRecord } from "../../db/repositories/channel-state"
+import type { ChannelStateChangeRecord } from "../../db/repositories/channel-state-changes"
+import type {
+  ChannelUpdateEventPayload,
+  StreamOfflineEventPayload,
+  StreamOnlineEventPayload,
+  TwitchEventQueueMessage,
+} from "./types"
+import { logger } from "../../lib/logger"
+import { getAppAccessToken } from "../../services/twitch/app-token"
+import {
+  getStreamsByUserIds,
+  resolveThumbnailUrl,
+} from "../../services/twitch/streams"
+
+/** Twitch sends "" for an unset category; store it as null. */
+function normalizeCategory(value: string | null | undefined): string | null {
+  return value || null
+}
+
+/**
+ * Out-of-order guard (ADR 0033): skip a message when the state row was
+ * already written from a later EventSub message. Equal timestamps process —
+ * exact duplicates are caught by the message-id check instead.
+ */
+function isStale(
+  previous: ChannelStateRecord | null,
+  messageTimestamp: string,
+): boolean {
+  if (!previous?.updated_from_event_at) return false
+  return (
+    Date.parse(previous.updated_from_event_at) > Date.parse(messageTimestamp)
+  )
+}
+
+/**
+ * Applies one EventSub notification to `channel_state` and records relevant
+ * transitions in `channel_state_changes` (ADRs 0006, 0033). Idempotent per
+ * EventSub message id: a message that already produced a change row skips
+ * state processing, and change inserts no-op on a duplicate message id.
+ * State is written before the change row so `channel_state` stays the source
+ * of truth even if the change insert is lost to a crash.
+ *
+ * Returns the change row this message maps to (fresh or pre-existing) so the
+ * caller can run notification matching on it — matching is idempotent at the
+ * delivery-dedupe level, so re-returning a known row on a queue replay is
+ * safe and lets a crashed match/enqueue step recover (ADR 0034).
+ *
+ * @returns `null` when the message was stale or produced no tracked transition.
+ */
+export async function processTwitchEventMessage(
+  db: Database,
+  config: AppConfig,
+  kv: KVNamespace,
+  message: TwitchEventQueueMessage,
+): Promise<ChannelStateChangeRecord | null> {
+  const existing = await db.channelStateChanges.findByEventsubMessageId(
+    message.messageId,
+  )
+  if (existing) {
+    logger.debug("Skipping already-processed EventSub message", {
+      messageId: message.messageId,
+      changeType: existing.change_type,
+    })
+    return existing
+  }
+
+  switch (message.eventType) {
+    case "stream.online":
+      await processStreamOnline(db, config, kv, message.event, message)
+      break
+    case "stream.offline":
+      await processStreamOffline(db, message.event, message)
+      break
+    case "channel.update":
+      await processChannelUpdate(db, message.event, message)
+      break
+  }
+
+  return db.channelStateChanges.findByEventsubMessageId(message.messageId)
+}
+
+async function processStreamOnline(
+  db: Database,
+  config: AppConfig,
+  kv: KVNamespace,
+  event: StreamOnlineEventPayload,
+  message: TwitchEventQueueMessage,
+): Promise<void> {
+  const previous = await db.channelState.findByBroadcasterUserId(
+    event.broadcaster_user_id,
+  )
+  if (isStale(previous, message.messageTimestamp)) return
+
+  // The stream.online payload carries no category — fetch the live stream
+  // for matching data. When Get Streams lags behind the event, fall back to
+  // the last known channel info (channel.update keeps it current offline).
+  const appAccessToken = await getAppAccessToken(kv, config)
+  const streams = await getStreamsByUserIds(
+    config.twitchClientId,
+    appAccessToken,
+    [event.broadcaster_user_id],
+    config.twitchApiBaseUrl,
+  )
+  const stream = streams.find((s) => s.id === event.id) ?? streams[0]
+
+  const next = {
+    isLive: true,
+    streamId: stream?.id ?? event.id,
+    categoryId: normalizeCategory(stream?.game_id ?? previous?.category_id),
+    categoryName: normalizeCategory(
+      stream?.game_name ?? previous?.category_name,
+    ),
+    title: stream?.title || previous?.title || null,
+    thumbnailUrl:
+      resolveThumbnailUrl(stream?.thumbnail_url) ??
+      previous?.thumbnail_url ??
+      null,
+    viewerCount: stream?.viewer_count ?? null,
+    startedAt: stream?.started_at ?? event.started_at,
+    // ADR 0050: notification matching suppresses anything but "live" so a
+    // rerun/playlist/watch_party doesn't page anyone.
+    streamType: stream?.type ?? event.type,
+  }
+
+  const now = new Date().toISOString()
+  await db.channelState.upsertAll([
+    {
+      broadcasterUserId: event.broadcaster_user_id,
+      ...next,
+      updatedFromEventAt: message.messageTimestamp,
+      now,
+    },
+  ])
+
+  // A stream we already know as live (e.g. seeded at preference creation) is
+  // not a transition — recording it would violate ADR 0008's future-only rule.
+  const isNewStream = !previous?.is_live || previous.stream_id !== next.streamId
+  if (!isNewStream) return
+
+  await db.channelStateChanges.insertIfNew({
+    broadcasterUserId: event.broadcaster_user_id,
+    eventsubMessageId: message.messageId,
+    changeType: "stream_started",
+    previousIsLive: previous ? previous.is_live : null,
+    nextIsLive: true,
+    previousCategoryId: previous?.category_id ?? null,
+    previousCategoryName: previous?.category_name ?? null,
+    nextCategoryId: next.categoryId,
+    nextCategoryName: next.categoryName,
+    streamId: next.streamId,
+    occurredAt: message.messageTimestamp,
+    now,
+  })
+}
+
+async function processStreamOffline(
+  db: Database,
+  event: StreamOfflineEventPayload,
+  message: TwitchEventQueueMessage,
+): Promise<void> {
+  const previous = await db.channelState.findByBroadcasterUserId(
+    event.broadcaster_user_id,
+  )
+  if (isStale(previous, message.messageTimestamp)) return
+
+  // Category/title persist — they are channel info, not stream info.
+  const now = new Date().toISOString()
+  await db.channelState.upsertAll([
+    {
+      broadcasterUserId: event.broadcaster_user_id,
+      isLive: false,
+      streamId: null,
+      categoryId: previous?.category_id ?? null,
+      categoryName: previous?.category_name ?? null,
+      title: previous?.title ?? null,
+      thumbnailUrl: previous?.thumbnail_url ?? null,
+      viewerCount: null,
+      startedAt: null,
+      // Not stream info to invent while offline — carried forward like
+      // category/title above; overwritten on the next stream_started anyway.
+      streamType: previous?.stream_type ?? null,
+      // The event's own time beats the write time on a live→offline
+      // transition; null otherwise so a repeat offline keeps the stored one.
+      lastLiveAt: previous?.is_live ? message.messageTimestamp : null,
+      updatedFromEventAt: message.messageTimestamp,
+      now,
+    },
+  ])
+
+  if (!previous?.is_live) return
+
+  await db.channelStateChanges.insertIfNew({
+    broadcasterUserId: event.broadcaster_user_id,
+    eventsubMessageId: message.messageId,
+    changeType: "stream_ended",
+    previousIsLive: true,
+    nextIsLive: false,
+    previousCategoryId: previous.category_id,
+    previousCategoryName: previous.category_name,
+    nextCategoryId: previous.category_id,
+    nextCategoryName: previous.category_name,
+    streamId: previous.stream_id,
+    occurredAt: message.messageTimestamp,
+    now,
+  })
+}
+
+async function processChannelUpdate(
+  db: Database,
+  event: ChannelUpdateEventPayload,
+  message: TwitchEventQueueMessage,
+): Promise<void> {
+  const previous = await db.channelState.findByBroadcasterUserId(
+    event.broadcaster_user_id,
+  )
+  if (isStale(previous, message.messageTimestamp)) return
+
+  const wasLive = previous?.is_live ?? false
+  const nextCategoryId = normalizeCategory(event.category_id)
+  const nextCategoryName = normalizeCategory(event.category_name)
+
+  // Channel info updates apply live or offline so channel_state stays the
+  // current snapshot; only the live category change is a relevant transition.
+  const now = new Date().toISOString()
+  await db.channelState.upsertAll([
+    {
+      broadcasterUserId: event.broadcaster_user_id,
+      isLive: wasLive,
+      streamId: previous?.stream_id ?? null,
+      categoryId: nextCategoryId,
+      categoryName: nextCategoryName,
+      title: event.title || null,
+      thumbnailUrl: previous?.thumbnail_url ?? null,
+      viewerCount: previous?.viewer_count ?? null,
+      startedAt: previous?.started_at ?? null,
+      // channel.update carries no stream type — preserve whatever the last
+      // stream.online/offline recorded.
+      streamType: previous?.stream_type ?? null,
+      updatedFromEventAt: message.messageTimestamp,
+      now,
+    },
+  ])
+
+  const previousCategoryId = previous?.category_id ?? null
+  if (!wasLive || previousCategoryId === nextCategoryId) return
+
+  await db.channelStateChanges.insertIfNew({
+    broadcasterUserId: event.broadcaster_user_id,
+    eventsubMessageId: message.messageId,
+    changeType: "category_changed",
+    previousIsLive: true,
+    nextIsLive: true,
+    previousCategoryId,
+    previousCategoryName: previous?.category_name ?? null,
+    nextCategoryId,
+    nextCategoryName,
+    streamId: previous?.stream_id ?? null,
+    occurredAt: message.messageTimestamp,
+    now,
+  })
+}

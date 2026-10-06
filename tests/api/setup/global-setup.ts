@@ -83,7 +83,7 @@ export default async function globalSetup() {
       "--var",
       `VAPID_PRIVATE_KEY:${vapidKeys.privateKey}`,
       // .env.development's TWITCH_CLIENT_SECRET is a placeholder that
-      // services/twitch/client.ts now rejects before calling Twitch (so real
+      // services/twitch/oauth.ts now rejects before calling Twitch (so real
       // dev usage fails loud instead of getting an opaque 401). The mock
       // Twitch server above doesn't check the secret's value at all, so any
       // non-placeholder string clears that guard for these tests.

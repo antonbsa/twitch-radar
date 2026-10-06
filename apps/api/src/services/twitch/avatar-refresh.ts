@@ -1,9 +1,9 @@
 import { scheduledJobLogFields } from "../../crons"
 import type { Database } from "../../db"
 import type { AppConfig } from "../../env"
-import { logger, serializeError } from "../../logger"
+import { logger, serializeError } from "../../lib/logger"
 import { getAppAccessToken } from "./app-token"
-import { getUsersByIds } from "./client"
+import { getUsersByIds } from "./users"
 
 /**
  * The monthly refresh rides the hourly follow-sync trigger (no free cron slot,

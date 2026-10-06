@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import type { Database } from "../../apps/api/src/db"
 import type { AppConfig } from "../../apps/api/src/env"
-import { logger } from "../../apps/api/src/logger"
+import { logger } from "../../apps/api/src/lib/logger"
 import {
   isAvatarRefreshSlot,
   refreshBroadcasterAvatars,

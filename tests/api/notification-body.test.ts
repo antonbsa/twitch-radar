@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { buildBody } from "../../apps/api/src/services/notifications/match"
+import { buildBody } from "../../apps/api/src/features/notifications/match"
 import type { ChannelStateRecord } from "../../apps/api/src/db/repositories/channel-state"
 
 // The push payload buildBody feeds into is encrypted end-to-end (ADR 0035),

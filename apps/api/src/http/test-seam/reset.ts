@@ -19,7 +19,10 @@ import {
   globalCategoryPreferenceExclusions,
 } from "../../db/schema"
 import { APP_TOKEN_KV_KEY } from "../../services/twitch/app-token"
-import { deleteSession, deleteSessionsForUser } from "../../services/session"
+import {
+  deleteSession,
+  deleteSessionsForUser,
+} from "../../features/auth/session"
 import { E2E_BROADCASTER_PREFIX, E2E_USER_ID, readJsonBody } from "./shared"
 
 export interface ResetRequestBody {

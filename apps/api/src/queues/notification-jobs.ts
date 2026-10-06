@@ -1,8 +1,8 @@
 import type { Database } from "../db"
 import type { AppConfig } from "../env"
-import { logger, serializeError } from "../logger"
-import { deliverNotification } from "../services/notifications/deliver"
-import type { NotificationJobMessage } from "../types"
+import { logger, serializeError } from "../lib/logger"
+import { deliverNotification } from "../features/notifications/deliver"
+import type { NotificationJobMessage } from "../features/notifications/types"
 
 export async function consumeNotificationJobs(
   batch: MessageBatch,

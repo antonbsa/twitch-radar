@@ -1,35 +1,35 @@
 import { Hono } from "hono"
 import { Database } from "./db"
 import { parseEnv, type HonoEnv } from "./env"
-import { logger } from "./logger"
+import { logger } from "./lib/logger"
 import { ApiError, errorResponse } from "./http/errors"
 import { authedRouter } from "./http/handlers"
-import { requireAuth } from "./http/middleware/auth"
-import { handleSearchCategories } from "./http/routes/categories"
-import { handleGetFollowedChannels } from "./http/routes/channels"
-import { handleHealth } from "./http/routes/health"
+import { requireAuth } from "./features/auth/middleware"
+import { handleSearchCategories } from "./features/categories/routes"
+import { handleGetFollowedChannels } from "./features/channels/routes"
+import { handleHealth } from "./http/health"
 import {
   handleGetMe,
   handleUpdateLanguage,
   handleUpdateNotificationsPaused,
-} from "./http/routes/me"
+} from "./features/me/routes"
 import {
   handleAuthCallback,
   handleAuthStart,
   handleLogout,
-} from "./http/routes/auth"
+} from "./features/auth/routes"
 import {
   handleCreateBroadcasterMute,
   handleCreateNotificationSnooze,
   handleDeleteBroadcasterMute,
   handleListBroadcasterMutes,
   handleListNotificationSnoozes,
-} from "./http/routes/notifications"
+} from "./features/notifications/routes"
 import {
   handleCreatePushSubscription,
   handleDeletePushSubscription,
   handleGetVapidPublicKey,
-} from "./http/routes/push-subscriptions"
+} from "./features/push/routes"
 import {
   handleCreateChannelPreference,
   handleCreateGlobalPreference,
@@ -38,9 +38,9 @@ import {
   handleDeleteGlobalPreference,
   handleDeleteGlobalPreferenceExclusion,
   handleGetPreferences,
-} from "./http/routes/preferences"
-import { handleSyncFollows } from "./http/routes/sync"
-import { handleEventsubWebhook } from "./http/routes/webhooks"
+} from "./features/preferences/routes"
+import { handleSyncFollows } from "./features/channels/sync-routes"
+import { handleEventsubWebhook } from "./features/eventsub/webhooks"
 import { handleTestInspect } from "./http/test-seam/inspect"
 import { handleTestReset } from "./http/test-seam/reset"
 import { handleTestSeed } from "./http/test-seam/seed"

@@ -3,7 +3,7 @@ import { matchedRoutes } from "hono/route"
 import type { z } from "zod"
 import type { HonoEnv } from "../env"
 import { ApiError } from "./errors"
-import { requireAuth } from "./middleware/auth"
+import { requireAuth } from "../features/auth/middleware"
 
 /**
  * Reads the JSON body and validates it against `schema`; a missing, malformed
