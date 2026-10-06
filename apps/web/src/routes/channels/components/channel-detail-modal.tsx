@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import {
   AlarmClockCheckIcon,
   AlarmClockIcon,
@@ -17,24 +17,19 @@ import {
 } from "@/components/ui/sheet"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
+import { ToggleActionButton } from "@/components/toggle-action-button"
 import { useLanguage } from "@/context/language-context"
 import {
   useBroadcasterMutes,
   useMuteBroadcaster,
-  useNotificationSnoozes,
-  useSnoozeNotification,
   useUnmuteBroadcaster,
 } from "@/hooks/use-notifications"
-import { interpolateNodes } from "@/lib/i18n-react"
-import {
-  useAddChannelPreference,
-  usePreferences,
-} from "@/hooks/use-preferences"
-import { usePushNotifications } from "@/hooks/use-push-notifications"
 import { formatViewerCount } from "@/lib/format"
-import { showEnablePushToast } from "@/lib/push-toast"
 import { cn } from "@/lib/utils"
 import type { FollowedChannel } from "@/types/channel"
+import { getLiveCategory } from "../live-category"
+import { useChannelCategoryNotify } from "../use-channel-category-notify"
+import { useChannelSnooze } from "../use-channel-snooze"
 
 interface ChannelDetailModalProps {
   channel: FollowedChannel | null
@@ -72,62 +67,16 @@ export function ChannelDetailModal({
   channel,
   onOpenChange,
 }: ChannelDetailModalProps) {
-  const { t, tRaw } = useLanguage()
-  const { data: preferences } = usePreferences()
-  const addPreference = useAddChannelPreference()
-  const push = usePushNotifications()
-  const snoozeNotification = useSnoozeNotification()
-  const { data: pendingSnoozes } = useNotificationSnoozes()
+  const { t } = useLanguage()
+  const liveCategory = getLiveCategory(channel)
+  const snoozeNotification = useChannelSnooze(channel, liveCategory)
+  const notify = useChannelCategoryNotify(channel, liveCategory)
   const { data: mutes } = useBroadcasterMutes()
   const muteBroadcaster = useMuteBroadcaster()
   const unmuteBroadcaster = useUnmuteBroadcaster()
   const activeMute = (mutes ?? []).find(
     (mute) => mute.broadcaster_user_id === channel?.broadcaster_user_id,
   )
-
-  // Each open is a fresh channel — drop any pending/success/error state left
-  // over from a previous one before it's shown for a new broadcaster.
-  const resetSnooze = snoozeNotification.reset
-  useEffect(() => {
-    resetSnooze()
-  }, [channel?.broadcaster_user_id, resetSnooze])
-
-  const liveCategory =
-    channel?.is_live && channel.category_id && channel.category_name
-      ? { id: channel.category_id, name: channel.category_name }
-      : null
-
-  // Only one pending reminder per broadcaster/category is allowed.
-  const hasPendingSnooze =
-    liveCategory !== null &&
-    (pendingSnoozes ?? []).some(
-      (snooze) =>
-        snooze.broadcaster_user_id === channel?.broadcaster_user_id &&
-        snooze.category_id === liveCategory.id,
-    )
-  const isSnoozed = snoozeNotification.isSuccess || hasPendingSnooze
-
-  const isNotifyingForCategory =
-    liveCategory !== null &&
-    (preferences?.channel ?? []).some(
-      (pref) =>
-        pref.broadcaster_user_id === channel?.broadcaster_user_id &&
-        pref.category_id === liveCategory.id,
-    )
-
-  function handleNotifyForCategory() {
-    if (!channel || !liveCategory) return
-    addPreference.mutate(
-      {
-        broadcasterUserId: channel.broadcaster_user_id,
-        category: liveCategory,
-      },
-      {
-        onSuccess: () =>
-          showEnablePushToast({ status: push.status, enable: push.enable, t }),
-      },
-    )
-  }
 
   return (
     <Sheet open={channel !== null} onOpenChange={onOpenChange}>
@@ -177,31 +126,18 @@ export function ChannelDetailModal({
                   count: formatViewerCount(channel.viewer_count ?? 0),
                 })}
               </p>
-              {liveCategory &&
-                (isNotifyingForCategory ? (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="lg"
-                    disabled
-                    className="shrink-0 gap-1.5"
-                  >
-                    <BellCheckIcon />
-                    {t("channel_detail.notifying_for_category")}
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="lg"
-                    className="shrink-0 gap-1.5"
-                    disabled={addPreference.isPending}
-                    onClick={handleNotifyForCategory}
-                  >
-                    <BellIcon />
-                    {t("channel_preferences.notify_for_category")}
-                  </Button>
-                ))}
+              {liveCategory && (
+                <ToggleActionButton
+                  isDone={notify.isNotifying}
+                  isPending={notify.isPending}
+                  idleIcon={<BellIcon />}
+                  idleLabel={t("channel_preferences.notify_for_category")}
+                  doneIcon={<BellCheckIcon />}
+                  doneLabel={t("channel_detail.notifying_for_category")}
+                  onClick={notify.notify}
+                  className="shrink-0"
+                />
+              )}
             </div>
           ) : (
             channel && (
@@ -223,56 +159,18 @@ export function ChannelDetailModal({
 
           {channel && (
             <div className="flex flex-col gap-2 sm:mx-auto sm:flex-row sm:justify-center">
-              {liveCategory &&
-                (isSnoozed ? (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="lg"
-                    disabled
-                    className="w-full gap-1.5 sm:w-fit sm:max-w-xs"
-                  >
-                    <AlarmClockCheckIcon />
-                    {t("channel_detail.snooze_done")}
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="lg"
-                    disabled={snoozeNotification.isPending}
-                    className="w-full gap-1.5 sm:w-fit sm:max-w-xs"
-                    onClick={() =>
-                      snoozeNotification.mutate(
-                        {
-                          broadcasterUserId: channel.broadcaster_user_id,
-                          categoryId: liveCategory.id,
-                        },
-                        {
-                          onSuccess: () =>
-                            toast(
-                              interpolateNodes(
-                                tRaw("channel_detail.snooze_toast"),
-                                {
-                                  channelName: (
-                                    <strong>
-                                      {channel.broadcaster_display_name}
-                                    </strong>
-                                  ),
-                                  categoryName: (
-                                    <strong>{liveCategory.name}</strong>
-                                  ),
-                                },
-                              ),
-                            ),
-                        },
-                      )
-                    }
-                  >
-                    <AlarmClockIcon />
-                    {t("channel_detail.snooze_action")}
-                  </Button>
-                ))}
+              {liveCategory && (
+                <ToggleActionButton
+                  isDone={snoozeNotification.isSnoozed}
+                  isPending={snoozeNotification.isPending}
+                  idleIcon={<AlarmClockIcon />}
+                  idleLabel={t("channel_detail.snooze_action")}
+                  doneIcon={<AlarmClockCheckIcon />}
+                  doneLabel={t("channel_detail.snooze_done")}
+                  onClick={snoozeNotification.snooze}
+                  className="w-full sm:w-fit sm:max-w-xs"
+                />
+              )}
 
               {activeMute ? (
                 <Button

@@ -2,16 +2,16 @@ import { useMemo, useState } from "react"
 import { Plus } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
-import { AddChannelDialog } from "@/components/add-channel-dialog"
-import { AddGlobalCategoryDialog } from "@/components/add-global-category-dialog"
-import { ChannelAlertsCard } from "@/components/channel-alerts-card"
+import { AsyncSection } from "@/components/async-section"
+import { AddChannelDialog } from "@/routes/alerts/components/add-channel-dialog"
+import { AddGlobalCategoryDialog } from "@/routes/alerts/components/add-global-category-dialog"
+import { ChannelAlertsCard } from "@/routes/alerts/components/channel-alerts-card"
 import { ChannelRowSkeleton } from "@/components/channel-row-skeleton"
 import { ChannelPreferencesDialog } from "@/components/channel-preferences-dialog"
-import { MutedChannelsSection } from "@/components/muted-channels-section"
-import { PauseNotificationsControl } from "@/components/pause-notifications-control"
-import { GlobalExclusionsDialog } from "@/components/global-exclusions-dialog"
-import { GlobalAlertsCard } from "@/components/global-alerts-card"
-import { ReconnectRequired } from "@/components/reconnect-required"
+import { MutedChannelsSection } from "@/routes/alerts/components/muted-channels-section"
+import { PauseNotificationsControl } from "@/routes/alerts/components/pause-notifications-control"
+import { GlobalExclusionsDialog } from "@/routes/alerts/components/global-exclusions-dialog"
+import { GlobalAlertsCard } from "@/routes/alerts/components/global-alerts-card"
 import { SearchField } from "@/components/search-field"
 import { useAuth } from "@/context/auth-context"
 import { useLanguage } from "@/context/language-context"
@@ -99,21 +99,16 @@ export function AlertsPage() {
         {t("alerts.global_title")}
       </h2>
 
-      {isLoading && (
-        <div className="px-4">
-          <Skeleton className="h-20 w-full" />
-        </div>
-      )}
-
-      {!isLoading && isError && reconnectRequired && <ReconnectRequired />}
-
-      {!isLoading && isError && !reconnectRequired && (
-        <p className="px-4 py-6 text-sm text-muted-foreground">
-          {t("alerts.load_error")}
-        </p>
-      )}
-
-      {!isLoading && !isError && (
+      <AsyncSection
+        isLoading={isLoading}
+        isError={isError}
+        skeleton={
+          <div className="px-4">
+            <Skeleton className="h-20 w-full" />
+          </div>
+        }
+        errorMessage={t("alerts.load_error")}
+      >
         <GlobalAlertsCard
           preferences={globalPreferences}
           onAdd={() => setAddGlobalOpen(true)}
@@ -122,7 +117,7 @@ export function AlertsPage() {
           armedChipId={armedChipId}
           onArmChip={armChip}
         />
-      )}
+      </AsyncSection>
 
       <div className="flex items-center justify-between gap-2 px-4 pt-6 pb-2">
         <h2 className="text-base font-semibold text-muted-foreground">

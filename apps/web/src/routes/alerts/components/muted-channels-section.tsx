@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { PlusIcon } from "lucide-react"
 import { toast } from "sonner"
-import { AddChannelDialog } from "@/components/add-channel-dialog"
+import { AddChannelDialog } from "@/routes/alerts/components/add-channel-dialog"
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/context/language-context"
 import {

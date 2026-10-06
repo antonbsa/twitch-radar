@@ -3,11 +3,12 @@ import { useSearchParams } from "react-router"
 import { RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ChannelRow } from "@/components/channel-row"
+import { ChannelRow } from "@/routes/channels/components/channel-row"
 import { ChannelRowSkeleton } from "@/components/channel-row-skeleton"
-import { ChannelFiltersBar } from "@/components/channel-filters-bar"
+import { ChannelFiltersBar } from "@/routes/channels/components/channel-filters-bar"
 import { ChannelPreferencesDialog } from "@/components/channel-preferences-dialog"
-import { ChannelDetailModal } from "@/components/channel-detail-modal"
+import { ChannelDetailModal } from "@/routes/channels/components/channel-detail-modal"
+import { AsyncSection } from "@/components/async-section"
 import { ReconnectRequired } from "@/components/reconnect-required"
 import { useAuth } from "@/context/auth-context"
 import { useLanguage } from "@/context/language-context"
@@ -149,80 +150,75 @@ export function ChannelsPage() {
         </div>
       </div>
 
-      {!isLoading && !isError && autoSyncFailed && reconnectRequired && (
-        <ReconnectRequired />
-      )}
+      <AsyncSection
+        isLoading={isLoading}
+        isError={isError}
+        skeleton={<ChannelsLoadingSkeleton />}
+        errorMessage={t("channels.load_error")}
+      >
+        {autoSyncFailed && reconnectRequired && <ReconnectRequired />}
 
-      {!isLoading && !isError && autoSyncFailed && !reconnectRequired && (
-        <p role="status" className="px-4 pb-2 text-xs text-muted-foreground">
-          {t("channels.sync_stale_notice")}
-        </p>
-      )}
+        {autoSyncFailed && !reconnectRequired && (
+          <p role="status" className="px-4 pb-2 text-xs text-muted-foreground">
+            {t("channels.sync_stale_notice")}
+          </p>
+        )}
 
-      {isLoading && <ChannelsLoadingSkeleton />}
+        {channels && channels.length === 0 && (
+          <p className="px-4 py-6 text-sm text-muted-foreground">
+            {t("channels.empty")}
+          </p>
+        )}
 
-      {!isLoading && isError && reconnectRequired && <ReconnectRequired />}
+        {hasChannels && (
+          <ChannelFiltersBar
+            filters={filters}
+            onChange={updateFilters}
+            categories={categories}
+          />
+        )}
 
-      {!isLoading && isError && !reconnectRequired && (
-        <p className="px-4 py-6 text-sm text-muted-foreground">
-          {t("channels.load_error")}
-        </p>
-      )}
+        {hasChannels && !hasVisibleResults && (
+          <p className="px-4 py-6 text-sm text-muted-foreground">
+            {t("channels.no_matches")}
+          </p>
+        )}
 
-      {!isLoading && !isError && channels && channels.length === 0 && (
-        <p className="px-4 py-6 text-sm text-muted-foreground">
-          {t("channels.empty")}
-        </p>
-      )}
+        {live.length > 0 && (
+          <section>
+            <h2 className="px-4 pt-2 pb-1 text-xs font-semibold text-muted-foreground uppercase">
+              {t("channels.live")}
+            </h2>
+            {live.map((channel) => (
+              <ChannelRow
+                key={channel.broadcaster_user_id}
+                channel={channel}
+                preferenceMatch={preferenceMatchFor(channel)}
+                muted={mutedIds.has(channel.broadcaster_user_id)}
+                onConfigure={setConfiguringChannel}
+                onOpenDetail={setDetailChannel}
+              />
+            ))}
+          </section>
+        )}
 
-      {!isLoading && !isError && hasChannels && (
-        <ChannelFiltersBar
-          filters={filters}
-          onChange={updateFilters}
-          categories={categories}
-        />
-      )}
-
-      {!isLoading && !isError && hasChannels && !hasVisibleResults && (
-        <p className="px-4 py-6 text-sm text-muted-foreground">
-          {t("channels.no_matches")}
-        </p>
-      )}
-
-      {!isLoading && !isError && live.length > 0 && (
-        <section>
-          <h2 className="px-4 pt-2 pb-1 text-xs font-semibold text-muted-foreground uppercase">
-            {t("channels.live")}
-          </h2>
-          {live.map((channel) => (
-            <ChannelRow
-              key={channel.broadcaster_user_id}
-              channel={channel}
-              preferenceMatch={preferenceMatchFor(channel)}
-              muted={mutedIds.has(channel.broadcaster_user_id)}
-              onConfigure={setConfiguringChannel}
-              onOpenDetail={setDetailChannel}
-            />
-          ))}
-        </section>
-      )}
-
-      {!isLoading && !isError && offline.length > 0 && (
-        <section>
-          <h2 className="px-4 pt-4 pb-1 text-xs font-semibold text-muted-foreground uppercase">
-            {t("channels.offline")}
-          </h2>
-          {offline.map((channel) => (
-            <ChannelRow
-              key={channel.broadcaster_user_id}
-              channel={channel}
-              muted={mutedIds.has(channel.broadcaster_user_id)}
-              onConfigure={setConfiguringChannel}
-              onOpenDetail={setDetailChannel}
-            />
-          ))}
-        </section>
-      )}
+        {offline.length > 0 && (
+          <section>
+            <h2 className="px-4 pt-4 pb-1 text-xs font-semibold text-muted-foreground uppercase">
+              {t("channels.offline")}
+            </h2>
+            {offline.map((channel) => (
+              <ChannelRow
+                key={channel.broadcaster_user_id}
+                channel={channel}
+                muted={mutedIds.has(channel.broadcaster_user_id)}
+                onConfigure={setConfiguringChannel}
+                onOpenDetail={setDetailChannel}
+              />
+            ))}
+          </section>
+        )}
+      </AsyncSection>
 
       <ChannelPreferencesDialog
         channel={configuringChannel}
