@@ -67,7 +67,7 @@ export interface SeamClientOptions {
  * This is the only channel test setup/teardown goes through — the seam runs
  * inside the worker, so it reuses the same repository modules and D1/KV
  * bindings as the real routes without going through the public API. The
- * route only exists at all outside production (see `apps/api/src/index.ts`).
+ * route only exists at all outside production (see `apps/api/src/app.ts`).
  */
 export function createSeamClient({ baseUrl }: SeamClientOptions) {
   async function call(

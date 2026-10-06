@@ -4,7 +4,7 @@ Backend conventions for the Hono + Drizzle + D1/KV/Queues Worker.
 
 ## Database access
 
-- A fresh `Database` is created per request by middleware in `index.ts` (`c.set("db", new Database(c.env.DB))`); handlers use `c.var.db`, typed via `HonoEnv.Variables`.
+- A fresh `Database` is created per request by middleware in `app.ts` (`c.set("db", new Database(c.env.DB))`); handlers use `c.var.db`, typed via `HonoEnv.Variables`.
 - New repositories go in `db/repositories/<entity>.ts` as a class taking `AppDatabase` in the constructor, then get wired into the `Database` class in `db/index.ts`.
 - Timestamps are ISO-8601 UTC strings (`new Date().toISOString()`), in `*_at` text columns and in repository params like `now`/`cutoff`. Pass that format, not epoch numbers or `Date`s.
 

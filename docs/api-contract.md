@@ -21,7 +21,7 @@ Every error response has the same shape:
 { "error": { "code": "string", "message": "string", "requestId": "string" } }
 ```
 
-`code` is a route-specific string (thrown via `ApiError(status, code, message)`), not an exhaustive enum kept in sync here — read the handler for the exact codes a given route can return. `404`/`405` for unknown routes/methods and `500` for unhandled errors are produced centrally in `index.ts`, not per-route.
+`code` is a route-specific string (thrown via `ApiError(status, code, message)`), not an exhaustive enum kept in sync here — read the handler for the exact codes a given route can return. `404`/`405` for unknown routes/methods and `500` for unhandled errors are produced centrally in `app.ts`, not per-route.
 
 ## Conventions
 
