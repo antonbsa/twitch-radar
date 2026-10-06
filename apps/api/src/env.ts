@@ -3,7 +3,7 @@ import type { Database } from "./db"
 import type { NotificationJobMessage } from "./features/notifications/types"
 import type { TwitchEventQueueMessage } from "./features/eventsub/types"
 
-// Must stay in sync with the route registration in index.ts (`/auth/twitch/callback` under `/api`).
+// Must stay in sync with the route registration in app.ts (`/auth/twitch/callback` under `/api`).
 const TWITCH_CALLBACK_PATH = "/api/auth/twitch/callback"
 
 export interface Env {
