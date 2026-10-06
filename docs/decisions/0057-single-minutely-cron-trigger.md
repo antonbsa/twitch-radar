@@ -11,6 +11,7 @@ Cloudflare caps Cron Triggers account-wide (API error 10072: 5 per account), not
 ## Decision
 
 - **Each environment registers one cron, `* * * * *`.** `scheduled()` runs the minutely jobs (`eventsub-create`, `snooze-sweep`) on every invocation and decides which periodic job is also due from the UTC minute of `controller.scheduledTime`: `eventsub-reconcile` at minutes 0 and 30, `token-refresh` at 5 and 35, `follow-sync` at 10 (with the monthly `avatar-refresh` still gated inside that slot). The minute table lives in `src/crons.ts`. The periodic jobs keep the cadences ADR 0036 set and never share a minute, so an invocation runs at most one of them.
+- **Creations are capped at 10 per run on invocations that also run a periodic job** (30 otherwise): reconcile can spend ~20 Twitch calls from the same 50-subrequest free-plan budget, and a create that hits the limit would count toward ADR 0049's terminal `failed` status. The backlog drains at full speed on the other minutes.
 - **Jobs run sequentially in one invocation**, each already catching and logging its own failure, so one failing job doesn't skip the next.
 - **`scheduledTime`, not `Date.now()`, picks the slot**, so a delayed invocation still runs the job it was scheduled for.
 - **Preview gets every job**, since it no longer needs more than one trigger.

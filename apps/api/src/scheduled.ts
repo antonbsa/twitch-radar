@@ -1,8 +1,11 @@
-import { isPeriodicJobDue } from "./crons"
+import { isAnyPeriodicJobDue, isPeriodicJobDue } from "./crons"
 import { Database } from "./db"
 import { parseEnv, type Env } from "./env"
 import { logger, serializeError } from "./lib/logger"
-import { createPendingEventsubSubscriptions } from "./features/eventsub/subscriptions"
+import {
+  createPendingEventsubSubscriptions,
+  MAX_CREATES_WITH_PERIODIC_JOB,
+} from "./features/eventsub/subscriptions"
 import { reconcileEventsubSubscriptions } from "./features/eventsub/reconcile"
 import { sweepNotificationSnoozes } from "./features/notifications/snooze-sweep"
 import { refreshExpiringTwitchTokens } from "./services/twitch/token-refresh"
@@ -35,7 +38,14 @@ export async function runScheduled(
     const { scheduledTime } = controller
 
     // Each job catches and logs its own failures, so none can skip the others.
-    await createPendingEventsubSubscriptions(db, config, env.KV_APP_CACHE)
+    await createPendingEventsubSubscriptions(
+      db,
+      config,
+      env.KV_APP_CACHE,
+      isAnyPeriodicJobDue(scheduledTime)
+        ? MAX_CREATES_WITH_PERIODIC_JOB
+        : undefined,
+    )
     await sweepNotificationSnoozes(db, env.NOTIFICATION_JOBS_QUEUE)
     if (isPeriodicJobDue("eventsub-reconcile", scheduledTime)) {
       await reconcileEventsubSubscriptions(db, config, env.KV_APP_CACHE)

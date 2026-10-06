@@ -33,6 +33,13 @@ export function isPeriodicJobDue(
   return (PERIODIC_JOB_MINUTES[job] as readonly number[]).includes(minute)
 }
 
+/** Whether any periodic job is due, i.e. this invocation does more than the minutely jobs. */
+export function isAnyPeriodicJobDue(scheduledTime: number): boolean {
+  return (Object.keys(PERIODIC_JOB_MINUTES) as PeriodicJobName[]).some((job) =>
+    isPeriodicJobDue(job, scheduledTime),
+  )
+}
+
 /**
  * `{ job }` field every scheduled job spreads into its summary and failure
  * logs, so Workers Logs can be filtered by job instead of by free-text

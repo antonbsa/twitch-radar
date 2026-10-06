@@ -444,6 +444,29 @@ describe("EventSub subscription creation", () => {
     ).toEqual(["tsub_1", "tsub_2", "tsub_3"])
   })
 
+  it("should create fewer subscriptions when a periodic job shares the invocation", async () => {
+    const rows = Array.from({ length: 12 }, (_, i) => ({
+      broadcasterUserId: `bulk_${i}`,
+      eventType: "stream.online",
+    }))
+    await orchestrator.seedEventsubSubscriptions(rows)
+    await orchestrator.mockTwitch.onAppToken()
+    for (let i = 0; i < rows.length; i++) {
+      await orchestrator.mockTwitch.onEventsubSubscriptionCreate(`tsub_${i}`)
+    }
+
+    await orchestrator.runScheduled("token-refresh")
+
+    const state = await orchestrator.inspect(
+      rows.map((r) => r.broadcasterUserId),
+    )
+    const statuses = state.eventsubSubscriptions.map((s) => s.status)
+    expect(
+      statuses.filter((s) => s === "webhook_callback_verification_pending"),
+    ).toHaveLength(10)
+    expect(statuses.filter((s) => s === "pending")).toHaveLength(2)
+  })
+
   it("should leave a row pending with a scheduled backoff retry when Twitch rejects the create", async () => {
     await orchestrator.seedEventsubSubscriptions([PENDING_ROWS[0]])
     await orchestrator.mockTwitch.onAppToken()

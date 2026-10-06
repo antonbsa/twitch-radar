@@ -9,6 +9,11 @@ import { getAppAccessToken } from "../../services/twitch/app-token"
 // Workers subrequest limit (50 on the free plan); the next scheduled run
 // picks up whatever is left.
 const MAX_CREATES_PER_RUN = 30
+// Cap for invocations that also run a periodic job (ADR 0057): reconcile alone
+// can spend ~20 Twitch deletes plus its list calls from the same budget, and a
+// create that hits the limit counts as a failure toward ADR 0049's terminal
+// `failed` status.
+export const MAX_CREATES_WITH_PERIODIC_JOB = 10
 
 // Exponential backoff per consecutive failure (ADR 0049): 1min, 2min, 4min,
 // 8min, ... capped at 1h, so a row that fails for a transient reason doesn't
@@ -33,14 +38,12 @@ export async function createPendingEventsubSubscriptions(
   db: Database,
   config: AppConfig,
   kv: KVNamespace,
+  maxCreates = MAX_CREATES_PER_RUN,
 ): Promise<void> {
   const logFields = scheduledJobLogFields("eventsub-create")
   try {
     const now = new Date().toISOString()
-    const pending = await db.eventsubSubscriptions.findPending(
-      MAX_CREATES_PER_RUN,
-      now,
-    )
+    const pending = await db.eventsubSubscriptions.findPending(maxCreates, now)
     if (pending.length === 0) {
       logger.debug(
         "Pending EventSub subscription creation run found nothing to do",
