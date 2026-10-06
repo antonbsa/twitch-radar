@@ -1,7 +1,7 @@
 import { z } from "zod"
 import type { Context } from "hono"
 import type { HonoEnv } from "../../env"
-import { ApiError } from "../errors"
+import { findOwnedRecord, parseBody } from "../handlers"
 import type { BroadcasterMuteRecord } from "../../db/repositories/broadcaster-mutes"
 import { jsonResponse } from "../response"
 
@@ -20,13 +20,8 @@ const CreateSnoozeSchema = z.object({
 export async function handleCreateNotificationSnooze(
   c: Context<HonoEnv>,
 ): Promise<Response> {
-  const body = await c.req.json().catch(() => null)
-  const parsed = CreateSnoozeSchema.safeParse(body)
-  if (!parsed.success) {
-    throw new ApiError(400, "invalid_request", "Invalid snooze payload")
-  }
   const { broadcaster_user_id: broadcasterUserId, category_id: categoryId } =
-    parsed.data
+    await parseBody(c, CreateSnoozeSchema, "Invalid snooze payload")
 
   const existing =
     await c.var.db.notificationSnoozes.findPendingByUserBroadcasterCategory(
@@ -90,12 +85,11 @@ export async function handleListBroadcasterMutes(
 export async function handleCreateBroadcasterMute(
   c: Context<HonoEnv>,
 ): Promise<Response> {
-  const body = await c.req.json().catch(() => null)
-  const parsed = CreateMuteSchema.safeParse(body)
-  if (!parsed.success) {
-    throw new ApiError(400, "invalid_request", "Invalid mute payload")
-  }
-  const broadcasterUserId = parsed.data.broadcaster_user_id
+  const { broadcaster_user_id: broadcasterUserId } = await parseBody(
+    c,
+    CreateMuteSchema,
+    "Invalid mute payload",
+  )
 
   const existing = await c.var.db.broadcasterMutes.findByUserAndBroadcaster(
     c.var.userId,
@@ -119,11 +113,11 @@ export async function handleCreateBroadcasterMute(
 export async function handleDeleteBroadcasterMute(
   c: Context<HonoEnv>,
 ): Promise<Response> {
-  const id = c.req.param("id")
-  const record = id ? await c.var.db.broadcasterMutes.findById(id) : null
-  if (!record || record.user_id !== c.var.userId) {
-    throw new ApiError(404, "not_found", "Mute not found")
-  }
+  const record = await findOwnedRecord(
+    c,
+    (id) => c.var.db.broadcasterMutes.findById(id),
+    "Mute not found",
+  )
 
   // Soft disable; repeating the delete is a no-op.
   if (!record.disabled_at) {

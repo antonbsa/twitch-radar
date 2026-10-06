@@ -3,6 +3,7 @@ import type { Context } from "hono"
 import type { HonoEnv } from "../../env"
 import { SUPPORTED_LANGUAGES } from "../../types"
 import { ApiError } from "../errors"
+import { parseBody } from "../handlers"
 import { jsonResponse } from "../response"
 
 const UpdateLanguageSchema = z.object({
@@ -32,20 +33,20 @@ export async function handleGetMe(c: Context<HonoEnv>): Promise<Response> {
 export async function handleUpdateLanguage(
   c: Context<HonoEnv>,
 ): Promise<Response> {
-  const body = await c.req.json().catch(() => null)
-  const parsed = UpdateLanguageSchema.safeParse(body)
-  if (!parsed.success) {
-    throw new ApiError(400, "invalid_request", "Invalid language payload")
-  }
+  const { language } = await parseBody(
+    c,
+    UpdateLanguageSchema,
+    "Invalid language payload",
+  )
 
   const user = await c.var.db.users.findById(c.var.userId)
   if (!user) throw new ApiError(404, "user_not_found", "User not found")
 
   const now = new Date().toISOString()
-  await c.var.db.users.updateLanguage(c.var.userId, parsed.data.language, now)
+  await c.var.db.users.updateLanguage(c.var.userId, language, now)
 
   return jsonResponse({
-    data: { ...user, language: parsed.data.language },
+    data: { ...user, language },
   })
 }
 
@@ -56,19 +57,17 @@ export async function handleUpdateLanguage(
 export async function handleUpdateNotificationsPaused(
   c: Context<HonoEnv>,
 ): Promise<Response> {
-  const body = await c.req.json().catch(() => null)
-  const parsed = UpdateNotificationsPausedSchema.safeParse(body)
-  if (!parsed.success) {
-    throw new ApiError(400, "invalid_request", "Invalid pause payload")
-  }
+  const { paused } = await parseBody(
+    c,
+    UpdateNotificationsPausedSchema,
+    "Invalid pause payload",
+  )
 
   const user = await c.var.db.users.findById(c.var.userId)
   if (!user) throw new ApiError(404, "user_not_found", "User not found")
 
   const now = new Date().toISOString()
-  const pausedAt = parsed.data.paused
-    ? (user.notifications_paused_at ?? now)
-    : null
+  const pausedAt = paused ? (user.notifications_paused_at ?? now) : null
   await c.var.db.users.setNotificationsPausedAt(c.var.userId, pausedAt, now)
 
   return jsonResponse({ data: { ...user, notifications_paused_at: pausedAt } })

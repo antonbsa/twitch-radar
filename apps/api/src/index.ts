@@ -8,6 +8,7 @@ import { Database } from "./db"
 import { parseEnv, type Env, type HonoEnv } from "./env"
 import { ApiError, errorResponse } from "./http/errors"
 import { logger, serializeError } from "./logger"
+import { authedRouter } from "./http/handlers"
 import { requireAuth } from "./http/middleware/auth"
 import { handleSearchCategories } from "./http/routes/categories"
 import { handleGetFollowedChannels } from "./http/routes/channels"
@@ -86,57 +87,60 @@ function buildApp(includeTestSeam: boolean): Hono<HonoEnv> {
   api.get("/auth/twitch/start", handleAuthStart)
   api.get("/auth/twitch/callback", handleAuthCallback)
   api.post("/auth/logout", requireAuth, handleLogout)
-  api.get("/me", requireAuth, handleGetMe)
-  api.patch("/me/language", requireAuth, handleUpdateLanguage)
-  api.patch(
-    "/me/notifications-paused",
-    requireAuth,
-    handleUpdateNotificationsPaused,
-  )
-  api.post("/sync/follows", requireAuth, handleSyncFollows)
-  api.get("/channels/followed", requireAuth, handleGetFollowedChannels)
-  api.get("/categories/search", requireAuth, handleSearchCategories)
-  api.get("/preferences", requireAuth, handleGetPreferences)
-  api.post("/preferences/channel", requireAuth, handleCreateChannelPreference)
-  api.delete(
-    "/preferences/channel/:id",
-    requireAuth,
-    handleDeleteChannelPreference,
-  )
-  api.post("/preferences/global", requireAuth, handleCreateGlobalPreference)
-  api.delete(
-    "/preferences/global/:id",
-    requireAuth,
-    handleDeleteGlobalPreference,
-  )
-  api.post(
-    "/preferences/global/:id/exclusions",
-    requireAuth,
+
+  const me = authedRouter()
+  me.get("/", handleGetMe)
+  me.patch("/language", handleUpdateLanguage)
+  me.patch("/notifications-paused", handleUpdateNotificationsPaused)
+  api.route("/me", me)
+
+  const sync = authedRouter()
+  sync.post("/follows", handleSyncFollows)
+  api.route("/sync", sync)
+
+  const channels = authedRouter()
+  channels.get("/followed", handleGetFollowedChannels)
+  api.route("/channels", channels)
+
+  const categories = authedRouter()
+  categories.get("/search", handleSearchCategories)
+  api.route("/categories", categories)
+
+  const preferences = authedRouter()
+  preferences.get("/", handleGetPreferences)
+  preferences.post("/channel", handleCreateChannelPreference)
+  preferences.delete("/channel/:id", handleDeleteChannelPreference)
+  preferences.post("/global", handleCreateGlobalPreference)
+  preferences.delete("/global/:id", handleDeleteGlobalPreference)
+  preferences.post(
+    "/global/:id/exclusions",
     handleCreateGlobalPreferenceExclusion,
   )
-  api.delete(
-    "/preferences/global/:id/exclusions/:exclusionId",
-    requireAuth,
+  preferences.delete(
+    "/global/:id/exclusions/:exclusionId",
     handleDeleteGlobalPreferenceExclusion,
   )
-  api.post("/notifications/snooze", requireAuth, handleCreateNotificationSnooze)
-  api.get("/notifications/snoozes", requireAuth, handleListNotificationSnoozes)
-  api.get("/notifications/mutes", requireAuth, handleListBroadcasterMutes)
-  api.post("/notifications/mutes", requireAuth, handleCreateBroadcasterMute)
-  api.delete(
-    "/notifications/mutes/:id",
-    requireAuth,
-    handleDeleteBroadcasterMute,
-  )
+  api.route("/preferences", preferences)
+
+  const notifications = authedRouter()
+  notifications.post("/snooze", handleCreateNotificationSnooze)
+  notifications.get("/snoozes", handleListNotificationSnoozes)
+  notifications.get("/mutes", handleListBroadcasterMutes)
+  notifications.post("/mutes", handleCreateBroadcasterMute)
+  notifications.delete("/mutes/:id", handleDeleteBroadcasterMute)
+  api.route("/notifications", notifications)
+
   // Called by Twitch, not by users — authenticates via HMAC signature.
   api.post("/webhooks/twitch/eventsub", handleEventsubWebhook)
-  api.get("/push/vapid-public-key", requireAuth, handleGetVapidPublicKey)
-  api.post("/push-subscriptions", requireAuth, handleCreatePushSubscription)
-  api.delete(
-    "/push-subscriptions/:id",
-    requireAuth,
-    handleDeletePushSubscription,
-  )
+
+  const push = authedRouter()
+  push.get("/vapid-public-key", handleGetVapidPublicKey)
+  api.route("/push", push)
+
+  const pushSubscriptions = authedRouter()
+  pushSubscriptions.post("/", handleCreatePushSubscription)
+  pushSubscriptions.delete("/:id", handleDeletePushSubscription)
+  api.route("/push-subscriptions", pushSubscriptions)
 
   app.route("/api", api)
 

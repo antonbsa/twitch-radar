@@ -4,6 +4,7 @@ import type { HonoEnv } from "../../env"
 import { logger, serializeError } from "../../logger"
 import { importVapidSigningKey } from "../../services/push/web-push"
 import { ApiError } from "../errors"
+import { findOwnedRecord, parseBody } from "../handlers"
 import { jsonResponse } from "../response"
 
 // Standard `PushSubscription.toJSON()` shape (see ADR 0027).
@@ -44,17 +45,11 @@ export async function handleGetVapidPublicKey(
 export async function handleCreatePushSubscription(
   c: Context<HonoEnv>,
 ): Promise<Response> {
-  const body = await c.req.json().catch(() => null)
-  const parsed = CreatePushSubscriptionSchema.safeParse(body)
-  if (!parsed.success) {
-    throw new ApiError(
-      400,
-      "invalid_request",
-      "Invalid push subscription payload",
-    )
-  }
-
-  const { endpoint, keys } = parsed.data
+  const { endpoint, keys } = await parseBody(
+    c,
+    CreatePushSubscriptionSchema,
+    "Invalid push subscription payload",
+  )
   const now = new Date().toISOString()
   const userAgent = c.req.header("user-agent") ?? null
 
@@ -89,11 +84,11 @@ export async function handleCreatePushSubscription(
 export async function handleDeletePushSubscription(
   c: Context<HonoEnv>,
 ): Promise<Response> {
-  const id = c.req.param("id")
-  const record = id ? await c.var.db.pushSubscriptions.findById(id) : null
-  if (!record || record.user_id !== c.var.userId) {
-    throw new ApiError(404, "not_found", "Push subscription not found")
-  }
+  const record = await findOwnedRecord(
+    c,
+    (id) => c.var.db.pushSubscriptions.findById(id),
+    "Push subscription not found",
+  )
 
   // Soft revoke; repeating the delete is a no-op (ADR 0027).
   if (!record.revoked_at) {

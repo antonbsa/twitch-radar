@@ -5,6 +5,7 @@ import type { ChannelPreferenceRecord } from "../../db/repositories/channel-cate
 import type { GlobalPreferenceRecord } from "../../db/repositories/global-category-preferences"
 import type { GlobalPreferenceExclusionRecord } from "../../db/repositories/global-category-preference-exclusions"
 import { ApiError } from "../errors"
+import { findOwnedRecord, parseBody } from "../handlers"
 import { jsonResponse } from "../response"
 import {
   cleanupMonitoringForBroadcasters,
@@ -92,13 +93,11 @@ export async function handleGetPreferences(
 export async function handleCreateChannelPreference(
   c: Context<HonoEnv>,
 ): Promise<Response> {
-  const body = await c.req.json().catch(() => null)
-  const parsed = CreateChannelPreferenceSchema.safeParse(body)
-  if (!parsed.success) {
-    throw new ApiError(400, "invalid_request", "Invalid preference payload")
-  }
-
-  const input = parsed.data
+  const input = await parseBody(
+    c,
+    CreateChannelPreferenceSchema,
+    "Invalid preference payload",
+  )
   const followed = await c.var.db.followedChannels.findOne(
     c.var.userId,
     input.broadcaster_user_id,
@@ -175,13 +174,11 @@ export async function handleCreateChannelPreference(
 export async function handleDeleteChannelPreference(
   c: Context<HonoEnv>,
 ): Promise<Response> {
-  const id = c.req.param("id")
-  const record = id
-    ? await c.var.db.channelCategoryPreferences.findById(id)
-    : null
-  if (!record || record.user_id !== c.var.userId) {
-    throw new ApiError(404, "not_found", "Preference not found")
-  }
+  const record = await findOwnedRecord(
+    c,
+    (id) => c.var.db.channelCategoryPreferences.findById(id),
+    "Preference not found",
+  )
 
   // Soft disable; repeating the delete is a no-op.
   if (!record.disabled_at) {
@@ -199,13 +196,11 @@ export async function handleDeleteChannelPreference(
 export async function handleCreateGlobalPreference(
   c: Context<HonoEnv>,
 ): Promise<Response> {
-  const body = await c.req.json().catch(() => null)
-  const parsed = CreateGlobalPreferenceSchema.safeParse(body)
-  if (!parsed.success) {
-    throw new ApiError(400, "invalid_request", "Invalid preference payload")
-  }
-
-  const input = parsed.data
+  const input = await parseBody(
+    c,
+    CreateGlobalPreferenceSchema,
+    "Invalid preference payload",
+  )
   // Idempotent per user/category, same revival semantics as channel prefs.
   const existing =
     await c.var.db.globalCategoryPreferences.findByUserAndCategory(
@@ -270,13 +265,7 @@ export async function handleCreateGlobalPreference(
 export async function handleDeleteGlobalPreference(
   c: Context<HonoEnv>,
 ): Promise<Response> {
-  const id = c.req.param("id")
-  const record = id
-    ? await c.var.db.globalCategoryPreferences.findById(id)
-    : null
-  if (!record || record.user_id !== c.var.userId) {
-    throw new ApiError(404, "not_found", "Preference not found")
-  }
+  const record = await findOwnedGlobalPreference(c)
 
   // Soft disable; repeating the delete is a no-op.
   if (!record.disabled_at) {
@@ -296,14 +285,11 @@ export async function handleDeleteGlobalPreference(
 }
 
 async function findOwnedGlobalPreference(c: Context<HonoEnv>) {
-  const id = c.req.param("id")
-  const record = id
-    ? await c.var.db.globalCategoryPreferences.findById(id)
-    : null
-  if (!record || record.user_id !== c.var.userId) {
-    throw new ApiError(404, "not_found", "Preference not found")
-  }
-  return record
+  return findOwnedRecord(
+    c,
+    (id) => c.var.db.globalCategoryPreferences.findById(id),
+    "Preference not found",
+  )
 }
 
 /**
@@ -314,12 +300,11 @@ export async function handleCreateGlobalPreferenceExclusion(
   c: Context<HonoEnv>,
 ): Promise<Response> {
   const preference = await findOwnedGlobalPreference(c)
-  const body = await c.req.json().catch(() => null)
-  const parsed = CreateExclusionSchema.safeParse(body)
-  if (!parsed.success) {
-    throw new ApiError(400, "invalid_request", "Invalid exclusion payload")
-  }
-  const broadcasterUserId = parsed.data.broadcaster_user_id
+  const { broadcaster_user_id: broadcasterUserId } = await parseBody(
+    c,
+    CreateExclusionSchema,
+    "Invalid exclusion payload",
+  )
 
   const followed = await c.var.db.followedChannels.findOne(
     c.var.userId,
