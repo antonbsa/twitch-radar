@@ -41,11 +41,9 @@ import {
 } from "./http/routes/preferences"
 import { handleSyncFollows } from "./http/routes/sync"
 import { handleEventsubWebhook } from "./http/routes/webhooks"
-import {
-  handleTestInspect,
-  handleTestReset,
-  handleTestSeed,
-} from "./http/routes/_tests"
+import { handleTestInspect } from "./http/test-seam/inspect"
+import { handleTestReset } from "./http/test-seam/reset"
+import { handleTestSeed } from "./http/test-seam/seed"
 import { getRequestId } from "./http/response"
 
 export function buildApp(includeTestSeam: boolean): Hono<HonoEnv> {

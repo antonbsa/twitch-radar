@@ -34,7 +34,7 @@ const USAGE =
 // channel.update wouldn't be a category switch.
 const DEFAULT_BASELINE = { id: "0", name: "Mock Baseline" }
 
-// Test seam's fixed identity (apps/api/src/http/routes/_tests.ts), left in
+// Test seam's fixed identity (apps/api/src/http/test-seam/shared.ts), left in
 // the shared dev D1 by the e2e tier — never the user you're testing as.
 const E2E_USER_ID = "usr_e2e"
 

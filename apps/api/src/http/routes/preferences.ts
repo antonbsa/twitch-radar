@@ -8,9 +8,11 @@ import { ApiError } from "../errors"
 import { findOwnedRecord, parseBody } from "../handlers"
 import { jsonResponse } from "../response"
 import {
-  cleanupMonitoringForBroadcasters,
-  ensureMonitoredBroadcasters,
-} from "../../services/monitoring"
+  disableChannelPreference,
+  disableGlobalPreference,
+  upsertChannelPreference,
+  upsertGlobalPreference,
+} from "../../services/preferences"
 
 const CreateChannelPreferenceSchema = z.object({
   broadcaster_user_id: z.string().min(1),
@@ -62,6 +64,10 @@ const CreateExclusionSchema = z.object({
   broadcaster_user_id: z.string().min(1),
 })
 
+function actor(c: Context<HonoEnv>) {
+  return { db: c.var.db, config: c.var.config, userId: c.var.userId }
+}
+
 export async function handleGetPreferences(
   c: Context<HonoEnv>,
 ): Promise<Response> {
@@ -98,11 +104,12 @@ export async function handleCreateChannelPreference(
     CreateChannelPreferenceSchema,
     "Invalid preference payload",
   )
-  const followed = await c.var.db.followedChannels.findOne(
-    c.var.userId,
-    input.broadcaster_user_id,
-  )
-  if (!followed) {
+  const result = await upsertChannelPreference(actor(c), {
+    broadcasterUserId: input.broadcaster_user_id,
+    categoryId: input.category_id,
+    categoryName: input.category_name,
+  })
+  if (!result) {
     throw new ApiError(
       400,
       "invalid_request",
@@ -110,64 +117,9 @@ export async function handleCreateChannelPreference(
     )
   }
 
-  // Idempotent per user/broadcaster/category: a repeated create (including
-  // one after a delete) revives the existing row instead of failing.
-  const existing =
-    await c.var.db.channelCategoryPreferences.findByUserBroadcasterCategory(
-      c.var.userId,
-      input.broadcaster_user_id,
-      input.category_id,
-    )
-
-  let record: ChannelPreferenceRecord
-  if (existing) {
-    await c.var.db.channelCategoryPreferences.reactivate(
-      existing.id,
-      input.category_name,
-    )
-    record = {
-      ...existing,
-      category_name: input.category_name,
-      disabled_at: null,
-    }
-  } else {
-    const now = new Date().toISOString()
-    const id = await c.var.db.channelCategoryPreferences.create({
-      userId: c.var.userId,
-      broadcasterUserId: input.broadcaster_user_id,
-      categoryId: input.category_id,
-      categoryName: input.category_name,
-      now,
-    })
-    record = {
-      id,
-      user_id: c.var.userId,
-      broadcaster_user_id: input.broadcaster_user_id,
-      category_id: input.category_id,
-      category_name: input.category_name,
-      created_at: now,
-      disabled_at: null,
-    }
-  }
-
-  // Per-channel preferences monitor only the selected broadcaster (ADR 0007).
-  await ensureMonitoredBroadcasters(
-    c.var.db,
-    c.var.config,
-    c.var.userId,
-    [
-      {
-        broadcasterUserId: followed.broadcaster_user_id,
-        broadcasterLogin: followed.broadcaster_login,
-        broadcasterDisplayName: followed.broadcaster_display_name,
-      },
-    ],
-    "channel_preference",
-  )
-
   return jsonResponse(
-    { data: toChannelPreferenceItem(record) },
-    { status: existing ? 200 : 201 },
+    { data: toChannelPreferenceItem(result.record) },
+    { status: result.created ? 201 : 200 },
   )
 }
 
@@ -180,15 +132,7 @@ export async function handleDeleteChannelPreference(
     "Preference not found",
   )
 
-  // Soft disable; repeating the delete is a no-op.
-  if (!record.disabled_at) {
-    await c.var.db.channelCategoryPreferences.disable(
-      record.id,
-      new Date().toISOString(),
-    )
-  }
-
-  await cleanupMonitoringForBroadcasters(c.var.db, [record.broadcaster_user_id])
+  await disableChannelPreference(actor(c), record)
 
   return new Response(null, { status: 204 })
 }
@@ -201,64 +145,13 @@ export async function handleCreateGlobalPreference(
     CreateGlobalPreferenceSchema,
     "Invalid preference payload",
   )
-  // Idempotent per user/category, same revival semantics as channel prefs.
-  const existing =
-    await c.var.db.globalCategoryPreferences.findByUserAndCategory(
-      c.var.userId,
-      input.category_id,
-    )
-
-  let record: GlobalPreferenceRecord
-  if (existing) {
-    await c.var.db.globalCategoryPreferences.reactivate(
-      existing.id,
-      input.category_name,
-    )
-    record = {
-      ...existing,
-      category_name: input.category_name,
-      disabled_at: null,
-    }
-  } else {
-    const now = new Date().toISOString()
-    const id = await c.var.db.globalCategoryPreferences.create({
-      userId: c.var.userId,
-      categoryId: input.category_id,
-      categoryName: input.category_name,
-      now,
-    })
-    record = {
-      id,
-      user_id: c.var.userId,
-      category_id: input.category_id,
-      category_name: input.category_name,
-      created_at: now,
-      disabled_at: null,
-    }
-  }
-
-  // A global preference monitors all of the user's followed broadcasters
-  // (ADR 0007); follow sync keeps the set current as follows change.
-  const followed = await c.var.db.followedChannels.findByUserId(c.var.userId)
-  await ensureMonitoredBroadcasters(
-    c.var.db,
-    c.var.config,
-    c.var.userId,
-    followed.map((channel) => ({
-      broadcasterUserId: channel.broadcaster_user_id,
-      broadcasterLogin: channel.broadcaster_login,
-      broadcasterDisplayName: channel.broadcaster_display_name,
-    })),
-    "global_preference",
+  const { record, created, exclusions } = await upsertGlobalPreference(
+    actor(c),
+    { categoryId: input.category_id, categoryName: input.category_name },
   )
-
-  const exclusions =
-    await c.var.db.globalCategoryPreferenceExclusions.listActiveByPreferenceIds(
-      [record.id],
-    )
   return jsonResponse(
     { data: toGlobalPreferenceItem(record, exclusions) },
-    { status: existing ? 200 : 201 },
+    { status: created ? 201 : 200 },
   )
 }
 
@@ -267,19 +160,7 @@ export async function handleDeleteGlobalPreference(
 ): Promise<Response> {
   const record = await findOwnedGlobalPreference(c)
 
-  // Soft disable; repeating the delete is a no-op.
-  if (!record.disabled_at) {
-    await c.var.db.globalCategoryPreferences.disable(
-      record.id,
-      new Date().toISOString(),
-    )
-  }
-
-  const followed = await c.var.db.followedChannels.findByUserId(c.var.userId)
-  await cleanupMonitoringForBroadcasters(
-    c.var.db,
-    followed.map((channel) => channel.broadcaster_user_id),
-  )
+  await disableGlobalPreference(actor(c), record)
 
   return new Response(null, { status: 204 })
 }
