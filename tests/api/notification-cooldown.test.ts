@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest"
 import type { Database } from "../../apps/api/src/db"
 import type { ChannelStateChangeRecord } from "../../apps/api/src/db/repositories/channel-state-changes"
-import { matchAndCreateDeliveries } from "../../apps/api/src/services/notifications/match"
-import { sweepNotificationSnoozes } from "../../apps/api/src/services/notifications/snooze-sweep"
-import type { NotificationJobMessage } from "../../apps/api/src/types"
+import { matchAndCreateDeliveries } from "../../apps/api/src/features/notifications/match"
+import { sweepNotificationSnoozes } from "../../apps/api/src/features/notifications/snooze-sweep"
+import type { NotificationJobMessage } from "../../apps/api/src/features/notifications/types"
 
 // Window boundary and trigger/category independence of the send-side
 // cooldown (ADR 0056), asserted on the queue with a fake db.

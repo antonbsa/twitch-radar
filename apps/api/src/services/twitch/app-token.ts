@@ -1,5 +1,5 @@
 import type { AppConfig } from "../../env"
-import { fetchAppAccessToken } from "./client"
+import { fetchAppAccessToken } from "./oauth"
 
 // Exported so the test seam can evict the cache between tests.
 export const APP_TOKEN_KV_KEY = "twitch:app_access_token"

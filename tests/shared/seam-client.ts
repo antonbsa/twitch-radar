@@ -1,7 +1,7 @@
+import type { InspectRequestBody } from "../../apps/api/src/http/test-seam/inspect"
+import type { ResetRequestBody } from "../../apps/api/src/http/test-seam/reset"
 import type {
-  InspectRequestBody,
   SeedBroadcasterMuteInput,
-  ResetRequestBody,
   SeedChannelStateInput,
   SeedEventsubSubscriptionInput,
   SeedFollowedChannelInput,
@@ -12,19 +12,19 @@ import type {
   SeedRequestBody,
   SeedResponse,
   SeedUserInput,
-} from "../../apps/api/src/http/routes/_tests"
+} from "../../apps/api/src/http/test-seam/seed"
 import type { ChannelStateRecord } from "../../apps/api/src/db/repositories/channel-state"
 import type { ChannelStateChangeRecord } from "../../apps/api/src/db/repositories/channel-state-changes"
 import type { EventsubSubscriptionRecord } from "../../apps/api/src/db/repositories/eventsub-subscriptions"
 import type { MonitoredChannelRecord } from "../../apps/api/src/db/repositories/monitored-channels"
 import type { NotificationDeliveryRecord } from "../../apps/api/src/db/repositories/notification-deliveries"
 import type { NotificationSnoozeRecord } from "../../apps/api/src/db/repositories/notification-snoozes"
-import type { PushSubscriptionRecord } from "../../apps/api/src/types"
+import type { PushSubscriptionRecord } from "../../apps/api/src/db/repositories/push-subscriptions"
 
 export {
   E2E_BROADCASTER_PREFIX,
   E2E_USER_ID,
-} from "../../apps/api/src/http/routes/_tests"
+} from "../../apps/api/src/http/test-seam/shared"
 
 export type {
   SeedBroadcasterMuteInput,
@@ -67,7 +67,7 @@ export interface SeamClientOptions {
  * This is the only channel test setup/teardown goes through — the seam runs
  * inside the worker, so it reuses the same repository modules and D1/KV
  * bindings as the real routes without going through the public API. The
- * route only exists at all outside production (see `apps/api/src/index.ts`).
+ * route only exists at all outside production (see `apps/api/src/app.ts`).
  */
 export function createSeamClient({ baseUrl }: SeamClientOptions) {
   async function call(

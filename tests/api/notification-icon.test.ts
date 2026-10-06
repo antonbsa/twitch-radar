@@ -2,9 +2,9 @@ import { describe, expect, it, vi } from "vitest"
 import type { Database } from "../../apps/api/src/db"
 import type { ChannelStateChangeRecord } from "../../apps/api/src/db/repositories/channel-state-changes"
 import type { ChannelStateRecord } from "../../apps/api/src/db/repositories/channel-state"
-import { matchAndCreateDeliveries } from "../../apps/api/src/services/notifications/match"
-import { sweepNotificationSnoozes } from "../../apps/api/src/services/notifications/snooze-sweep"
-import type { NotificationJobMessage } from "../../apps/api/src/types"
+import { matchAndCreateDeliveries } from "../../apps/api/src/features/notifications/match"
+import { sweepNotificationSnoozes } from "../../apps/api/src/features/notifications/snooze-sweep"
+import type { NotificationJobMessage } from "../../apps/api/src/features/notifications/types"
 
 // The push payload is encrypted end-to-end (ADR 0035), so the avatar-as-icon
 // field (issue #25) is asserted on the queued job message with a fake db.

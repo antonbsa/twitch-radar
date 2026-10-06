@@ -1,20 +1,22 @@
 import { scheduledJobLogFields } from "../../crons"
 import type { AppConfig } from "../../env"
 import type { Database } from "../../db"
-import { logger, serializeError } from "../../logger"
-import { ensureMonitoredBroadcasters } from "../monitoring"
+import { logger, serializeError } from "../../lib/logger"
+import { ensureMonitoredBroadcasters } from "../../features/eventsub/monitoring"
 import {
   buildFollowedChannelsView,
   type FollowedChannelViewItem,
-} from "../followed-channels-view"
+} from "../../features/channels/followed-channels-view"
 import {
   getAllFollowedChannels,
-  getAllFollowedStreams,
   getUsersByIds,
-  resolveThumbnailUrl,
   type TwitchFollowedChannel,
+} from "./users"
+import {
+  getAllFollowedStreams,
+  resolveThumbnailUrl,
   type TwitchFollowedStream,
-} from "./client"
+} from "./streams"
 import { getValidAccessToken } from "./token-refresh"
 
 // Refresh every user's follow list daily even when they don't open the app:

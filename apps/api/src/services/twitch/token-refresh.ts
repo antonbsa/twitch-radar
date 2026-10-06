@@ -1,9 +1,10 @@
 import { scheduledJobLogFields } from "../../crons"
 import type { AppConfig } from "../../env"
 import { ApiError } from "../../http/errors"
-import { logger, serializeError } from "../../logger"
-import { decryptToken, encryptToken } from "../crypto"
-import { TwitchApiError, refreshAccessToken } from "./client"
+import { logger, serializeError } from "../../lib/logger"
+import { decryptToken, encryptToken } from "../../lib/crypto"
+import { TwitchApiError } from "./errors"
+import { refreshAccessToken } from "./oauth"
 import type { Database } from "../../db"
 import type { TwitchTokenRecord } from "../../db/repositories/twitch-tokens"
 

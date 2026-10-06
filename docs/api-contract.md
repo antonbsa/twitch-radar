@@ -1,6 +1,6 @@
 # API Contract
 
-Transversal conventions for `apps/api`'s HTTP surface, plus an index of what exists. This is not a substitute for reading the actual route/schema when the detail matters — request/response field shapes live in the route file itself (`apps/api/src/http/routes/<name>.ts`), not duplicated here, so they can't drift out of sync with this doc. Keep this file in sync when a route is added/removed/renamed or a convention below changes (see `AGENTS.md`'s "API Contract Doc").
+Transversal conventions for `apps/api`'s HTTP surface, plus an index of what exists. This is not a substitute for reading the actual route/schema when the detail matters — request/response field shapes live in the route file itself (`apps/api/src/features/<name>/routes.ts`), not duplicated here, so they can't drift out of sync with this doc. Keep this file in sync when a route is added/removed/renamed or a convention below changes (see `AGENTS.md`'s "API Contract Doc").
 
 ## Base & Auth
 
@@ -21,7 +21,7 @@ Every error response has the same shape:
 { "error": { "code": "string", "message": "string", "requestId": "string" } }
 ```
 
-`code` is a route-specific string (thrown via `ApiError(status, code, message)`), not an exhaustive enum kept in sync here — read the handler for the exact codes a given route can return. `404`/`405` for unknown routes/methods and `500` for unhandled errors are produced centrally in `index.ts`, not per-route.
+`code` is a route-specific string (thrown via `ApiError(status, code, message)`), not an exhaustive enum kept in sync here — read the handler for the exact codes a given route can return. `404`/`405` for unknown routes/methods and `500` for unhandled errors are produced centrally in `app.ts`, not per-route.
 
 ## Conventions
 

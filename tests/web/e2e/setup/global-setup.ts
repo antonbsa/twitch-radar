@@ -43,7 +43,7 @@ export default async function globalSetup() {
       "--env-file",
       "../../.env.development",
       // .env.development's VAPID keys and TWITCH_CLIENT_SECRET are
-      // placeholders that services/twitch/client.ts and web-push.ts now
+      // placeholders that services/twitch/oauth.ts and features/push/web-push.ts now
       // reject before doing real work (so `npm run dev` fails loud instead
       // of an opaque 401/DOMException). The account.spec.ts push flow
       // exercises the real vapid-public-key endpoint, so it needs a real

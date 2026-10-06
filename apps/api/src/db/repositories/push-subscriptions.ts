@@ -1,8 +1,19 @@
 import { and, eq, isNull } from "drizzle-orm"
 import { nanoid } from "nanoid"
-import type { PushSubscriptionRecord } from "../../types"
 import type { AppDatabase } from "../client"
 import { pushSubscriptions, type PushSubscriptionRow } from "../schema"
+
+export interface PushSubscriptionRecord {
+  id: string
+  user_id: string
+  endpoint: string
+  p256dh: string
+  auth: string
+  user_agent: string | null
+  created_at: string
+  updated_at: string
+  revoked_at: string | null
+}
 
 export interface CreatePushSubscriptionInput {
   userId: string

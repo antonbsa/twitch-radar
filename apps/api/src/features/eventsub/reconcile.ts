@@ -1,0 +1,218 @@
+import { scheduledJobLogFields } from "../../crons"
+import type { AppConfig } from "../../env"
+import type { Database } from "../../db"
+import { MONITORED_EVENT_TYPES } from "../../db/repositories/eventsub-subscriptions"
+import { logger, serializeError } from "../../lib/logger"
+import { eventsubCallbackUrl } from "./monitoring"
+import { getAppAccessToken } from "../../services/twitch/app-token"
+import {
+  deleteEventsubSubscription,
+  getAllEventsubSubscriptions,
+} from "../../services/twitch/eventsub"
+
+// Keeps one run well under the Workers subrequest limit even when a large
+// broadcaster set gets disabled at once; the next run continues the cleanup.
+const MAX_REMOTE_DELETES_PER_RUN = 20
+
+const RECONCILE_LOG_FIELDS = scheduledJobLogFields("eventsub-reconcile")
+
+// A `failed` row (ADR 0049) isn't retried automatically — only reconciliation
+// resurrects it, and only this long after it was flagged, so a fix (e.g. a
+// corrected PUBLIC_URL, a re-registered redirect URI) has had a real chance
+// to take effect before the exact same failure mode gets another shot.
+const FAILED_COOLDOWN_MS = 24 * 60 * 60_000
+
+// Twitch statuses that need no repair. Everything else (revocation reasons,
+// failure states) means the subscription no longer delivers events.
+const HEALTHY_REMOTE_STATUSES = new Set([
+  "enabled",
+  "webhook_callback_verification_pending",
+])
+
+/**
+ * Compares local `eventsub_subscriptions` against Twitch and repairs both
+ * sides (ADRs 0007, 0031, 0036, 0049):
+ *
+ * - broadcaster no longer monitored → delete the Twitch subscription and the
+ *   local row (this is also what clears pending rows staged for a
+ *   broadcaster that was disabled before the creation job picked them up).
+ * - local row's Twitch subscription is missing or unhealthy → reset the row
+ *   to `pending` so the minutely creation job recreates it.
+ * - local row is the terminal `failed` status (ADR 0049) for a still-active
+ *   broadcaster and its cooldown has elapsed → reset it to `pending` too, so
+ *   a permanently-stuck row isn't abandoned forever once the underlying
+ *   cause (bad config, revoked credentials) is actually fixed.
+ * - local and Twitch disagree on status (e.g. a missed challenge flip) →
+ *   mirror Twitch's status locally.
+ * - Twitch subscription with no local row → delete it (it spends quota and
+ *   nothing consumes its events).
+ * - monitored broadcaster missing local rows → stage them as `pending`.
+ *
+ * Only Twitch subscriptions whose webhook callback is this deployment's own
+ * URL are touched — several environments share one Twitch application, and
+ * their subscriptions are indistinguishable except by callback.
+ */
+export async function reconcileEventsubSubscriptions(
+  db: Database,
+  config: AppConfig,
+  kv: KVNamespace,
+): Promise<void> {
+  try {
+    await reconcile(db, config, kv)
+  } catch (error) {
+    // Covers anything thrown outside the per-subscription `deleteRemote`
+    // handling below — e.g. getAppAccessToken/getAllEventsubSubscriptions
+    // failing, or a D1 write — so it's logged with full detail instead of
+    // escaping as Cloudflare's bare automatic exception capture.
+    logger.error("EventSub reconciliation run failed", {
+      ...RECONCILE_LOG_FIELDS,
+      ...serializeError(error),
+    })
+  }
+}
+
+async function reconcile(
+  db: Database,
+  config: AppConfig,
+  kv: KVNamespace,
+): Promise<void> {
+  const appAccessToken = await getAppAccessToken(kv, config)
+  const callbackUrl = eventsubCallbackUrl(config)
+
+  const [remote, local, monitored] = await Promise.all([
+    getAllEventsubSubscriptions(
+      config.twitchClientId,
+      appAccessToken,
+      config.twitchApiBaseUrl,
+    ),
+    db.eventsubSubscriptions.listAll(),
+    db.monitoredChannels.listAll(),
+  ])
+
+  const ownedRemote = remote.filter(
+    (sub) =>
+      sub.transport.method === "webhook" &&
+      sub.transport.callback === callbackUrl,
+  )
+  const remoteById = new Map(ownedRemote.map((sub) => [sub.id, sub]))
+  const activeBroadcasterIds = new Set(
+    monitored
+      .filter((channel) => channel.disabled_at === null)
+      .map((channel) => channel.broadcaster_user_id),
+  )
+
+  const now = new Date().toISOString()
+  let remoteDeletes = 0
+  /**
+   * Budgeted best-effort delete.
+   *
+   * @returns `false` means try again next run.
+   */
+  const deleteRemote = async (twitchSubscriptionId: string) => {
+    if (remoteDeletes >= MAX_REMOTE_DELETES_PER_RUN) return false
+    remoteDeletes += 1
+    try {
+      await deleteEventsubSubscription(
+        config.twitchClientId,
+        appAccessToken,
+        twitchSubscriptionId,
+        config.twitchApiBaseUrl,
+      )
+      return true
+    } catch (error) {
+      logger.error("EventSub subscription delete failed", {
+        ...RECONCILE_LOG_FIELDS,
+        twitchSubscriptionId,
+        ...serializeError(error),
+      })
+      return false
+    }
+  }
+
+  let localRowsDeleted = 0
+  let localRowsReset = 0
+  let localRowsUpdated = 0
+
+  const claimedTwitchIds = new Set<string>()
+  for (const row of local) {
+    const remoteSub = row.twitch_subscription_id
+      ? remoteById.get(row.twitch_subscription_id)
+      : undefined
+    if (remoteSub) claimedTwitchIds.add(remoteSub.id)
+
+    if (!activeBroadcasterIds.has(row.broadcaster_user_id)) {
+      // Keep the row when the remote delete didn't go through so the pair is
+      // retried next run instead of leaking the Twitch-side subscription.
+      if (remoteSub && !(await deleteRemote(remoteSub.id))) continue
+      await db.eventsubSubscriptions.deleteById(row.id)
+      localRowsDeleted += 1
+      continue
+    }
+
+    if (row.status === "pending") continue
+
+    if (row.status === "failed") {
+      const cooledDown =
+        Date.parse(row.updated_at) + FAILED_COOLDOWN_MS <= Date.parse(now)
+      if (cooledDown) {
+        await db.eventsubSubscriptions.resetToPending(row.id, now)
+        localRowsReset += 1
+      }
+      continue
+    }
+
+    if (!remoteSub) {
+      await db.eventsubSubscriptions.resetToPending(row.id, now)
+      localRowsReset += 1
+      continue
+    }
+    if (!HEALTHY_REMOTE_STATUSES.has(remoteSub.status)) {
+      await deleteRemote(remoteSub.id)
+      await db.eventsubSubscriptions.resetToPending(row.id, now)
+      localRowsReset += 1
+      continue
+    }
+    if (row.status !== remoteSub.status) {
+      await db.eventsubSubscriptions.markCreated(
+        row.id,
+        remoteSub.id,
+        remoteSub.status,
+        now,
+      )
+      localRowsUpdated += 1
+    }
+  }
+
+  for (const sub of ownedRemote) {
+    if (!claimedTwitchIds.has(sub.id)) await deleteRemote(sub.id)
+  }
+
+  const eventTypesByBroadcaster = new Map<string, Set<string>>()
+  for (const row of local) {
+    const types =
+      eventTypesByBroadcaster.get(row.broadcaster_user_id) ?? new Set()
+    types.add(row.event_type)
+    eventTypesByBroadcaster.set(row.broadcaster_user_id, types)
+  }
+  const broadcastersMissingSubscriptions: string[] = []
+  for (const broadcasterUserId of activeBroadcasterIds) {
+    const types = eventTypesByBroadcaster.get(broadcasterUserId)
+    if (!types || MONITORED_EVENT_TYPES.some((type) => !types.has(type))) {
+      broadcastersMissingSubscriptions.push(broadcasterUserId)
+    }
+  }
+  await db.eventsubSubscriptions.ensurePending(
+    broadcastersMissingSubscriptions,
+    callbackUrl,
+    now,
+  )
+
+  logger.info("EventSub reconciliation run completed", {
+    ...RECONCILE_LOG_FIELDS,
+    localRowsDeleted,
+    localRowsReset,
+    localRowsUpdated,
+    staged: broadcastersMissingSubscriptions.length,
+    remoteDeletes,
+  })
+}

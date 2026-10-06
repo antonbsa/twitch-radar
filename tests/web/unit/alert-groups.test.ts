@@ -3,7 +3,7 @@ import {
   buildChannelAlertGroups,
   filterChannelAlertGroups,
   type ChannelAlertGroup,
-} from "../../../apps/web/src/lib/alert-groups"
+} from "../../../apps/web/src/routes/alerts/alert-groups"
 import type { ChannelPreference } from "../../../apps/web/src/types/preference"
 import type { FollowedChannel } from "../../../apps/web/src/types/channel"
 
