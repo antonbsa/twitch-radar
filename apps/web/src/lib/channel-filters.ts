@@ -15,7 +15,7 @@ export const DEFAULT_CHANNEL_FILTERS: ChannelFilters = {
   sort: "viewers",
 }
 
-export interface LiveCategory {
+export interface LiveCategoryCount {
   name: string
   liveCount: number
 }
@@ -23,7 +23,7 @@ export interface LiveCategory {
 /** Categories of the live channels with how many are live in each, most broadcasters first, then alphabetically. */
 export function deriveLiveCategories(
   channels: FollowedChannel[],
-): LiveCategory[] {
+): LiveCategoryCount[] {
   const counts = new Map<string, number>()
   for (const channel of channels) {
     if (channel.is_live && channel.category_name) {

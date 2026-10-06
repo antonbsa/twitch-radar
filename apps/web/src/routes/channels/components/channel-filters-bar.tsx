@@ -18,7 +18,7 @@ import { useLanguage } from "@/context/language-context"
 import type {
   ChannelFilters,
   ChannelSort,
-  LiveCategory,
+  LiveCategoryCount,
 } from "@/lib/channel-filters"
 
 // 44px touch-target height; responsive width (narrow on mobile, full label width at md+)
@@ -28,7 +28,7 @@ const CATEGORY_TRIGGER_CLASSNAME =
 interface ChannelFiltersBarProps {
   filters: ChannelFilters
   onChange: (patch: Partial<ChannelFilters>) => void
-  categories: LiveCategory[]
+  categories: LiveCategoryCount[]
 }
 
 export function ChannelFiltersBar({
