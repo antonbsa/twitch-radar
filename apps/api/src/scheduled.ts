@@ -1,8 +1,4 @@
-import {
-  CRON_EVENTSUB_RECONCILE,
-  CRON_FOLLOW_SYNC,
-  CRON_TOKEN_REFRESH,
-} from "./crons"
+import { isPeriodicJobDue } from "./crons"
 import { Database } from "./db"
 import { parseEnv, type Env } from "./env"
 import { logger, serializeError } from "./lib/logger"
@@ -17,15 +13,10 @@ import {
 } from "./services/twitch/avatar-refresh"
 
 /**
- * Cron fan-out (ADR 0036): each schedule owns one job so a slow or failing
- * job can't starve the others' subrequest budget, and tests can trigger
- * each in isolation via `/__scheduled?cron=...`. The default branch keeps
- * the minutely pending-subscription creation (ADR 0031) and also runs the
- * notification snooze sweep (ADR 0048): the account-wide cron trigger cap
- * (5, already fully consumed by production + preview) leaves no free slot
- * for the sweep's own schedule, and it wants a minutely cadence anyway to
- * keep the 15-minute snooze window tight. The same cap is why the monthly
- * avatar refresh is gated inside the hourly follow-sync branch.
+ * Cron fan-out (ADR 0057): the single minutely trigger runs the minutely jobs
+ * (pending-subscription creation, ADR 0031; snooze sweep, ADR 0048) on every
+ * invocation, plus whichever periodic job is due at `scheduledTime`'s minute
+ * (ADR 0036). Tests pick the job by passing `?time=` to Miniflare's `/cdn-cgi/local/scheduled`.
  */
 export async function runScheduled(
   controller: ScheduledController,
@@ -41,26 +32,22 @@ export async function runScheduled(
     logger.configure(config.environment)
     const db = new Database(env.DB)
 
-    switch (controller.cron) {
-      case CRON_EVENTSUB_RECONCILE:
-        return await reconcileEventsubSubscriptions(
-          db,
-          config,
-          env.KV_APP_CACHE,
-        )
-      case CRON_TOKEN_REFRESH:
-        return await refreshExpiringTwitchTokens(db, config)
-      case CRON_FOLLOW_SYNC:
-        // Both jobs catch and log their own failures, so neither can skip
-        // the other.
-        await syncStaleFollows(db, config)
-        if (isAvatarRefreshSlot(controller.scheduledTime)) {
-          await refreshBroadcasterAvatars(db, config, env.KV_APP_CACHE)
-        }
-        return
-      default:
-        await createPendingEventsubSubscriptions(db, config, env.KV_APP_CACHE)
-        return await sweepNotificationSnoozes(db, env.NOTIFICATION_JOBS_QUEUE)
+    const { scheduledTime } = controller
+
+    // Each job catches and logs its own failures, so none can skip the others.
+    await createPendingEventsubSubscriptions(db, config, env.KV_APP_CACHE)
+    await sweepNotificationSnoozes(db, env.NOTIFICATION_JOBS_QUEUE)
+    if (isPeriodicJobDue("eventsub-reconcile", scheduledTime)) {
+      await reconcileEventsubSubscriptions(db, config, env.KV_APP_CACHE)
+    }
+    if (isPeriodicJobDue("token-refresh", scheduledTime)) {
+      await refreshExpiringTwitchTokens(db, config)
+    }
+    if (isPeriodicJobDue("follow-sync", scheduledTime)) {
+      await syncStaleFollows(db, config)
+      if (isAvatarRefreshSlot(scheduledTime)) {
+        await refreshBroadcasterAvatars(db, config, env.KV_APP_CACHE)
+      }
     }
   } catch (error) {
     logger.error("Scheduled job failed", {

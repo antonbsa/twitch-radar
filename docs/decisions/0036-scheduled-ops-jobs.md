@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted. The "one cron per job" dispatch is superseded by [ADR 0057](0057-single-minutely-cron-trigger.md): the same jobs and cadences now run from one minutely trigger, dispatched on the scheduled time.
 
 ## Context
 

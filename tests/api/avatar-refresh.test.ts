@@ -9,9 +9,9 @@ import {
 import { orchestrator } from "./setup/orchestrator"
 import { MOCK_TWITCH_URL } from "./setup/ports"
 
-// The refresh is date-gated inside the hourly follow-sync trigger, and
-// wrangler's /__scheduled can't set scheduledTime, so the job is called
-// directly: real Get Users calls against the mock Twitch server, fake db.
+// The refresh is date-gated inside the hourly follow-sync slot, so the job is
+// called directly instead of waiting for the 1st at 04:10 UTC: real Get Users
+// calls against the mock Twitch server, fake db.
 
 describe("isAvatarRefreshSlot", () => {
   it.each([

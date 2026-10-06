@@ -17,12 +17,11 @@
       "preview_id": "76f00c08321d4e0c9254304b71ad0dae"
     }
   ],
-  // One cron per scheduled job, dispatched on controller.cron in index.ts
-  // (ADR 0036): minutely pending-subscription creation (ADR 0031, the
-  // default branch), EventSub reconciliation, Twitch token refresh sweep,
-  // and stale follow re-sync.
+  // One minutely cron per environment: scheduled.ts picks the jobs due from
+  // the scheduled time (ADR 0057). Cron triggers are capped account-wide, so
+  // adding a schedule here costs a slot in every environment.
   "triggers": {
-    "crons": ["* * * * *", "*/30 * * * *", "5,35 * * * *", "10 * * * *"]
+    "crons": ["* * * * *"]
   },
   // "-dev" suffix so an accidental `wrangler dev --remote` without `--env`
   // can't bind to production's real queues below.
@@ -130,7 +129,7 @@
         }
       ],
       "triggers": {
-        "crons": ["* * * * *", "*/30 * * * *", "5,35 * * * *", "10 * * * *"]
+        "crons": ["* * * * *"]
       },
       "queues": {
         "producers": [
@@ -201,15 +200,6 @@
           "id": "f3f65972f7404e23ade4a303d9b8371a"
         }
       ],
-      // Cron Triggers are capped account-wide (Cloudflare API error 10072:
-      // "exceeded the limit of 5 cron triggers"), not per Worker. Production
-      // already registers all 4 crons above, leaving only 1 free — so preview
-      // gets just the default minutely job (pending EventSub subscription
-      // creation, ADR 0031) and no scheduled reconcile/token-refresh/
-      // stale-follow-sync in this environment. Those can still be exercised
-      // manually in preview via `wrangler deploy --env preview` +
-      // `/__scheduled?cron=...` against the running dev/preview worker if
-      // needed.
       "triggers": {
         "crons": ["* * * * *"]
       },

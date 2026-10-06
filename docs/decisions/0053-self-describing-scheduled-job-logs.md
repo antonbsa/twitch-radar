@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted. The `cron` field and the job → cron mapping are dropped by [ADR 0057](0057-single-minutely-cron-trigger.md): with one schedule, only `job` identifies the source.
 
 ## Context
 

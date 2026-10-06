@@ -1,3 +1,7 @@
+import {
+  PERIODIC_JOB_MINUTES,
+  type PeriodicJobName,
+} from "../../../apps/api/src/crons"
 import { createSeamClient } from "../../shared/seam-client"
 import type { SeedUserInput } from "../../shared/seam-client"
 import { API_TEST_URL, MOCK_TWITCH_URL } from "./ports"
@@ -228,14 +232,19 @@ function pushEndpoint(path: string) {
 }
 
 /**
- * Triggers the worker's `scheduled()` handler through wrangler dev's
- * `--test-scheduled` endpoint; resolves after the handler completes. `cron`
- * selects which scheduled job runs (the handler dispatches on
- * `controller.cron`); without it the default minutely job runs.
+ * Triggers the worker's `scheduled()` handler through Miniflare's
+ * `/cdn-cgi/local/scheduled` endpoint (wrangler's `/__scheduled` drops
+ * `time`); resolves after the handler completes. The handler picks jobs from
+ * the scheduled time (ADR 0057), so `job` pins the time to that job's first
+ * UTC minute; without it the time falls on a minute with only the minutely
+ * jobs due, regardless of when the test runs.
  */
-async function runScheduled(cron?: string) {
-  const query = cron ? `?cron=${encodeURIComponent(cron)}` : ""
-  const res = await fetch(`${API_TEST_URL}/__scheduled${query}`)
+async function runScheduled(job?: PeriodicJobName) {
+  const minute = job ? PERIODIC_JOB_MINUTES[job][0] : 1
+  const time = Date.UTC(2026, 0, 2, 12, minute)
+  const res = await fetch(
+    `${API_TEST_URL}/cdn-cgi/local/scheduled?time=${time}`,
+  )
   if (!res.ok) throw new Error(`Scheduled trigger failed: ${res.status}`)
 }
 

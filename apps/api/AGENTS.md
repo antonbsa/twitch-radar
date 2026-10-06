@@ -67,5 +67,5 @@ for (let i = 0; i < ids.length; i += BATCH_SIZE) {
 
 ## Change together
 
-- Cron expressions are defined once in `src/crons.ts` (so tests can import them) and mirrored by hand into `wrangler.jsonc`'s `triggers.crons`. Edit both in the same change: one without the other silently breaks either the deployed schedule or the tests.
+- There is one cron trigger per environment, `* * * * *`, and `scheduled.ts` picks the jobs due from the minute of `controller.scheduledTime` (table in `src/crons.ts`, ADR 0057). Cloudflare caps cron triggers account-wide (5), so a new scheduled job adds a minute-table entry and a `scheduledJobLogFields` name, never a `wrangler.jsonc` trigger. Keep `CRON_MINUTELY` and every `triggers.crons` in `wrangler.jsonc` identical.
 - The zod schema in `src/env.ts` and the `.env.development` placeholders move in the same change.
