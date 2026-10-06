@@ -29,4 +29,20 @@ export default [
       "prettier/prettier": ["error", prettierConfig],
     },
   },
+  {
+    files: ["apps/web/src/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["./*", "../*"],
+              message: 'Use the "@/" alias instead of a relative import.',
+            },
+          ],
+        },
+      ],
+    },
+  },
 ]
