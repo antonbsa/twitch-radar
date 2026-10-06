@@ -1,4 +1,4 @@
-import { and, eq, inArray } from "drizzle-orm"
+import { and, desc, eq, inArray } from "drizzle-orm"
 import { nanoid } from "nanoid"
 import type { AppDatabase } from "../client"
 import { notificationDeliveries } from "../schema"
@@ -134,6 +134,30 @@ export class NotificationDeliveriesRepository {
       .select()
       .from(notificationDeliveries)
       .where(eq(notificationDeliveries.id, id))
+      .get()
+    return row ? toRecord(row) : null
+  }
+
+  /**
+   * Most recent `sent` delivery for the pair, whatever its category, trigger
+   * or stream: the send-side cooldown deliberately ignores them (ADR 0056).
+   */
+  async findLastSentByUserAndBroadcaster(
+    userId: string,
+    broadcasterUserId: string,
+  ): Promise<NotificationDeliveryRecord | null> {
+    const row = await this.db
+      .select()
+      .from(notificationDeliveries)
+      .where(
+        and(
+          eq(notificationDeliveries.userId, userId),
+          eq(notificationDeliveries.broadcasterUserId, broadcasterUserId),
+          eq(notificationDeliveries.status, "sent"),
+        ),
+      )
+      .orderBy(desc(notificationDeliveries.sentAt))
+      .limit(1)
       .get()
     return row ? toRecord(row) : null
   }

@@ -555,6 +555,59 @@ describe("notification matching and delivery", () => {
   })
 })
 
+describe("notification cooldown (ADR 0056)", () => {
+  it("should not re-notify when a stream reconnects within the cooldown", async () => {
+    await orchestrator.seed({
+      user: {},
+      preferences: {
+        channel: [
+          {
+            broadcasterUserId: BROADCASTER_ID,
+            categoryId: MINECRAFT.id,
+            categoryName: MINECRAFT.name,
+          },
+        ],
+      },
+      pushSubscriptions: [{ endpoint: orchestrator.pushEndpoint("/push/c1") }],
+    })
+    await orchestrator.seedChannelState([
+      { broadcasterUserId: BROADCASTER_ID, isLive: false },
+    ])
+    await mockStreamOnlineLookups()
+    await orchestrator.mockTwitch.onPush("/push/c1")
+
+    await sendEventsubWebhook("stream.online", { event: streamOnlineEvent() })
+    await orchestrator.waitForInspect([BROADCASTER_ID], (s) =>
+      s.notificationDeliveries.some((d) => d.status === "sent"),
+    )
+
+    await sendEventsubWebhook("stream.offline", {
+      event: {
+        broadcaster_user_id: BROADCASTER_ID,
+        broadcaster_user_login: STREAM.user_login,
+        broadcaster_user_name: STREAM.user_name,
+      },
+    })
+    // Reconnect: a new stream id for the same category.
+    const reconnected = { ...STREAM, id: "stream_n2" }
+    await orchestrator.mockTwitch.onStreams([reconnected])
+    await sendEventsubWebhook("stream.online", {
+      event: streamOnlineEvent({ id: reconnected.id }),
+    })
+
+    // Fence: the reconnect's stream_started row is visible once it is
+    // processed, so a delivery for it would be too.
+    const state = await orchestrator.waitForInspect(
+      [BROADCASTER_ID],
+      (s) =>
+        s.channelStateChanges.filter((c) => c.change_type === "stream_started")
+          .length === 2,
+    )
+    expect(state.notificationDeliveries).toHaveLength(1)
+    expect(state.notificationDeliveries[0].stream_id).toBe(STREAM.id)
+  })
+})
+
 describe("notification snoozing", () => {
   it("should schedule a 15-minute reminder for a broadcaster/category", async () => {
     const { cookie } = await orchestrator.createAuthenticatedSession()

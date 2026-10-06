@@ -71,6 +71,13 @@
       "when": 1791168141398,
       "tag": "0010_global_category_preference_exclusions",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1791219440545,
+      "tag": "0011_notification_delivery_cooldown_index",
+      "breakpoints": true
     }
   ]
 }

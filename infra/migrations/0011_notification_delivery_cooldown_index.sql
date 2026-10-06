@@ -1,0 +1,1 @@
+CREATE INDEX `idx_notification_deliveries_cooldown` ON `notification_deliveries` (`user_id`,`broadcaster_user_id`,`status`,`sent_at`);

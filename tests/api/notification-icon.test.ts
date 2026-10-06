@@ -61,6 +61,7 @@ function fakeDb(avatarUrl: string | null) {
       findMutedUserIds: vi.fn().mockResolvedValue(new Set()),
     },
     notificationDeliveries: {
+      findLastSentByUserAndBroadcaster: vi.fn().mockResolvedValue(null),
       insertPendingIfNew: vi
         .fn()
         .mockResolvedValue({ id: "dlv_1", status: "pending" }),

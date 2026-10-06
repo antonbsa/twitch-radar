@@ -30,6 +30,9 @@ function isRedundantWithCategory(
   )
 }
 
+// Send-side cooldown per user/broadcaster, aligned with the snooze interval (ADR 0056).
+const NOTIFICATION_COOLDOWN_MS = 15 * 60 * 1000
+
 function computeUptime(
   startedAt: string | null,
   now: Date,
@@ -140,8 +143,9 @@ function buildPayload(
 
 /**
  * Match the change against active category preferences, dedupe by user,
- * broadcaster, category, trigger, and stream, then enqueue one pending
- * delivery per matched user.
+ * broadcaster, category, trigger, and stream, drop users still in the
+ * per-broadcaster cooldown (ADR 0056), then enqueue one pending delivery per
+ * remaining user.
  */
 export async function matchAndCreateDeliveries(
   db: Database,
@@ -224,8 +228,20 @@ export async function matchAndCreateDeliveries(
     Array.from(matchedUserIds),
   )
 
-  const now = new Date().toISOString()
+  const nowDate = new Date()
+  const now = nowDate.toISOString()
+  const cooldownCutoff = new Date(
+    nowDate.getTime() - NOTIFICATION_COOLDOWN_MS,
+  ).toISOString()
   for (const userId of matchedUserIds) {
+    // Runs last, after every other per-user filter (ADR 0054 order, ADR 0056).
+    const lastSent =
+      await db.notificationDeliveries.findLastSentByUserAndBroadcaster(
+        userId,
+        broadcasterUserId,
+      )
+    if (lastSent?.sent_at && lastSent.sent_at > cooldownCutoff) continue
+
     const delivery = await db.notificationDeliveries.insertPendingIfNew({
       userId,
       broadcasterUserId,
