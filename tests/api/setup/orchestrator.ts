@@ -38,6 +38,9 @@ async function createAuthenticatedSession(options: SeedUserInput = {}) {
     accessToken: options.accessToken ?? "valid-access-token",
     refreshToken: options.refreshToken ?? "valid-refresh-token",
     expiredToken: options.expiredToken ?? false,
+    tokenValidatedAt: options.tokenValidatedAt,
+    sessionTtlS: options.sessionTtlS,
+    sessionMaxLifetimeS: options.sessionMaxLifetimeS,
     ...(options.id ? { id: options.id } : {}),
   })
   // seeded.cookie is a full Set-Cookie string; requests need only the pair.
@@ -74,6 +77,11 @@ const mockTwitch = {
 
   onTokenExchange(body: unknown, status = 200) {
     return this.queue("/oauth2/token", body, status)
+  },
+
+  /** `/oauth2/validate`: 200 for a valid token, 401 for an invalid or expired one. */
+  onTokenValidate(status = 200) {
+    return this.queue("/oauth2/validate", { message: "validate" }, status)
   },
 
   onUserInfo(body: unknown, status = 200) {

@@ -1,4 +1,4 @@
-import { and, asc, eq, isNull, lt } from "drizzle-orm"
+import { and, asc, eq, isNull, lt, or } from "drizzle-orm"
 import type { AppDatabase } from "../client"
 import { twitchTokens } from "../schema"
 
@@ -19,6 +19,7 @@ export interface TwitchTokenRecord {
   scopes: string
   updated_at: string
   refresh_failed_at: string | null
+  validated_at: string | null
 }
 
 export class TwitchTokensRepository {
@@ -38,6 +39,7 @@ export class TwitchTokensRepository {
         expiresAt: input.expiresAt,
         scopes: input.scopes,
         updatedAt: input.now,
+        validatedAt: input.now,
       })
       .onConflictDoUpdate({
         target: twitchTokens.userId,
@@ -49,6 +51,8 @@ export class TwitchTokensRepository {
           updatedAt: input.now,
           // Fresh tokens mean the connection works again (re-auth or refresh).
           refreshFailedAt: null,
+          // A token just issued is valid by definition.
+          validatedAt: input.now,
         },
       })
       .run()
@@ -78,6 +82,40 @@ export class TwitchTokensRepository {
     return rows.map(toRecord)
   }
 
+  /**
+   * Tokens not yet confirmed valid since `cutoff` (never-validated first) that
+   * haven't failed a refresh — the validation sweep's work queue.
+   */
+  async findDueForValidation(
+    cutoff: string,
+    limit: number,
+  ): Promise<TwitchTokenRecord[]> {
+    const rows = await this.db
+      .select()
+      .from(twitchTokens)
+      .where(
+        and(
+          isNull(twitchTokens.refreshFailedAt),
+          or(
+            isNull(twitchTokens.validatedAt),
+            lt(twitchTokens.validatedAt, cutoff),
+          ),
+        ),
+      )
+      .orderBy(asc(twitchTokens.validatedAt))
+      .limit(limit)
+      .all()
+    return rows.map(toRecord)
+  }
+
+  async markValidated(userId: string, now: string): Promise<void> {
+    await this.db
+      .update(twitchTokens)
+      .set({ validatedAt: now })
+      .where(eq(twitchTokens.userId, userId))
+      .run()
+  }
+
   async markRefreshFailed(userId: string, now: string): Promise<void> {
     await this.db
       .update(twitchTokens)
@@ -105,5 +143,6 @@ function toRecord(row: typeof twitchTokens.$inferSelect): TwitchTokenRecord {
     scopes: row.scopes,
     updated_at: row.updatedAt,
     refresh_failed_at: row.refreshFailedAt,
+    validated_at: row.validatedAt,
   }
 }

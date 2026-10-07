@@ -19,6 +19,11 @@ export interface SeedUserInput {
   accessToken?: string
   refreshToken?: string
   expiredToken?: boolean
+  // Backdates the token's last validation so the validate sweep picks it up.
+  tokenValidatedAt?: string
+  // Seeds a session closer to expiry (or its max lifetime) than a fresh login.
+  sessionTtlS?: number
+  sessionMaxLifetimeS?: number
   // Applied whenever present, null included, so a re-seed resets a value a
   // previous test left on the shared user row; omitted leaves it untouched.
   lastFollowSyncAt?: string | null
@@ -175,9 +180,18 @@ export async function handleTestSeed(c: Context<HonoEnv>): Promise<Response> {
         scopes: "user:read:follows",
         now,
       })
+      if (body.user.tokenValidatedAt) {
+        await c.var.db.twitchTokens.markValidated(
+          userId,
+          body.user.tokenValidatedAt,
+        )
+      }
     }
 
-    const sessionId = await createSession(c.env.KV_APP_CACHE, userId)
+    const sessionId = await createSession(c.env.KV_APP_CACHE, userId, {
+      ttlS: body.user.sessionTtlS,
+      maxLifetimeS: body.user.sessionMaxLifetimeS,
+    })
     session = { sessionId, cookie: sessionCookieHeader(sessionId) }
   }
 

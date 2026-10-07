@@ -11,6 +11,7 @@ import {
 interface PreferenceActor {
   db: Database
   config: AppConfig
+  kv: KVNamespace
   userId: string
 }
 
@@ -27,7 +28,7 @@ export interface UpsertResult<T> {
  * not one of the user's followed channels.
  */
 export async function upsertChannelPreference(
-  { db, config, userId }: PreferenceActor,
+  { db, config, kv, userId }: PreferenceActor,
   input: {
     broadcasterUserId: string
     categoryId: string
@@ -81,6 +82,7 @@ export async function upsertChannelPreference(
   await ensureMonitoredBroadcasters(
     db,
     config,
+    kv,
     userId,
     [
       {
@@ -115,7 +117,7 @@ export async function disableChannelPreference(
  * 0007); follow sync keeps the set current as follows change.
  */
 export async function upsertGlobalPreference(
-  { db, config, userId }: PreferenceActor,
+  { db, config, kv, userId }: PreferenceActor,
   input: { categoryId: string; categoryName: string },
 ): Promise<
   UpsertResult<GlobalPreferenceRecord> & {
@@ -160,6 +162,7 @@ export async function upsertGlobalPreference(
   await ensureMonitoredBroadcasters(
     db,
     config,
+    kv,
     userId,
     followed.map((channel) => ({
       broadcasterUserId: channel.broadcaster_user_id,

@@ -51,10 +51,10 @@ export async function runScheduled(
       await reconcileEventsubSubscriptions(db, config, env.KV_APP_CACHE)
     }
     if (isPeriodicJobDue("token-refresh", scheduledTime)) {
-      await refreshExpiringTwitchTokens(db, config)
+      await refreshExpiringTwitchTokens(db, config, env.KV_APP_CACHE)
     }
     if (isPeriodicJobDue("follow-sync", scheduledTime)) {
-      await syncStaleFollows(db, config)
+      await syncStaleFollows(db, config, env.KV_APP_CACHE)
       if (isAvatarRefreshSlot(scheduledTime)) {
         await refreshBroadcasterAvatars(db, config, env.KV_APP_CACHE)
       }

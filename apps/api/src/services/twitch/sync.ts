@@ -178,6 +178,7 @@ export async function fetchFollowedChannelsSync(
 async function persistFollowedChannelsSync(
   db: Database,
   config: AppConfig,
+  kv: KVNamespace,
   userId: string,
   fetched: Omit<FollowedChannelsSyncFetch, "payload">,
   now: string,
@@ -242,6 +243,7 @@ async function persistFollowedChannelsSync(
     await ensureMonitoredBroadcasters(
       db,
       config,
+      kv,
       userId,
       channels.map((ch) => ({
         broadcasterUserId: ch.broadcaster_id,
@@ -264,14 +266,15 @@ async function persistFollowedChannelsSync(
 export async function syncFollowedChannels(
   db: Database,
   config: AppConfig,
+  kv: KVNamespace,
   userId: string,
   twitchUserId: string,
 ): Promise<FollowedChannelViewItem[]> {
   const now = new Date().toISOString()
-  const fetched = await withUserAccessToken(db, config, userId, (token) =>
+  const fetched = await withUserAccessToken(db, config, kv, userId, (token) =>
     fetchFollowedChannelsSync(db, config, userId, twitchUserId, token),
   )
-  await persistFollowedChannelsSync(db, config, userId, fetched, now)
+  await persistFollowedChannelsSync(db, config, kv, userId, fetched, now)
   return fetched.payload
 }
 
@@ -286,12 +289,13 @@ export async function syncFollowedChannels(
 export async function persistFollowedChannelsSyncDeferred(
   db: Database,
   config: AppConfig,
+  kv: KVNamespace,
   userId: string,
   fetched: FollowedChannelsSyncFetch,
   now: string,
 ): Promise<void> {
   try {
-    await persistFollowedChannelsSync(db, config, userId, fetched, now)
+    await persistFollowedChannelsSync(db, config, kv, userId, fetched, now)
   } catch (error) {
     logger.error("Deferred follow sync write failed", {
       userId,
@@ -309,6 +313,7 @@ export async function persistFollowedChannelsSyncDeferred(
 export async function syncStaleFollows(
   db: Database,
   config: AppConfig,
+  kv: KVNamespace,
 ): Promise<void> {
   const logFields = scheduledJobLogFields("follow-sync")
   try {
@@ -321,7 +326,7 @@ export async function syncStaleFollows(
 
     for (const user of candidates) {
       try {
-        await syncFollowedChannels(db, config, user.id, user.twitch_user_id)
+        await syncFollowedChannels(db, config, kv, user.id, user.twitch_user_id)
         succeeded += 1
       } catch (error) {
         logger.error("Scheduled follow sync failed", {

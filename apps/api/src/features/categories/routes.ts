@@ -16,6 +16,7 @@ export async function handleSearchCategories(
   const categories = await withUserAccessToken(
     c.var.db,
     c.var.config,
+    c.env.KV_APP_CACHE,
     c.var.userId,
     (token) =>
       searchCategories(

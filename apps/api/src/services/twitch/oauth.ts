@@ -82,3 +82,20 @@ export async function fetchAppAccessToken(
     throw await twitchApiErrorFromResponse(`App token fetch failed`, res)
   return res.json() as Promise<TwitchAppTokenResponse>
 }
+
+/**
+ * Twitch asks apps to validate user tokens hourly; this is also the cheap way
+ * to notice a revoked grant without waiting for a request to fail.
+ * @returns `false` on a 401 (invalid or expired token); other failures throw.
+ */
+export async function validateAccessToken(
+  accessToken: string,
+  authBaseUrl = "https://id.twitch.tv",
+): Promise<boolean> {
+  const res = await fetch(`${authBaseUrl}/oauth2/validate`, {
+    headers: { Authorization: `OAuth ${accessToken}` },
+  })
+  if (res.ok) return true
+  if (res.status === 401) return false
+  throw await twitchApiErrorFromResponse(`Token validation failed`, res)
+}
