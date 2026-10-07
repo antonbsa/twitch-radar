@@ -56,17 +56,16 @@ export function classifyTwitchError(err: unknown): unknown {
   if (err.status !== 429 && err.status < 500) return err
 
   logger.warn("Twitch unavailable", { ...serializeError(err) })
+  // Same message for both: the client only needs "retry later", and the
+  // 429 cause stays in the log above and in the status/Retry-After.
+  const message = "Twitch is unavailable, try again shortly"
   if (err.status === 429) {
     return new ApiError(
       503,
       "twitch_unavailable",
-      "Twitch is rate limiting requests, try again shortly",
+      message,
       err.retryAfter ? { "Retry-After": err.retryAfter } : {},
     )
   }
-  return new ApiError(
-    502,
-    "twitch_unavailable",
-    "Twitch is unavailable, try again shortly",
-  )
+  return new ApiError(502, "twitch_unavailable", message)
 }
