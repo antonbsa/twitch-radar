@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Rejected. Implemented and tried by hand on an installed iOS PWA: `getNotifications()` lists nothing there, notifications can't be replaced by `tag` or closed, and offline bursts lose pushes at the push service. See [TN 0007](../notes/0007-client-side-notification-digest-not-viable-on-ios.md).
 
 ## Context
 
