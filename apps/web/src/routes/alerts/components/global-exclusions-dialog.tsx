@@ -94,15 +94,17 @@ export function GlobalExclusionsDialog({
       }}
     >
       <DialogContent fullScreen data-testid="exclusions-dialog">
-        <DialogHeader className="min-h-14 justify-center px-4 py-3 pr-14">
+        {/* Title-only header, like the other full-screen dialogs, so it lines
+            up with the close button; a long category name may still wrap. */}
+        <DialogHeader className="min-h-14 justify-center px-4 pr-14">
           <DialogTitle>
             {t("exclusions.title", {
               category: preference?.category_name ?? "",
             })}
           </DialogTitle>
-          <DialogDescription>{t("exclusions.description")}</DialogDescription>
         </DialogHeader>
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 pt-1 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <DialogDescription>{t("exclusions.description")}</DialogDescription>
           <section>
             <h3 className="pb-2 text-sm font-semibold text-muted-foreground">
               {t("exclusions.excluded_title")}
