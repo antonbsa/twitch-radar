@@ -8,7 +8,7 @@ import type { GlobalPreference } from "@/types/preference"
 interface GlobalAlertsCardProps {
   preferences: GlobalPreference[]
   onAdd: () => void
-  onRemove: (preferenceId: string) => void
+  onRemove: (preference: GlobalPreference) => void
   onEditExclusions: (preference: GlobalPreference) => void
   armedChipId: string | null
   onArmChip: (preferenceId: string) => void
@@ -48,7 +48,7 @@ export function GlobalAlertsCard({
               label={pref.category_name}
               armed={armedChipId === pref.id}
               onArm={() => onArmChip(pref.id)}
-              onRemove={() => onRemove(pref.id)}
+              onRemove={() => onRemove(pref)}
               removeLabel={t("alerts.remove_aria", {
                 category: pref.category_name,
               })}

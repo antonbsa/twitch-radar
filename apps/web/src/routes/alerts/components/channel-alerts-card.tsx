@@ -7,12 +7,15 @@ import {
 import { AddCategoryChip } from "@/components/categories/add-category-chip"
 import { CategoryChip } from "@/components/categories/category-chip"
 import { useLanguage } from "@/context/language-context"
-import type { ChannelAlertGroup } from "@/routes/alerts/alert-groups"
+import type {
+  AlertCategory,
+  ChannelAlertGroup,
+} from "@/routes/alerts/alert-groups"
 
 interface ChannelAlertsCardProps {
   group: ChannelAlertGroup
   onAdd: (broadcasterUserId: string) => void
-  onRemove: (preferenceId: string) => void
+  onRemove: (category: AlertCategory) => void
   armedChipId: string | null
   onArmChip: (preferenceId: string) => void
 }
@@ -58,7 +61,7 @@ export function ChannelAlertsCard({
             alsoGlobal={category.alsoGlobal}
             armed={armedChipId === category.preferenceId}
             onArm={() => onArmChip(category.preferenceId)}
-            onRemove={() => onRemove(category.preferenceId)}
+            onRemove={() => onRemove(category)}
             removeLabel={t("alerts.remove_for_channel_aria", {
               category: category.categoryName,
               channel: group.displayName,

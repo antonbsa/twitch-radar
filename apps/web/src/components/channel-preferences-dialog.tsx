@@ -69,7 +69,14 @@ export function ChannelPreferencesDialog({
                     label={pref.category_name}
                     armed={armedChipId === pref.id}
                     onArm={() => armChip(pref.id)}
-                    onRemove={() => removePreference.mutate(pref.id)}
+                    onRemove={() =>
+                      removePreference.mutate({
+                        id: pref.id,
+                        // Chips only render while a channel is set.
+                        channelName: channel?.broadcaster_display_name ?? "",
+                        categoryName: pref.category_name,
+                      })
+                    }
                     removeLabel={t("channel_preferences.remove_aria", {
                       category: pref.category_name,
                     })}
@@ -92,6 +99,7 @@ export function ChannelPreferencesDialog({
               addPreference.mutate(
                 {
                   broadcasterUserId: channel.broadcaster_user_id,
+                  channelName: channel.broadcaster_display_name,
                   category,
                 },
                 { onSuccess: handlePreferenceAdded },

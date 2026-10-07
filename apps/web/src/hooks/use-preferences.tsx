@@ -6,6 +6,7 @@ import {
 import { useLanguage } from "@/context/language-context"
 import { api } from "@/lib/api"
 import { showMutationErrorToast } from "@/lib/error-toast"
+import { interpolateNodes } from "@/lib/i18n-react"
 import { showPreferenceToast } from "@/lib/push-toast"
 import { useSessionAwareMutation } from "@/hooks/use-session-aware-mutation"
 import type {
@@ -24,18 +25,35 @@ export function usePreferences() {
   })
 }
 
+/** What a preference toast names; a null channel means a global alert. */
+interface PreferenceToastTarget {
+  channelName: string | null
+  categoryName: string
+}
+
 /**
  * Feedback shared by every preference mutation. Call sites may add their own
  * `onSuccess` (e.g. the push-enable prompt), which replaces this success toast.
  */
-function usePreferenceMutationFeedback(action: "add" | "remove") {
+function usePreferenceMutationFeedback<TVariables>(
+  action: "add" | "remove",
+  toastTarget: (variables: TVariables) => PreferenceToastTarget,
+) {
   const queryClient = useQueryClient()
-  const { t } = useLanguage()
+  const { t, tRaw } = useLanguage()
 
   return {
-    onSuccess: async () => {
+    onSuccess: async (_data: unknown, variables: TVariables) => {
       await queryClient.invalidateQueries({ queryKey: PREFERENCES_QUERY_KEY })
-      showPreferenceToast(t(`preferences.${action}_success`))
+      const { channelName, categoryName } = toastTarget(variables)
+      showPreferenceToast(
+        interpolateNodes(tRaw(`preferences.${action}_success`), {
+          target: (
+            <strong>{channelName ?? t("preferences.all_channels")}</strong>
+          ),
+          category: <strong>{categoryName}</strong>,
+        }),
+      )
     },
     onError: (error: Error) =>
       showMutationErrorToast(error, t(`preferences.${action}_error`)),
@@ -102,6 +120,12 @@ async function updateCachedExclusions(
   )
 }
 
+/** A preference to delete, plus the category name its toast shows. */
+interface PreferenceRemoval {
+  id: string
+  categoryName: string
+}
+
 export function useAddChannelPreference() {
   return useSessionAwareMutation({
     mutationFn: ({
@@ -109,6 +133,7 @@ export function useAddChannelPreference() {
       category,
     }: {
       broadcasterUserId: string
+      channelName: string
       category: Category
     }) =>
       api.post("/preferences/channel", {
@@ -116,14 +141,30 @@ export function useAddChannelPreference() {
         category_id: category.id,
         category_name: category.name,
       }),
-    ...usePreferenceMutationFeedback("add"),
+    ...usePreferenceMutationFeedback(
+      "add",
+      ({
+        channelName,
+        category,
+      }: {
+        channelName: string
+        category: Category
+      }) => ({
+        channelName,
+        categoryName: category.name,
+      }),
+    ),
   })
 }
 
 export function useRemoveChannelPreference() {
   return useSessionAwareMutation({
-    mutationFn: (id: string) => api.delete(`/preferences/channel/${id}`),
-    ...usePreferenceMutationFeedback("remove"),
+    mutationFn: ({ id }: PreferenceRemoval & { channelName: string }) =>
+      api.delete(`/preferences/channel/${id}`),
+    ...usePreferenceMutationFeedback(
+      "remove",
+      (removal: PreferenceRemoval & { channelName: string }) => removal,
+    ),
   })
 }
 
@@ -134,14 +175,24 @@ export function useAddGlobalPreference() {
         category_id: category.id,
         category_name: category.name,
       }),
-    ...usePreferenceMutationFeedback("add"),
+    ...usePreferenceMutationFeedback("add", (category: Category) => ({
+      channelName: null,
+      categoryName: category.name,
+    })),
   })
 }
 
 export function useRemoveGlobalPreference() {
   return useSessionAwareMutation({
-    mutationFn: (id: string) => api.delete(`/preferences/global/${id}`),
-    ...usePreferenceMutationFeedback("remove"),
+    mutationFn: ({ id }: PreferenceRemoval) =>
+      api.delete(`/preferences/global/${id}`),
+    ...usePreferenceMutationFeedback(
+      "remove",
+      (removal: PreferenceRemoval) => ({
+        channelName: null,
+        categoryName: removal.categoryName,
+      }),
+    ),
   })
 }
 

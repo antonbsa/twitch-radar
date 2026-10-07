@@ -108,10 +108,11 @@
   "push.banner_prompt": "Ative as notificações para não perder este alerta.",
   "push.banner_enable_cta": "Ativar",
 
-  "preferences.add_success": "Alerta salvo.",
+  "preferences.add_success": "Alerta criado: {target} · {category}",
   "preferences.add_error": "Não foi possível salvar o alerta. Tente novamente.",
-  "preferences.remove_success": "Alerta removido.",
+  "preferences.remove_success": "Alerta removido: {target} · {category}",
   "preferences.remove_error": "Não foi possível remover o alerta. Tente novamente.",
+  "preferences.all_channels": "Todos os canais",
 
   "sync.error": "Não foi possível sincronizar os canais. Tente novamente.",
 

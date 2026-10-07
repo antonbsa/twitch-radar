@@ -173,9 +173,9 @@ describe("Alerts view", () => {
     )
     await expectVisible(page.getByText("Minecraft"))
     await expectHidden(page.getByText("No global alerts set."))
-    // The push prompt takes over the "Alert saved." toast's slot (#24).
+    // The push prompt takes over the "Alert created" toast's slot (#24).
     expect(await page.locator("[data-sonner-toast]").count()).toBe(1)
-    expect(await page.getByText("Alert saved.").count()).toBe(0)
+    expect(await page.getByText("Alert created:").count()).toBe(0)
 
     const removeButton = page.getByRole("button", { name: "Remove Minecraft" })
     await removeButton.click()
@@ -186,10 +186,15 @@ describe("Alerts view", () => {
 
     await removeButton.click()
     await expectVisible(page.getByText("No global alerts set."))
-    await expectHidden(page.getByText("Minecraft"))
+    // The chip, not the text: the removal toast names the category too.
+    await expectHidden(removeButton)
     // The removal toast replaces the prompt in the same slot without
     // inheriting its Enable action.
-    await expectVisible(page.getByText("Alert removed."))
+    await expectVisible(
+      page.locator("[data-sonner-toast]", {
+        hasText: "Alert removed: All channels · Minecraft",
+      }),
+    )
     expect(await page.locator("[data-sonner-toast]").count()).toBe(1)
     expect(await page.getByRole("button", { name: "Enable" }).count()).toBe(0)
   })
@@ -229,7 +234,7 @@ describe("Alerts view", () => {
 
     await expectVisible(page.getByText("Could not save the alert. Try again."))
     await expectVisible(dialog)
-    expect(await page.getByText("Alert saved.").count()).toBe(0)
+    expect(await page.getByText("Alert created:").count()).toBe(0)
   })
 
   // These two run before any test below seeds followed channels: adding a
@@ -317,8 +322,8 @@ describe("Alerts view", () => {
     // No prompt — the sheet closes on success exactly as before #29, and
     // the plain success toast stays.
     await expectHidden(dialog)
-    await expectVisible(page.getByText("Music"))
-    await expectVisible(page.getByText("Alert saved."))
+    await expectVisible(page.getByRole("button", { name: "Remove Music" }))
+    await expectVisible(page.getByText("Alert created:"))
     expect(
       await page
         .getByText("Enable notifications so you don't miss this alert.")
@@ -412,10 +417,15 @@ describe("Alerts view", () => {
     await removeGta.click()
     await removeGta.click()
 
-    await expectHidden(page.getByText("GTA V"))
+    // The chip, not the text: the removal toast names the category too.
+    await expectHidden(removeGta)
     await expectVisible(page.getByText("Minecraft"))
-    await expectVisible(page.getByText("GroupedStreamer"))
-    await expectVisible(page.getByText("Alert removed."))
+    await expectVisible(page.getByText("GroupedStreamer").first())
+    await expectVisible(
+      page.locator("[data-sonner-toast]", {
+        hasText: "Alert removed: GroupedStreamer · GTA V",
+      }),
+    )
   })
 
   it("should mark a per-channel category that an active global preference also covers", async ({

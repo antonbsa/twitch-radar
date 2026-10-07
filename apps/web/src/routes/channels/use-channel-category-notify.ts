@@ -31,6 +31,7 @@ export function useChannelCategoryNotify(
     addPreference.mutate(
       {
         broadcasterUserId: channel.broadcaster_user_id,
+        channelName: channel.broadcaster_display_name,
         category: liveCategory,
       },
       {
