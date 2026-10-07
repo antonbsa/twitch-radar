@@ -21,6 +21,8 @@ export interface SeedUserInput {
   expiredToken?: boolean
   // Backdates the token's last validation so the validate sweep picks it up.
   tokenValidatedAt?: string
+  // Stores tokens that fail to decrypt, as after a key rotation or corruption.
+  undecryptableToken?: boolean
   // Seeds a session closer to expiry (or its max lifetime) than a fresh login.
   sessionTtlS?: number
   sessionMaxLifetimeS?: number
@@ -166,15 +168,15 @@ export async function handleTestSeed(c: Context<HonoEnv>): Promise<Response> {
         ? new Date(Date.now() - 1000).toISOString()
         : new Date(Date.now() + 60 * 60 * 1000).toISOString()
 
+      const encrypt = (token: string) =>
+        body?.user?.undecryptableToken
+          ? Promise.resolve(`not-encrypted:${token}`)
+          : encryptToken(token, c.var.config.tokenEncryptionKey)
       await c.var.db.twitchTokens.upsert({
         userId,
-        accessToken: await encryptToken(
-          body.user.accessToken,
-          c.var.config.tokenEncryptionKey,
-        ),
-        refreshToken: await encryptToken(
+        accessToken: await encrypt(body.user.accessToken),
+        refreshToken: await encrypt(
           body.user.refreshToken ?? "refresh-placeholder",
-          c.var.config.tokenEncryptionKey,
         ),
         expiresAt,
         scopes: "user:read:follows",

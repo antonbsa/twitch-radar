@@ -1,4 +1,5 @@
 import { TwitchApiError, twitchApiErrorFromResponse } from "./errors"
+import { fetchTwitch } from "./fetch"
 
 export interface CreateEventsubSubscriptionInput {
   type: string
@@ -21,7 +22,7 @@ export async function createEventsubSubscription(
   input: CreateEventsubSubscriptionInput,
   apiBaseUrl = "https://api.twitch.tv",
 ): Promise<TwitchEventsubSubscription> {
-  const res = await fetch(`${apiBaseUrl}/helix/eventsub/subscriptions`, {
+  const res = await fetchTwitch(`${apiBaseUrl}/helix/eventsub/subscriptions`, {
     method: "POST",
     headers: {
       "Client-Id": clientId,
@@ -75,7 +76,7 @@ export async function getAllEventsubSubscriptions(
     url.searchParams.set("first", "100")
     if (cursor) url.searchParams.set("after", cursor)
 
-    const res = await fetch(url.toString(), {
+    const res = await fetchTwitch(url.toString(), {
       headers: {
         "Client-Id": clientId,
         Authorization: `Bearer ${appAccessToken}`,
@@ -106,7 +107,7 @@ export async function deleteEventsubSubscription(
   const url = new URL(`${apiBaseUrl}/helix/eventsub/subscriptions`)
   url.searchParams.set("id", twitchSubscriptionId)
 
-  const res = await fetch(url.toString(), {
+  const res = await fetchTwitch(url.toString(), {
     method: "DELETE",
     headers: {
       "Client-Id": clientId,

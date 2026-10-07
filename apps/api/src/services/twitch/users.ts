@@ -1,4 +1,5 @@
 import { TwitchApiError, twitchApiErrorFromResponse } from "./errors"
+import { fetchTwitch } from "./fetch"
 
 export interface TwitchUser {
   id: string
@@ -19,7 +20,7 @@ export async function getAuthenticatedUser(
   accessToken: string,
   apiBaseUrl = "https://api.twitch.tv",
 ): Promise<TwitchUser> {
-  const res = await fetch(`${apiBaseUrl}/helix/users`, {
+  const res = await fetchTwitch(`${apiBaseUrl}/helix/users`, {
     headers: {
       "Client-Id": clientId,
       Authorization: `Bearer ${accessToken}`,
@@ -50,7 +51,7 @@ export async function getUsersByIds(
       url.searchParams.append("id", userId)
     }
 
-    const res = await fetch(url.toString(), {
+    const res = await fetchTwitch(url.toString(), {
       headers: {
         "Client-Id": clientId,
         Authorization: `Bearer ${accessToken}`,
@@ -80,7 +81,7 @@ export async function getAllFollowedChannels(
     url.searchParams.set("first", "100")
     if (cursor) url.searchParams.set("after", cursor)
 
-    const res = await fetch(url.toString(), {
+    const res = await fetchTwitch(url.toString(), {
       headers: {
         "Client-Id": clientId,
         Authorization: `Bearer ${accessToken}`,

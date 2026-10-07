@@ -34,6 +34,26 @@ function isDeadRefreshStatus(status: number): boolean {
 }
 
 /**
+ * Decrypts a stored token. One that can't be decrypted (rotated key, corrupt
+ * row) never will be, so the row is flagged `refresh_failed_at` like a dead
+ * refresh token; otherwise it would stay first in both sweep queries every run
+ * and starve every other user's refresh and validation.
+ */
+async function decryptStoredToken(
+  db: Database,
+  config: AppConfig,
+  userId: string,
+  encrypted: string,
+): Promise<string> {
+  try {
+    return await decryptToken(encrypted, config.tokenEncryptionKey)
+  } catch (err) {
+    await db.twitchTokens.markRefreshFailed(userId, new Date().toISOString())
+    throw err
+  }
+}
+
+/**
  * Refreshes one stored token and persists the result. A 4xx from Twitch
  * means the refresh token itself is dead (revoked or expired) — the row is
  * flagged `refresh_failed_at` so `/api/me` surfaces the reconnect state and
@@ -45,9 +65,11 @@ async function refreshAndStoreToken(
   config: AppConfig,
   record: TwitchTokenRecord,
 ): Promise<string> {
-  const refreshToken = await decryptToken(
+  const refreshToken = await decryptStoredToken(
+    db,
+    config,
+    record.user_id,
     record.refresh_token,
-    config.tokenEncryptionKey,
   )
 
   let refreshed
@@ -311,9 +333,11 @@ async function validateTwitchTokens(
 
     for (const record of due) {
       try {
-        const accessToken = await decryptToken(
+        const accessToken = await decryptStoredToken(
+          db,
+          config,
+          record.user_id,
           record.access_token,
-          config.tokenEncryptionKey,
         )
         if (await validateAccessToken(accessToken, config.twitchAuthBaseUrl)) {
           await db.twitchTokens.markValidated(

@@ -1,4 +1,5 @@
 import { twitchApiErrorFromResponse } from "./errors"
+import { fetchTwitch } from "./fetch"
 
 export interface TwitchFollowedStream {
   id: string
@@ -65,7 +66,7 @@ export async function getStreamsByUserIds(
     }
     url.searchParams.set("first", "100")
 
-    const res = await fetch(url.toString(), {
+    const res = await fetchTwitch(url.toString(), {
       headers: {
         "Client-Id": clientId,
         Authorization: `Bearer ${accessToken}`,
@@ -95,7 +96,7 @@ export async function getAllFollowedStreams(
     url.searchParams.set("first", "100")
     if (cursor) url.searchParams.set("after", cursor)
 
-    const res = await fetch(url.toString(), {
+    const res = await fetchTwitch(url.toString(), {
       headers: {
         "Client-Id": clientId,
         Authorization: `Bearer ${accessToken}`,

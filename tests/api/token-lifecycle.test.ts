@@ -187,4 +187,16 @@ describe("Token validation sweep (issue #94)", () => {
 
     expect(await reconnectRequired(cookie)).toBe(false)
   })
+
+  it("should flag a token that can't be decrypted so it stops heading the sweep queue", async () => {
+    const { cookie } = await orchestrator.createAuthenticatedSession({
+      tokenValidatedAt: STALE,
+      undecryptableToken: true,
+    })
+
+    await orchestrator.runScheduled("token-refresh")
+
+    expect(await validateRequests()).toHaveLength(0)
+    expect(await reconnectRequired(cookie)).toBe(true)
+  })
 })

@@ -1,4 +1,5 @@
 import { twitchApiErrorFromResponse } from "./errors"
+import { fetchTwitch } from "./fetch"
 
 export interface TwitchTokenResponse {
   access_token: string
@@ -16,7 +17,7 @@ export async function exchangeCode(
   redirectUri: string,
   authBaseUrl = "https://id.twitch.tv",
 ): Promise<TwitchTokenResponse> {
-  const res = await fetch(`${authBaseUrl}/oauth2/token`, {
+  const res = await fetchTwitch(`${authBaseUrl}/oauth2/token`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
@@ -38,7 +39,7 @@ export async function refreshAccessToken(
   refreshToken: string,
   authBaseUrl = "https://id.twitch.tv",
 ): Promise<TwitchTokenResponse> {
-  const res = await fetch(`${authBaseUrl}/oauth2/token`, {
+  const res = await fetchTwitch(`${authBaseUrl}/oauth2/token`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
@@ -69,7 +70,7 @@ export async function fetchAppAccessToken(
   clientSecret: string,
   authBaseUrl = "https://id.twitch.tv",
 ): Promise<TwitchAppTokenResponse> {
-  const res = await fetch(`${authBaseUrl}/oauth2/token`, {
+  const res = await fetchTwitch(`${authBaseUrl}/oauth2/token`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
@@ -92,7 +93,7 @@ export async function validateAccessToken(
   accessToken: string,
   authBaseUrl = "https://id.twitch.tv",
 ): Promise<boolean> {
-  const res = await fetch(`${authBaseUrl}/oauth2/validate`, {
+  const res = await fetchTwitch(`${authBaseUrl}/oauth2/validate`, {
     headers: { Authorization: `OAuth ${accessToken}` },
   })
   if (res.ok) return true

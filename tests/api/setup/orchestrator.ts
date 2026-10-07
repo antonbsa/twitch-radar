@@ -39,6 +39,7 @@ async function createAuthenticatedSession(options: SeedUserInput = {}) {
     refreshToken: options.refreshToken ?? "valid-refresh-token",
     expiredToken: options.expiredToken ?? false,
     tokenValidatedAt: options.tokenValidatedAt,
+    undecryptableToken: options.undecryptableToken,
     sessionTtlS: options.sessionTtlS,
     sessionMaxLifetimeS: options.sessionMaxLifetimeS,
     ...(options.id ? { id: options.id } : {}),

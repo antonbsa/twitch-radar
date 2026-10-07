@@ -1,4 +1,5 @@
 import { twitchApiErrorFromResponse } from "./errors"
+import { fetchTwitch } from "./fetch"
 
 export interface TwitchCategory {
   id: string
@@ -16,7 +17,7 @@ export async function searchCategories(
   url.searchParams.set("query", query)
   url.searchParams.set("first", "20")
 
-  const res = await fetch(url.toString(), {
+  const res = await fetchTwitch(url.toString(), {
     headers: {
       "Client-Id": clientId,
       Authorization: `Bearer ${accessToken}`,
