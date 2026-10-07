@@ -40,7 +40,6 @@
   "channel_preferences.saved_for_channel": "Saved for this channel",
   "channel_preferences.no_preferences": "No preferences saved.",
   "channel_preferences.remove_aria": "Remove {category}",
-  "channel_preferences.notify_for_category": "Notify me",
 
   "alerts.title": "Alerts",
   "alerts.global_title": "Global",
@@ -73,7 +72,9 @@
   "category_search.already_global": "already in All channels",
 
   "channel_detail.watch_on_twitch": "Watch on Twitch",
-  "channel_detail.notifying_for_category": "Notifying",
+  "channel_detail.add_alert": "Add alert",
+  "channel_detail.add_alert_aria": "Alert me when {channel} streams {category}",
+  "channel_detail.alert_active": "Alert on",
   "channel_detail.snooze_action": "Remind me in 15m",
   "channel_detail.snooze_done": "Reminder set",
   "channel_detail.snooze_error": "Could not set the reminder. Try again.",
@@ -107,10 +108,11 @@
   "push.banner_prompt": "Enable notifications so you don't miss this alert.",
   "push.banner_enable_cta": "Enable",
 
-  "preferences.add_success": "Alert saved.",
+  "preferences.add_success": "Alert created: {target} · {category}",
   "preferences.add_error": "Could not save the alert. Try again.",
-  "preferences.remove_success": "Alert removed.",
+  "preferences.remove_success": "Alert removed: {target} · {category}",
   "preferences.remove_error": "Could not remove the alert. Try again.",
+  "preferences.all_channels": "All channels",
 
   "sync.error": "Could not sync channels. Try again.",
 
@@ -146,7 +148,7 @@
   "alerts.muted_empty": "No muted channels.",
   "alerts.unmute_aria": "Unmute {channel}",
   "alerts.unmute": "Unmute",
-  "mute.mute_action": "Mute notifications",
+  "mute.mute_action": "Mute channel",
   "mute.unmute_action": "Unmute",
   "mute.mute_error": "Could not mute the channel. Try again.",
   "mute.unmute_error": "Could not unmute the channel. Try again.",

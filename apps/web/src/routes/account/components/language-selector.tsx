@@ -8,6 +8,8 @@ import {
 import { useLanguage } from "@/context/language-context"
 import { SUPPORTED_LANGUAGES, type Language } from "@/lib/i18n"
 
+const FLAGS: Record<Language, string> = { en: "🇺🇸", "pt-BR": "🇧🇷", es: "🇪🇸" }
+
 export function LanguageSelector() {
   const { t, language, setLanguage } = useLanguage()
 
@@ -29,7 +31,10 @@ export function LanguageSelector() {
       <SelectContent size="lg" position="popper" align="start">
         {SUPPORTED_LANGUAGES.map((lang: Language) => (
           <SelectItem key={lang} value={lang}>
-            {t(`account.language_${lang}`)}
+            <span className="flex items-center gap-2">
+              <span aria-hidden="true">{FLAGS[lang]}</span>
+              {t(`account.language_${lang}`)}
+            </span>
           </SelectItem>
         ))}
       </SelectContent>

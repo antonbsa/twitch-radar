@@ -8,6 +8,8 @@ interface ToggleActionButtonProps {
   isPending: boolean
   idleIcon: ReactNode
   idleLabel: string
+  /** Fuller name for screen readers when the visible label leans on context. */
+  idleAriaLabel?: string
   doneIcon: ReactNode
   doneLabel: string
   onClick: () => void
@@ -20,6 +22,7 @@ export function ToggleActionButton({
   isPending,
   idleIcon,
   idleLabel,
+  idleAriaLabel,
   doneIcon,
   doneLabel,
   onClick,
@@ -30,6 +33,7 @@ export function ToggleActionButton({
       type="button"
       variant="secondary"
       size="lg"
+      aria-label={isDone ? undefined : idleAriaLabel}
       disabled={isDone || isPending}
       className={cn("gap-1.5", className)}
       onClick={isDone ? undefined : onClick}

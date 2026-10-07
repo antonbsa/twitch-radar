@@ -143,3 +143,40 @@
     cursor: pointer;
   }
 }
+
+/* Sonner's close button is a 20px badge on the toast's corner, too small to tap
+   on a phone: restyle it as a trailing 44px icon button, the mobile snackbar
+   pattern (swipe still dismisses). Unlayered and this specific on purpose:
+   sonner injects unlayered CSS that would beat any Tailwind utility. */
+[data-sonner-toaster] [data-sonner-toast].cn-toast {
+  padding-right: 3rem;
+}
+[data-sonner-toaster]
+  [data-sonner-toast].cn-toast
+  [data-close-button].cn-toast-close,
+[data-sonner-toaster]
+  [data-sonner-toast].cn-toast:hover
+  [data-close-button].cn-toast-close:hover {
+  left: auto;
+  right: 0.25rem;
+  top: 50%;
+  width: 2.75rem;
+  height: 2.75rem;
+  transform: translateY(-50%);
+  border: none;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--muted-foreground);
+}
+[data-sonner-toaster]
+  [data-sonner-toast].cn-toast:hover
+  [data-close-button].cn-toast-close:hover {
+  color: var(--foreground);
+}
+[data-sonner-toaster]
+  [data-sonner-toast].cn-toast
+  [data-close-button].cn-toast-close
+  svg {
+  width: 1rem;
+  height: 1rem;
+}

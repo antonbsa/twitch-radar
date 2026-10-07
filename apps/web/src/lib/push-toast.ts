@@ -1,3 +1,4 @@
+import type { ReactNode } from "react"
 import { toast, type ExternalToast } from "sonner"
 import type { PushStatus } from "@/hooks/use-push-notifications"
 
@@ -12,7 +13,7 @@ const PREFERENCE_TOAST_ID = "preference-feedback"
  * duration would leak into a later "saved" toast.
  */
 export function showPreferenceToast(
-  message: string,
+  message: ReactNode,
   { action, duration }: Pick<ExternalToast, "action" | "duration"> = {},
 ): void {
   toast(message, { id: PREFERENCE_TOAST_ID, action, duration })

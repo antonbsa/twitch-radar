@@ -112,7 +112,12 @@ export function AlertsPage() {
         <GlobalAlertsCard
           preferences={globalPreferences}
           onAdd={() => setAddGlobalOpen(true)}
-          onRemove={(id) => removeGlobalPreference.mutate(id)}
+          onRemove={(pref) =>
+            removeGlobalPreference.mutate({
+              id: pref.id,
+              categoryName: pref.category_name,
+            })
+          }
           onEditExclusions={(pref) => setExclusionsPreferenceId(pref.id)}
           armedChipId={armedChipId}
           onArmChip={armChip}
@@ -191,7 +196,13 @@ export function AlertsPage() {
             key={group.broadcasterUserId}
             group={group}
             onAdd={openChannelSheet}
-            onRemove={(id) => removeChannelPreference.mutate(id)}
+            onRemove={(category) =>
+              removeChannelPreference.mutate({
+                id: category.preferenceId,
+                channelName: group.displayName,
+                categoryName: category.categoryName,
+              })
+            }
             armedChipId={armedChipId}
             onArmChip={armChip}
           />

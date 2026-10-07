@@ -83,13 +83,10 @@ function DialogContent({
           <DialogPrimitive.Close data-slot="dialog-close" asChild>
             <Button
               variant="ghost"
-              className={cn(
-                "absolute top-2 right-2",
-                fullScreen && "top-1.5 size-11",
-              )}
-              size={fullScreen ? "icon" : "icon-sm"}
+              className="absolute top-1.5 right-2 size-11"
+              size="icon"
             >
-              <XIcon className={fullScreen ? "size-5" : undefined} />
+              <XIcon className="size-5" />
               <span className="sr-only">{t("common.close")}</span>
             </Button>
           </DialogPrimitive.Close>

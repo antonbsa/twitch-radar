@@ -795,7 +795,8 @@ describe("Channels view", () => {
     await expectVisible(modal)
     await expectVisible(modal.getByText("DetailStreamer"))
     await expectVisible(modal.getByText("Chatting with viewers"))
-    await expectVisible(modal.getByText("Just Chatting · 1.2K viewers"))
+    await expectVisible(modal.getByText(/Just Chatting/))
+    await expectVisible(modal.getByText("1.2K viewers"))
     await expectVisible(
       modal.locator(`img[src="https://example.com/detailstreamer-thumb.jpg"]`),
     )
@@ -889,14 +890,14 @@ describe("Channels view", () => {
     const modal = page.getByTestId("channel-detail-modal")
     await expectVisible(modal)
 
-    const suggestion = modal.getByRole("button", { name: "Notify me" })
+    const suggestion = modal.getByRole("button", { name: "Alert me when" })
     await expectVisible(suggestion)
 
     await suggestion.click()
 
     // Saved: the button flips to the checked "already notifying" state.
     await expectHidden(suggestion)
-    await expectVisible(modal.getByRole("button", { name: "Notifying" }))
+    await expectVisible(modal.getByRole("button", { name: "Alert on" }))
   })
 
   it("should not offer the live-category suggestion for an offline channel", async ({
@@ -922,10 +923,10 @@ describe("Channels view", () => {
     await expectVisible(modal)
 
     await expect(
-      modal.getByRole("button", { name: "Notify me" }).count(),
+      modal.getByRole("button", { name: "Alert me when" }).count(),
     ).resolves.toBe(0)
     await expect(
-      modal.getByRole("button", { name: "Notifying" }).count(),
+      modal.getByRole("button", { name: "Alert on" }).count(),
     ).resolves.toBe(0)
   })
 
@@ -969,9 +970,9 @@ describe("Channels view", () => {
     await expectVisible(modal)
 
     await expect(
-      modal.getByRole("button", { name: "Notify me" }).count(),
+      modal.getByRole("button", { name: "Alert me when" }).count(),
     ).resolves.toBe(0)
-    await expectVisible(modal.getByRole("button", { name: "Notifying" }))
+    await expectVisible(modal.getByRole("button", { name: "Alert on" }))
   })
 
   it("should offer to enable push after using the live-category suggestion while not enabled", async ({
@@ -1005,7 +1006,7 @@ describe("Channels view", () => {
     const modal = page.getByTestId("channel-detail-modal")
     await expectVisible(modal)
 
-    await modal.getByRole("button", { name: "Notify me" }).click()
+    await modal.getByRole("button", { name: "Alert me when" }).click()
 
     // The push prompt is a toast, rendered outside the modal.
     await expectVisible(

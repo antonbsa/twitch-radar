@@ -24,7 +24,7 @@ import {
   useMuteBroadcaster,
   useUnmuteBroadcaster,
 } from "@/hooks/use-notifications"
-import { formatViewerCount } from "@/lib/format"
+import { formatLiveDuration, formatViewerCount } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import type { FollowedChannel } from "@/types/channel"
 import { getLiveCategory } from "@/routes/channels/live-category"
@@ -97,7 +97,7 @@ export function ChannelDetailModal({
           }
         }}
       >
-        <SheetHeader className="pb-0">
+        <SheetHeader className="pr-14 pb-0">
           <div className="flex items-center gap-2">
             <Avatar size="sm">
               <AvatarImage
@@ -108,7 +108,9 @@ export function ChannelDetailModal({
                 {channel?.broadcaster_display_name[0]?.toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <SheetTitle>{channel?.broadcaster_display_name}</SheetTitle>
+            <SheetTitle className="truncate">
+              {channel?.broadcaster_display_name}
+            </SheetTitle>
             {activeMute && (
               <BellOffIcon
                 role="img"
@@ -117,23 +119,37 @@ export function ChannelDetailModal({
                 className="size-3.5 shrink-0 text-muted-foreground"
               />
             )}
-          </div>
-          {channel?.is_live ? (
-            <div className="flex items-center justify-between gap-2">
-              <p className="truncate text-xs text-muted-foreground">
-                {channel.category_name ?? t("channel_row.no_category")} ·{" "}
+            {channel?.is_live && (
+              <p className="shrink-0 text-xs text-muted-foreground">
                 {t("channel_row.viewers_count", {
                   count: formatViewerCount(channel.viewer_count ?? 0),
                 })}
+              </p>
+            )}
+          </div>
+          {channel?.is_live ? (
+            <div className="flex items-center gap-2">
+              <p className="truncate text-xs text-muted-foreground">
+                {channel.started_at
+                  ? t("channel_row.live_for", {
+                      category:
+                        channel.category_name ?? t("channel_row.no_category"),
+                      duration: formatLiveDuration(channel.started_at),
+                    })
+                  : (channel.category_name ?? t("channel_row.no_category"))}
               </p>
               {liveCategory && (
                 <ToggleActionButton
                   isDone={notify.isNotifying}
                   isPending={notify.isPending}
                   idleIcon={<BellIcon />}
-                  idleLabel={t("channel_preferences.notify_for_category")}
+                  idleLabel={t("channel_detail.add_alert")}
+                  idleAriaLabel={t("channel_detail.add_alert_aria", {
+                    channel: channel.broadcaster_display_name,
+                    category: liveCategory.name,
+                  })}
                   doneIcon={<BellCheckIcon />}
-                  doneLabel={t("channel_detail.notifying_for_category")}
+                  doneLabel={t("channel_detail.alert_active")}
                   onClick={notify.notify}
                   className="shrink-0"
                 />
@@ -158,65 +174,64 @@ export function ChannelDetailModal({
           )}
 
           {channel && (
-            <div className="flex flex-col gap-2 sm:mx-auto sm:flex-row sm:justify-center">
-              {liveCategory && (
-                <ToggleActionButton
-                  isDone={snoozeNotification.isSnoozed}
-                  isPending={snoozeNotification.isPending}
-                  idleIcon={<AlarmClockIcon />}
-                  idleLabel={t("channel_detail.snooze_action")}
-                  doneIcon={<AlarmClockCheckIcon />}
-                  doneLabel={t("channel_detail.snooze_done")}
-                  onClick={snoozeNotification.snooze}
-                  className="w-full sm:w-fit sm:max-w-xs"
-                />
-              )}
+            <div className="flex flex-col gap-2">
+              <div className={cn("grid gap-2", liveCategory && "grid-cols-2")}>
+                {liveCategory && (
+                  <ToggleActionButton
+                    isDone={snoozeNotification.isSnoozed}
+                    isPending={snoozeNotification.isPending}
+                    idleIcon={<AlarmClockIcon />}
+                    idleLabel={t("channel_detail.snooze_action")}
+                    doneIcon={<AlarmClockCheckIcon />}
+                    doneLabel={t("channel_detail.snooze_done")}
+                    onClick={snoozeNotification.snooze}
+                  />
+                )}
 
-              {activeMute ? (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="lg"
-                  disabled={unmuteBroadcaster.isPending}
-                  className="w-full gap-1.5 sm:w-fit sm:max-w-xs"
-                  onClick={() =>
-                    unmuteBroadcaster.mutate(activeMute.id, {
-                      onSuccess: () =>
-                        toast(
-                          t("mute.unmuted_toast", {
-                            channel: channel.broadcaster_display_name,
-                          }),
-                        ),
-                    })
-                  }
-                >
-                  <BellIcon />
-                  {t("mute.unmute_action")}
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="lg"
-                  disabled={muteBroadcaster.isPending}
-                  className="w-full gap-1.5 sm:w-fit sm:max-w-xs"
-                  onClick={() =>
-                    muteBroadcaster.mutate(channel.broadcaster_user_id, {
-                      onSuccess: () =>
-                        toast(
-                          t("mute.muted_toast", {
-                            channel: channel.broadcaster_display_name,
-                          }),
-                        ),
-                    })
-                  }
-                >
-                  <BellOffIcon />
-                  {t("mute.mute_action")}
-                </Button>
-              )}
+                {activeMute ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="lg"
+                    disabled={unmuteBroadcaster.isPending}
+                    onClick={() =>
+                      unmuteBroadcaster.mutate(activeMute.id, {
+                        onSuccess: () =>
+                          toast(
+                            t("mute.unmuted_toast", {
+                              channel: channel.broadcaster_display_name,
+                            }),
+                          ),
+                      })
+                    }
+                  >
+                    <BellIcon />
+                    {t("mute.unmute_action")}
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="lg"
+                    disabled={muteBroadcaster.isPending}
+                    onClick={() =>
+                      muteBroadcaster.mutate(channel.broadcaster_user_id, {
+                        onSuccess: () =>
+                          toast(
+                            t("mute.muted_toast", {
+                              channel: channel.broadcaster_display_name,
+                            }),
+                          ),
+                      })
+                    }
+                  >
+                    <BellOffIcon />
+                    {t("mute.mute_action")}
+                  </Button>
+                )}
+              </div>
 
-              <Button size="lg" asChild className="w-full sm:w-fit sm:max-w-xs">
+              <Button size="lg" asChild className="h-11 text-base">
                 <a
                   href={`https://twitch.tv/${channel.broadcaster_login}`}
                   target="_blank"
