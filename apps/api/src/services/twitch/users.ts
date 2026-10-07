@@ -1,4 +1,4 @@
-import { TwitchApiError, readErrorBody } from "./errors"
+import { TwitchApiError, twitchApiErrorFromResponse } from "./errors"
 
 export interface TwitchUser {
   id: string
@@ -26,11 +26,7 @@ export async function getAuthenticatedUser(
     },
   })
   if (!res.ok)
-    throw new TwitchApiError(
-      `User profile fetch failed`,
-      res.status,
-      await readErrorBody(res),
-    )
+    throw await twitchApiErrorFromResponse(`User profile fetch failed`, res)
   const body = (await res.json()) as { data: TwitchUser[] }
   const user = body.data[0]
   if (!user) throw new TwitchApiError("No user in Twitch response", 200, "")
@@ -61,11 +57,7 @@ export async function getUsersByIds(
       },
     })
     if (!res.ok)
-      throw new TwitchApiError(
-        `Users fetch failed`,
-        res.status,
-        await readErrorBody(res),
-      )
+      throw await twitchApiErrorFromResponse(`Users fetch failed`, res)
     const body = (await res.json()) as { data: TwitchUser[] }
     results.push(...body.data)
   }
@@ -95,10 +87,9 @@ export async function getAllFollowedChannels(
       },
     })
     if (!res.ok)
-      throw new TwitchApiError(
+      throw await twitchApiErrorFromResponse(
         `Followed channels fetch failed`,
-        res.status,
-        await readErrorBody(res),
+        res,
       )
     const body = (await res.json()) as {
       data: TwitchFollowedChannel[]

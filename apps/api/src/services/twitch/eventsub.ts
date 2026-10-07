@@ -1,4 +1,4 @@
-import { TwitchApiError, readErrorBody } from "./errors"
+import { TwitchApiError, twitchApiErrorFromResponse } from "./errors"
 
 export interface CreateEventsubSubscriptionInput {
   type: string
@@ -40,10 +40,9 @@ export async function createEventsubSubscription(
     }),
   })
   if (!res.ok)
-    throw new TwitchApiError(
+    throw await twitchApiErrorFromResponse(
       `EventSub subscription create failed`,
-      res.status,
-      await readErrorBody(res),
+      res,
     )
   const body = (await res.json()) as { data: TwitchEventsubSubscription[] }
   const subscription = body.data[0]
@@ -83,10 +82,9 @@ export async function getAllEventsubSubscriptions(
       },
     })
     if (!res.ok)
-      throw new TwitchApiError(
+      throw await twitchApiErrorFromResponse(
         `EventSub subscription list failed`,
-        res.status,
-        await readErrorBody(res),
+        res,
       )
     const body = (await res.json()) as {
       data: TwitchEventsubSubscriptionDetails[]
@@ -117,9 +115,8 @@ export async function deleteEventsubSubscription(
   })
   // Already gone on Twitch's side is the desired end state, not a failure.
   if (!res.ok && res.status !== 404)
-    throw new TwitchApiError(
+    throw await twitchApiErrorFromResponse(
       `EventSub subscription delete failed`,
-      res.status,
-      await readErrorBody(res),
+      res,
     )
 }

@@ -1,4 +1,4 @@
-import { TwitchApiError, readErrorBody } from "./errors"
+import { twitchApiErrorFromResponse } from "./errors"
 
 export interface TwitchTokenResponse {
   access_token: string
@@ -28,11 +28,7 @@ export async function exchangeCode(
     }),
   })
   if (!res.ok)
-    throw new TwitchApiError(
-      `Token exchange failed`,
-      res.status,
-      await readErrorBody(res),
-    )
+    throw await twitchApiErrorFromResponse(`Token exchange failed`, res)
   return res.json() as Promise<TwitchTokenResponse>
 }
 
@@ -53,11 +49,7 @@ export async function refreshAccessToken(
     }),
   })
   if (!res.ok)
-    throw new TwitchApiError(
-      `Token refresh failed`,
-      res.status,
-      await readErrorBody(res),
-    )
+    throw await twitchApiErrorFromResponse(`Token refresh failed`, res)
   return res.json() as Promise<TwitchTokenResponse>
 }
 
@@ -87,10 +79,6 @@ export async function fetchAppAccessToken(
     }),
   })
   if (!res.ok)
-    throw new TwitchApiError(
-      `App token fetch failed`,
-      res.status,
-      await readErrorBody(res),
-    )
+    throw await twitchApiErrorFromResponse(`App token fetch failed`, res)
   return res.json() as Promise<TwitchAppTokenResponse>
 }

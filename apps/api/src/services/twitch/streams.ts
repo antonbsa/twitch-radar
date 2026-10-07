@@ -1,4 +1,4 @@
-import { TwitchApiError, readErrorBody } from "./errors"
+import { twitchApiErrorFromResponse } from "./errors"
 
 export interface TwitchFollowedStream {
   id: string
@@ -72,11 +72,7 @@ export async function getStreamsByUserIds(
       },
     })
     if (!res.ok)
-      throw new TwitchApiError(
-        `Streams fetch failed`,
-        res.status,
-        await readErrorBody(res),
-      )
+      throw await twitchApiErrorFromResponse(`Streams fetch failed`, res)
     const body = (await res.json()) as { data: TwitchStream[] }
     results.push(...body.data)
   }
@@ -106,10 +102,9 @@ export async function getAllFollowedStreams(
       },
     })
     if (!res.ok)
-      throw new TwitchApiError(
+      throw await twitchApiErrorFromResponse(
         `Followed streams fetch failed`,
-        res.status,
-        await readErrorBody(res),
+        res,
       )
     const body = (await res.json()) as {
       data: TwitchFollowedStream[]

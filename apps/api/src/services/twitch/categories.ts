@@ -1,4 +1,4 @@
-import { TwitchApiError, readErrorBody } from "./errors"
+import { twitchApiErrorFromResponse } from "./errors"
 
 export interface TwitchCategory {
   id: string
@@ -25,11 +25,7 @@ export async function searchCategories(
   // Twitch returns 404 for queries with no matching categories.
   if (res.status === 404) return []
   if (!res.ok)
-    throw new TwitchApiError(
-      `Category search failed`,
-      res.status,
-      await readErrorBody(res),
-    )
+    throw await twitchApiErrorFromResponse(`Category search failed`, res)
   const body = (await res.json()) as { data?: TwitchCategory[] }
   return body.data ?? []
 }

@@ -48,11 +48,16 @@ async function createAuthenticatedSession(options: SeedUserInput = {}) {
 }
 
 const mockTwitch = {
-  async queue(pathPattern: string, body: unknown, status = 200) {
+  async queue(
+    pathPattern: string,
+    body: unknown,
+    status = 200,
+    headers?: Record<string, string>,
+  ) {
     const res = await fetch(`${MOCK_TWITCH_URL}/__mock`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pathPattern, body, status }),
+      body: JSON.stringify({ pathPattern, body, status, headers }),
     })
     if (!res.ok) throw new Error(`mockTwitch.queue failed: ${res.status}`)
   },

@@ -23,6 +23,8 @@ Every error response has the same shape:
 
 `code` is a route-specific string (thrown via `ApiError(status, code, message)`), not an exhaustive enum kept in sync here — read the handler for the exact codes a given route can return. `404`/`405` for unknown routes/methods and `500` for unhandled errors are produced centrally in `app.ts`, not per-route.
 
+`twitch_unavailable` is shared by every route that calls Twitch with the user's token: `502` when Twitch answers 5xx (or the token refresh does), `503` when Twitch rate limits (429), the latter forwarding `Retry-After` when Twitch sent one. It means "retry later", unlike `401 reconnect_required`, which needs a new OAuth round-trip.
+
 ## Conventions
 
 - **Idempotent create, soft-disable delete** (ADR 0029, ADR 0030): a create endpoint for a preference/subscription-like resource upserts — a repeat call with the same identity revives a soft-disabled row instead of erroring or duplicating. Response status reflects which happened: `201` for a genuinely new row, `200` when an existing (possibly disabled) row was revived/returned. A delete endpoint soft-disables (`disabled_at`) rather than removing the row, and responds `204`.

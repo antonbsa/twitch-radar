@@ -3,7 +3,7 @@ import type { AppConfig } from "../../env"
 import { ApiError } from "../../http/errors"
 import { logger, serializeError } from "../../lib/logger"
 import { decryptToken, encryptToken } from "../../lib/crypto"
-import { TwitchApiError } from "./errors"
+import { TwitchApiError, classifyTwitchError } from "./errors"
 import { refreshAccessToken } from "./oauth"
 import type { Database } from "../../db"
 import type { TwitchTokenRecord } from "../../db/repositories/twitch-tokens"
@@ -15,6 +15,12 @@ const REFRESH_BUFFER_MS = 5 * 60 * 1000
 // lookahead must comfortably exceed the run interval.
 const SCHEDULED_REFRESH_LOOKAHEAD_MS = 45 * 60 * 1000
 const MAX_SCHEDULED_REFRESHES_PER_RUN = 10
+
+// A 4xx other than 429 means Twitch rejected the refresh token itself; 429 and
+// 5xx say nothing about it, so those must not flag the row or ask for a reconnect.
+function isDeadRefreshStatus(status: number): boolean {
+  return status < 500 && status !== 429
+}
 
 /**
  * Refreshes one stored token and persists the result. A 4xx from Twitch
@@ -42,7 +48,7 @@ async function refreshAndStoreToken(
       config.twitchAuthBaseUrl,
     )
   } catch (err) {
-    if (err instanceof TwitchApiError && err.status < 500) {
+    if (err instanceof TwitchApiError && isDeadRefreshStatus(err.status)) {
       await db.twitchTokens.markRefreshFailed(
         record.user_id,
         new Date().toISOString(),
@@ -72,9 +78,10 @@ async function refreshAndStoreToken(
 
 /**
  * @returns The decrypted access token, refreshing first when it expires within 5 min.
- * @throws ApiError 401 `auth_required` (no token row) or `reconnect_required` (Twitch rejected the refresh).
+ * @throws ApiError 401 `auth_required` (no token row) or `reconnect_required` (Twitch rejected the refresh),
+ * 502/503 `twitch_unavailable` (Twitch down or rate limiting the refresh).
  */
-export async function getValidAccessToken(
+async function getValidAccessToken(
   db: Database,
   config: AppConfig,
   userId: string,
@@ -95,14 +102,33 @@ export async function getValidAccessToken(
   try {
     return await refreshAndStoreToken(db, config, record)
   } catch (err) {
-    if (err instanceof TwitchApiError) {
+    if (err instanceof TwitchApiError && isDeadRefreshStatus(err.status)) {
       throw new ApiError(
         401,
         "reconnect_required",
         "Twitch token refresh failed — please reconnect your account",
       )
     }
-    throw err
+    throw classifyTwitchError(err)
+  }
+}
+
+/**
+ * Runs `fn` with the user's Twitch access token, the one place request-time
+ * Helix calls get their token and have their upstream failures classified
+ * (see `classifyTwitchError`).
+ */
+export async function withUserAccessToken<T>(
+  db: Database,
+  config: AppConfig,
+  userId: string,
+  fn: (accessToken: string) => Promise<T>,
+): Promise<T> {
+  const accessToken = await getValidAccessToken(db, config, userId)
+  try {
+    return await fn(accessToken)
+  } catch (err) {
+    throw classifyTwitchError(err)
   }
 }
 
