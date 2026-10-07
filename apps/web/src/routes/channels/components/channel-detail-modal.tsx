@@ -128,7 +128,7 @@ export function ChannelDetailModal({
             )}
           </div>
           {channel?.is_live ? (
-            <div className="flex min-h-7 items-center gap-2">
+            <div className="flex items-center gap-2">
               <p className="truncate text-xs text-muted-foreground">
                 {channel.category_name ?? t("channel_row.no_category")}
               </p>
@@ -145,7 +145,6 @@ export function ChannelDetailModal({
                   doneIcon={<BellCheckIcon />}
                   doneLabel={t("channel_detail.alert_active")}
                   onClick={notify.notify}
-                  size="sm"
                   className="shrink-0"
                 />
               )}
