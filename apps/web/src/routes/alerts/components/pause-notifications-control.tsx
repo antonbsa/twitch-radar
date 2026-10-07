@@ -47,13 +47,15 @@ export function PauseNotificationsControl() {
           onClick={() => setPaused.mutate(!paused)}
           className={cn(
             "relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-60",
-            paused ? "bg-primary" : "bg-muted",
+            paused ? "bg-primary" : "bg-input",
           )}
         >
           <span
             className={cn(
-              "absolute top-0.5 left-0.5 size-5 rounded-full bg-background transition-transform",
-              paused && "translate-x-5",
+              "absolute top-0.5 left-0.5 size-5 rounded-full transition-transform",
+              paused
+                ? "translate-x-5 bg-primary-foreground"
+                : "bg-muted-foreground",
             )}
           />
         </button>
