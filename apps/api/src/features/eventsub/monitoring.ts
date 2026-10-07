@@ -139,6 +139,7 @@ async function seedMissingChannelState(
             now,
           }
     }),
+    { preserveCategoryStartedAt: true },
   )
 }
 

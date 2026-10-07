@@ -34,6 +34,37 @@ export function ChannelRow({
 }: ChannelRowProps) {
   const { t, language } = useLanguage()
   const categoryName = channel.category_name ?? t("channel_row.no_category")
+  const liveLabel = getLiveLabel()
+
+  /**
+   * Second line of a live row. `category_started_at` is exact or null
+   * (issue #120): null falls back to the stream uptime, labelled as such.
+   */
+  function getLiveLabel(): string {
+    if (!channel.started_at) return categoryName
+    const streamDuration = formatLiveDuration(channel.started_at)
+    if (!channel.category_started_at) {
+      return t("channel_row.live_in_category_unknown", {
+        category: categoryName,
+        duration: streamDuration,
+      })
+    }
+    if (
+      new Date(channel.category_started_at).getTime() ===
+      new Date(channel.started_at).getTime()
+    ) {
+      return t("channel_row.live_for", {
+        category: categoryName,
+        duration: streamDuration,
+      })
+    }
+    return t("channel_row.live_for_category", {
+      category: categoryName,
+      categoryDuration: formatLiveDuration(channel.category_started_at),
+      streamDuration,
+    })
+  }
+
   return (
     <div
       data-testid="channel-row"
@@ -87,14 +118,7 @@ export function ChannelRow({
             {preferenceMatch === "global" && (
               <Globe aria-hidden="true" className="size-3 shrink-0" />
             )}
-            <span className="truncate">
-              {channel.started_at
-                ? t("channel_row.live_for", {
-                    category: categoryName,
-                    duration: formatLiveDuration(channel.started_at),
-                  })
-                : categoryName}
-            </span>
+            <span className="truncate">{liveLabel}</span>
           </p>
         ) : (
           <p className="truncate text-xs text-muted-foreground">

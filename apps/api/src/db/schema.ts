@@ -131,6 +131,9 @@ export const channelState = sqliteTable("channel_state", {
   thumbnailUrl: text("thumbnail_url"),
   viewerCount: integer("viewer_count"),
   startedAt: text("started_at"),
+  // When the current category began, exact or NULL ("unknown"); only
+  // meaningful while live. Writer rules: issue #120.
+  categoryStartedAt: text("category_started_at"),
   // Twitch's stream type ("live" / "rerun" / "playlist" / "watch_party",
   // ADR 0050): null means "unknown" (rows written before this column
   // existed) and is treated as live rather than silently suppressed.

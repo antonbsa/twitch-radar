@@ -423,3 +423,79 @@ describe("POST /api/sync/follows broadcaster avatars", () => {
     }
   }, 30_000)
 })
+
+describe("POST /api/sync/follows category_started_at (issue #120)", () => {
+  const CATEGORY_SINCE = "2024-06-01T13:00:00Z"
+
+  type Item = {
+    broadcaster_user_id: string
+    category_started_at: string | null
+  }
+
+  /** Syncs once to create the follow rows, seeds channel_state, then syncs `stream` and returns the response and the persisted value. */
+  async function resyncAgainst(stream: typeof STREAM_A) {
+    const { cookie } = await orchestrator.createAuthenticatedSession()
+    await orchestrator.mockTwitch.onFollowedChannels([CHANNEL_A])
+    await orchestrator.mockTwitch.onFollowedStreams([])
+    await fetch(`${orchestrator.baseUrl}/api/sync/follows`, {
+      method: "POST",
+      headers: { Cookie: cookie },
+    })
+    await orchestrator.waitForFollowedChannels(cookie, (i) => i.length === 1)
+    await orchestrator.seedChannelState([
+      {
+        broadcasterUserId: "100",
+        isLive: true,
+        streamId: STREAM_A.id,
+        categoryId: STREAM_A.game_id,
+        categoryName: STREAM_A.game_name,
+        startedAt: STREAM_A.started_at,
+        categoryStartedAt: CATEGORY_SINCE,
+      },
+    ])
+
+    // Mock responses are one-shot, so queue the second sync's fetch again.
+    await orchestrator.mockTwitch.onFollowedChannels([CHANNEL_A])
+    await orchestrator.mockTwitch.onFollowedStreams([stream])
+    const res = await fetch(`${orchestrator.baseUrl}/api/sync/follows`, {
+      method: "POST",
+      headers: { Cookie: cookie },
+    })
+    const { data } = (await res.json()) as { data: Item[] }
+    const persisted = await orchestrator.waitForFollowedChannels(
+      cookie,
+      (items) =>
+        items[0]?.stream_id === stream.id &&
+        items[0]?.category_id === stream.game_id,
+    )
+    return {
+      response: data[0]!.category_started_at,
+      persisted: persisted[0]!.category_started_at,
+    }
+  }
+
+  it("should preserve it for the same stream and category", async () => {
+    const { response, persisted } = await resyncAgainst(STREAM_A)
+    expect(response).toBe(CATEGORY_SINCE)
+    expect(persisted).toBe(CATEGORY_SINCE)
+  })
+
+  it("should null it for a new stream", async () => {
+    const { response, persisted } = await resyncAgainst({
+      ...STREAM_A,
+      id: "stream_2",
+    })
+    expect(response).toBeNull()
+    expect(persisted).toBeNull()
+  })
+
+  it("should null it when the category changed", async () => {
+    const { response, persisted } = await resyncAgainst({
+      ...STREAM_A,
+      game_id: "game_2",
+      game_name: "Just Chatting",
+    })
+    expect(response).toBeNull()
+    expect(persisted).toBeNull()
+  })
+})

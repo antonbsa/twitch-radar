@@ -133,13 +133,76 @@ describe("Channels view", () => {
     )
     await expectVisible(row.locator('[data-slot="avatar-badge"]'))
     await expectVisible(row.getByText("1.2K viewers"))
-    await expectVisible(row.getByText("In Just Chatting for 1h 23m"))
-    // The category appears once, inside the "In … for …" line.
+    // No exact category start was seeded, so the uptime is labelled as such.
+    await expectVisible(row.getByText("In Just Chatting · live 1h 23m"))
+    // The category appears once, inside the "In … · live …" line.
     expect(
       ((await row.textContent()) ?? "").match(/Just Chatting/g),
     ).toHaveLength(1)
   })
 
+  it("should show category time and stream uptime when the category changed mid-stream", async ({
+    authenticatedSession,
+  }) => {
+    const id = broadcasterId("catswitch")
+    await seedFollowedChannels([
+      {
+        broadcasterUserId: id,
+        broadcasterLogin: "catswitch",
+        broadcasterDisplayName: "CatSwitch",
+      },
+    ])
+    await seedChannelState([
+      {
+        broadcasterUserId: id,
+        isLive: true,
+        categoryName: "Just Chatting",
+        viewerCount: 10,
+        startedAt: new Date(Date.now() - 140 * 60_000).toISOString(),
+        categoryStartedAt: new Date(Date.now() - 40 * 60_000).toISOString(),
+      },
+    ])
+
+    const { page } = authenticatedSession
+    await page.goto(WEB_URL)
+
+    const row = page.locator(
+      `[data-testid="channel-row"][data-broadcaster-user-id="${id}"]`,
+    )
+    await expectVisible(row.getByText("In Just Chatting for 40m (live 2h 20m)"))
+  })
+
+  it("should show a single duration when the category never changed", async ({
+    authenticatedSession,
+  }) => {
+    const id = broadcasterId("catsame")
+    const startedAt = new Date(Date.now() - 83 * 60_000).toISOString()
+    await seedFollowedChannels([
+      {
+        broadcasterUserId: id,
+        broadcasterLogin: "catsame",
+        broadcasterDisplayName: "CatSame",
+      },
+    ])
+    await seedChannelState([
+      {
+        broadcasterUserId: id,
+        isLive: true,
+        categoryName: "Just Chatting",
+        viewerCount: 10,
+        startedAt,
+        categoryStartedAt: startedAt,
+      },
+    ])
+
+    const { page } = authenticatedSession
+    await page.goto(WEB_URL)
+
+    const row = page.locator(
+      `[data-testid="channel-row"][data-broadcaster-user-id="${id}"]`,
+    )
+    await expectVisible(row.getByText("In Just Chatting for 1h 23m"))
+  })
   it("should highlight a live channel in a preferred category, marking global matches with a globe", async ({
     authenticatedSession,
   }) => {

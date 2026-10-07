@@ -11,6 +11,8 @@ export interface FollowedChannel {
   title: string | null
   viewer_count: number | null
   started_at: string | null
+  // Exact start of the current category; null when unknown (issue #120).
+  category_started_at: string | null
   thumbnail_url: string | null
   last_live_at: string | null
   last_category_id: string | null

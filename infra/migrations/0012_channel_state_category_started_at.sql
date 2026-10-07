@@ -1,0 +1,1 @@
+ALTER TABLE `channel_state` ADD `category_started_at` text;

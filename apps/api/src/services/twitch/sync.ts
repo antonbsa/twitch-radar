@@ -17,6 +17,7 @@ import {
   resolveThumbnailUrl,
   type TwitchFollowedStream,
 } from "./streams"
+import { preserveCategoryStartedAt } from "../../db/repositories/channel-state"
 import { getValidAccessToken } from "./token-refresh"
 
 // Refresh every user's follow list daily even when they don't open the app:
@@ -88,21 +89,34 @@ export async function fetchFollowedChannelsSync(
   twitchUserId: string,
   accessToken: string,
 ): Promise<FollowedChannelsSyncFetch> {
-  const [channels, streams, storedProfileImages] = await Promise.all([
-    getAllFollowedChannels(
-      config.twitchClientId,
-      accessToken,
-      twitchUserId,
-      config.twitchApiBaseUrl,
-    ),
-    getAllFollowedStreams(
-      config.twitchClientId,
-      accessToken,
-      twitchUserId,
-      config.twitchApiBaseUrl,
-    ),
-    db.followedChannels.findProfileImageUrlsByUserId(userId),
-  ])
+  const [channels, streams, storedProfileImages, storedStates] =
+    await Promise.all([
+      getAllFollowedChannels(
+        config.twitchClientId,
+        accessToken,
+        twitchUserId,
+        config.twitchApiBaseUrl,
+      ),
+      getAllFollowedStreams(
+        config.twitchClientId,
+        accessToken,
+        twitchUserId,
+        config.twitchApiBaseUrl,
+      ),
+      db.followedChannels.findProfileImageUrlsByUserId(userId),
+      // Stored state feeds the category_started_at preserve rule so the
+      // response matches what the deferred upsert will persist (issue #120).
+      db.followedChannels
+        .findByUserId(userId)
+        .then((followed) =>
+          db.channelState.findByBroadcasterUserIds(
+            followed.map((ch) => ch.broadcaster_user_id),
+          ),
+        ),
+    ])
+  const storedStateById = new Map(
+    storedStates.map((state) => [state.broadcaster_user_id, state]),
+  )
 
   const profileImageByBroadcasterId = await resolveProfileImages(
     config,
@@ -138,6 +152,13 @@ export async function fetchFollowedChannelsSync(
                 thumbnail_url: resolveThumbnailUrl(stream.thumbnail_url),
                 viewer_count: stream.viewer_count,
                 started_at: stream.started_at,
+                category_started_at: preserveCategoryStartedAt(
+                  storedStateById.get(ch.broadcaster_id),
+                  {
+                    streamId: stream.id,
+                    categoryId: stream.game_id || null,
+                  },
+                ),
                 last_live_at: null,
                 last_category_id: null,
                 last_category_name: null,
@@ -151,6 +172,7 @@ export async function fetchFollowedChannelsSync(
                 thumbnail_url: null,
                 viewer_count: null,
                 started_at: null,
+                category_started_at: null,
                 last_live_at: null,
                 last_category_id: null,
                 last_category_name: null,
@@ -229,6 +251,7 @@ async function persistFollowedChannelsSync(
               now,
             }
       }),
+      { preserveCategoryStartedAt: true },
     ),
   ])
 
