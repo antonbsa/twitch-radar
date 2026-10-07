@@ -24,7 +24,7 @@ import {
   useMuteBroadcaster,
   useUnmuteBroadcaster,
 } from "@/hooks/use-notifications"
-import { formatViewerCount } from "@/lib/format"
+import { formatLiveDuration, formatViewerCount } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import type { FollowedChannel } from "@/types/channel"
 import { getLiveCategory } from "@/routes/channels/live-category"
@@ -130,7 +130,13 @@ export function ChannelDetailModal({
           {channel?.is_live ? (
             <div className="flex items-center gap-2">
               <p className="truncate text-xs text-muted-foreground">
-                {channel.category_name ?? t("channel_row.no_category")}
+                {channel.started_at
+                  ? t("channel_row.live_for", {
+                      category:
+                        channel.category_name ?? t("channel_row.no_category"),
+                      duration: formatLiveDuration(channel.started_at),
+                    })
+                  : (channel.category_name ?? t("channel_row.no_category"))}
               </p>
               {liveCategory && (
                 <ToggleActionButton

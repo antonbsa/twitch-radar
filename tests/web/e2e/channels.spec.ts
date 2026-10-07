@@ -795,7 +795,7 @@ describe("Channels view", () => {
     await expectVisible(modal)
     await expectVisible(modal.getByText("DetailStreamer"))
     await expectVisible(modal.getByText("Chatting with viewers"))
-    await expectVisible(modal.getByText("Just Chatting", { exact: true }))
+    await expectVisible(modal.getByText(/Just Chatting/))
     await expectVisible(modal.getByText("1.2K viewers"))
     await expectVisible(
       modal.locator(`img[src="https://example.com/detailstreamer-thumb.jpg"]`),
