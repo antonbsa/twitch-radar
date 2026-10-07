@@ -582,6 +582,75 @@ describe("Channels view", () => {
       await expectHidden(chattingRow)
     })
 
+    it("should count categories and narrow to categories with an active alert", async ({
+      authenticatedSession,
+    }) => {
+      const alerted = broadcasterId("alertfilter_alerted")
+      const plain = broadcasterId("alertfilter_plain")
+
+      await seedFollowedChannels([
+        {
+          broadcasterUserId: alerted,
+          broadcasterLogin: "alertfilteralerted",
+          broadcasterDisplayName: "AlertFilterAlerted",
+        },
+        {
+          broadcasterUserId: plain,
+          broadcasterLogin: "alertfilterplain",
+          broadcasterDisplayName: "AlertFilterPlain",
+        },
+      ])
+      await seedChannelState([
+        {
+          broadcasterUserId: alerted,
+          isLive: true,
+          categoryId: "alertfilter_cat",
+          categoryName: "Alert Filter Category",
+          viewerCount: 10,
+        },
+        {
+          broadcasterUserId: plain,
+          isLive: true,
+          categoryId: "alertfilter_plain_cat",
+          categoryName: "Alert Filter Plain",
+          viewerCount: 20,
+        },
+      ])
+      await seedPreferences({
+        channel: [],
+        global: [
+          {
+            categoryId: "alertfilter_cat",
+            categoryName: "Alert Filter Category",
+          },
+        ],
+      })
+
+      const { page } = authenticatedSession
+      await page.goto(WEB_URL)
+
+      const alertedRow = page.locator(
+        `[data-testid="channel-row"][data-broadcaster-user-id="${alerted}"]`,
+      )
+      const plainRow = page.locator(
+        `[data-testid="channel-row"][data-broadcaster-user-id="${plain}"]`,
+      )
+      await expectVisible(plainRow)
+
+      await page.getByRole("button", { name: "Filter by category" }).click()
+      await expectVisible(
+        page.getByRole("menuitemcheckbox", {
+          name: /^All categories \(\d+\)$/,
+        }),
+      )
+      await page
+        .getByRole("menuitemcheckbox", { name: /^With alerts \(\d+\)$/ })
+        .click()
+
+      await expectVisible(alertedRow)
+      await expectHidden(plainRow)
+    })
+
     it("should narrow the live section to any of multiple selected categories", async ({
       authenticatedSession,
     }) => {

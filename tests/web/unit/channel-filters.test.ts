@@ -56,9 +56,38 @@ describe("deriveLiveCategories", () => {
     ]
 
     expect(deriveLiveCategories(channels)).toEqual([
-      { name: "Music", liveCount: 2 },
-      { name: "Art", liveCount: 1 },
-      { name: "Just Chatting", liveCount: 1 },
+      { name: "Music", liveCount: 2, hasAlert: false },
+      { name: "Art", liveCount: 1, hasAlert: false },
+      { name: "Just Chatting", liveCount: 1, hasAlert: false },
+    ])
+  })
+
+  it("should flag a category when any of its live channels has an alert", () => {
+    const channels = [
+      channel({
+        broadcaster_user_id: "1",
+        is_live: true,
+        category_name: "Music",
+      }),
+      channel({
+        broadcaster_user_id: "2",
+        is_live: true,
+        category_name: "Music",
+      }),
+      channel({
+        broadcaster_user_id: "3",
+        is_live: true,
+        category_name: "Art",
+      }),
+    ]
+
+    const result = deriveLiveCategories(
+      channels,
+      (c) => c.broadcaster_user_id === "2",
+    )
+    expect(result.map((c) => [c.name, c.hasAlert])).toEqual([
+      ["Music", true],
+      ["Art", false],
     ])
   })
 })
@@ -136,6 +165,23 @@ describe("applyChannelFilters", () => {
       "high",
       "low",
     ])
+  })
+
+  it("should narrow the live section to categories with an active alert", () => {
+    const result = applyChannelFilters(
+      channels,
+      { ...DEFAULT_CHANNEL_FILTERS, alertsOnly: true },
+      (c) => c.broadcaster_user_id === "low",
+    )
+    expect(result.live.map((c) => c.broadcaster_user_id)).toEqual(["low"])
+  })
+
+  it("should show no live channels when alerts-only is on and no category has an alert", () => {
+    const result = applyChannelFilters(channels, {
+      ...DEFAULT_CHANNEL_FILTERS,
+      alertsOnly: true,
+    })
+    expect(result.live).toEqual([])
   })
 
   it("should sort alphabetically across both sections when sort is 'alphabetical'", () => {

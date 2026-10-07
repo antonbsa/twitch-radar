@@ -25,6 +25,9 @@ import type {
 const CATEGORY_TRIGGER_CLASSNAME =
   "flex h-11 w-28 min-w-0 shrink-0 items-center justify-between gap-1.5 rounded-lg border border-input bg-transparent px-3 text-base whitespace-nowrap transition-colors outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30 dark:hover:bg-input/50 sm:w-36 md:w-fit"
 
+// Same highlight as an alert-matching live row in ChannelRow.
+const ALERT_COUNT_CLASSNAME = "font-medium text-[#f09d22]"
+
 interface ChannelFiltersBarProps {
   filters: ChannelFilters
   onChange: (patch: Partial<ChannelFilters>) => void
@@ -42,11 +45,13 @@ export function ChannelFiltersBar({
     const next = filters.categories.includes(category)
       ? filters.categories.filter((c) => c !== category)
       : [...filters.categories, category]
-    onChange({ categories: next })
+    onChange({ categories: next, alertsOnly: false })
   }
 
-  const categorySummary =
-    filters.categories.length === 0
+  const alertCategoryCount = categories.filter((c) => c.hasAlert).length
+  const categorySummary = filters.alertsOnly
+    ? t("channels.alert_categories")
+    : filters.categories.length === 0
       ? t("channels.all_categories")
       : filters.categories.length === 1
         ? filters.categories[0]
@@ -74,16 +79,33 @@ export function ChannelFiltersBar({
             <span className="min-w-0 truncate">{categorySummary}</span>
             <ChevronDownIcon className="size-4 shrink-0 text-muted-foreground" />
           </DropdownMenuTrigger>
-          <DropdownMenuContent>
+          <DropdownMenuContent align="end">
             <DropdownMenuCheckboxItem
-              checked={filters.categories.length === 0}
-              onCheckedChange={() => onChange({ categories: [] })}
+              checked={!filters.alertsOnly && filters.categories.length === 0}
+              onCheckedChange={() =>
+                onChange({ categories: [], alertsOnly: false })
+              }
               onSelect={(e) => e.preventDefault()}
             >
               {t("channels.all_categories")}
+              <span className="text-muted-foreground">
+                ({categories.length})
+              </span>
             </DropdownMenuCheckboxItem>
+            {(alertCategoryCount > 0 || filters.alertsOnly) && (
+              <DropdownMenuCheckboxItem
+                checked={filters.alertsOnly}
+                onCheckedChange={() =>
+                  onChange({ categories: [], alertsOnly: true })
+                }
+                onSelect={(e) => e.preventDefault()}
+                className={ALERT_COUNT_CLASSNAME}
+              >
+                {t("channels.alert_categories")} ({alertCategoryCount})
+              </DropdownMenuCheckboxItem>
+            )}
             <DropdownMenuSeparator />
-            {categories.map(({ name, liveCount }) => (
+            {categories.map(({ name, liveCount, hasAlert }) => (
               <DropdownMenuCheckboxItem
                 key={name}
                 checked={filters.categories.includes(name)}
@@ -91,7 +113,13 @@ export function ChannelFiltersBar({
                 onSelect={(e) => e.preventDefault()}
               >
                 {name}
-                <span className="text-muted-foreground">({liveCount})</span>
+                <span
+                  className={
+                    hasAlert ? ALERT_COUNT_CLASSNAME : "text-muted-foreground"
+                  }
+                >
+                  ({liveCount})
+                </span>
               </DropdownMenuCheckboxItem>
             ))}
           </DropdownMenuContent>
