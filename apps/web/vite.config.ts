@@ -3,6 +3,7 @@ import { defineConfig } from "vite"
 import react from "@vitejs/plugin-react"
 import tailwindcss from "@tailwindcss/vite"
 import { changelogPlugin } from "./vite-plugins/changelog-plugin"
+import { appIconPlugin } from "./vite-plugins/app-icon-plugin"
 import { loadDevEnv } from "../../infra/scripts/dev/load-env.mjs"
 
 export default defineConfig(() => {
@@ -11,7 +12,7 @@ export default defineConfig(() => {
 
   return {
     envDir,
-    plugins: [react(), tailwindcss(), changelogPlugin()],
+    plugins: [react(), tailwindcss(), changelogPlugin(), appIconPlugin()],
     resolve: {
       alias: {
         "@": fileURLToPath(new URL("./src", import.meta.url)),
