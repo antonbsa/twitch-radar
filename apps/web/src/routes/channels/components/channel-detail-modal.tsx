@@ -97,7 +97,7 @@ export function ChannelDetailModal({
           }
         }}
       >
-        <SheetHeader className="pb-0">
+        <SheetHeader className="pr-14 pb-0">
           <div className="flex items-center gap-2">
             <Avatar size="sm">
               <AvatarImage

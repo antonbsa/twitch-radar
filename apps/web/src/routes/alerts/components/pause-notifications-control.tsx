@@ -26,17 +26,27 @@ export function PauseNotificationsControl() {
             paused ? "text-destructive" : "text-muted-foreground",
           )}
         />
-        <div className="min-w-0 flex-1">
-          <span className="text-sm font-medium">{t("alerts.pause_label")}</span>
-          {paused && (
-            <p
-              role="status"
-              data-testid="pause-description"
-              className="text-xs text-muted-foreground"
-            >
-              {t("alerts.pause_description")}
-            </p>
-          )}
+        {/* The idle layout reserves the description's rows (invisible sizer) so pausing doesn't shift the content below. */}
+        <div className="grid min-w-0 flex-1 grid-rows-[1.25rem_auto]">
+          <span
+            className={cn(
+              "col-start-1 row-start-1 text-sm font-medium",
+              !paused && "row-span-2 self-center",
+            )}
+          >
+            {t("alerts.pause_label")}
+          </span>
+          <p
+            role={paused ? "status" : undefined}
+            data-testid={paused ? "pause-description" : undefined}
+            aria-hidden={!paused}
+            className={cn(
+              "col-start-1 row-start-2 text-xs text-muted-foreground",
+              !paused && "invisible",
+            )}
+          >
+            {t("alerts.pause_description")}
+          </p>
         </div>
         <button
           type="button"
