@@ -6,34 +6,43 @@ export interface ChannelFilters {
   search: string
   // Empty means no category restriction (all categories) - the default.
   categories: string[]
+  // Restricts to categories with an active alert; mutually exclusive with `categories`.
+  alertsOnly: boolean
   sort: ChannelSort
 }
 
 export const DEFAULT_CHANNEL_FILTERS: ChannelFilters = {
   search: "",
   categories: [],
+  alertsOnly: false,
   sort: "viewers",
 }
 
 export interface LiveCategoryCount {
   name: string
   liveCount: number
+  /** A live channel in this category matches an active alert preference. */
+  hasAlert: boolean
 }
 
 /** Categories of the live channels with how many are live in each, most broadcasters first, then alphabetically. */
 export function deriveLiveCategories(
   channels: FollowedChannel[],
+  hasAlert: (channel: FollowedChannel) => boolean = () => false,
 ): LiveCategoryCount[] {
-  const counts = new Map<string, number>()
+  const categories = new Map<string, LiveCategoryCount>()
   for (const channel of channels) {
-    if (channel.is_live && channel.category_name) {
-      counts.set(
-        channel.category_name,
-        (counts.get(channel.category_name) ?? 0) + 1,
-      )
+    if (!channel.is_live || !channel.category_name) continue
+    const entry = categories.get(channel.category_name) ?? {
+      name: channel.category_name,
+      liveCount: 0,
+      hasAlert: false,
     }
+    entry.liveCount += 1
+    entry.hasAlert ||= hasAlert(channel)
+    categories.set(channel.category_name, entry)
   }
-  return Array.from(counts, ([name, liveCount]) => ({ name, liveCount })).sort(
+  return Array.from(categories.values()).sort(
     (a, b) => b.liveCount - a.liveCount || a.name.localeCompare(b.name),
   )
 }
@@ -75,17 +84,24 @@ function sortOffline(channels: FollowedChannel[]) {
 export function applyChannelFilters(
   channels: FollowedChannel[],
   filters: ChannelFilters,
+  hasAlert: (channel: FollowedChannel) => boolean = () => false,
 ): { live: FollowedChannel[]; offline: FollowedChannel[] } {
   const searched = channels.filter((channel) =>
     matchesSearch(channel, filters.search),
   )
 
+  const allowedCategories = filters.alertsOnly
+    ? deriveLiveCategories(channels, hasAlert)
+        .filter((category) => category.hasAlert)
+        .map((category) => category.name)
+    : filters.categories
+
   const live = searched.filter((channel) => {
     if (!channel.is_live) return false
-    if (filters.categories.length === 0) return true
+    if (!filters.alertsOnly && allowedCategories.length === 0) return true
     return (
       channel.category_name !== null &&
-      filters.categories.includes(channel.category_name)
+      allowedCategories.includes(channel.category_name)
     )
   })
 

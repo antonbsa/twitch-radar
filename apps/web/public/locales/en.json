@@ -25,6 +25,7 @@
   "channels.clear_search_aria": "Clear search",
   "channels.category_filter_aria": "Filter by category",
   "channels.all_categories": "All categories",
+  "channels.alert_categories": "With alerts",
   "channels.categories_selected_count": "{count} categories",
   "channels.sort_aria": "Sort channels",
   "channels.sort_viewers": "Viewers (High to Low)",

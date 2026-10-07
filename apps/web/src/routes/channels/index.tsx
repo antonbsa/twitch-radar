@@ -63,16 +63,6 @@ export function ChannelsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const appliedDeepLinkRef = useRef(false)
 
-  const categories = useMemo(
-    () => deriveLiveCategories(channels ?? []),
-    [channels],
-  )
-
-  const { live, offline } = useMemo(
-    () => applyChannelFilters(channels ?? [], filters),
-    [channels, filters],
-  )
-
   const globalCategoryIds = useMemo(
     () => new Set(preferences?.global.map((p) => p.category_id)),
     [preferences],
@@ -96,6 +86,16 @@ export function ChannelsPage() {
       ? "channel"
       : null
   }
+
+  const hasAlert = (channel: FollowedChannel) =>
+    preferenceMatchFor(channel) !== null
+
+  const categories = deriveLiveCategories(channels ?? [], hasAlert)
+  const { live, offline } = applyChannelFilters(
+    channels ?? [],
+    filters,
+    hasAlert,
+  )
 
   const hasChannels = (channels?.length ?? 0) > 0
   const hasVisibleResults = live.length > 0 || offline.length > 0
