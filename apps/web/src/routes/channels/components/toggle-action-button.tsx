@@ -1,4 +1,4 @@
-import type { ReactNode } from "react"
+import type { ComponentProps, ReactNode } from "react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -8,9 +8,12 @@ interface ToggleActionButtonProps {
   isPending: boolean
   idleIcon: ReactNode
   idleLabel: string
+  /** Fuller name for screen readers when the visible label leans on context. */
+  idleAriaLabel?: string
   doneIcon: ReactNode
   doneLabel: string
   onClick: () => void
+  size?: ComponentProps<typeof Button>["size"]
   className?: string
 }
 
@@ -20,16 +23,19 @@ export function ToggleActionButton({
   isPending,
   idleIcon,
   idleLabel,
+  idleAriaLabel,
   doneIcon,
   doneLabel,
   onClick,
+  size = "lg",
   className,
 }: ToggleActionButtonProps) {
   return (
     <Button
       type="button"
       variant="secondary"
-      size="lg"
+      size={size}
+      aria-label={isDone ? undefined : idleAriaLabel}
       disabled={isDone || isPending}
       className={cn("gap-1.5", className)}
       onClick={isDone ? undefined : onClick}

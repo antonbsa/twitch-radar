@@ -942,7 +942,7 @@ describe("Alerts view", () => {
     await row.click()
 
     const modal = page.getByTestId("channel-detail-modal")
-    await modal.getByRole("button", { name: "Mute notifications" }).click()
+    await modal.getByRole("button", { name: "Mute channel" }).click()
     await expectVisible(modal.getByRole("button", { name: "Unmute" }))
     await expectVisible(modal.getByTestId("muted-indicator"))
     await expectVisible(page.getByText("MuteStreamer muted"))

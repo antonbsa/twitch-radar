@@ -40,7 +40,6 @@
   "channel_preferences.saved_for_channel": "Salvo para este canal",
   "channel_preferences.no_preferences": "Nenhuma preferência salva.",
   "channel_preferences.remove_aria": "Remover {category}",
-  "channel_preferences.notify_for_category": "Notificar-me",
 
   "alerts.title": "Alertas",
   "alerts.global_title": "Global",
@@ -73,7 +72,9 @@
   "category_search.already_global": "já em Todos os canais",
 
   "channel_detail.watch_on_twitch": "Assistir na Twitch",
-  "channel_detail.notifying_for_category": "Notificando",
+  "channel_detail.add_alert": "Criar alerta",
+  "channel_detail.add_alert_aria": "Me avisar quando {channel} transmitir {category}",
+  "channel_detail.alert_active": "Alerta ativo",
   "channel_detail.snooze_action": "Lembrar em 15m",
   "channel_detail.snooze_done": "Lembrete ativado",
   "channel_detail.snooze_error": "Não foi possível ativar o lembrete. Tente novamente.",
@@ -146,7 +147,7 @@
   "alerts.muted_empty": "Nenhum canal silenciado.",
   "alerts.unmute_aria": "Reativar notificações de {channel}",
   "alerts.unmute": "Reativar",
-  "mute.mute_action": "Silenciar notificações",
+  "mute.mute_action": "Silenciar canal",
   "mute.unmute_action": "Reativar",
   "mute.mute_error": "Não foi possível silenciar o canal. Tente novamente.",
   "mute.unmute_error": "Não foi possível reativar o canal. Tente novamente.",

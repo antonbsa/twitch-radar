@@ -40,7 +40,6 @@
   "channel_preferences.saved_for_channel": "Guardado para este canal",
   "channel_preferences.no_preferences": "No hay preferencias guardadas.",
   "channel_preferences.remove_aria": "Eliminar {category}",
-  "channel_preferences.notify_for_category": "Notificarme",
 
   "alerts.title": "Alertas",
   "alerts.global_title": "Global",
@@ -73,7 +72,9 @@
   "category_search.already_global": "ya en Todos los canales",
 
   "channel_detail.watch_on_twitch": "Ver en Twitch",
-  "channel_detail.notifying_for_category": "Notificando",
+  "channel_detail.add_alert": "Crear alerta",
+  "channel_detail.add_alert_aria": "Avisarme cuando {channel} transmita {category}",
+  "channel_detail.alert_active": "Alerta activa",
   "channel_detail.snooze_action": "Recordarme en 15m",
   "channel_detail.snooze_done": "Recordatorio activado",
   "channel_detail.snooze_error": "No se pudo activar el recordatorio. Inténtalo de nuevo.",
@@ -146,7 +147,7 @@
   "alerts.muted_empty": "No hay canales silenciados.",
   "alerts.unmute_aria": "Dejar de silenciar a {channel}",
   "alerts.unmute": "Dejar de silenciar",
-  "mute.mute_action": "Silenciar notificaciones",
+  "mute.mute_action": "Silenciar canal",
   "mute.unmute_action": "Dejar de silenciar",
   "mute.mute_error": "No se pudo silenciar el canal. Inténtalo de nuevo.",
   "mute.unmute_error": "No se pudo dejar de silenciar el canal. Inténtalo de nuevo.",
