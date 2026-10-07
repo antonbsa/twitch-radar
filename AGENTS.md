@@ -85,6 +85,15 @@ Don't hard-wrap prose: one paragraph, one line (`npx prettier --write <file>.md`
 - Before writing your own code: use what the project's dependencies already offer (check their docs and types before assuming a gap), then a well-maintained library; adding a dependency needs a reason.
 - For a design with no precedent in the codebase, look at how established products solve it and follow their conventions instead of inventing one.
 
+## iOS PWA Is The Primary Platform
+
+Design and verify every feature for the installed iOS PWA first; desktop Chrome and Android come second.
+
+- Symptom: a web-platform API works in desktop Chrome and in a Node harness, then does nothing on the phone. Notifications are the usual case: on installed iOS 18.7 `registration.getNotifications()` lists nothing, a repeat `tag` doesn't replace the earlier notification, `event.notification.data` can be empty at click time (ADR 0055, the `NOTIFICATION_URL_CACHE` note in `apps/web/public/service-worker.js`), and an offline device loses pushes at Apple's push service.
+- Why it slips: unit tests, e2e (Chromium) and spec/MDN docs all pass; only an installed iOS PWA with push enabled shows the difference.
+- Treat an API as missing on iOS until it has worked there. Verify on an iPhone: install the PWA through the dev tunnel (`PUBLIC_URL` in `.env.local`), enable push in the app, send with `npm run mock-eventsub` (15 min cooldown per channel), and keep the phone online, since offline bursts lose pushes. After a dev server restart the tunnel URL changes, so reinstall the PWA and re-enable push, or the old install silently receives nothing.
+- Where iOS can't do something, record the limit in the feature's ADR and PR instead of leaving the feature half-working there.
+
 ## No Backward-Compatibility Code (Pre-launch)
 
 Don't add code that only accepts old schema/data states. When a schema or format changes, update existing records in the same change (a backfill `UPDATE` in the migration) so every environment converges and the new invariant is the only supported state. This doesn't apply to fields that are legitimately optional going forward. Revisit once the app has real users.

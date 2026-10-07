@@ -24,3 +24,4 @@ TNs never carry authorization on their own. If a TN's conclusion later becomes s
 - [0004 - Follow Sync Latency Root Cause](0004-follow-sync-latency-root-cause.md)
 - [0005 - Incremental Follow Sync Not Justified](0005-incremental-follow-sync-not-justified.md)
 - [0006 - Category Art In Push Notifications Not Justified](0006-category-art-in-push-notifications-not-justified.md)
+- [0007 - Client-Side Notification Digest Not Viable On iOS](0007-client-side-notification-digest-not-viable-on-ios.md)
