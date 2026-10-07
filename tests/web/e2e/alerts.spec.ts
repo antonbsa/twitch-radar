@@ -144,12 +144,27 @@ describe("Alerts view", () => {
     // and search proxies to the real Twitch API. The preference add/remove
     // round-trips below hit the real backend (the seeded E2E user has no
     // followed channels, so no monitoring work reaches Twitch either).
+    // A failed image swaps in the placeholder, so serve a real (1px) one.
+    await page.route("**/static-cdn.jtvnw.net/**", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "image/gif",
+        body: Buffer.from("R0lGODlhAQABAAAAACwAAAAAAQABAAA=", "base64"),
+      }),
+    )
     await page.route("**/api/categories/search*", (route) =>
       route.fulfill({
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
-          data: [{ id: "27471", name: "Minecraft", box_art_url: null }],
+          data: [
+            {
+              id: "27471",
+              name: "Minecraft",
+              box_art_url:
+                "https://static-cdn.jtvnw.net/ttv-boxart/27471_IGDB-{width}x{height}.jpg",
+            },
+          ],
         }),
       }),
     )
@@ -162,6 +177,11 @@ describe("Alerts view", () => {
     await expectVisible(dialog)
 
     await dialog.getByPlaceholder("Search categories").fill("mine")
+    await expectVisible(
+      dialog.locator(
+        'img[src="https://static-cdn.jtvnw.net/ttv-boxart/27471_IGDB-40x54.jpg"]',
+      ),
+    )
     await dialog.getByRole("button", { name: "Minecraft" }).click()
 
     // The sheet closes on success and the refreshed list shows the new
