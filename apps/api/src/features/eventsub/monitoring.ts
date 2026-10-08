@@ -2,7 +2,7 @@ import type { AppConfig } from "../../env"
 import type { Database } from "../../db"
 import type { MonitorReason } from "../../db/repositories/monitored-channels"
 import { getStreamsByUserIds } from "../../services/twitch/streams"
-import { getValidAccessToken } from "../../services/twitch/token-refresh"
+import { withUserAccessToken } from "../../services/twitch/token-refresh"
 
 // Must match the EventSub webhook route registered under /api.
 const EVENTSUB_CALLBACK_PATH = "/api/webhooks/twitch/eventsub"
@@ -102,12 +102,13 @@ async function seedMissingChannelState(
   const missing = broadcasterUserIds.filter((id) => !seeded.has(id))
   if (missing.length === 0) return
 
-  const accessToken = await getValidAccessToken(db, config, userId)
-  const streams = await getStreamsByUserIds(
-    config.twitchClientId,
-    accessToken,
-    missing,
-    config.twitchApiBaseUrl,
+  const streams = await withUserAccessToken(db, config, userId, (token) =>
+    getStreamsByUserIds(
+      config.twitchClientId,
+      token,
+      missing,
+      config.twitchApiBaseUrl,
+    ),
   )
   const streamByBroadcasterId = new Map(streams.map((s) => [s.user_id, s]))
 

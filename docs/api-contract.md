@@ -4,7 +4,7 @@ Transversal conventions for `apps/api`'s HTTP surface, plus an index of what exi
 
 ## Base & Auth
 
-All routes are mounted under `/api`. Most require a valid session: `requireAuth` middleware reads a session cookie (set by the OAuth callback, ADR 0016) and populates `userId`/`sessionId` on the request context; an unauthenticated request gets a 401.
+All routes are mounted under `/api`. Most require a valid session: `requireAuth` middleware reads a session cookie (set by the OAuth callback, ADR 0016) and populates `userId`/`sessionId` on the request context; an unauthenticated request gets a 401. Sessions are sliding (ADR 0016): an authenticated request near expiry renews the session and re-sends the `Set-Cookie`.
 
 Routes that don't require a session:
 
@@ -22,6 +22,8 @@ Every error response has the same shape:
 ```
 
 `code` is a route-specific string (thrown via `ApiError(status, code, message)`), not an exhaustive enum kept in sync here — read the handler for the exact codes a given route can return. `404`/`405` for unknown routes/methods and `500` for unhandled errors are produced centrally in `app.ts`, not per-route.
+
+`twitch_unavailable` is shared by every route that calls Twitch with the user's token: `502` when Twitch answers 5xx (or the token refresh does), `503` when Twitch rate limits (429), the latter forwarding `Retry-After` when Twitch sent one. It means "retry later", unlike `401 reconnect_required`, which needs a new OAuth round-trip (also returned when Twitch rejects the user's token with a 401 even after one refresh-and-retry).
 
 ## Conventions
 

@@ -39,3 +39,7 @@ Logout deletes the KV entry and responds with `Max-Age=0` to clear the cookie.
 - Session storage scales with KV, not with Worker memory.
 - Session data is opaque to the client (no JWT payload leakage).
 - Rotating `APP_CACHE` or clearing the namespace logs out all users.
+
+## Update (issue #94): sliding sessions
+
+The value shape is now `{ userId, expiresAt, maxExpiresAt }` and the TTL slides: `getSession` renews a session to the full 30 days once it is within 7 days of expiring, never past `maxExpiresAt` (180 days from login). The middleware re-sends the cookie with the renewed `Max-Age`, since the browser drops it at its own expiry. An active user is never logged out by calendar time alone under the 180-day cap; an inactive one still expires after 30 days.

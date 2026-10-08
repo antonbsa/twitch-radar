@@ -189,3 +189,77 @@ describe("GET /api/me", () => {
     expect(res.status).toBe(401)
   })
 })
+
+describe("Sliding sessions", () => {
+  const DAY_S = 60 * 60 * 24
+
+  it("should not touch the cookie while the session is far from expiring", async () => {
+    const { cookie } = await orchestrator.createAuthenticatedSession()
+
+    const res = await fetch(`${orchestrator.baseUrl}/api/me`, {
+      headers: { Cookie: cookie },
+    })
+
+    expect(res.status).toBe(200)
+    expect(res.headers.get("set-cookie")).toBeNull()
+  })
+
+  it("should renew a session in its last week to the full 30 days and refresh the cookie", async () => {
+    const { cookie } = await orchestrator.createAuthenticatedSession({
+      sessionTtlS: 3 * DAY_S,
+    })
+
+    const res = await fetch(`${orchestrator.baseUrl}/api/me`, {
+      headers: { Cookie: cookie },
+    })
+
+    expect(res.status).toBe(200)
+    expect(res.headers.get("set-cookie")).toContain(`Max-Age=${30 * DAY_S}`)
+  })
+
+  it("should cap the renewal at the session's max lifetime", async () => {
+    const { cookie } = await orchestrator.createAuthenticatedSession({
+      sessionTtlS: 3 * DAY_S,
+      sessionMaxLifetimeS: 10 * DAY_S,
+    })
+
+    const res = await fetch(`${orchestrator.baseUrl}/api/me`, {
+      headers: { Cookie: cookie },
+    })
+
+    expect(res.status).toBe(200)
+    const maxAge = Number(
+      /Max-Age=(\d+)/.exec(res.headers.get("set-cookie")!)?.[1],
+    )
+    expect(maxAge).toBeGreaterThan(9 * DAY_S)
+    expect(maxAge).toBeLessThanOrEqual(10 * DAY_S)
+  })
+
+  it("should not renew a session already at its max lifetime", async () => {
+    const { cookie } = await orchestrator.createAuthenticatedSession({
+      sessionTtlS: 3 * DAY_S,
+      sessionMaxLifetimeS: 3 * DAY_S,
+    })
+
+    const res = await fetch(`${orchestrator.baseUrl}/api/me`, {
+      headers: { Cookie: cookie },
+    })
+
+    expect(res.status).toBe(200)
+    expect(res.headers.get("set-cookie")).toBeNull()
+  })
+
+  it("should keep the logout cookie clearing when the session was due for renewal", async () => {
+    const { cookie } = await orchestrator.createAuthenticatedSession({
+      sessionTtlS: 3 * DAY_S,
+    })
+
+    const res = await fetch(`${orchestrator.baseUrl}/api/auth/logout`, {
+      method: "POST",
+      headers: { Cookie: cookie },
+    })
+
+    expect(res.status).toBe(204)
+    expect(res.headers.get("set-cookie")).toContain("Max-Age=0")
+  })
+})

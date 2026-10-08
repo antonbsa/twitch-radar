@@ -1,4 +1,12 @@
 const SESSION_TTL_S = 60 * 60 * 24 * 30 // 30 days
+// Sliding sessions: activity renews the TTL, but never past this ceiling from
+// login, so a stolen-but-unused cookie can't keep itself alive forever.
+const SESSION_MAX_LIFETIME_S = 60 * 60 * 24 * 180 // 180 days
+// A session is renewed only once it is this close to expiring, so an active
+// user costs one KV write per week instead of one per request.
+const SESSION_RENEW_WINDOW_S = 60 * 60 * 24 * 7 // 7 days
+// KV rejects an expirationTtl below 60 seconds (apps/api/AGENTS.md "KV gotchas").
+const KV_MIN_TTL_S = 60
 const OAUTH_STATE_TTL_S = 60 * 10 // 10 minutes
 
 export const SESSION_COOKIE_NAME = "session"
@@ -6,32 +14,69 @@ export const SESSION_COOKIE_NAME = "session"
 interface SessionData {
   userId: string
   expiresAt: string
+  /** Absolute ceiling `expiresAt` can be renewed up to. */
+  maxExpiresAt: string
 }
 
+/** `ttlS`/`maxLifetimeS` only exist so the test seam can seed a session about to expire. */
 export async function createSession(
   kv: KVNamespace,
   userId: string,
+  { ttlS = SESSION_TTL_S, maxLifetimeS = SESSION_MAX_LIFETIME_S } = {},
 ): Promise<string> {
   const sessionId = crypto.randomUUID()
-  const expiresAt = new Date(Date.now() + SESSION_TTL_S * 1000).toISOString()
+  const now = Date.now()
   await kv.put(
     `session:${sessionId}`,
-    JSON.stringify({ userId, expiresAt } satisfies SessionData),
-    { expirationTtl: SESSION_TTL_S },
+    JSON.stringify({
+      userId,
+      expiresAt: new Date(now + ttlS * 1000).toISOString(),
+      maxExpiresAt: new Date(now + maxLifetimeS * 1000).toISOString(),
+    } satisfies SessionData),
+    { expirationTtl: ttlS },
   )
   return sessionId
 }
 
-/** @returns `null` for a missing or expired session. */
+/**
+ * Slides the session: within the last week of its TTL it is renewed to the
+ * full TTL, bounded by `maxExpiresAt`.
+ * @returns `null` for a missing or expired session; `renewedTtlS` is set when
+ * the session was just renewed, so the caller can refresh the cookie too.
+ */
 export async function getSession(
   kv: KVNamespace,
   sessionId: string,
-): Promise<{ userId: string } | null> {
-  const raw = await kv.get(`session:${sessionId}`)
+): Promise<{ userId: string; renewedTtlS?: number } | null> {
+  const key = `session:${sessionId}`
+  const raw = await kv.get(key)
   if (!raw) return null
   const data = JSON.parse(raw) as SessionData
-  if (new Date(data.expiresAt) < new Date()) return null
-  return { userId: data.userId }
+  const now = Date.now()
+  const expiresAt = Date.parse(data.expiresAt)
+  if (expiresAt < now) return null
+
+  if (expiresAt - now > SESSION_RENEW_WINDOW_S * 1000) {
+    return { userId: data.userId }
+  }
+  const renewedExpiresAt = Math.min(
+    now + SESSION_TTL_S * 1000,
+    Date.parse(data.maxExpiresAt),
+  )
+  const renewedTtlS = Math.floor((renewedExpiresAt - now) / 1000)
+  // Also false when `maxExpiresAt` is missing or invalid (NaN).
+  if (!(renewedExpiresAt > expiresAt) || renewedTtlS < KV_MIN_TTL_S) {
+    return { userId: data.userId }
+  }
+  await kv.put(
+    key,
+    JSON.stringify({
+      ...data,
+      expiresAt: new Date(renewedExpiresAt).toISOString(),
+    } satisfies SessionData),
+    { expirationTtl: renewedTtlS },
+  )
+  return { userId: data.userId, renewedTtlS }
 }
 
 export async function deleteSession(
@@ -81,8 +126,11 @@ export async function consumeOAuthState(
   return true
 }
 
-export function sessionCookieHeader(sessionId: string): string {
-  return `${SESSION_COOKIE_NAME}=${sessionId}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${SESSION_TTL_S}`
+export function sessionCookieHeader(
+  sessionId: string,
+  maxAgeS = SESSION_TTL_S,
+): string {
+  return `${SESSION_COOKIE_NAME}=${sessionId}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${maxAgeS}`
 }
 
 export function clearSessionCookieHeader(): string {

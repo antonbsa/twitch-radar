@@ -2,7 +2,7 @@ import type { Database } from "../../db"
 import type { AppConfig } from "../../env"
 import { logger, serializeError } from "../../lib/logger"
 import { getCategoriesByIds } from "../../services/twitch/categories"
-import { getValidAccessToken } from "../../services/twitch/token-refresh"
+import { withUserAccessToken } from "../../services/twitch/token-refresh"
 
 /**
  * Box art template URL per category id (ADR 0058). Cached ids come from D1;
@@ -25,12 +25,13 @@ export async function resolveBoxArt(
   if (missing.length === 0) return boxArt
 
   try {
-    const accessToken = await getValidAccessToken(db, config, userId)
-    const fetched = await getCategoriesByIds(
-      config.twitchClientId,
-      accessToken,
-      missing,
-      config.twitchApiBaseUrl,
+    const fetched = await withUserAccessToken(db, config, userId, (token) =>
+      getCategoriesByIds(
+        config.twitchClientId,
+        token,
+        missing,
+        config.twitchApiBaseUrl,
+      ),
     )
     const urlById = new Map(fetched.map((c) => [c.id, c.box_art_url ?? null]))
     const entries = missing.map((id) => ({

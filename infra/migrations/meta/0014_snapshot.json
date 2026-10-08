@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "2ecac78f-0d09-4ac0-b455-eb89b308a628",
-  "prevId": "7a04dfd0-4294-4620-9054-7beaf84a108f",
+  "id": "684460b1-9232-4256-a6b8-09040226730d",
+  "prevId": "70e9b122-180b-448a-ba42-941f4c502347",
   "tables": {
     "broadcaster_mutes": {
       "name": "broadcaster_mutes",
@@ -76,6 +76,37 @@
           "onUpdate": "no action"
         }
       },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "category_box_art": {
+      "name": "category_box_art",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "box_art_url": {
+          "name": "box_art_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
@@ -1224,6 +1255,13 @@
         },
         "validated_at": {
           "name": "validated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "refresh_locked_until": {
+          "name": "refresh_locked_until",
           "type": "text",
           "primaryKey": false,
           "notNull": false,

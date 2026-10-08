@@ -31,3 +31,9 @@ ADR 0031's minutely cron only creates pending EventSub subscriptions; keeping ex
 - Reconciliation loads the full local subscription and monitored-channel tables — fine at MVP scale, needs paging if broadcaster counts grow large.
 - A dead refresh token stops being retried; the user sees the reconnect state only when the client reads `/api/me`, there is no push nudge.
 - Scheduled follow sync consumes user-token rate limits in the background, bounded by the per-run cap and the 24h staleness gate.
+
+## Update (issue #94, #102): token validation and failure classification
+
+- Refresh failures: only a 4xx other than 429 is a dead refresh token (flag + `reconnect_required`); 429 and 5xx are `twitch_unavailable` and flag nothing. Request-time Helix calls go through `withUserAccessToken`, which also turns an upstream 401 into one refresh-and-retry, then `reconnect_required` (flagging the row) on a second 401.
+- Refreshes take an atomic per-user claim on the token row (`twitch_tokens.refresh_locked_until`, 60s TTL, released by the refresh itself); a request that loses it re-reads the token from D1 instead of refreshing. The claim replaced a KV lock, which was not atomic and spent KV's 1,000 daily writes and deletes (issue #145).
+- The token-refresh job also validates tokens against `/oauth2/validate` about hourly (`twitch_tokens.validated_at`, 3 per run, every minute since ADR 0057's update). A 401 is confirmed by a refresh, so only a dead refresh token flags the row.

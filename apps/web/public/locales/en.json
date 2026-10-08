@@ -116,6 +116,7 @@
   "preferences.all_channels": "All channels",
 
   "sync.error": "Could not sync channels. Try again.",
+  "sync.twitch_unavailable": "Twitch is unavailable, try again shortly.",
 
   "reconnect.message": "Your Twitch connection needs to be renewed.",
   "reconnect.cta": "Reconnect Twitch",

@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "2ecac78f-0d09-4ac0-b455-eb89b308a628",
-  "prevId": "7a04dfd0-4294-4620-9054-7beaf84a108f",
+  "id": "70e9b122-180b-448a-ba42-941f4c502347",
+  "prevId": "2ecac78f-0d09-4ac0-b455-eb89b308a628",
   "tables": {
     "broadcaster_mutes": {
       "name": "broadcaster_mutes",
@@ -1224,6 +1224,13 @@
         },
         "validated_at": {
           "name": "validated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "refresh_locked_until": {
+          "name": "refresh_locked_until",
           "type": "text",
           "primaryKey": false,
           "notNull": false,

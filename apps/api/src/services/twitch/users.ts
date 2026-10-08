@@ -1,4 +1,5 @@
-import { TwitchApiError, readErrorBody } from "./errors"
+import { TwitchApiError, twitchApiErrorFromResponse } from "./errors"
+import { fetchTwitch } from "./fetch"
 
 export interface TwitchUser {
   id: string
@@ -19,18 +20,14 @@ export async function getAuthenticatedUser(
   accessToken: string,
   apiBaseUrl = "https://api.twitch.tv",
 ): Promise<TwitchUser> {
-  const res = await fetch(`${apiBaseUrl}/helix/users`, {
+  const res = await fetchTwitch(`${apiBaseUrl}/helix/users`, {
     headers: {
       "Client-Id": clientId,
       Authorization: `Bearer ${accessToken}`,
     },
   })
   if (!res.ok)
-    throw new TwitchApiError(
-      `User profile fetch failed`,
-      res.status,
-      await readErrorBody(res),
-    )
+    throw await twitchApiErrorFromResponse(`User profile fetch failed`, res)
   const body = (await res.json()) as { data: TwitchUser[] }
   const user = body.data[0]
   if (!user) throw new TwitchApiError("No user in Twitch response", 200, "")
@@ -54,18 +51,14 @@ export async function getUsersByIds(
       url.searchParams.append("id", userId)
     }
 
-    const res = await fetch(url.toString(), {
+    const res = await fetchTwitch(url.toString(), {
       headers: {
         "Client-Id": clientId,
         Authorization: `Bearer ${accessToken}`,
       },
     })
     if (!res.ok)
-      throw new TwitchApiError(
-        `Users fetch failed`,
-        res.status,
-        await readErrorBody(res),
-      )
+      throw await twitchApiErrorFromResponse(`Users fetch failed`, res)
     const body = (await res.json()) as { data: TwitchUser[] }
     results.push(...body.data)
   }
@@ -88,17 +81,16 @@ export async function getAllFollowedChannels(
     url.searchParams.set("first", "100")
     if (cursor) url.searchParams.set("after", cursor)
 
-    const res = await fetch(url.toString(), {
+    const res = await fetchTwitch(url.toString(), {
       headers: {
         "Client-Id": clientId,
         Authorization: `Bearer ${accessToken}`,
       },
     })
     if (!res.ok)
-      throw new TwitchApiError(
+      throw await twitchApiErrorFromResponse(
         `Followed channels fetch failed`,
-        res.status,
-        await readErrorBody(res),
+        res,
       )
     const body = (await res.json()) as {
       data: TwitchFollowedChannel[]

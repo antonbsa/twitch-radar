@@ -9,6 +9,7 @@ import { useAuth } from "@/context/auth-context"
 import { useLanguage } from "@/context/language-context"
 import { api } from "@/lib/api"
 import { showMutationErrorToast } from "@/lib/error-toast"
+import { isTwitchUnavailableError } from "@/lib/errors"
 import { useSessionAwareMutation } from "@/hooks/use-session-aware-mutation"
 import type { FollowedChannel } from "@/types/channel"
 
@@ -73,7 +74,13 @@ export function useManualSyncFollows() {
     isPending: syncFollows.isPending,
     sync: () =>
       syncFollows.mutate(undefined, {
-        onError: (error) => showMutationErrorToast(error, t("sync.error")),
+        onError: (error) =>
+          showMutationErrorToast(
+            error,
+            isTwitchUnavailableError(error)
+              ? t("sync.twitch_unavailable")
+              : t("sync.error"),
+          ),
       }),
   }
 }

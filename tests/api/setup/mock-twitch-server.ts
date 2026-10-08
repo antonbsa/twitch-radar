@@ -5,6 +5,7 @@ type QueueEntry = {
   pathPattern: string
   body: unknown
   status: number
+  headers?: Record<string, string>
 }
 
 const queue: QueueEntry[] = []
@@ -15,7 +16,11 @@ function handleRequest(
   method: string,
   url: string,
   rawBody: string,
-  respond: (status: number, body: string) => void,
+  respond: (
+    status: number,
+    body: string,
+    headers?: Record<string, string>,
+  ) => void,
 ) {
   if (url === "/__mock" && method === "POST") {
     queue.push(JSON.parse(rawBody))
@@ -44,7 +49,7 @@ function handleRequest(
 
   const [entry] = queue.splice(idx, 1)
   requests.push(url)
-  respond(entry.status, JSON.stringify(entry.body))
+  respond(entry.status, JSON.stringify(entry.body), entry.headers)
 }
 
 export function createMockTwitchServer(): Server {
@@ -56,8 +61,11 @@ export function createMockTwitchServer(): Server {
         req.method ?? "GET",
         req.url ?? "/",
         body,
-        (status, responseBody) => {
-          res.writeHead(status, { "Content-Type": "application/json" })
+        (status, responseBody, headers) => {
+          res.writeHead(status, {
+            "Content-Type": "application/json",
+            ...headers,
+          })
           res.end(responseBody)
         },
       )
