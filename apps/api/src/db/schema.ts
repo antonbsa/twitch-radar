@@ -37,6 +37,12 @@ export const twitchTokens = sqliteTable(
     // token) — the user must reconnect their Twitch account. Cleared by the
     // next successful token upsert (re-auth or successful refresh).
     refreshFailedAt: text("refresh_failed_at"),
+    // Last time the access token was confirmed valid: set when it is issued
+    // (login or refresh) and by the hourly /oauth2/validate sweep.
+    validatedAt: text("validated_at"),
+    // Atomic claim on a token refresh: a caller owns the refresh until this
+    // time passes or it clears the claim (cleared by the refresh upsert).
+    refreshLockedUntil: text("refresh_locked_until"),
   },
   (table) => [index("idx_twitch_tokens_expires_at").on(table.expiresAt)],
 )

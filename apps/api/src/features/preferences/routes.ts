@@ -65,7 +65,11 @@ const CreateExclusionSchema = z.object({
 })
 
 function actor(c: Context<HonoEnv>) {
-  return { db: c.var.db, config: c.var.config, userId: c.var.userId }
+  return {
+    db: c.var.db,
+    config: c.var.config,
+    userId: c.var.userId,
+  }
 }
 
 export async function handleGetPreferences(

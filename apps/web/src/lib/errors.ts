@@ -26,3 +26,8 @@ export class ApiRequestError extends Error {
 export function isReconnectRequiredError(error: unknown): boolean {
   return error instanceof ApiRequestError && error.status === 401
 }
+
+/** Twitch itself is down or rate limiting (API `twitch_unavailable`), so a retry later is the fix. */
+export function isTwitchUnavailableError(error: unknown): boolean {
+  return error instanceof ApiRequestError && error.code === "twitch_unavailable"
+}

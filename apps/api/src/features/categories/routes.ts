@@ -3,7 +3,7 @@ import type { HonoEnv } from "../../env"
 import { ApiError } from "../../http/errors"
 import { jsonResponse } from "../../http/response"
 import { searchCategories } from "../../services/twitch/categories"
-import { getValidAccessToken } from "../../services/twitch/token-refresh"
+import { withUserAccessToken } from "../../services/twitch/token-refresh"
 
 export async function handleSearchCategories(
   c: Context<HonoEnv>,
@@ -13,16 +13,17 @@ export async function handleSearchCategories(
     throw new ApiError(400, "invalid_request", "Missing search query")
   }
 
-  const accessToken = await getValidAccessToken(
+  const categories = await withUserAccessToken(
     c.var.db,
     c.var.config,
     c.var.userId,
-  )
-  const categories = await searchCategories(
-    c.var.config.twitchClientId,
-    accessToken,
-    query,
-    c.var.config.twitchApiBaseUrl,
+    (token) =>
+      searchCategories(
+        c.var.config.twitchClientId,
+        token,
+        query,
+        c.var.config.twitchApiBaseUrl,
+      ),
   )
 
   return jsonResponse({

@@ -1,4 +1,5 @@
-import { TwitchApiError, readErrorBody } from "./errors"
+import { twitchApiErrorFromResponse } from "./errors"
+import { fetchTwitch } from "./fetch"
 
 export interface TwitchTokenResponse {
   access_token: string
@@ -16,7 +17,7 @@ export async function exchangeCode(
   redirectUri: string,
   authBaseUrl = "https://id.twitch.tv",
 ): Promise<TwitchTokenResponse> {
-  const res = await fetch(`${authBaseUrl}/oauth2/token`, {
+  const res = await fetchTwitch(`${authBaseUrl}/oauth2/token`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
@@ -28,11 +29,7 @@ export async function exchangeCode(
     }),
   })
   if (!res.ok)
-    throw new TwitchApiError(
-      `Token exchange failed`,
-      res.status,
-      await readErrorBody(res),
-    )
+    throw await twitchApiErrorFromResponse(`Token exchange failed`, res)
   return res.json() as Promise<TwitchTokenResponse>
 }
 
@@ -42,7 +39,7 @@ export async function refreshAccessToken(
   refreshToken: string,
   authBaseUrl = "https://id.twitch.tv",
 ): Promise<TwitchTokenResponse> {
-  const res = await fetch(`${authBaseUrl}/oauth2/token`, {
+  const res = await fetchTwitch(`${authBaseUrl}/oauth2/token`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
@@ -53,11 +50,7 @@ export async function refreshAccessToken(
     }),
   })
   if (!res.ok)
-    throw new TwitchApiError(
-      `Token refresh failed`,
-      res.status,
-      await readErrorBody(res),
-    )
+    throw await twitchApiErrorFromResponse(`Token refresh failed`, res)
   return res.json() as Promise<TwitchTokenResponse>
 }
 
@@ -77,7 +70,7 @@ export async function fetchAppAccessToken(
   clientSecret: string,
   authBaseUrl = "https://id.twitch.tv",
 ): Promise<TwitchAppTokenResponse> {
-  const res = await fetch(`${authBaseUrl}/oauth2/token`, {
+  const res = await fetchTwitch(`${authBaseUrl}/oauth2/token`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
@@ -87,10 +80,23 @@ export async function fetchAppAccessToken(
     }),
   })
   if (!res.ok)
-    throw new TwitchApiError(
-      `App token fetch failed`,
-      res.status,
-      await readErrorBody(res),
-    )
+    throw await twitchApiErrorFromResponse(`App token fetch failed`, res)
   return res.json() as Promise<TwitchAppTokenResponse>
+}
+
+/**
+ * Twitch asks apps to validate user tokens hourly; this is also the cheap way
+ * to notice a revoked grant without waiting for a request to fail.
+ * @returns `false` on a 401 (invalid or expired token); other failures throw.
+ */
+export async function validateAccessToken(
+  accessToken: string,
+  authBaseUrl = "https://id.twitch.tv",
+): Promise<boolean> {
+  const res = await fetchTwitch(`${authBaseUrl}/oauth2/validate`, {
+    headers: { Authorization: `OAuth ${accessToken}` },
+  })
+  if (res.ok) return true
+  if (res.status === 401) return false
+  throw await twitchApiErrorFromResponse(`Token validation failed`, res)
 }
