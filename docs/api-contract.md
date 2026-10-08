@@ -42,8 +42,8 @@ Every error response has the same shape:
 | PATCH | `/me/notifications-paused` | yes | pauses or resumes all notifications with `{ paused }`; `GET /me` exposes `notifications_paused_at` (ADR 0054) |
 | POST | `/sync/follows` | yes | re-syncs the user's followed channels from Twitch |
 | GET | `/channels/followed` | yes | the user's followed channels with current live/category state |
-| GET | `/categories/search` | yes | proxies Twitch category search with the user's token |
-| GET | `/preferences` | yes | the user's active channel and global category preferences; each global preference embeds its active `exclusions` (ADR 0054) |
+| GET | `/categories/search` | yes | proxies Twitch category search with the user's token; also caches each result's box art (ADR 0058) |
+| GET | `/preferences` | yes | the user's active channel and global category preferences; each item carries a nullable `box_art_url` (ADR 0058); each global preference embeds its active `exclusions` (ADR 0054) |
 | POST | `/preferences/channel` | yes | creates/revives a channel-scoped category preference (ADR 0029) |
 | DELETE | `/preferences/channel/:id` | yes | soft-disables a channel-scoped preference |
 | POST | `/preferences/global` | yes | creates/revives a global (all-channels) category preference (ADR 0029) |

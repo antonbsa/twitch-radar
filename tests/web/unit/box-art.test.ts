@@ -9,4 +9,13 @@ describe("boxArtSrc", () => {
       ),
     ).toBe("https://static-cdn.jtvnw.net/ttv-boxart/27471_IGDB-40x54.jpg")
   })
+
+  it("should render the small size for chips and title lines", () => {
+    expect(
+      boxArtSrc(
+        "https://static-cdn.jtvnw.net/ttv-boxart/27471_IGDB-{width}x{height}.jpg",
+        "sm",
+      ),
+    ).toBe("https://static-cdn.jtvnw.net/ttv-boxart/27471_IGDB-18x24.jpg")
+  })
 })

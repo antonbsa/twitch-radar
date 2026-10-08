@@ -1,9 +1,11 @@
 import { Globe, X } from "lucide-react"
+import { CategoryBoxArt } from "@/components/categories/category-box-art"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 
 interface CategoryChipProps {
   label: string
+  boxArtUrl: string | null
   /**
    * Marks a per-channel preference whose category an active global preference
    * also covers. The chip stays removable — it is a real per-channel
@@ -20,6 +22,7 @@ interface CategoryChipProps {
 
 export function CategoryChip({
   label,
+  boxArtUrl,
   alsoGlobal = false,
   armed,
   onArm,
@@ -55,6 +58,7 @@ export function CategoryChip({
         {alsoGlobal && (
           <Globe aria-hidden="true" className="size-3 text-primary" />
         )}
+        <CategoryBoxArt boxArtUrl={boxArtUrl} name={label} size="sm" />
         {label}
         <X aria-hidden="true" className="size-3" />
       </button>

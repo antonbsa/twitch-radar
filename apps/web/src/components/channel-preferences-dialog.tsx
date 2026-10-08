@@ -67,6 +67,7 @@ export function ChannelPreferencesDialog({
                   <CategoryChip
                     key={pref.id}
                     label={pref.category_name}
+                    boxArtUrl={pref.box_art_url}
                     armed={armedChipId === pref.id}
                     onArm={() => armChip(pref.id)}
                     onRemove={() =>
