@@ -7,13 +7,16 @@
 export const CRON_MINUTELY = "* * * * *"
 
 // Jobs that run on every invocation.
-const MINUTELY_JOBS = ["eventsub-create", "snooze-sweep"] as const
+const MINUTELY_JOBS = [
+  "eventsub-create",
+  "snooze-sweep",
+  "token-refresh",
+] as const
 
 // UTC minutes of the hour each periodic job runs at. They never share a
 // minute, so an invocation runs at most one of them next to the minutely jobs.
 export const PERIODIC_JOB_MINUTES = {
   "eventsub-reconcile": [0, 30],
-  "token-refresh": [5, 35],
   "follow-sync": [10],
 } as const
 

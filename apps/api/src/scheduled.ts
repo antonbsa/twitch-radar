@@ -17,7 +17,7 @@ import {
 
 /**
  * Cron fan-out (ADR 0057): the single minutely trigger runs the minutely jobs
- * (pending-subscription creation, ADR 0031; snooze sweep, ADR 0048) on every
+ * (pending-subscription creation, ADR 0031; snooze sweep, ADR 0048; token refresh and validation, ADR 0036) on every
  * invocation, plus whichever periodic job is due at `scheduledTime`'s minute
  * (ADR 0036). Tests pick the job by passing `?time=` to Miniflare's `/cdn-cgi/local/scheduled`.
  */
@@ -47,11 +47,9 @@ export async function runScheduled(
         : undefined,
     )
     await sweepNotificationSnoozes(db, env.NOTIFICATION_JOBS_QUEUE)
+    await refreshExpiringTwitchTokens(db, config, env.KV_APP_CACHE)
     if (isPeriodicJobDue("eventsub-reconcile", scheduledTime)) {
       await reconcileEventsubSubscriptions(db, config, env.KV_APP_CACHE)
-    }
-    if (isPeriodicJobDue("token-refresh", scheduledTime)) {
-      await refreshExpiringTwitchTokens(db, config, env.KV_APP_CACHE)
     }
     if (isPeriodicJobDue("follow-sync", scheduledTime)) {
       await syncStaleFollows(db, config, env.KV_APP_CACHE)

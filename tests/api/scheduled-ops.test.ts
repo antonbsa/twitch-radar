@@ -293,7 +293,7 @@ describe("Twitch token refresh", () => {
       token_type: "bearer",
     })
 
-    await orchestrator.runScheduled("token-refresh")
+    await orchestrator.runScheduled()
 
     const me = await fetch(`${orchestrator.baseUrl}/api/me`, {
       headers: { Cookie: cookie },
@@ -325,7 +325,7 @@ describe("Twitch token refresh", () => {
       400,
     )
 
-    await orchestrator.runScheduled("token-refresh")
+    await orchestrator.runScheduled()
 
     const me = await fetch(`${orchestrator.baseUrl}/api/me`, {
       headers: { Cookie: cookie },

@@ -36,4 +36,4 @@ ADR 0031's minutely cron only creates pending EventSub subscriptions; keeping ex
 
 - Refresh failures: only a 4xx other than 429 is a dead refresh token (flag + `reconnect_required`); 429 and 5xx are `twitch_unavailable` and flag nothing. Request-time Helix calls go through `withUserAccessToken`, which also turns an upstream 401 into one refresh-and-retry, then `reconnect_required` (flagging the row) on a second 401.
 - Refreshes take a short per-user KV lock (`token_refresh_lock:<userId>`); a request that loses it re-reads the token from D1 instead of refreshing.
-- The token-refresh job also validates tokens against `/oauth2/validate` about hourly (`twitch_tokens.validated_at`, 20 per run). A 401 is confirmed by a refresh, so only a dead refresh token flags the row.
+- The token-refresh job also validates tokens against `/oauth2/validate` about hourly (`twitch_tokens.validated_at`, 3 per run, every minute since ADR 0057's update). A 401 is confirmed by a refresh, so only a dead refresh token flags the row.

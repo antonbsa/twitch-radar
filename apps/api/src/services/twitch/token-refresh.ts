@@ -11,15 +11,16 @@ import type { TwitchTokenRecord } from "../../db/repositories/twitch-tokens"
 const REFRESH_BUFFER_MS = 5 * 60 * 1000
 
 // The scheduled sweep refreshes tokens due within this window so request-time
-// refreshes stay the exception; runs twice per hour (ADR 0036), so the
-// lookahead must comfortably exceed the run interval.
+// refreshes stay the exception. It runs every minute (ADR 0057) with small
+// per-run caps: the invocation's 50-subrequest Free-plan budget is shared with
+// the other minutely jobs, and a steady few calls per minute beats a burst.
 const SCHEDULED_REFRESH_LOOKAHEAD_MS = 45 * 60 * 1000
-const MAX_SCHEDULED_REFRESHES_PER_RUN = 10
+const MAX_SCHEDULED_REFRESHES_PER_RUN = 2
 
-// Twitch asks for hourly validation of user tokens. The sweep runs twice per
-// hour, so a 50 minute threshold validates each token about once an hour.
+// Twitch asks for hourly validation of user tokens; a 50 minute threshold
+// validates each one about once an hour.
 const VALIDATION_INTERVAL_MS = 50 * 60 * 1000
-const MAX_VALIDATIONS_PER_RUN = 20
+const MAX_VALIDATIONS_PER_RUN = 3
 
 // Short KV lock per user so concurrent requests don't both spend the same
 // refresh token (Twitch invalidates it on use). 60s is KV's minimum TTL.
@@ -275,6 +276,9 @@ export async function refreshExpiringTwitchTokens(
       cutoff,
       MAX_SCHEDULED_REFRESHES_PER_RUN,
     )
+    if (expiring.length === 0) {
+      logger.debug("No Twitch tokens to refresh", logFields)
+    }
     let succeeded = 0
 
     for (const record of expiring) {
@@ -290,12 +294,14 @@ export async function refreshExpiringTwitchTokens(
       }
     }
 
-    logger.info("Scheduled Twitch token refresh sweep completed", {
-      ...logFields,
-      attempted: expiring.length,
-      succeeded,
-      failed: expiring.length - succeeded,
-    })
+    if (expiring.length > 0) {
+      logger.info("Scheduled Twitch token refresh sweep completed", {
+        ...logFields,
+        attempted: expiring.length,
+        succeeded,
+        failed: expiring.length - succeeded,
+      })
+    }
   } catch (error) {
     // Covers a D1 read failure (findExpiringBefore) or anything else thrown
     // outside the per-record handling above, so it's logged with full detail
@@ -310,7 +316,7 @@ export async function refreshExpiringTwitchTokens(
 }
 
 /**
- * Hourly-ish `/oauth2/validate` sweep: catches a grant revoked on Twitch's
+ * Hourly-per-token `/oauth2/validate` sweep: catches a grant revoked on Twitch's
  * side before a request trips on it. A 401 from validate also happens for a
  * merely expired access token, so it is confirmed by a refresh: only a dead
  * refresh token flags the row (`refreshAndStoreToken`). Run after the refresh
@@ -327,6 +333,10 @@ async function validateTwitchTokens(
       new Date(Date.now() - VALIDATION_INTERVAL_MS).toISOString(),
       MAX_VALIDATIONS_PER_RUN,
     )
+    if (due.length === 0) {
+      logger.debug("No Twitch tokens to validate", logFields)
+      return
+    }
     let valid = 0
     let revalidated = 0
     let failed = 0

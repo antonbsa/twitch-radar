@@ -132,7 +132,7 @@ describe("Token validation sweep (issue #94)", () => {
   it("should skip tokens validated recently", async () => {
     await orchestrator.createAuthenticatedSession()
 
-    await orchestrator.runScheduled("token-refresh")
+    await orchestrator.runScheduled()
 
     expect(await validateRequests()).toHaveLength(0)
   })
@@ -143,9 +143,9 @@ describe("Token validation sweep (issue #94)", () => {
     })
     await orchestrator.mockTwitch.onTokenValidate(200)
 
-    await orchestrator.runScheduled("token-refresh")
+    await orchestrator.runScheduled()
     // Validated now, so a second run doesn't call validate again.
-    await orchestrator.runScheduled("token-refresh")
+    await orchestrator.runScheduled()
 
     expect(await validateRequests()).toHaveLength(1)
     expect(await tokenRequests()).toHaveLength(0)
@@ -159,7 +159,7 @@ describe("Token validation sweep (issue #94)", () => {
     await orchestrator.mockTwitch.onTokenValidate(401)
     await orchestrator.mockTwitch.onTokenExchange({ message: "revoked" }, 400)
 
-    await orchestrator.runScheduled("token-refresh")
+    await orchestrator.runScheduled()
 
     expect(await reconnectRequired(cookie)).toBe(true)
   })
@@ -171,7 +171,7 @@ describe("Token validation sweep (issue #94)", () => {
     await orchestrator.mockTwitch.onTokenValidate(401)
     await orchestrator.mockTwitch.onTokenExchange(NEW_TOKENS)
 
-    await orchestrator.runScheduled("token-refresh")
+    await orchestrator.runScheduled()
 
     expect(await tokenRequests()).toHaveLength(1)
     expect(await reconnectRequired(cookie)).toBe(false)
@@ -183,7 +183,7 @@ describe("Token validation sweep (issue #94)", () => {
     })
     await orchestrator.mockTwitch.onTokenValidate(503)
 
-    await orchestrator.runScheduled("token-refresh")
+    await orchestrator.runScheduled()
 
     expect(await reconnectRequired(cookie)).toBe(false)
   })
@@ -194,7 +194,7 @@ describe("Token validation sweep (issue #94)", () => {
       undecryptableToken: true,
     })
 
-    await orchestrator.runScheduled("token-refresh")
+    await orchestrator.runScheduled()
 
     expect(await validateRequests()).toHaveLength(0)
     expect(await reconnectRequired(cookie)).toBe(true)
