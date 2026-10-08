@@ -30,7 +30,6 @@ describe("persistFollowedChannelsSyncDeferred", () => {
       persistFollowedChannelsSyncDeferred(
         db,
         config,
-        {} as KVNamespace,
         "usr_1",
         {
           channels: [

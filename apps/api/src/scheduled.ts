@@ -47,12 +47,12 @@ export async function runScheduled(
         : undefined,
     )
     await sweepNotificationSnoozes(db, env.NOTIFICATION_JOBS_QUEUE)
-    await refreshExpiringTwitchTokens(db, config, env.KV_APP_CACHE)
+    await refreshExpiringTwitchTokens(db, config)
     if (isPeriodicJobDue("eventsub-reconcile", scheduledTime)) {
       await reconcileEventsubSubscriptions(db, config, env.KV_APP_CACHE)
     }
     if (isPeriodicJobDue("follow-sync", scheduledTime)) {
-      await syncStaleFollows(db, config, env.KV_APP_CACHE)
+      await syncStaleFollows(db, config)
       if (isAvatarRefreshSlot(scheduledTime)) {
         await refreshBroadcasterAvatars(db, config, env.KV_APP_CACHE)
       }

@@ -121,6 +121,49 @@ describe("Concurrent token refresh (issue #94)", () => {
   })
 })
 
+describe("Refresh claim (issue #145)", () => {
+  it("should not refresh while another caller holds the claim", async () => {
+    const { cookie } = await orchestrator.createAuthenticatedSession({
+      expiredToken: true,
+      refreshLockedUntil: new Date(Date.now() + 60_000).toISOString(),
+    })
+    await queueSyncAttempt(200)
+
+    const res = await postSync(cookie)
+
+    expect(res.status).toBe(200)
+    expect(await tokenRequests()).toHaveLength(0)
+  })
+
+  it("should refresh once the claim of a crashed worker has expired", async () => {
+    const { cookie } = await orchestrator.createAuthenticatedSession({
+      expiredToken: true,
+      refreshLockedUntil: new Date(Date.now() - 1000).toISOString(),
+    })
+    await orchestrator.mockTwitch.onTokenExchange(NEW_TOKENS)
+    await queueSyncAttempt(200)
+
+    const res = await postSync(cookie)
+
+    expect(res.status).toBe(200)
+    expect(await tokenRequests()).toHaveLength(1)
+  })
+
+  it("should release the claim when the refresh fails transiently", async () => {
+    const { cookie } = await orchestrator.createAuthenticatedSession({
+      expiredToken: true,
+    })
+    await orchestrator.mockTwitch.onTokenExchange({ message: "down" }, 503)
+    expect((await postSync(cookie)).status).toBe(502)
+
+    await orchestrator.mockTwitch.onTokenExchange(NEW_TOKENS)
+    await queueSyncAttempt(200)
+    const retry = await postSync(cookie)
+
+    expect(retry.status).toBe(200)
+  })
+})
+
 describe("Token validation sweep (issue #94)", () => {
   const STALE = "2020-01-01T00:00:00.000Z"
 

@@ -23,6 +23,8 @@ export interface SeedUserInput {
   tokenValidatedAt?: string
   // Stores tokens that fail to decrypt, as after a key rotation or corruption.
   undecryptableToken?: boolean
+  // Seeds a refresh claim held until this time, as by a refresh in flight (or a worker that died mid-refresh when it's in the past).
+  refreshLockedUntil?: string
   // Seeds a session closer to expiry (or its max lifetime) than a fresh login.
   sessionTtlS?: number
   sessionMaxLifetimeS?: number
@@ -182,6 +184,13 @@ export async function handleTestSeed(c: Context<HonoEnv>): Promise<Response> {
         scopes: "user:read:follows",
         now,
       })
+      if (body.user.refreshLockedUntil) {
+        await c.var.db.twitchTokens.claimRefreshLock(
+          userId,
+          now,
+          body.user.refreshLockedUntil,
+        )
+      }
       if (body.user.tokenValidatedAt) {
         await c.var.db.twitchTokens.markValidated(
           userId,

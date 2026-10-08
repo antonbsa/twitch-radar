@@ -54,7 +54,6 @@ export interface MonitorTarget {
 export async function ensureMonitoredBroadcasters(
   db: Database,
   config: AppConfig,
-  kv: KVNamespace,
   userId: string,
   targets: MonitorTarget[],
   reason: MonitorReason,
@@ -85,7 +84,6 @@ export async function ensureMonitoredBroadcasters(
     seedMissingChannelState(
       db,
       config,
-      kv,
       userId,
       targets.map((target) => target.broadcasterUserId),
     ),
@@ -95,7 +93,6 @@ export async function ensureMonitoredBroadcasters(
 async function seedMissingChannelState(
   db: Database,
   config: AppConfig,
-  kv: KVNamespace,
   userId: string,
   broadcasterUserIds: string[],
 ): Promise<void> {
@@ -105,7 +102,7 @@ async function seedMissingChannelState(
   const missing = broadcasterUserIds.filter((id) => !seeded.has(id))
   if (missing.length === 0) return
 
-  const streams = await withUserAccessToken(db, config, kv, userId, (token) =>
+  const streams = await withUserAccessToken(db, config, userId, (token) =>
     getStreamsByUserIds(
       config.twitchClientId,
       token,

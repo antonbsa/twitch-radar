@@ -22,9 +22,10 @@ const MAX_SCHEDULED_REFRESHES_PER_RUN = 2
 const VALIDATION_INTERVAL_MS = 50 * 60 * 1000
 const MAX_VALIDATIONS_PER_RUN = 3
 
-// Short KV lock per user so concurrent requests don't both spend the same
-// refresh token (Twitch invalidates it on use). 60s is KV's minimum TTL.
-const REFRESH_LOCK_TTL_S = 60
+// Per-user D1 claim so concurrent callers don't both spend the same refresh
+// token (Twitch invalidates it on use). The TTL only matters when a worker dies
+// mid-refresh; a refresh that finishes or fails releases the claim itself.
+const REFRESH_LOCK_TTL_MS = 60 * 1000
 const LOCK_WAIT_POLL_MS = 400
 const LOCK_WAIT_POLLS = 6
 
@@ -110,10 +111,6 @@ async function refreshAndStoreToken(
   return refreshed.access_token
 }
 
-function refreshLockKey(userId: string): string {
-  return `token_refresh_lock:${userId}`
-}
-
 /**
  * A request that lost the lock doesn't refresh (the winner's write would make
  * its own refresh token dead) and doesn't fail: it re-reads the token from D1
@@ -138,28 +135,35 @@ async function waitForConcurrentRefresh(
 }
 
 /**
- * `refreshAndStoreToken` behind the per-user KV lock. KV has no atomic
- * set-if-absent, so the lock narrows the race rather than closing it; the D1
- * re-read after taking it catches a refresh that finished in the gap.
+ * `refreshAndStoreToken` behind the per-user D1 claim. The claim is atomic, so
+ * one caller refreshes; the re-read after winning catches a refresh that
+ * finished between the caller loading its record and claiming.
  */
 async function refreshWithLock(
   db: Database,
   config: AppConfig,
-  kv: KVNamespace,
   record: TwitchTokenRecord,
 ): Promise<string> {
-  const key = refreshLockKey(record.user_id)
-  if (await kv.get(key)) return waitForConcurrentRefresh(db, config, record)
+  const now = Date.now()
+  const claimed = await db.twitchTokens.claimRefreshLock(
+    record.user_id,
+    new Date(now).toISOString(),
+    new Date(now + REFRESH_LOCK_TTL_MS).toISOString(),
+  )
+  if (!claimed) return waitForConcurrentRefresh(db, config, record)
 
-  await kv.put(key, "1", { expirationTtl: REFRESH_LOCK_TTL_S })
+  // A successful refresh releases the claim in its upsert.
+  let refreshed = false
   try {
     const latest = await db.twitchTokens.findByUserId(record.user_id)
     if (latest && latest.access_token !== record.access_token) {
       return await decryptToken(latest.access_token, config.tokenEncryptionKey)
     }
-    return await refreshAndStoreToken(db, config, record)
+    const accessToken = await refreshAndStoreToken(db, config, record)
+    refreshed = true
+    return accessToken
   } finally {
-    await kv.delete(key)
+    if (!refreshed) await db.twitchTokens.releaseRefreshLock(record.user_id)
   }
 }
 
@@ -175,11 +179,10 @@ function reconnectRequiredError(): ApiError {
 async function refreshForRequest(
   db: Database,
   config: AppConfig,
-  kv: KVNamespace,
   record: TwitchTokenRecord,
 ): Promise<string> {
   try {
-    return await refreshWithLock(db, config, kv, record)
+    return await refreshWithLock(db, config, record)
   } catch (err) {
     if (err instanceof TwitchApiError && isDeadRefreshStatus(err.status)) {
       throw reconnectRequiredError()
@@ -212,7 +215,6 @@ async function loadTokenRecord(
 export async function withUserAccessToken<T>(
   db: Database,
   config: AppConfig,
-  kv: KVNamespace,
   userId: string,
   fn: (accessToken: string) => Promise<T>,
 ): Promise<T> {
@@ -222,7 +224,7 @@ export async function withUserAccessToken<T>(
     config.tokenEncryptionKey,
   )
   if (new Date(record.expires_at).getTime() - Date.now() <= REFRESH_BUFFER_MS) {
-    accessToken = await refreshForRequest(db, config, kv, record)
+    accessToken = await refreshForRequest(db, config, record)
   }
 
   try {
@@ -241,7 +243,7 @@ export async function withUserAccessToken<T>(
     config.tokenEncryptionKey,
   )
   if (retryToken === accessToken) {
-    retryToken = await refreshForRequest(db, config, kv, latest)
+    retryToken = await refreshForRequest(db, config, latest)
   }
 
   try {
@@ -265,7 +267,6 @@ export async function withUserAccessToken<T>(
 export async function refreshExpiringTwitchTokens(
   db: Database,
   config: AppConfig,
-  kv: KVNamespace,
 ): Promise<void> {
   const logFields = scheduledJobLogFields("token-refresh")
   try {
@@ -283,7 +284,7 @@ export async function refreshExpiringTwitchTokens(
 
     for (const record of expiring) {
       try {
-        await refreshWithLock(db, config, kv, record)
+        await refreshWithLock(db, config, record)
         succeeded += 1
       } catch (error) {
         logger.error("Scheduled Twitch token refresh failed", {
@@ -312,7 +313,7 @@ export async function refreshExpiringTwitchTokens(
     })
   }
 
-  await validateTwitchTokens(db, config, kv)
+  await validateTwitchTokens(db, config)
 }
 
 /**
@@ -325,7 +326,6 @@ export async function refreshExpiringTwitchTokens(
 async function validateTwitchTokens(
   db: Database,
   config: AppConfig,
-  kv: KVNamespace,
 ): Promise<void> {
   const logFields = scheduledJobLogFields("token-refresh")
   try {
@@ -356,7 +356,7 @@ async function validateTwitchTokens(
           )
           valid += 1
         } else {
-          await refreshWithLock(db, config, kv, record)
+          await refreshWithLock(db, config, record)
           revalidated += 1
         }
       } catch (error) {

@@ -53,6 +53,8 @@ export class TwitchTokensRepository {
           refreshFailedAt: null,
           // A token just issued is valid by definition.
           validatedAt: input.now,
+          // The refresh that issued it is over, so release its claim.
+          refreshLockedUntil: null,
         },
       })
       .run()
@@ -106,6 +108,41 @@ export class TwitchTokensRepository {
       .limit(limit)
       .all()
     return rows.map(toRecord)
+  }
+
+  /**
+   * Claims the right to refresh this user's token until `until`, in one
+   * statement so exactly one concurrent caller wins. Returns false when another
+   * caller holds an unexpired claim.
+   */
+  async claimRefreshLock(
+    userId: string,
+    now: string,
+    until: string,
+  ): Promise<boolean> {
+    const claimed = await this.db
+      .update(twitchTokens)
+      .set({ refreshLockedUntil: until })
+      .where(
+        and(
+          eq(twitchTokens.userId, userId),
+          or(
+            isNull(twitchTokens.refreshLockedUntil),
+            lt(twitchTokens.refreshLockedUntil, now),
+          ),
+        ),
+      )
+      .returning({ userId: twitchTokens.userId })
+    return claimed.length > 0
+  }
+
+  /** Releases a claim without a successful refresh (the upsert releases it on success). */
+  async releaseRefreshLock(userId: string): Promise<void> {
+    await this.db
+      .update(twitchTokens)
+      .set({ refreshLockedUntil: null })
+      .where(eq(twitchTokens.userId, userId))
+      .run()
   }
 
   async markValidated(userId: string, now: string): Promise<void> {

@@ -1,0 +1,1 @@
+ALTER TABLE `twitch_tokens` ADD `refresh_locked_until` text;

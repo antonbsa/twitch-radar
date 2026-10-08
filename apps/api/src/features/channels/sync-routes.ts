@@ -17,8 +17,7 @@ export async function handleSyncFollows(
   const user = await db.users.findById(userId)
   if (!user) throw new ApiError(404, "user_not_found", "User not found")
 
-  const kv = c.env.KV_APP_CACHE
-  const fetched = await withUserAccessToken(db, config, kv, userId, (token) =>
+  const fetched = await withUserAccessToken(db, config, userId, (token) =>
     fetchFollowedChannelsSync(db, config, userId, user.twitch_user_id, token),
   )
 
@@ -28,7 +27,6 @@ export async function handleSyncFollows(
     persistFollowedChannelsSyncDeferred(
       db,
       config,
-      kv,
       userId,
       fetched,
       new Date().toISOString(),

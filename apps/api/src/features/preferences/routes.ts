@@ -68,7 +68,6 @@ function actor(c: Context<HonoEnv>) {
   return {
     db: c.var.db,
     config: c.var.config,
-    kv: c.env.KV_APP_CACHE,
     userId: c.var.userId,
   }
 }
