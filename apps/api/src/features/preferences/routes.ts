@@ -99,7 +99,7 @@ export async function handleGetPreferences(
   const boxArt = await resolveBoxArt(
     c.var.db,
     c.var.config,
-    c.var.userId,
+    c.env.KV_APP_CACHE,
     [...channel, ...global].map((record) => record.category_id),
   )
 
@@ -138,9 +138,12 @@ export async function handleCreateChannelPreference(
     )
   }
 
-  const boxArt = await resolveBoxArt(c.var.db, c.var.config, c.var.userId, [
-    result.record.category_id,
-  ])
+  const boxArt = await resolveBoxArt(
+    c.var.db,
+    c.var.config,
+    c.env.KV_APP_CACHE,
+    [result.record.category_id],
+  )
   return jsonResponse(
     { data: toChannelPreferenceItem(result.record, boxArt) },
     { status: result.created ? 201 : 200 },
@@ -173,9 +176,12 @@ export async function handleCreateGlobalPreference(
     actor(c),
     { categoryId: input.category_id, categoryName: input.category_name },
   )
-  const boxArt = await resolveBoxArt(c.var.db, c.var.config, c.var.userId, [
-    record.category_id,
-  ])
+  const boxArt = await resolveBoxArt(
+    c.var.db,
+    c.var.config,
+    c.env.KV_APP_CACHE,
+    [record.category_id],
+  )
   return jsonResponse(
     { data: toGlobalPreferenceItem(record, boxArt, exclusions) },
     { status: created ? 201 : 200 },

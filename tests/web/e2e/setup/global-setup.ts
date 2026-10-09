@@ -56,6 +56,13 @@ export default async function globalSetup() {
       `VAPID_PRIVATE_KEY:${vapidKeys.privateKey}`,
       "--var",
       "TWITCH_CLIENT_SECRET:test-client-secret",
+      // This tier has no mock Twitch: point both Twitch hosts at a closed port so
+      // best-effort lookups (category box art, ADR 0058) fail instantly instead of
+      // adding a real round trip to every preferences request.
+      "--var",
+      "TWITCH_AUTH_BASE_URL:http://127.0.0.1:9",
+      "--var",
+      "TWITCH_API_BASE_URL:http://127.0.0.1:9",
       // Match this tier's own vite port instead of npm run dev's.
       "--var",
       `PUBLIC_URL:${E2E_WEB_URL}`,

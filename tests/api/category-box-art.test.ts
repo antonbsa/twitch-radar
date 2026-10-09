@@ -54,6 +54,7 @@ describe("category box art (ADR 0058)", () => {
         global: [{ categoryId: MINECRAFT.id, categoryName: MINECRAFT.name }],
       },
     })
+    await orchestrator.mockTwitch.onAppToken()
     await orchestrator.mockTwitch.onGames([MINECRAFT])
 
     const first = await getPreferences(cookie)
@@ -89,6 +90,7 @@ describe("category box art (ADR 0058)", () => {
         global: [{ categoryId: MINECRAFT.id, categoryName: MINECRAFT.name }],
       },
     })
+    await orchestrator.mockTwitch.onAppToken()
     await orchestrator.mockTwitch.onGames([], 500)
 
     const failed = await getPreferences(cookie)
@@ -107,6 +109,7 @@ describe("category box art (ADR 0058)", () => {
         global: [{ categoryId: MINECRAFT.id, categoryName: MINECRAFT.name }],
       },
     })
+    await orchestrator.mockTwitch.onAppToken()
     await orchestrator.mockTwitch.onGames([])
 
     await getPreferences(cookie)
@@ -114,5 +117,26 @@ describe("category box art (ADR 0058)", () => {
 
     expect(again.global[0].box_art_url).toBeNull()
     expect(await gamesRequests()).toHaveLength(1)
+  })
+
+  it("should not flag the user's session when Twitch rejects the lookup", async () => {
+    const { cookie, userId } = await orchestrator.createAuthenticatedSession()
+    await orchestrator.seed({
+      user: { id: userId, twitchUserId: `twitch_${userId}` },
+      preferences: {
+        global: [{ categoryId: MINECRAFT.id, categoryName: MINECRAFT.name }],
+      },
+    })
+    await orchestrator.mockTwitch.onAppToken()
+    await orchestrator.mockTwitch.onGames([], 401)
+
+    await getPreferences(cookie)
+
+    const me = await fetch(`${orchestrator.baseUrl}/api/me`, {
+      headers: { Cookie: cookie },
+    })
+    await expect(me.json()).resolves.toMatchObject({
+      data: { twitch_reconnect_required: false },
+    })
   })
 })
