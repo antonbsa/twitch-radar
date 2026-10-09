@@ -69,3 +69,5 @@ jobs:
         run: npm ci
       - name: Run drizzle-kit check
         run: npm run db:check -w @twitch-radar/api
+      - name: Run migration file check
+        run: npm run check-migrations

@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "WRANGLER_LOG_PATH=.wrangler/logs node ../../infra/scripts/dev/api-dev.mjs",
-    "migrations:create": "drizzle-kit generate --config drizzle.config.ts --prefix index",
+    "migrations:create": "drizzle-kit generate --config drizzle.config.ts --prefix timestamp",
     "db:check": "drizzle-kit check --config drizzle.config.ts",
     "db:setup": "wrangler d1 migrations apply twitch-radar-dev --local",
     "build": "tsc -p tsconfig.json",

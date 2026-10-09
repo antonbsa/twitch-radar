@@ -37,4 +37,4 @@ Tailwind v4's Preflight doesn't give `<button>` a pointer cursor, so `src/index.
 
 `components/ui/` is copied source, not an upgradeable dependency: edit it directly.
 
-Before running `npx shadcn add <component>`, read [docs/shadcn-add-component.md](../../docs/shadcn-add-component.md): the CLI misconfigures paths, imports and dependencies here.
+Before running `npx shadcn add <component>`, use the [adding-a-shadcn-component](../../.claude/skills/adding-a-shadcn-component/SKILL.md) skill: the CLI misconfigures paths, imports and dependencies here.

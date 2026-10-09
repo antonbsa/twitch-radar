@@ -21,7 +21,7 @@ The canonical PR structure lives in [.github/PULL_REQUEST_TEMPLATE.md](../../../
    - Labels: apply them when opening the PR (`gh pr create --label ...` or `gh pr edit --add-label ...`), not only when asked: `migration` if it touches `infra/migrations`; `config` if it touches `apps/api/wrangler.jsonc`, `crons.ts`, or `env.ts`; plus the default label (`bug`, `enhancement`, `documentation`). These drive the categorized release notes in [.github/release.yml](../../../.github/release.yml): an unlabeled PR silently lands in "Other Changes", and `migration`/`config` have no category of their own - `preparing-a-release` calls out that risk in the notes' prose instead.
 6. Impact section: the specific effect, not the mechanism - name the capability/fix/behavior change precisely, then attach proof (command output, screenshots, benchmark results) only to substantiate that specific claim. Don't restate Summary. Mark N/A for changes with no external effect (pure refactor, docs).
 7. How to test section: reproduction steps for a reviewer, if applicable - instructions, not proof; the proof itself goes in Impact. Condense the handoff's How to Validate section into this when one exists; otherwise derive repro steps directly from the diff and the conversation.
-8. **For any change with a visible UI effect, generate a screenshot and attach it to the PR (Impact, or Summary if it frames the problem better).** Follow [docs/ui-screenshots.md](../../../docs/ui-screenshots.md). Skip this for changes with no visible UI effect (backend-only, refactors, docs).
+8. **For any change with a visible UI effect, generate a screenshot and attach it to the PR (Impact, or Summary if it frames the problem better).** Follow [capturing-ui-screenshots](../capturing-ui-screenshots/SKILL.md); capture with `npm run pr:screenshot` and upload with `npm run pr:image` (it prints the Markdown to paste), laid out as a table per its "Layout in the PR description" section. Skip this for changes with no visible UI effect (backend-only, refactors, docs).
 9. If there's no tracked issue and no spec/ADR link, delete the "References" section rather than leaving it empty.
 
 ## Common mistakes
@@ -33,3 +33,4 @@ The canonical PR structure lives in [.github/PULL_REQUEST_TEMPLATE.md](../../../
 - Writing the description from a handoff alone, without checking it against the diff.
 - Iteration narrative or a follow-up list in the body: the former belongs in the handoff's Design Decisions, the latter in a GitHub issue.
 - Repro steps in Impact instead of How to test.
+- Claiming an image can't be attached via `gh`, or linking a local/gitignored screenshot path: `npm run pr:image` uploads it and prints a URL that renders for everyone.

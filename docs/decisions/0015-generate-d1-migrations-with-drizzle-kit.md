@@ -23,7 +23,7 @@ Review generated SQL before applying or committing it.
 ## Consequences
 
 - Future schema changes start by editing `apps/api/src/db/schema.ts`.
-- `npm run migrations:create -- --name <descriptive_name>` generates the next SQL migration and Drizzle metadata.
+- `npm run migrations:create -- --name <descriptive_name>` generates the next SQL migration and Drizzle metadata, named with a timestamp prefix ([ADR 0059](0059-timestamp-prefixed-d1-migrations.md)).
 - `npm run db:check` validates generated migration metadata.
 - `npm run db:setup` remains the D1 apply command.
 - The initial migration is baselined with Drizzle Kit metadata so future generated migrations diff against the current schema.

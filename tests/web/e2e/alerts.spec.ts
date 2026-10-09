@@ -1132,8 +1132,16 @@ describe("Alerts view", () => {
       (res) =>
         res.request().method() === "POST" && res.url().includes("/exclusions"),
     )
+    // The row's remove button stays disabled until this refetch swaps the
+    // optimistic id for the real one.
+    const refetched = page.waitForResponse(
+      (res) =>
+        res.request().method() === "GET" &&
+        new URL(res.url()).pathname === "/api/preferences",
+    )
     release()
     await posted
+    await refetched
     await page.unroute("**/api/preferences/global/*/exclusions")
 
     // A failing DELETE puts the row back once the refetch lands.
