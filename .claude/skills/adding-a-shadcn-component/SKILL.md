@@ -1,4 +1,9 @@
-# Adding a shadcn component
+---
+name: adding-a-shadcn-component
+description: Use before running `npx shadcn add <component>` in apps/web; the CLI misconfigures paths, imports and dependencies here.
+---
+
+# Adding a shadcn Component
 
 Procedure for `npx shadcn add <component>` in `apps/web`. The CLI (style `radix-nova`) misbehaves in this repo, so each step below works around a known failure. The change is done when `git status` shows only the new `components/ui/` file(s) and the files you meant to touch, and the new component renders no literal user-facing text.
 

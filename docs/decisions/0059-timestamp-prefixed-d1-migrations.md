@@ -10,7 +10,7 @@ Accepted
 
 1. **Filename collision.** Both land `0012_*.sql`; the journal entry (`idx`, `tag`) conflicts textually in `meta/_journal.json`.
 2. **Snapshot-chain collision.** Each branch's snapshot has the same `prevId`. `drizzle-kit check` fails ("pointing to a parent snapshot ... which is a collision"), and a snapshot that lacks the other branch's columns makes the next `generate` diff wrongly. This is why `infra/AGENTS.md` says to regenerate on the merged baseline instead of renumbering by hand.
-3. **Local D1 remembers the old filename.** `wrangler d1 migrations apply` tracks applied migrations by filename in `d1_migrations`. A renumbered migration the worktree had already applied re-runs under its new name and fails with `duplicate column name` (recovery: [docs/d1-migration-rename-recovery.md](../d1-migration-rename-recovery.md)).
+3. **Local D1 remembers the old filename.** `wrangler d1 migrations apply` tracks applied migrations by filename in `d1_migrations`. A renumbered migration the worktree had already applied re-runs under its new name and fails with `duplicate column name` (recovery: [infra/AGENTS.md](../../infra/AGENTS.md), "Local D1 already recorded the old filename").
 
 Checked with drizzle-kit 0.31: `--prefix timestamp` names the files `YYYYMMDDHHMMSS_<name>.sql` (UTC), the snapshot `YYYYMMDDHHMMSS_snapshot.json`, and the journal `tag` the same, with `idx` still sequential. `drizzle-kit check` accepts the mix of `0001`-`0014` and timestamped entries. Wrangler sorts migration files lexicographically, and every `00NN_` name sorts before any `20…` timestamp, so the existing history keeps its order.
 
@@ -26,4 +26,4 @@ Checked with drizzle-kit 0.31: `--prefix timestamp` names the files `YYYYMMDDHHM
 - Problem 2 does not disappear: parallel branches still share a `prevId`, so the branch that merges second still regenerates its snapshot. The timestamp only makes it possible to keep the migration's filename while doing so.
 - Filenames lose the at-a-glance ordinal; ordering comes from the timestamp and the journal `idx`.
 - The restore-the-name step is manual. If it proves error-prone, a `migrations:rebase` script is the follow-up, not part of this decision.
-- `infra/AGENTS.md`, ADR 0015 and `docs/d1-migration-rename-recovery.md` are updated when this is accepted.
+- `infra/AGENTS.md` (including its local D1 recovery section) and ADR 0015 are updated when this is accepted.
