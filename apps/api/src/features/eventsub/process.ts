@@ -106,6 +106,7 @@ async function processStreamOnline(
   )
   const stream = streams.find((s) => s.id === event.id) ?? streams[0]
 
+  const startedAt = stream?.started_at ?? event.started_at
   const next = {
     isLive: true,
     streamId: stream?.id ?? event.id,
@@ -119,7 +120,9 @@ async function processStreamOnline(
       previous?.thumbnail_url ??
       null,
     viewerCount: stream?.viewer_count ?? null,
-    startedAt: stream?.started_at ?? event.started_at,
+    startedAt,
+    // A new stream starts in its first category (issue #120).
+    categoryStartedAt: startedAt,
     // ADR 0050: notification matching suppresses anything but "live" so a
     // rerun/playlist/watch_party doesn't page anyone.
     streamType: stream?.type ?? event.type,
@@ -179,6 +182,7 @@ async function processStreamOffline(
       thumbnailUrl: previous?.thumbnail_url ?? null,
       viewerCount: null,
       startedAt: null,
+      categoryStartedAt: null,
       // Not stream info to invent while offline — carried forward like
       // category/title above; overwritten on the next stream_started anyway.
       streamType: previous?.stream_type ?? null,
@@ -221,6 +225,13 @@ async function processChannelUpdate(
   const wasLive = previous?.is_live ?? false
   const nextCategoryId = normalizeCategory(event.category_id)
   const nextCategoryName = normalizeCategory(event.category_name)
+  // Exact only while live: the event time on a category change, the stored
+  // value when unchanged (e.g. title-only), nothing offline (issue #120).
+  const categoryStartedAt = !wasLive
+    ? null
+    : (previous?.category_id ?? null) === nextCategoryId
+      ? (previous?.category_started_at ?? null)
+      : message.messageTimestamp
 
   // Channel info updates apply live or offline so channel_state stays the
   // current snapshot; only the live category change is a relevant transition.
@@ -236,6 +247,7 @@ async function processChannelUpdate(
       thumbnailUrl: previous?.thumbnail_url ?? null,
       viewerCount: previous?.viewer_count ?? null,
       startedAt: previous?.started_at ?? null,
+      categoryStartedAt,
       // channel.update carries no stream type — preserve whatever the last
       // stream.online/offline recorded.
       streamType: previous?.stream_type ?? null,

@@ -12,6 +12,7 @@ export interface FollowedChannelViewItem {
   thumbnail_url: string | null
   viewer_count: number | null
   started_at: string | null
+  category_started_at: string | null
   last_live_at: string | null
   last_category_id: string | null
   last_category_name: string | null
@@ -34,6 +35,7 @@ export interface ChannelStateViewSource {
   thumbnail_url: string | null
   viewer_count: number | null
   started_at: string | null
+  category_started_at: string | null
   last_live_at: string | null
   last_category_id: string | null
   last_category_name: string | null
@@ -66,6 +68,7 @@ export function buildFollowedChannelsView(
       thumbnail_url: state?.thumbnail_url ?? null,
       viewer_count: state?.viewer_count ?? null,
       started_at: state?.started_at ?? null,
+      category_started_at: state?.category_started_at ?? null,
       last_live_at: state?.last_live_at ?? null,
       last_category_id: state?.last_category_id ?? null,
       last_category_name: state?.last_category_name ?? null,

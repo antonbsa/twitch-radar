@@ -20,6 +20,7 @@ function channel(overrides: Partial<FollowedChannel> = {}): FollowedChannel {
     title: null,
     viewer_count: null,
     started_at: null,
+    category_started_at: null,
     ...overrides,
   }
 }

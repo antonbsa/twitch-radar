@@ -8,11 +8,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/context/language-context"
 import { cn } from "@/lib/utils"
-import {
-  formatLiveDuration,
-  formatTimeAgo,
-  formatViewerCount,
-} from "@/lib/format"
+import { formatTimeAgo, formatViewerCount } from "@/lib/format"
+import { LiveLabel } from "@/routes/channels/components/live-label"
 import type { FollowedChannel } from "@/types/channel"
 
 interface ChannelRowProps {
@@ -33,7 +30,7 @@ export function ChannelRow({
   muted = false,
 }: ChannelRowProps) {
   const { t, language } = useLanguage()
-  const categoryName = channel.category_name ?? t("channel_row.no_category")
+
   return (
     <div
       data-testid="channel-row"
@@ -88,12 +85,7 @@ export function ChannelRow({
               <Globe aria-hidden="true" className="size-3 shrink-0" />
             )}
             <span className="truncate">
-              {channel.started_at
-                ? t("channel_row.live_for", {
-                    category: categoryName,
-                    duration: formatLiveDuration(channel.started_at),
-                  })
-                : categoryName}
+              <LiveLabel channel={channel} />
             </span>
           </p>
         ) : (

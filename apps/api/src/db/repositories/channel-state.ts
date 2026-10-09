@@ -12,6 +12,9 @@ export interface UpsertChannelStateInput {
   thumbnailUrl?: string | null
   viewerCount?: number | null
   startedAt?: string | null
+  // Exact start of the current category, or null for "unknown" (issue #120).
+  // Ignored when `upsertAll` runs with `preserveCategoryStartedAt`.
+  categoryStartedAt?: string | null
   streamType?: string | null
   // Explicit values win over the live→offline capture in `upsertAll`; seeds
   // set them directly, EventSub offline passes its own event timestamp.
@@ -35,12 +38,40 @@ export interface ChannelStateRecord {
   thumbnail_url: string | null
   viewer_count: number | null
   started_at: string | null
+  category_started_at: string | null
   stream_type: string | null
   last_live_at: string | null
   last_category_id: string | null
   last_category_name: string | null
   updated_from_event_at: string | null
   updated_at: string
+}
+
+/**
+ * Follow-sync rule for `category_started_at` (issue #120): a Twitch snapshot
+ * can't tell when the category began, so the stored value survives only when
+ * the snapshot is the same stream in the same category; otherwise it is
+ * unknown (null). Mirrors the SQL `CASE` in `upsertAll`.
+ */
+export function preserveCategoryStartedAt(
+  stored:
+    | Pick<
+        ChannelStateRecord,
+        "stream_id" | "category_id" | "category_started_at"
+      >
+    | undefined,
+  next: { streamId: string | null; categoryId: string | null },
+): string | null {
+  if (!stored || next.streamId === null) return null
+  if (stored.stream_id !== next.streamId) return null
+  if (stored.category_id !== next.categoryId) return null
+  return stored.category_started_at
+}
+
+export interface UpsertAllOptions {
+  // Follow sync / monitoring seed: derive `category_started_at` from the
+  // stored row (see `preserveCategoryStartedAt`) instead of the input value.
+  preserveCategoryStartedAt?: boolean
 }
 
 export class ChannelStateRepository {
@@ -50,13 +81,16 @@ export class ChannelStateRepository {
     this.db = db
   }
 
-  async upsertAll(inputs: UpsertChannelStateInput[]): Promise<void> {
+  async upsertAll(
+    inputs: UpsertChannelStateInput[],
+    options: UpsertAllOptions = {},
+  ): Promise<void> {
     if (inputs.length === 0) return
-    // 15 bound params per row (broadcasterUserId, isLive, streamId,
+    // 16 bound params per row (broadcasterUserId, isLive, streamId,
     // categoryId, categoryName, title, thumbnailUrl, viewerCount, startedAt,
-    // streamType, lastLiveAt, lastCategoryId, lastCategoryName,
-    // updatedFromEventAt, updatedAt); D1 caps bound params at 100 per query,
-    // so 6 rows/batch (90 params) stays safely under that limit.
+    // categoryStartedAt, streamType, lastLiveAt, lastCategoryId,
+    // lastCategoryName, updatedFromEventAt, updatedAt); D1 caps bound params
+    // at 100 per query, so 6 rows/batch (96 params) stays under that limit.
     const BATCH_SIZE = 6
     const statements = []
     for (let i = 0; i < inputs.length; i += BATCH_SIZE) {
@@ -75,6 +109,7 @@ export class ChannelStateRepository {
               thumbnailUrl: input.thumbnailUrl ?? null,
               viewerCount: input.viewerCount ?? null,
               startedAt: input.startedAt ?? null,
+              categoryStartedAt: input.categoryStartedAt ?? null,
               streamType: input.streamType ?? null,
               lastLiveAt: input.lastLiveAt ?? null,
               lastCategoryId: input.lastCategoryId ?? null,
@@ -94,6 +129,9 @@ export class ChannelStateRepository {
               thumbnailUrl: sql`excluded.thumbnail_url`,
               viewerCount: sql`excluded.viewer_count`,
               startedAt: sql`excluded.started_at`,
+              categoryStartedAt: options.preserveCategoryStartedAt
+                ? sql`CASE WHEN excluded.stream_id IS NOT NULL AND excluded.stream_id = ${channelState.streamId} AND excluded.category_id IS ${channelState.categoryId} THEN ${channelState.categoryStartedAt} ELSE NULL END`
+                : sql`excluded.category_started_at`,
               streamType: sql`excluded.stream_type`,
               // On a live→offline transition, capture when and what it last
               // streamed from the row being replaced, in the same upsert (no
@@ -136,6 +174,7 @@ export class ChannelStateRepository {
           thumbnail_url: row.thumbnailUrl,
           viewer_count: row.viewerCount,
           started_at: row.startedAt,
+          category_started_at: row.categoryStartedAt,
           stream_type: row.streamType,
           last_live_at: row.lastLiveAt,
           last_category_id: row.lastCategoryId,

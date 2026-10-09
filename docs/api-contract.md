@@ -42,8 +42,8 @@ Every error response has the same shape:
 | GET | `/me` | yes | current user, including `twitch_reconnect_required` (ADR 0036) |
 | PATCH | `/me/language` | yes | sets the user's language preference (ADR 0044) |
 | PATCH | `/me/notifications-paused` | yes | pauses or resumes all notifications with `{ paused }`; `GET /me` exposes `notifications_paused_at` (ADR 0054) |
-| POST | `/sync/follows` | yes | re-syncs the user's followed channels from Twitch |
-| GET | `/channels/followed` | yes | the user's followed channels with current live/category state |
+| POST | `/sync/follows` | yes | re-syncs the user's followed channels from Twitch and returns the same list as `GET /channels/followed`, including `category_started_at` computed in memory with the same preserve-or-null rule the deferred write applies |
+| GET | `/channels/followed` | yes | the user's followed channels with current live/category state; `category_started_at` is when the current category began while live, exact or `null` for unknown (clients fall back to `started_at`) |
 | GET | `/categories/search` | yes | proxies Twitch category search with the user's token; also caches each result's box art (ADR 0058) |
 | GET | `/preferences` | yes | the user's active channel and global category preferences; each item carries a nullable `box_art_url` (ADR 0058); each global preference embeds its active `exclusions` (ADR 0054) |
 | POST | `/preferences/channel` | yes | creates/revives a channel-scoped category preference (ADR 0029) |

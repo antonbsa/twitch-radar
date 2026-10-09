@@ -412,6 +412,135 @@ describe("EventSub queue processing", () => {
   })
 })
 
+describe("EventSub category_started_at (issue #120)", () => {
+  const CATEGORY_SINCE = "2024-06-01T13:00:00Z"
+  const liveSeed = {
+    broadcasterUserId: BROADCASTER_ID,
+    isLive: true,
+    streamId: STREAM.id,
+    categoryId: "27471",
+    categoryName: "Minecraft",
+    startedAt: STREAM.started_at,
+    categoryStartedAt: CATEGORY_SINCE,
+  }
+
+  it("should set it to the stream's started_at on stream.online", async () => {
+    await orchestrator.seedChannelState([
+      { broadcasterUserId: BROADCASTER_ID, isLive: false },
+    ])
+    await orchestrator.mockTwitch.onAppToken()
+    await orchestrator.mockTwitch.onStreams([STREAM])
+
+    const res = await sendEventsubWebhook("stream.online", {
+      event: streamOnlineEvent(),
+    })
+    expect(res.status).toBe(204)
+
+    const state = await orchestrator.waitForInspect(
+      [BROADCASTER_ID],
+      (s) => s.channelState[0]?.is_live === true,
+    )
+    expect(state.channelState[0]!.category_started_at).toBe(STREAM.started_at)
+  })
+
+  it("should restore it on stream.online after a sync wrote NULL", async () => {
+    await orchestrator.seedChannelState([
+      { ...liveSeed, categoryStartedAt: null },
+    ])
+    await orchestrator.mockTwitch.onAppToken()
+    await orchestrator.mockTwitch.onStreams([STREAM])
+
+    const res = await sendEventsubWebhook("stream.online", {
+      event: streamOnlineEvent(),
+    })
+    expect(res.status).toBe(204)
+
+    const state = await orchestrator.waitForInspect(
+      [BROADCASTER_ID],
+      (s) => s.channelState[0]?.category_started_at === STREAM.started_at,
+    )
+    expect(state.channelState[0]!.category_started_at).toBe(STREAM.started_at)
+  })
+
+  it("should set it to the message timestamp on a live category change", async () => {
+    await orchestrator.seedChannelState([liveSeed])
+    const timestamp = new Date().toISOString()
+
+    const res = await sendEventsubWebhook("channel.update", {
+      timestamp,
+      event: channelUpdateEvent({
+        category_id: "509658",
+        category_name: "Just Chatting",
+      }),
+      subscription: { version: "2" },
+    })
+    expect(res.status).toBe(204)
+
+    const state = await orchestrator.waitForInspect(
+      [BROADCASTER_ID],
+      (s) => s.channelState[0]?.category_id === "509658",
+    )
+    expect(state.channelState[0]!.category_started_at).toBe(timestamp)
+  })
+
+  it("should preserve it on a live title-only update", async () => {
+    await orchestrator.seedChannelState([liveSeed])
+
+    const res = await sendEventsubWebhook("channel.update", {
+      event: channelUpdateEvent({ title: "New title" }),
+      subscription: { version: "2" },
+    })
+    expect(res.status).toBe(204)
+
+    const state = await orchestrator.waitForInspect(
+      [BROADCASTER_ID],
+      (s) => s.channelState[0]?.title === "New title",
+    )
+    expect(state.channelState[0]!.category_started_at).toBe(CATEGORY_SINCE)
+  })
+
+  it("should clear it on a channel.update while offline", async () => {
+    await orchestrator.seedChannelState([
+      {
+        broadcasterUserId: BROADCASTER_ID,
+        isLive: false,
+        categoryId: "27471",
+        categoryStartedAt: CATEGORY_SINCE,
+      },
+    ])
+
+    const res = await sendEventsubWebhook("channel.update", {
+      event: channelUpdateEvent({
+        category_id: "509658",
+        category_name: "Just Chatting",
+      }),
+      subscription: { version: "2" },
+    })
+    expect(res.status).toBe(204)
+
+    const state = await orchestrator.waitForInspect(
+      [BROADCASTER_ID],
+      (s) => s.channelState[0]?.category_id === "509658",
+    )
+    expect(state.channelState[0]!.category_started_at).toBeNull()
+  })
+
+  it("should clear it on stream.offline", async () => {
+    await orchestrator.seedChannelState([liveSeed])
+
+    const res = await sendEventsubWebhook("stream.offline", {
+      event: streamOfflineEvent(),
+    })
+    expect(res.status).toBe(204)
+
+    const state = await orchestrator.waitForInspect(
+      [BROADCASTER_ID],
+      (s) => s.channelState[0]?.is_live === false,
+    )
+    expect(state.channelState[0]!.category_started_at).toBeNull()
+  })
+})
+
 describe("EventSub subscription creation", () => {
   const PENDING_ROWS = [
     { broadcasterUserId: BROADCASTER_ID, eventType: "stream.online" },

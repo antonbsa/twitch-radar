@@ -35,6 +35,8 @@
   "channel_row.no_category": "Sin categoría",
   "channel_row.viewers_count": "{count} espectadores",
   "channel_row.live_for": "En {category} desde hace {duration}",
+  "channel_row.live_in_category": "En {category}",
+  "channel_row.live_duration": "en vivo desde hace {duration}",
   "channel_row.last_live": "Estuvo en {category} {time}",
   "channel_row.configure_aria": "Configurar {name}",
 
