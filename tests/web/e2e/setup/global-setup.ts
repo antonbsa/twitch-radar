@@ -10,7 +10,13 @@ import {
   waitForReadyOrExit,
 } from "../../../shared/setup/process-lifecycle"
 import { generateTestVapidKeys } from "../../../shared/setup/vapid"
-import { E2E_API_PORT, E2E_API_URL, E2E_WEB_PORT, E2E_WEB_URL } from "./ports"
+import {
+  E2E_API_PORT,
+  E2E_API_URL,
+  E2E_UNREACHABLE_TWITCH_URL,
+  E2E_WEB_PORT,
+  E2E_WEB_URL,
+} from "./ports"
 
 const REPO_ROOT = resolve(fileURLToPath(import.meta.url), "../../../../..")
 const API_HEALTH_URL = `${E2E_API_URL}/health`
@@ -56,13 +62,11 @@ export default async function globalSetup() {
       `VAPID_PRIVATE_KEY:${vapidKeys.privateKey}`,
       "--var",
       "TWITCH_CLIENT_SECRET:test-client-secret",
-      // This tier has no mock Twitch: point both Twitch hosts at a closed port so
-      // best-effort lookups (category box art, ADR 0058) fail instantly instead of
-      // adding a real round trip to every preferences request.
+      // Best-effort lookups (category box art, ADR 0058) must fail instantly instead of adding a real Twitch round trip to every preferences request.
       "--var",
-      "TWITCH_AUTH_BASE_URL:http://127.0.0.1:9",
+      `TWITCH_AUTH_BASE_URL:${E2E_UNREACHABLE_TWITCH_URL}`,
       "--var",
-      "TWITCH_API_BASE_URL:http://127.0.0.1:9",
+      `TWITCH_API_BASE_URL:${E2E_UNREACHABLE_TWITCH_URL}`,
       // Match this tier's own vite port instead of npm run dev's.
       "--var",
       `PUBLIC_URL:${E2E_WEB_URL}`,
