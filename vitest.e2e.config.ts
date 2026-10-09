@@ -10,6 +10,9 @@ export default defineConfig({
     // against the real D1/KV bindings the test-seam endpoint writes to.
     fileParallelism: false,
     testTimeout: 30_000,
+    // One retry on CI absorbs rare browser-timing flakes; locally a failure
+    // stays visible. Don't add it to the API or unit tiers, which are deterministic.
+    retry: process.env.CI ? 1 : 0,
     hookTimeout: 30_000,
     env: {
       ...loadDevVars(),

@@ -10,6 +10,11 @@ import { E2E_WEB_URL } from "./ports"
 export const MOBILE_VIEWPORT = { width: 390, height: 844 }
 export const WEB_URL = E2E_WEB_URL
 
+// Playwright actions (click, goto, waitForResponse...) have no timeout by
+// default, so a stuck one only surfaces as the 30s test timeout with no line
+// number. A bounded default makes the failing step name itself.
+const ACTION_TIMEOUT_MS = 10_000
+
 export interface BrowserSession {
   browser: Browser
   context: BrowserContext
@@ -25,6 +30,7 @@ export interface BrowserSession {
 export async function openBrowser(sessionId?: string): Promise<BrowserSession> {
   const browser = await chromium.launch()
   const context = await browser.newContext({ viewport: MOBILE_VIEWPORT })
+  context.setDefaultTimeout(ACTION_TIMEOUT_MS)
 
   if (sessionId) {
     await context.addCookies([
