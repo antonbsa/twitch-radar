@@ -1,4 +1,9 @@
-# UI screenshots
+---
+name: capturing-ui-screenshots
+description: Use to see a UI change in a real browser or to attach before/after screenshots to a PR (npm run pr:screenshot, npm run pr:image).
+---
+
+# Capturing UI Screenshots
 
 Before seeing a UI change (checking your own work, or attaching a screenshot to a PR), use the `tests/web/e2e` tier instead of the dev server: it seeds an authenticated session for you, so there's no manual login and no `localhost`/`127.0.0.1` session-cookie mismatch. The throwaway spec and its output images live under gitignored paths (`tests/web/e2e/scratch/`, `test-results/`), so nothing here can end up committed, and eslint ignores the scratch directory, so a leftover spec is harmless.
 

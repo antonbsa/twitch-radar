@@ -66,7 +66,7 @@ const repo = run("gh", [
 
 if (ghApi([`repos/${repo}/branches/${BRANCH}`]) === null) {
   fail(
-    `Branch "${BRANCH}" does not exist. Create it once with "One-time setup: pr-assets branch" in docs/ui-screenshots.md.`,
+    `Branch "${BRANCH}" does not exist. Create it once with "One-time setup: pr-assets branch" in .claude/skills/capturing-ui-screenshots/SKILL.md.`,
   )
 }
 

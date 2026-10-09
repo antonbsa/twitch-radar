@@ -1,6 +1,6 @@
 // Runs a throwaway e2e screenshot spec against this worktree and, with --before, also against origin/main (files get -after/-before suffixes).
 // Usage: npm run pr:screenshot -- <spec> [--before]
-// See docs/ui-screenshots.md.
+// See .claude/skills/capturing-ui-screenshots/SKILL.md.
 import { execFileSync } from "node:child_process"
 import { cpSync, existsSync, mkdirSync, readdirSync } from "node:fs"
 import { basename, dirname, join, resolve } from "node:path"
