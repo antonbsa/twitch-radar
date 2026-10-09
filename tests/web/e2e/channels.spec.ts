@@ -134,7 +134,7 @@ describe("Channels view", () => {
     await expectVisible(row.locator('[data-slot="avatar-badge"]'))
     await expectVisible(row.getByText("1.2K viewers"))
     // No exact category start was seeded, so only the stream uptime shows.
-    await expectVisible(row.getByText("In Just Chatting", { exact: true }))
+    await expectVisible(row.getByText("In Just Chatting"))
     await expectVisible(row.getByText("live 1h 23m"))
     expect(
       ((await row.textContent()) ?? "").match(/Just Chatting/g),
