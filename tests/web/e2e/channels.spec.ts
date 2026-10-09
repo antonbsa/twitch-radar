@@ -859,7 +859,9 @@ describe("Channels view", () => {
       // force: true - Radix menu sets pointer-events to "none", making the row
       // appear unclickable to Playwright's static hit-test, but it becomes
       // clickable dynamically when pointerdown dismisses the menu first.
-      await row.click({ force: true })
+      // Clicking near the left edge keeps the point clear of the menu, which
+      // can overlap the row's center depending on how many rows are above it.
+      await row.click({ force: true, position: { x: 20, y: 28 } })
 
       await expectHidden(menu)
       expect(await page.getByTestId("channel-detail-modal").count()).toBe(0)
