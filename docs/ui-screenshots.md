@@ -1,22 +1,36 @@
 # UI screenshots
 
-Before seeing a UI change (checking your own work, or attaching a screenshot to a PR), use the `tests/web/e2e` tier instead of the dev server: it seeds an authenticated session for you, so there's no manual login and no `localhost`/`127.0.0.1` session-cookie mismatch. Both the throwaway spec and its output image live under gitignored paths (`tests/web/e2e/scratch/`, `test-results/`), so nothing here can end up committed, and eslint ignores the scratch directory, so a leftover spec is harmless.
+Before seeing a UI change (checking your own work, or attaching a screenshot to a PR), use the `tests/web/e2e` tier instead of the dev server: it seeds an authenticated session for you, so there's no manual login and no `localhost`/`127.0.0.1` session-cookie mismatch. The throwaway spec and its output images live under gitignored paths (`tests/web/e2e/scratch/`, `test-results/`), so nothing here can end up committed, and eslint ignores the scratch directory, so a leftover spec is harmless.
 
-1. Write the spec at `tests/web/e2e/scratch/<name>.spec.ts` (the `scratch/` directory is gitignored but still matches the tier's `tests/web/e2e/**/*.spec.ts` include glob, so it runs normally). Use the `authenticatedSession` fixture from `tests/web/e2e/setup/fixtures.ts`: it seeds a live session via the test seam and opens a real browser page already authenticated. Navigate to the screen you changed and call `page.screenshot({ path: "test-results/pr-screenshots/<name>.png" })`.
-2. Run just that spec through the tier's own config so it gets the tier's `globalSetup` (`wrangler dev` + `vite dev`):
+1. Write the spec at `tests/web/e2e/scratch/<name>.spec.ts` (`scratch/` is gitignored but still matches the tier's `tests/web/e2e/**/*.spec.ts` include glob). Use the `authenticatedSession` fixture from `tests/web/e2e/setup/fixtures.ts`, navigate to the screen you changed and call `screenshot(page, "<shot>")` from `tests/web/e2e/setup/screenshot.ts`. The helper writes `test-results/pr-screenshots/<shot>.png` (with a `-before`/`-after` suffix under `--before`); never set the path or the suffix yourself.
+2. Capture it:
    ```bash
-   npx vitest run --config vitest.e2e.config.ts tests/web/e2e/scratch/<name>.spec.ts
+   npm run pr:screenshot -- tests/web/e2e/scratch/<name>.spec.ts            # this worktree only
+   npm run pr:screenshot -- tests/web/e2e/scratch/<name>.spec.ts --before   # origin/main and this worktree
    ```
-3. Attach the resulting image to the PR description. Leaving the spec file under `scratch/` is fine.
+   The spec runs through the tier's own `globalSetup` (`wrangler dev` + `vite dev`). Use `--before` only when there is something comparable on `main`; a brand-new screen has no "before". With it, the script then runs the same spec from a detached `origin/main` worktree (`npm install` included), removes that worktree when done even if the spec fails, and copies its images back. The two runs go one after the other because the e2e tier uses fixed ports. The command prints the paths of the generated images.
+3. Upload them with `npm run pr:image -- <paths>` and put the Markdown it prints in the PR description (Impact, or Summary when it frames the problem better); use `gh pr edit --body-file` when the PR already exists.
 
-## Before
+## Layout in the PR description
 
-For a before/after comparison, capture the "before" from `origin/main` in a detached worktree. `git worktree add ... main` fails with `'main' is already used by worktree`, and symlinking `node_modules` from the feature worktree is unreliable.
+Images go in a Markdown table, following recent PRs:
 
-1. Create the worktree: `git worktree add --detach .agents/worktrees/before-<slug> origin/main`.
-2. Run `npm install` at its root.
-3. Copy the scratch spec into the same path there (`tests/web/e2e/scratch/<name>.spec.ts`), keeping a different output file name (e.g. `<name>-before.png`) if you want both images side by side.
-4. Run the same e2e command from that worktree's root.
-5. Remove it: `git worktree remove --force .agents/worktrees/before-<slug>`.
+- Header row: what each column shows. `Before | After` for a comparison, or the screen/state names (`List | Channel details`, `Mobile | Desktop`) when there is no "before".
+- Extra rows only when there is another dimension (e.g. Desktop and Mobile); then add a first column with the row label, with an empty header cell.
+- A single image needs no table.
 
-Run the two sides one after the other, never concurrently: the e2e tier uses fixed ports.
+```md
+|            | Before         | After         |
+| ---------- | -------------- | ------------- |
+| **Mobile** | ![a-before](…) | ![a-after](…) |
+```
+
+## One-time setup: `pr-assets` branch
+
+`npm run pr:image` needs an orphan `pr-assets` branch on origin. Create it once, from any checkout (it builds an empty commit without touching the working tree):
+
+```bash
+git push origin "$(git commit-tree "$(git hash-object -t tree /dev/null)" -m "chore: init pr-assets")":refs/heads/pr-assets
+```
+
+Don't upload screenshots containing real tokens, emails or non-test user data: the repo is public.
