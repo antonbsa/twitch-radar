@@ -15,7 +15,7 @@ Issues #27 and #77: category search results already show box art, but the places
 - **The preference wire shapes gain a nullable `box_art_url`** (channel and global items). The value is Twitch's `{width}x{height}` template, as `/categories/search` already returns it (ADR 0028 types are updated on the web side).
 - **A failed Get Games never fails the response.** The error is logged, ids stay uncached (so the next read retries) and their URL is `null`; the web renders the placeholder.
 - **No backfill migration.** Missing rows are the normal cold state, and the first read fills them (the "no backward-compatibility code" rule does not apply: null is a legitimate value, not a legacy state).
-- **No expiry.** Box art for a category id is effectively static; a stale image is not worth a refresh job.
+- **Entries expire after 30 days, on read.** Box art is effectively static, but a null cached while Twitch had no art yet would stick forever. A row older than the TTL counts as missing and goes through the same lazy batched fetch (no refresh job); if that fetch fails the stale value is served. The TTL is one constant, not configurable, and `GET /categories/search` upserts still refresh rows earlier.
 - **The web renders it through one `CategoryBoxArt` component** with fixed sizes in the 3:4 poster ratio: the 40x54 search-result size, and a small size for chips and the exclusions dialog title. The live category on the channel detail sheet was tried and dropped: the art next to the `text-xs` category line was not practical, so followed channels carry no box art.
 
 ## Consequences

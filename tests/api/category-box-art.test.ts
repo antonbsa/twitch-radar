@@ -139,4 +139,60 @@ describe("category box art (ADR 0058)", () => {
       data: { twitch_reconnect_required: false },
     })
   })
+
+  describe("expiry", () => {
+    const STALE = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000).toISOString()
+    const NEW_ART = MINECRAFT_ART.replace("27471_IGDB", "27471_IGDB_v2")
+
+    async function seedStaleBoxArt(boxArtUrl: string | null) {
+      const { cookie, userId } = await orchestrator.createAuthenticatedSession()
+      await orchestrator.seed({
+        user: { id: userId, twitchUserId: `twitch_${userId}` },
+        preferences: {
+          global: [{ categoryId: MINECRAFT.id, categoryName: MINECRAFT.name }],
+        },
+        categoryBoxArt: [{ id: MINECRAFT.id, boxArtUrl, updatedAt: STALE }],
+      })
+      return cookie
+    }
+
+    it("should refetch a null cached longer than the TTL ago and pick up the new art", async () => {
+      const cookie = await seedStaleBoxArt(null)
+      await orchestrator.mockTwitch.onAppToken()
+      await orchestrator.mockTwitch.onGames([
+        { ...MINECRAFT, box_art_url: NEW_ART },
+      ])
+
+      const data = await getPreferences(cookie)
+
+      expect(data.global[0].box_art_url).toBe(NEW_ART)
+      expect(await gamesRequests()).toHaveLength(1)
+    })
+
+    it("should keep serving the stale URL when the refetch fails", async () => {
+      const cookie = await seedStaleBoxArt(MINECRAFT_ART)
+      await orchestrator.mockTwitch.onAppToken()
+      await orchestrator.mockTwitch.onGames([], 500)
+
+      const data = await getPreferences(cookie)
+
+      expect(data.global[0].box_art_url).toBe(MINECRAFT_ART)
+    })
+
+    it("should not refetch an entry still inside the TTL", async () => {
+      const { cookie, userId } = await orchestrator.createAuthenticatedSession()
+      await orchestrator.seed({
+        user: { id: userId, twitchUserId: `twitch_${userId}` },
+        preferences: {
+          global: [{ categoryId: MINECRAFT.id, categoryName: MINECRAFT.name }],
+        },
+        categoryBoxArt: [{ id: MINECRAFT.id, boxArtUrl: MINECRAFT_ART }],
+      })
+
+      const data = await getPreferences(cookie)
+
+      expect(data.global[0].box_art_url).toBe(MINECRAFT_ART)
+      expect(await gamesRequests()).toHaveLength(0)
+    })
+  })
 })

@@ -116,6 +116,13 @@ export interface SeedBroadcasterMuteInput {
   broadcasterUserId: string
 }
 
+export interface SeedCategoryBoxArtInput {
+  id: string
+  boxArtUrl: string | null
+  // Backdates the cache row to exercise expiry; defaults to now.
+  updatedAt?: string
+}
+
 export interface SeedRequestBody {
   user?: SeedUserInput
   followedChannels?: SeedFollowedChannelInput[]
@@ -126,6 +133,7 @@ export interface SeedRequestBody {
   pushSubscriptions?: SeedPushSubscriptionInput[]
   notificationSnoozes?: SeedNotificationSnoozeInput[]
   broadcasterMutes?: SeedBroadcasterMuteInput[]
+  categoryBoxArt?: SeedCategoryBoxArtInput[]
 }
 
 export interface SeedResponse {
@@ -238,6 +246,13 @@ export async function handleTestSeed(c: Context<HonoEnv>): Promise<Response> {
         lastCategoryName: state.lastCategoryName ?? null,
         now,
       })),
+    )
+  }
+
+  for (const entry of body.categoryBoxArt ?? []) {
+    await c.var.db.categoryBoxArt.upsertMany(
+      [{ id: entry.id, box_art_url: entry.boxArtUrl }],
+      entry.updatedAt ?? now,
     )
   }
 
