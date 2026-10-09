@@ -26,6 +26,15 @@ export async function handleSearchCategories(
       ),
   )
 
+  // Seeds the box art cache so creating a preference from a result is a hit (ADR 0058).
+  await c.var.db.categoryBoxArt.upsertMany(
+    categories.map((category) => ({
+      id: category.id,
+      box_art_url: category.box_art_url ?? null,
+    })),
+    new Date().toISOString(),
+  )
+
   return jsonResponse({
     data: categories.map((category) => ({
       id: category.id,

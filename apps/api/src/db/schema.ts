@@ -174,6 +174,14 @@ export const channelStateChanges = sqliteTable(
   ],
 )
 
+// Twitch box art template per category id, filled lazily on read (ADR 0058).
+// A null URL is a cached "Twitch has no art for this id", not a missing row.
+export const categoryBoxArt = sqliteTable("category_box_art", {
+  id: text("id").primaryKey(),
+  boxArtUrl: text("box_art_url"),
+  updatedAt: text("updated_at").notNull(),
+})
+
 export const channelCategoryPreferences = sqliteTable(
   "channel_category_preferences",
   {

@@ -7,6 +7,7 @@ import type { GlobalPreferenceExclusionRecord } from "../../db/repositories/glob
 import { ApiError } from "../../http/errors"
 import { findOwnedRecord, parseBody } from "../../http/handlers"
 import { jsonResponse } from "../../http/response"
+import { resolveBoxArt } from "../categories/box-art"
 import {
   disableChannelPreference,
   disableGlobalPreference,
@@ -25,16 +26,22 @@ const CreateGlobalPreferenceSchema = z.object({
   category_name: z.string().min(1),
 })
 
+type BoxArtById = Map<string, string | null>
+
 /**
  * Wire shapes (mirrored in apps/web/src/types/preference.ts, ADR 0028) omit
  * user_id (implied by the session) and disabled_at (list returns active only).
  */
-function toChannelPreferenceItem(record: ChannelPreferenceRecord) {
+function toChannelPreferenceItem(
+  record: ChannelPreferenceRecord,
+  boxArt: BoxArtById,
+) {
   return {
     id: record.id,
     broadcaster_user_id: record.broadcaster_user_id,
     category_id: record.category_id,
     category_name: record.category_name,
+    box_art_url: boxArt.get(record.category_id) ?? null,
     created_at: record.created_at,
   }
 }
@@ -49,12 +56,14 @@ function toExclusionItem(record: GlobalPreferenceExclusionRecord) {
 
 function toGlobalPreferenceItem(
   record: GlobalPreferenceRecord,
+  boxArt: BoxArtById,
   exclusions: GlobalPreferenceExclusionRecord[] = [],
 ) {
   return {
     id: record.id,
     category_id: record.category_id,
     category_name: record.category_name,
+    box_art_url: boxArt.get(record.category_id) ?? null,
     created_at: record.created_at,
     exclusions: exclusions.map(toExclusionItem),
   }
@@ -87,12 +96,20 @@ export async function handleGetPreferences(
       global.map((record) => record.id),
     )
 
+  const boxArt = await resolveBoxArt(
+    c.var.db,
+    c.var.config,
+    c.env.KV_APP_CACHE,
+    [...channel, ...global].map((record) => record.category_id),
+  )
+
   return jsonResponse({
     data: {
-      channel: channel.map(toChannelPreferenceItem),
+      channel: channel.map((record) => toChannelPreferenceItem(record, boxArt)),
       global: global.map((record) =>
         toGlobalPreferenceItem(
           record,
+          boxArt,
           exclusions.filter((e) => e.preference_id === record.id),
         ),
       ),
@@ -121,8 +138,14 @@ export async function handleCreateChannelPreference(
     )
   }
 
+  const boxArt = await resolveBoxArt(
+    c.var.db,
+    c.var.config,
+    c.env.KV_APP_CACHE,
+    [result.record.category_id],
+  )
   return jsonResponse(
-    { data: toChannelPreferenceItem(result.record) },
+    { data: toChannelPreferenceItem(result.record, boxArt) },
     { status: result.created ? 201 : 200 },
   )
 }
@@ -153,8 +176,14 @@ export async function handleCreateGlobalPreference(
     actor(c),
     { categoryId: input.category_id, categoryName: input.category_name },
   )
+  const boxArt = await resolveBoxArt(
+    c.var.db,
+    c.var.config,
+    c.env.KV_APP_CACHE,
+    [record.category_id],
+  )
   return jsonResponse(
-    { data: toGlobalPreferenceItem(record, exclusions) },
+    { data: toGlobalPreferenceItem(record, boxArt, exclusions) },
     { status: created ? 201 : 200 },
   )
 }

@@ -157,6 +157,14 @@ const mockTwitch = {
     return this.queue("/helix/search/categories", { data: categories }, status)
   },
 
+  /** Get Games, used to resolve category box art (ADR 0058). */
+  onGames(
+    games: Array<{ id: string; name: string; box_art_url?: string | null }>,
+    status = 200,
+  ) {
+    return this.queue("/helix/games", { data: games }, status)
+  },
+
   onStreams(
     streams: Array<{
       id: string

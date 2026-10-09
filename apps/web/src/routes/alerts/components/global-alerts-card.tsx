@@ -46,6 +46,7 @@ export function GlobalAlertsCard({
           <div key={pref.id} className="flex items-center gap-0.5">
             <CategoryChip
               label={pref.category_name}
+              boxArtUrl={pref.box_art_url}
               armed={armedChipId === pref.id}
               onArm={() => onArmChip(pref.id)}
               onRemove={() => onRemove(pref)}

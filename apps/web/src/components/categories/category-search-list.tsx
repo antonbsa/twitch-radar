@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { Globe } from "lucide-react"
+import { CategoryBoxArt } from "@/components/categories/category-box-art"
 import { SearchField } from "@/components/search-field"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useLanguage } from "@/context/language-context"
@@ -69,9 +70,15 @@ export function CategorySearchList({
                   type="button"
                   disabled={disabled}
                   onClick={() => onSelect(category)}
-                  className="flex min-h-11 w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
+                  className="flex min-h-11 w-full items-center gap-3 px-3 py-2 text-left text-sm hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
                 >
-                  <span className="truncate">{category.name}</span>
+                  <CategoryBoxArt
+                    boxArtUrl={category.box_art_url}
+                    name={category.name}
+                  />
+                  <span className="min-w-0 flex-1 truncate">
+                    {category.name}
+                  </span>
                   {isGlobal && (
                     <span className="flex shrink-0 items-center gap-1 rounded-full border border-primary/40 px-2 py-0.5 text-xs text-primary">
                       <Globe className="size-3" />

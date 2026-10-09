@@ -7,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { CategoryBoxArt } from "@/components/categories/category-box-art"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { SearchField } from "@/components/search-field"
@@ -97,11 +98,18 @@ export function GlobalExclusionsDialog({
         {/* Title-only header, like the other full-screen dialogs, so it lines
             up with the close button; a long category name may still wrap. */}
         <DialogHeader className="min-h-14 justify-center px-4 pr-14">
-          <DialogTitle>
-            {t("exclusions.title", {
-              category: preference?.category_name ?? "",
-            })}
-          </DialogTitle>
+          <div className="flex items-center gap-2">
+            <CategoryBoxArt
+              boxArtUrl={preference?.box_art_url}
+              name={preference?.category_name ?? ""}
+              size="sm"
+            />
+            <DialogTitle>
+              {t("exclusions.title", {
+                category: preference?.category_name ?? "",
+              })}
+            </DialogTitle>
+          </div>
         </DialogHeader>
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 pt-1 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <DialogDescription>{t("exclusions.description")}</DialogDescription>

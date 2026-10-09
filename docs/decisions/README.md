@@ -60,6 +60,7 @@ Other project documents may state goals, requirements, task scope, validation st
 - [0053 - Self-Describing Scheduled Job Logs](0053-self-describing-scheduled-job-logs.md)
 - [0056 - Send-Side Notification Cooldown Per User And Broadcaster](0056-send-side-notification-cooldown.md)
 - [0057 - Single Minutely Cron Trigger With Time-Based Job Dispatch](0057-single-minutely-cron-trigger.md)
+- [0058 - Cache Category Box Art In D1 And Attach It To API Responses](0058-cache-category-box-art-in-d1.md)
 
 ## Proposed ADRs
 

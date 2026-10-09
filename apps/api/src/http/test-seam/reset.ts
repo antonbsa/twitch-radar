@@ -45,6 +45,7 @@ const ALL_TABLES = [
   "monitored_channels",
   "channel_state_changes",
   "channel_state",
+  "category_box_art",
   "followed_channels",
   "push_subscriptions",
   "twitch_tokens",
