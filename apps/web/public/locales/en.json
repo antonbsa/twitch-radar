@@ -35,7 +35,7 @@
   "channel_row.no_category": "No category",
   "channel_row.viewers_count": "{count} viewers",
   "channel_row.live_for": "In {category} for {duration}",
-  "channel_row.live_for_category": "In {category} for {categoryDuration} (live {streamDuration})",
+  "channel_row.live_for_category": "In {category} for {categoryDuration} · live {streamDuration}",
   "channel_row.live_in_category_unknown": "In {category} · live {duration}",
   "channel_row.last_live": "Was in {category} {time}",
   "channel_row.configure_aria": "Configure {name}",

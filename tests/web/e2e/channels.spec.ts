@@ -169,7 +169,7 @@ describe("Channels view", () => {
     const row = page.locator(
       `[data-testid="channel-row"][data-broadcaster-user-id="${id}"]`,
     )
-    await expectVisible(row.getByText("In Just Chatting for 40m (live 2h 20m)"))
+    await expectVisible(row.getByText("In Just Chatting for 40m · live 2h 20m"))
   })
 
   it("should show a single duration when the category never changed", async ({
