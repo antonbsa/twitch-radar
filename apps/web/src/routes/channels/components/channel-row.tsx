@@ -8,11 +8,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/context/language-context"
 import { cn } from "@/lib/utils"
-import {
-  formatLiveDuration,
-  formatTimeAgo,
-  formatViewerCount,
-} from "@/lib/format"
+import { formatTimeAgo, formatViewerCount } from "@/lib/format"
+import { useLiveLabel } from "@/routes/channels/use-live-label"
 import type { FollowedChannel } from "@/types/channel"
 
 interface ChannelRowProps {
@@ -33,37 +30,7 @@ export function ChannelRow({
   muted = false,
 }: ChannelRowProps) {
   const { t, language } = useLanguage()
-  const categoryName = channel.category_name ?? t("channel_row.no_category")
-  const liveLabel = getLiveLabel()
-
-  /**
-   * Second line of a live row. `category_started_at` is exact or null
-   * (issue #120): null falls back to the stream uptime, labelled as such.
-   */
-  function getLiveLabel(): string {
-    if (!channel.started_at) return categoryName
-    const streamDuration = formatLiveDuration(channel.started_at)
-    if (!channel.category_started_at) {
-      return t("channel_row.live_in_category_unknown", {
-        category: categoryName,
-        duration: streamDuration,
-      })
-    }
-    if (
-      new Date(channel.category_started_at).getTime() ===
-      new Date(channel.started_at).getTime()
-    ) {
-      return t("channel_row.live_for", {
-        category: categoryName,
-        duration: streamDuration,
-      })
-    }
-    return t("channel_row.live_for_category", {
-      category: categoryName,
-      categoryDuration: formatLiveDuration(channel.category_started_at),
-      streamDuration,
-    })
-  }
+  const liveLabel = useLiveLabel(channel)
 
   return (
     <div
