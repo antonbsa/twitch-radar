@@ -12,12 +12,15 @@ Conventions for `infra/` (D1 migrations, dev/deploy scripts).
 
 ## Local D1 already recorded the old filename
 
-If `npm run db:setup` fails after a migration was renamed (a legacy index-named one renumbered, or a timestamped one regenerated without restoring its name), typically with `duplicate column name: ... : SQLITE_ERROR`, local D1 had already applied it under the old filename and `db:setup` re-runs it under the new one. Repoint the tracking row at the new filename without losing dev data. This is a mutating `d1 execute`, so confirm before running it (see [apps/api/AGENTS.md](../apps/api/AGENTS.md), "D1 debug queries"):
+Symptom: right after regenerating a migration, `npm run db:setup` fails with `duplicate column name: ... : SQLITE_ERROR`. Local D1 had already applied it under its first filename and re-runs it under the new one, because wrangler tracks migrations by filename, not content; `db:check` and `check-migrations` pass either way, so only `db:setup` shows it.
 
-```bash
-cd apps/api
-npx wrangler d1 execute twitch-radar-dev --local \
-  --command "UPDATE d1_migrations SET name = '<new_filename>.sql' WHERE name = '<old_filename>.sql'"
-```
+1. Restore the original filename in the `.sql`, the snapshot and the journal `tag` (see "Migrations" above). This is the fix for a skipped restore step and mutates nothing.
+2. If the file must keep the new name and the SQL is unchanged, repoint the tracking row. This is a mutating `d1 execute`, so confirm before running it (see [apps/api/AGENTS.md](../apps/api/AGENTS.md), "D1 debug queries"):
+   ```bash
+   cd apps/api
+   npx wrangler d1 execute twitch-radar-dev --local \
+     --command "UPDATE d1_migrations SET name = '<new_filename>.sql' WHERE name = '<old_filename>.sql'"
+   ```
+3. If the SQL also changed, the applied schema is stale and repointing hides it: delete `apps/api/.wrangler/state/v3/d1` and rerun `npm run db:setup`, which wipes local sessions and synced channel data.
 
-Then `npm run db:setup` should report "No migrations to apply!" (or apply only the genuinely new ones). Deleting `apps/api/.wrangler/state/v3/d1` and rerunning `npm run db:setup` also works, but wipes local sessions and synced channel data.
+Verify with `npm run db:setup`: it reports "No migrations to apply!" or applies only the genuinely new ones.
