@@ -1,0 +1,1 @@
+ALTER TABLE `twitch_tokens` ADD `validated_at` text;

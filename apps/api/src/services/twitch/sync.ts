@@ -18,7 +18,7 @@ import {
   type TwitchFollowedStream,
 } from "./streams"
 import { preserveCategoryStartedAt } from "../../db/repositories/channel-state"
-import { getValidAccessToken } from "./token-refresh"
+import { withUserAccessToken } from "./token-refresh"
 
 // Refresh every user's follow list daily even when they don't open the app:
 // it drives which broadcasters global preferences monitor (ADR 0007) and the
@@ -289,15 +289,10 @@ export async function syncFollowedChannels(
   config: AppConfig,
   userId: string,
   twitchUserId: string,
-  accessToken: string,
 ): Promise<FollowedChannelViewItem[]> {
   const now = new Date().toISOString()
-  const fetched = await fetchFollowedChannelsSync(
-    db,
-    config,
-    userId,
-    twitchUserId,
-    accessToken,
+  const fetched = await withUserAccessToken(db, config, userId, (token) =>
+    fetchFollowedChannelsSync(db, config, userId, twitchUserId, token),
   )
   await persistFollowedChannelsSync(db, config, userId, fetched, now)
   return fetched.payload
@@ -349,14 +344,7 @@ export async function syncStaleFollows(
 
     for (const user of candidates) {
       try {
-        const accessToken = await getValidAccessToken(db, config, user.id)
-        await syncFollowedChannels(
-          db,
-          config,
-          user.id,
-          user.twitch_user_id,
-          accessToken,
-        )
+        await syncFollowedChannels(db, config, user.id, user.twitch_user_id)
         succeeded += 1
       } catch (error) {
         logger.error("Scheduled follow sync failed", {

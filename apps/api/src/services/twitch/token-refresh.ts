@@ -3,18 +3,57 @@ import type { AppConfig } from "../../env"
 import { ApiError } from "../../http/errors"
 import { logger, serializeError } from "../../lib/logger"
 import { decryptToken, encryptToken } from "../../lib/crypto"
-import { TwitchApiError } from "./errors"
-import { refreshAccessToken } from "./oauth"
+import { TwitchApiError, classifyTwitchError } from "./errors"
+import { refreshAccessToken, validateAccessToken } from "./oauth"
 import type { Database } from "../../db"
 import type { TwitchTokenRecord } from "../../db/repositories/twitch-tokens"
 
 const REFRESH_BUFFER_MS = 5 * 60 * 1000
 
 // The scheduled sweep refreshes tokens due within this window so request-time
-// refreshes stay the exception; runs twice per hour (ADR 0036), so the
-// lookahead must comfortably exceed the run interval.
+// refreshes stay the exception. It runs every minute (ADR 0057) with small
+// per-run caps: the invocation's 50-subrequest Free-plan budget is shared with
+// the other minutely jobs, and a steady few calls per minute beats a burst.
 const SCHEDULED_REFRESH_LOOKAHEAD_MS = 45 * 60 * 1000
-const MAX_SCHEDULED_REFRESHES_PER_RUN = 10
+const MAX_SCHEDULED_REFRESHES_PER_RUN = 2
+
+// Twitch asks for hourly validation of user tokens; a 50 minute threshold
+// validates each one about once an hour.
+const VALIDATION_INTERVAL_MS = 50 * 60 * 1000
+const MAX_VALIDATIONS_PER_RUN = 3
+
+// Per-user D1 claim so concurrent callers don't both spend the same refresh
+// token (Twitch invalidates it on use). The TTL only matters when a worker dies
+// mid-refresh; a refresh that finishes or fails releases the claim itself.
+const REFRESH_LOCK_TTL_MS = 60 * 1000
+const LOCK_WAIT_POLL_MS = 400
+const LOCK_WAIT_POLLS = 6
+
+// A 4xx other than 429 means Twitch rejected the refresh token itself; 429 and
+// 5xx say nothing about it, so those must not flag the row or ask for a reconnect.
+function isDeadRefreshStatus(status: number): boolean {
+  return status < 500 && status !== 429
+}
+
+/**
+ * Decrypts a stored token. One that can't be decrypted (rotated key, corrupt
+ * row) never will be, so the row is flagged `refresh_failed_at` like a dead
+ * refresh token; otherwise it would stay first in both sweep queries every run
+ * and starve every other user's refresh and validation.
+ */
+async function decryptStoredToken(
+  db: Database,
+  config: AppConfig,
+  userId: string,
+  encrypted: string,
+): Promise<string> {
+  try {
+    return await decryptToken(encrypted, config.tokenEncryptionKey)
+  } catch (err) {
+    await db.twitchTokens.markRefreshFailed(userId, new Date().toISOString())
+    throw err
+  }
+}
 
 /**
  * Refreshes one stored token and persists the result. A 4xx from Twitch
@@ -28,9 +67,11 @@ async function refreshAndStoreToken(
   config: AppConfig,
   record: TwitchTokenRecord,
 ): Promise<string> {
-  const refreshToken = await decryptToken(
+  const refreshToken = await decryptStoredToken(
+    db,
+    config,
+    record.user_id,
     record.refresh_token,
-    config.tokenEncryptionKey,
   )
 
   let refreshed
@@ -42,7 +83,7 @@ async function refreshAndStoreToken(
       config.twitchAuthBaseUrl,
     )
   } catch (err) {
-    if (err instanceof TwitchApiError && err.status < 500) {
+    if (err instanceof TwitchApiError && isDeadRefreshStatus(err.status)) {
       await db.twitchTokens.markRefreshFailed(
         record.user_id,
         new Date().toISOString(),
@@ -71,46 +112,157 @@ async function refreshAndStoreToken(
 }
 
 /**
- * @returns The decrypted access token, refreshing first when it expires within 5 min.
- * @throws ApiError 401 `auth_required` (no token row) or `reconnect_required` (Twitch rejected the refresh).
+ * A request that lost the lock doesn't refresh (the winner's write would make
+ * its own refresh token dead) and doesn't fail: it re-reads the token from D1
+ * until the winner's write lands, or after a few polls uses what is stored.
  */
-export async function getValidAccessToken(
+async function waitForConcurrentRefresh(
   db: Database,
   config: AppConfig,
-  userId: string,
+  record: TwitchTokenRecord,
 ): Promise<string> {
+  for (let i = 0; i < LOCK_WAIT_POLLS; i++) {
+    await new Promise((resolve) => setTimeout(resolve, LOCK_WAIT_POLL_MS))
+    const latest = await db.twitchTokens.findByUserId(record.user_id)
+    if (!latest) break
+    if (latest.refresh_failed_at) throw reconnectRequiredError()
+    if (latest.access_token !== record.access_token) {
+      return decryptToken(latest.access_token, config.tokenEncryptionKey)
+    }
+  }
+  const latest = (await db.twitchTokens.findByUserId(record.user_id)) ?? record
+  return decryptToken(latest.access_token, config.tokenEncryptionKey)
+}
+
+/**
+ * `refreshAndStoreToken` behind the per-user D1 claim. The claim is atomic, so
+ * one caller refreshes; the re-read after winning catches a refresh that
+ * finished between the caller loading its record and claiming.
+ */
+async function refreshWithLock(
+  db: Database,
+  config: AppConfig,
+  record: TwitchTokenRecord,
+): Promise<string> {
+  const now = Date.now()
+  const claimed = await db.twitchTokens.claimRefreshLock(
+    record.user_id,
+    new Date(now).toISOString(),
+    new Date(now + REFRESH_LOCK_TTL_MS).toISOString(),
+  )
+  if (!claimed) return waitForConcurrentRefresh(db, config, record)
+
+  // A successful refresh releases the claim in its upsert.
+  let refreshed = false
+  try {
+    const latest = await db.twitchTokens.findByUserId(record.user_id)
+    if (latest && latest.access_token !== record.access_token) {
+      return await decryptToken(latest.access_token, config.tokenEncryptionKey)
+    }
+    const accessToken = await refreshAndStoreToken(db, config, record)
+    refreshed = true
+    return accessToken
+  } finally {
+    if (!refreshed) await db.twitchTokens.releaseRefreshLock(record.user_id)
+  }
+}
+
+function reconnectRequiredError(): ApiError {
+  return new ApiError(
+    401,
+    "reconnect_required",
+    "Twitch token refresh failed — please reconnect your account",
+  )
+}
+
+/** Locked refresh for a request: a dead refresh token is `reconnect_required`, anything else `classifyTwitchError`. */
+async function refreshForRequest(
+  db: Database,
+  config: AppConfig,
+  record: TwitchTokenRecord,
+): Promise<string> {
+  try {
+    return await refreshWithLock(db, config, record)
+  } catch (err) {
+    if (err instanceof TwitchApiError && isDeadRefreshStatus(err.status)) {
+      throw reconnectRequiredError()
+    }
+    throw classifyTwitchError(err)
+  }
+}
+
+async function loadTokenRecord(
+  db: Database,
+  userId: string,
+): Promise<TwitchTokenRecord> {
   const record = await db.twitchTokens.findByUserId(userId)
   if (!record)
     throw new ApiError(401, "auth_required", "No Twitch token on record")
+  return record
+}
 
-  const accessToken = await decryptToken(
+/**
+ * Runs `fn` with the user's Twitch access token: the one place request-time
+ * Helix calls get their token and have upstream failures classified.
+ *
+ * - Refreshes first when the token expires within 5 min.
+ * - An upstream 401 on a token that looked valid (revoked grant, or rotated by
+ *   another request) refreshes once and retries; a second 401 flags the row and
+ *   throws `401 reconnect_required`, same as a dead refresh token.
+ * - 429/5xx become `twitch_unavailable` (see `classifyTwitchError`).
+ * @throws ApiError 401 `auth_required` (no token row) or `reconnect_required`.
+ */
+export async function withUserAccessToken<T>(
+  db: Database,
+  config: AppConfig,
+  userId: string,
+  fn: (accessToken: string) => Promise<T>,
+): Promise<T> {
+  const record = await loadTokenRecord(db, userId)
+  let accessToken = await decryptToken(
     record.access_token,
     config.tokenEncryptionKey,
   )
-
-  if (new Date(record.expires_at).getTime() - Date.now() > REFRESH_BUFFER_MS) {
-    return accessToken
+  if (new Date(record.expires_at).getTime() - Date.now() <= REFRESH_BUFFER_MS) {
+    accessToken = await refreshForRequest(db, config, record)
   }
 
   try {
-    return await refreshAndStoreToken(db, config, record)
+    return await fn(accessToken)
   } catch (err) {
-    if (err instanceof TwitchApiError) {
-      throw new ApiError(
-        401,
-        "reconnect_required",
-        "Twitch token refresh failed — please reconnect your account",
-      )
+    if (!(err instanceof TwitchApiError && err.status === 401)) {
+      throw classifyTwitchError(err)
     }
-    throw err
+  }
+
+  // Reuse a token another request already rotated in; only refresh if the
+  // one that just got a 401 is still what is stored.
+  const latest = await loadTokenRecord(db, userId)
+  let retryToken = await decryptToken(
+    latest.access_token,
+    config.tokenEncryptionKey,
+  )
+  if (retryToken === accessToken) {
+    retryToken = await refreshForRequest(db, config, latest)
+  }
+
+  try {
+    return await fn(retryToken)
+  } catch (err) {
+    if (err instanceof TwitchApiError && err.status === 401) {
+      await db.twitchTokens.markRefreshFailed(userId, new Date().toISOString())
+      throw reconnectRequiredError()
+    }
+    throw classifyTwitchError(err)
   }
 }
 
 /**
  * Scheduled sweep (ADR 0036): proactively refreshes tokens expiring soon so
  * event-driven work (state seeding, follow sync) rarely hits an expired
- * token at request time. Rows already flagged `refresh_failed_at` are
- * excluded by the query — retrying a dead refresh token can't succeed.
+ * token at request time, then validates the ones not checked recently.
+ * Rows already flagged `refresh_failed_at` are excluded by both queries —
+ * retrying a dead refresh token can't succeed.
  */
 export async function refreshExpiringTwitchTokens(
   db: Database,
@@ -125,11 +277,14 @@ export async function refreshExpiringTwitchTokens(
       cutoff,
       MAX_SCHEDULED_REFRESHES_PER_RUN,
     )
+    if (expiring.length === 0) {
+      logger.debug("No Twitch tokens to refresh", logFields)
+    }
     let succeeded = 0
 
     for (const record of expiring) {
       try {
-        await refreshAndStoreToken(db, config, record)
+        await refreshWithLock(db, config, record)
         succeeded += 1
       } catch (error) {
         logger.error("Scheduled Twitch token refresh failed", {
@@ -140,17 +295,89 @@ export async function refreshExpiringTwitchTokens(
       }
     }
 
-    logger.info("Scheduled Twitch token refresh sweep completed", {
-      ...logFields,
-      attempted: expiring.length,
-      succeeded,
-      failed: expiring.length - succeeded,
-    })
+    if (expiring.length > 0) {
+      logger.info("Scheduled Twitch token refresh sweep completed", {
+        ...logFields,
+        attempted: expiring.length,
+        succeeded,
+        failed: expiring.length - succeeded,
+      })
+    }
   } catch (error) {
     // Covers a D1 read failure (findExpiringBefore) or anything else thrown
     // outside the per-record handling above, so it's logged with full detail
     // instead of escaping as Cloudflare's bare automatic exception capture.
     logger.error("Scheduled Twitch token refresh sweep failed", {
+      ...logFields,
+      ...serializeError(error),
+    })
+  }
+
+  await validateTwitchTokens(db, config)
+}
+
+/**
+ * Hourly-per-token `/oauth2/validate` sweep: catches a grant revoked on Twitch's
+ * side before a request trips on it. A 401 from validate also happens for a
+ * merely expired access token, so it is confirmed by a refresh: only a dead
+ * refresh token flags the row (`refreshAndStoreToken`). Run after the refresh
+ * pass, whose upserts already stamped `validated_at` on what they renewed.
+ */
+async function validateTwitchTokens(
+  db: Database,
+  config: AppConfig,
+): Promise<void> {
+  const logFields = scheduledJobLogFields("token-refresh")
+  try {
+    const due = await db.twitchTokens.findDueForValidation(
+      new Date(Date.now() - VALIDATION_INTERVAL_MS).toISOString(),
+      MAX_VALIDATIONS_PER_RUN,
+    )
+    if (due.length === 0) {
+      logger.debug("No Twitch tokens to validate", logFields)
+      return
+    }
+    let valid = 0
+    let revalidated = 0
+    let failed = 0
+
+    for (const record of due) {
+      try {
+        const accessToken = await decryptStoredToken(
+          db,
+          config,
+          record.user_id,
+          record.access_token,
+        )
+        if (await validateAccessToken(accessToken, config.twitchAuthBaseUrl)) {
+          await db.twitchTokens.markValidated(
+            record.user_id,
+            new Date().toISOString(),
+          )
+          valid += 1
+        } else {
+          await refreshWithLock(db, config, record)
+          revalidated += 1
+        }
+      } catch (error) {
+        failed += 1
+        logger.error("Twitch token validation failed", {
+          ...logFields,
+          userId: record.user_id,
+          ...serializeError(error),
+        })
+      }
+    }
+
+    logger.info("Twitch token validation sweep completed", {
+      ...logFields,
+      attempted: due.length,
+      valid,
+      refreshedAfterInvalid: revalidated,
+      failed,
+    })
+  } catch (error) {
+    logger.error("Twitch token validation sweep failed", {
       ...logFields,
       ...serializeError(error),
     })

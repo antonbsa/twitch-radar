@@ -38,6 +38,11 @@ async function createAuthenticatedSession(options: SeedUserInput = {}) {
     accessToken: options.accessToken ?? "valid-access-token",
     refreshToken: options.refreshToken ?? "valid-refresh-token",
     expiredToken: options.expiredToken ?? false,
+    tokenValidatedAt: options.tokenValidatedAt,
+    undecryptableToken: options.undecryptableToken,
+    refreshLockedUntil: options.refreshLockedUntil,
+    sessionTtlS: options.sessionTtlS,
+    sessionMaxLifetimeS: options.sessionMaxLifetimeS,
     ...(options.id ? { id: options.id } : {}),
   })
   // seeded.cookie is a full Set-Cookie string; requests need only the pair.
@@ -48,11 +53,16 @@ async function createAuthenticatedSession(options: SeedUserInput = {}) {
 }
 
 const mockTwitch = {
-  async queue(pathPattern: string, body: unknown, status = 200) {
+  async queue(
+    pathPattern: string,
+    body: unknown,
+    status = 200,
+    headers?: Record<string, string>,
+  ) {
     const res = await fetch(`${MOCK_TWITCH_URL}/__mock`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pathPattern, body, status }),
+      body: JSON.stringify({ pathPattern, body, status, headers }),
     })
     if (!res.ok) throw new Error(`mockTwitch.queue failed: ${res.status}`)
   },
@@ -69,6 +79,11 @@ const mockTwitch = {
 
   onTokenExchange(body: unknown, status = 200) {
     return this.queue("/oauth2/token", body, status)
+  },
+
+  /** `/oauth2/validate`: 200 for a valid token, 401 for an invalid or expired one. */
+  onTokenValidate(status = 200) {
+    return this.queue("/oauth2/validate", { message: "validate" }, status)
   },
 
   onUserInfo(body: unknown, status = 200) {
@@ -140,6 +155,14 @@ const mockTwitch = {
     status = 200,
   ) {
     return this.queue("/helix/search/categories", { data: categories }, status)
+  },
+
+  /** Get Games, used to resolve category box art (ADR 0058). */
+  onGames(
+    games: Array<{ id: string; name: string; box_art_url?: string | null }>,
+    status = 200,
+  ) {
+    return this.queue("/helix/games", { data: games }, status)
   },
 
   onStreams(

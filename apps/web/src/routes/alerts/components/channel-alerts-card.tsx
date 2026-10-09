@@ -58,6 +58,7 @@ export function ChannelAlertsCard({
           <CategoryChip
             key={category.preferenceId}
             label={category.categoryName}
+            boxArtUrl={category.boxArtUrl}
             alsoGlobal={category.alsoGlobal}
             armed={armedChipId === category.preferenceId}
             onArm={() => onArmChip(category.preferenceId)}

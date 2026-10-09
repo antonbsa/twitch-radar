@@ -495,6 +495,30 @@ describe("Channels view", () => {
     const { page } = authenticatedSession
     await page.route("**/api/sync/follows", (route) =>
       route.fulfill({
+        status: 500,
+        contentType: "application/json",
+        body: JSON.stringify({
+          error: {
+            code: "internal_error",
+            message: "Internal server error",
+            requestId: "req_e2e",
+          },
+        }),
+      }),
+    )
+
+    await page.goto(WEB_URL)
+    await page.getByRole("button", { name: /sync/i }).click()
+
+    await expectVisible(page.getByText("Could not sync channels. Try again."))
+  })
+
+  it("should show a distinct toast when Twitch is unavailable during a manual sync", async ({
+    authenticatedSession,
+  }) => {
+    const { page } = authenticatedSession
+    await page.route("**/api/sync/follows", (route) =>
+      route.fulfill({
         status: 502,
         contentType: "application/json",
         body: JSON.stringify({
@@ -510,7 +534,9 @@ describe("Channels view", () => {
     await page.goto(WEB_URL)
     await page.getByRole("button", { name: /sync/i }).click()
 
-    await expectVisible(page.getByText("Could not sync channels. Try again."))
+    await expectVisible(
+      page.getByText("Twitch is unavailable, try again shortly."),
+    )
   })
 
   it("should open the per-channel preference sheet from the config button", async ({

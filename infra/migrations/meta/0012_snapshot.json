@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "9496ae8c-7e65-4746-8e96-78ee873847fd",
+  "id": "2ecac78f-0d09-4ac0-b455-eb89b308a628",
   "prevId": "7a04dfd0-4294-4620-9054-7beaf84a108f",
   "tables": {
     "broadcaster_mutes": {
@@ -232,13 +232,6 @@
         },
         "started_at": {
           "name": "started_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "category_started_at": {
-          "name": "category_started_at",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -1224,6 +1217,13 @@
         },
         "refresh_failed_at": {
           "name": "refresh_failed_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "validated_at": {
+          "name": "validated_at",
           "type": "text",
           "primaryKey": false,
           "notNull": false,

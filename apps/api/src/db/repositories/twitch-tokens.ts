@@ -1,4 +1,4 @@
-import { and, asc, eq, isNull, lt } from "drizzle-orm"
+import { and, asc, eq, isNull, lt, or } from "drizzle-orm"
 import type { AppDatabase } from "../client"
 import { twitchTokens } from "../schema"
 
@@ -19,6 +19,7 @@ export interface TwitchTokenRecord {
   scopes: string
   updated_at: string
   refresh_failed_at: string | null
+  validated_at: string | null
 }
 
 export class TwitchTokensRepository {
@@ -38,6 +39,7 @@ export class TwitchTokensRepository {
         expiresAt: input.expiresAt,
         scopes: input.scopes,
         updatedAt: input.now,
+        validatedAt: input.now,
       })
       .onConflictDoUpdate({
         target: twitchTokens.userId,
@@ -49,6 +51,10 @@ export class TwitchTokensRepository {
           updatedAt: input.now,
           // Fresh tokens mean the connection works again (re-auth or refresh).
           refreshFailedAt: null,
+          // A token just issued is valid by definition.
+          validatedAt: input.now,
+          // The refresh that issued it is over, so release its claim.
+          refreshLockedUntil: null,
         },
       })
       .run()
@@ -78,6 +84,75 @@ export class TwitchTokensRepository {
     return rows.map(toRecord)
   }
 
+  /**
+   * Tokens not yet confirmed valid since `cutoff` (never-validated first) that
+   * haven't failed a refresh — the validation sweep's work queue.
+   */
+  async findDueForValidation(
+    cutoff: string,
+    limit: number,
+  ): Promise<TwitchTokenRecord[]> {
+    const rows = await this.db
+      .select()
+      .from(twitchTokens)
+      .where(
+        and(
+          isNull(twitchTokens.refreshFailedAt),
+          or(
+            isNull(twitchTokens.validatedAt),
+            lt(twitchTokens.validatedAt, cutoff),
+          ),
+        ),
+      )
+      .orderBy(asc(twitchTokens.validatedAt))
+      .limit(limit)
+      .all()
+    return rows.map(toRecord)
+  }
+
+  /**
+   * Claims the right to refresh this user's token until `until`, in one
+   * statement so exactly one concurrent caller wins. Returns false when another
+   * caller holds an unexpired claim.
+   */
+  async claimRefreshLock(
+    userId: string,
+    now: string,
+    until: string,
+  ): Promise<boolean> {
+    const claimed = await this.db
+      .update(twitchTokens)
+      .set({ refreshLockedUntil: until })
+      .where(
+        and(
+          eq(twitchTokens.userId, userId),
+          or(
+            isNull(twitchTokens.refreshLockedUntil),
+            lt(twitchTokens.refreshLockedUntil, now),
+          ),
+        ),
+      )
+      .returning({ userId: twitchTokens.userId })
+    return claimed.length > 0
+  }
+
+  /** Releases a claim without a successful refresh (the upsert releases it on success). */
+  async releaseRefreshLock(userId: string): Promise<void> {
+    await this.db
+      .update(twitchTokens)
+      .set({ refreshLockedUntil: null })
+      .where(eq(twitchTokens.userId, userId))
+      .run()
+  }
+
+  async markValidated(userId: string, now: string): Promise<void> {
+    await this.db
+      .update(twitchTokens)
+      .set({ validatedAt: now })
+      .where(eq(twitchTokens.userId, userId))
+      .run()
+  }
+
   async markRefreshFailed(userId: string, now: string): Promise<void> {
     await this.db
       .update(twitchTokens)
@@ -105,5 +180,6 @@ function toRecord(row: typeof twitchTokens.$inferSelect): TwitchTokenRecord {
     scopes: row.scopes,
     updated_at: row.updatedAt,
     refresh_failed_at: row.refreshFailedAt,
+    validated_at: row.validatedAt,
   }
 }

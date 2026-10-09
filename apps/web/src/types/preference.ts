@@ -9,6 +9,7 @@ export interface ChannelPreference {
   broadcaster_user_id: string
   category_id: string
   category_name: string
+  box_art_url: string | null
   created_at: string
 }
 
@@ -22,6 +23,7 @@ export interface GlobalPreference {
   id: string
   category_id: string
   category_name: string
+  box_art_url: string | null
   created_at: string
   // Active exclusions embedded by GET /preferences (ADR 0054).
   exclusions: GlobalPreferenceExclusion[]

@@ -5,6 +5,7 @@ export interface AlertCategory {
   preferenceId: string
   categoryId: string
   categoryName: string
+  boxArtUrl: string | null
   /** True when an active global preference covers this same category. */
   alsoGlobal: boolean
 }
@@ -65,6 +66,7 @@ export function buildChannelAlertGroups(
       preferenceId: preference.id,
       categoryId: preference.category_id,
       categoryName: preference.category_name,
+      boxArtUrl: preference.box_art_url,
       alsoGlobal: globalIds.has(preference.category_id),
     })
   }

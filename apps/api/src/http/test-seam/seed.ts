@@ -19,6 +19,15 @@ export interface SeedUserInput {
   accessToken?: string
   refreshToken?: string
   expiredToken?: boolean
+  // Backdates the token's last validation so the validate sweep picks it up.
+  tokenValidatedAt?: string
+  // Stores tokens that fail to decrypt, as after a key rotation or corruption.
+  undecryptableToken?: boolean
+  // Seeds a refresh claim held until this time, as by a refresh in flight (or a worker that died mid-refresh when it's in the past).
+  refreshLockedUntil?: string
+  // Seeds a session closer to expiry (or its max lifetime) than a fresh login.
+  sessionTtlS?: number
+  sessionMaxLifetimeS?: number
   // Applied whenever present, null included, so a re-seed resets a value a
   // previous test left on the shared user row; omitted leaves it untouched.
   lastFollowSyncAt?: string | null
@@ -108,6 +117,13 @@ export interface SeedBroadcasterMuteInput {
   broadcasterUserId: string
 }
 
+export interface SeedCategoryBoxArtInput {
+  id: string
+  boxArtUrl: string | null
+  // Backdates the cache row to exercise expiry; defaults to now.
+  updatedAt?: string
+}
+
 export interface SeedRequestBody {
   user?: SeedUserInput
   followedChannels?: SeedFollowedChannelInput[]
@@ -118,6 +134,7 @@ export interface SeedRequestBody {
   pushSubscriptions?: SeedPushSubscriptionInput[]
   notificationSnoozes?: SeedNotificationSnoozeInput[]
   broadcasterMutes?: SeedBroadcasterMuteInput[]
+  categoryBoxArt?: SeedCategoryBoxArtInput[]
 }
 
 export interface SeedResponse {
@@ -162,23 +179,39 @@ export async function handleTestSeed(c: Context<HonoEnv>): Promise<Response> {
         ? new Date(Date.now() - 1000).toISOString()
         : new Date(Date.now() + 60 * 60 * 1000).toISOString()
 
+      const encrypt = (token: string) =>
+        body?.user?.undecryptableToken
+          ? Promise.resolve(`not-encrypted:${token}`)
+          : encryptToken(token, c.var.config.tokenEncryptionKey)
       await c.var.db.twitchTokens.upsert({
         userId,
-        accessToken: await encryptToken(
-          body.user.accessToken,
-          c.var.config.tokenEncryptionKey,
-        ),
-        refreshToken: await encryptToken(
+        accessToken: await encrypt(body.user.accessToken),
+        refreshToken: await encrypt(
           body.user.refreshToken ?? "refresh-placeholder",
-          c.var.config.tokenEncryptionKey,
         ),
         expiresAt,
         scopes: "user:read:follows",
         now,
       })
+      if (body.user.refreshLockedUntil) {
+        await c.var.db.twitchTokens.claimRefreshLock(
+          userId,
+          now,
+          body.user.refreshLockedUntil,
+        )
+      }
+      if (body.user.tokenValidatedAt) {
+        await c.var.db.twitchTokens.markValidated(
+          userId,
+          body.user.tokenValidatedAt,
+        )
+      }
     }
 
-    const sessionId = await createSession(c.env.KV_APP_CACHE, userId)
+    const sessionId = await createSession(c.env.KV_APP_CACHE, userId, {
+      ttlS: body.user.sessionTtlS,
+      maxLifetimeS: body.user.sessionMaxLifetimeS,
+    })
     session = { sessionId, cookie: sessionCookieHeader(sessionId) }
   }
 
@@ -215,6 +248,13 @@ export async function handleTestSeed(c: Context<HonoEnv>): Promise<Response> {
         lastCategoryName: state.lastCategoryName ?? null,
         now,
       })),
+    )
+  }
+
+  for (const entry of body.categoryBoxArt ?? []) {
+    await c.var.db.categoryBoxArt.upsertMany(
+      [{ id: entry.id, box_art_url: entry.boxArtUrl }],
+      entry.updatedAt ?? now,
     )
   }
 

@@ -1,4 +1,5 @@
-import { TwitchApiError, readErrorBody } from "./errors"
+import { TwitchApiError, twitchApiErrorFromResponse } from "./errors"
+import { fetchTwitch } from "./fetch"
 
 export interface CreateEventsubSubscriptionInput {
   type: string
@@ -21,7 +22,7 @@ export async function createEventsubSubscription(
   input: CreateEventsubSubscriptionInput,
   apiBaseUrl = "https://api.twitch.tv",
 ): Promise<TwitchEventsubSubscription> {
-  const res = await fetch(`${apiBaseUrl}/helix/eventsub/subscriptions`, {
+  const res = await fetchTwitch(`${apiBaseUrl}/helix/eventsub/subscriptions`, {
     method: "POST",
     headers: {
       "Client-Id": clientId,
@@ -40,10 +41,9 @@ export async function createEventsubSubscription(
     }),
   })
   if (!res.ok)
-    throw new TwitchApiError(
+    throw await twitchApiErrorFromResponse(
       `EventSub subscription create failed`,
-      res.status,
-      await readErrorBody(res),
+      res,
     )
   const body = (await res.json()) as { data: TwitchEventsubSubscription[] }
   const subscription = body.data[0]
@@ -76,17 +76,16 @@ export async function getAllEventsubSubscriptions(
     url.searchParams.set("first", "100")
     if (cursor) url.searchParams.set("after", cursor)
 
-    const res = await fetch(url.toString(), {
+    const res = await fetchTwitch(url.toString(), {
       headers: {
         "Client-Id": clientId,
         Authorization: `Bearer ${appAccessToken}`,
       },
     })
     if (!res.ok)
-      throw new TwitchApiError(
+      throw await twitchApiErrorFromResponse(
         `EventSub subscription list failed`,
-        res.status,
-        await readErrorBody(res),
+        res,
       )
     const body = (await res.json()) as {
       data: TwitchEventsubSubscriptionDetails[]
@@ -108,7 +107,7 @@ export async function deleteEventsubSubscription(
   const url = new URL(`${apiBaseUrl}/helix/eventsub/subscriptions`)
   url.searchParams.set("id", twitchSubscriptionId)
 
-  const res = await fetch(url.toString(), {
+  const res = await fetchTwitch(url.toString(), {
     method: "DELETE",
     headers: {
       "Client-Id": clientId,
@@ -117,9 +116,8 @@ export async function deleteEventsubSubscription(
   })
   // Already gone on Twitch's side is the desired end state, not a failure.
   if (!res.ok && res.status !== 404)
-    throw new TwitchApiError(
+    throw await twitchApiErrorFromResponse(
       `EventSub subscription delete failed`,
-      res.status,
-      await readErrorBody(res),
+      res,
     )
 }

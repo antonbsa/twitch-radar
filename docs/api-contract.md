@@ -4,7 +4,7 @@ Transversal conventions for `apps/api`'s HTTP surface, plus an index of what exi
 
 ## Base & Auth
 
-All routes are mounted under `/api`. Most require a valid session: `requireAuth` middleware reads a session cookie (set by the OAuth callback, ADR 0016) and populates `userId`/`sessionId` on the request context; an unauthenticated request gets a 401.
+All routes are mounted under `/api`. Most require a valid session: `requireAuth` middleware reads a session cookie (set by the OAuth callback, ADR 0016) and populates `userId`/`sessionId` on the request context; an unauthenticated request gets a 401. Sessions are sliding (ADR 0016): an authenticated request near expiry renews the session and re-sends the `Set-Cookie`.
 
 Routes that don't require a session:
 
@@ -22,6 +22,8 @@ Every error response has the same shape:
 ```
 
 `code` is a route-specific string (thrown via `ApiError(status, code, message)`), not an exhaustive enum kept in sync here — read the handler for the exact codes a given route can return. `404`/`405` for unknown routes/methods and `500` for unhandled errors are produced centrally in `app.ts`, not per-route.
+
+`twitch_unavailable` is shared by every route that calls Twitch with the user's token: `502` when Twitch answers 5xx (or the token refresh does), `503` when Twitch rate limits (429), the latter forwarding `Retry-After` when Twitch sent one. It means "retry later", unlike `401 reconnect_required`, which needs a new OAuth round-trip (also returned when Twitch rejects the user's token with a 401 even after one refresh-and-retry).
 
 ## Conventions
 
@@ -42,8 +44,8 @@ Every error response has the same shape:
 | PATCH | `/me/notifications-paused` | yes | pauses or resumes all notifications with `{ paused }`; `GET /me` exposes `notifications_paused_at` (ADR 0054) |
 | POST | `/sync/follows` | yes | re-syncs the user's followed channels from Twitch and returns the same list as `GET /channels/followed`, including `category_started_at` computed in memory with the same preserve-or-null rule the deferred write applies |
 | GET | `/channels/followed` | yes | the user's followed channels with current live/category state; `category_started_at` is when the current category began while live, exact or `null` for unknown (clients fall back to `started_at`) |
-| GET | `/categories/search` | yes | proxies Twitch category search with the user's token |
-| GET | `/preferences` | yes | the user's active channel and global category preferences; each global preference embeds its active `exclusions` (ADR 0054) |
+| GET | `/categories/search` | yes | proxies Twitch category search with the user's token; also caches each result's box art (ADR 0058) |
+| GET | `/preferences` | yes | the user's active channel and global category preferences; each item carries a nullable `box_art_url` (ADR 0058); each global preference embeds its active `exclusions` (ADR 0054) |
 | POST | `/preferences/channel` | yes | creates/revives a channel-scoped category preference (ADR 0029) |
 | DELETE | `/preferences/channel/:id` | yes | soft-disables a channel-scoped preference |
 | POST | `/preferences/global` | yes | creates/revives a global (all-channels) category preference (ADR 0029) |

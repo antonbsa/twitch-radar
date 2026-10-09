@@ -584,7 +584,7 @@ describe("EventSub subscription creation", () => {
       await orchestrator.mockTwitch.onEventsubSubscriptionCreate(`tsub_${i}`)
     }
 
-    await orchestrator.runScheduled("token-refresh")
+    await orchestrator.runScheduled("follow-sync")
 
     const state = await orchestrator.inspect(
       rows.map((r) => r.broadcasterUserId),

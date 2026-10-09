@@ -1,5 +1,6 @@
 import { createDatabaseClient } from "./client"
 import { BroadcasterMutesRepository } from "./repositories/broadcaster-mutes"
+import { CategoryBoxArtRepository } from "./repositories/category-box-art"
 import { ChannelCategoryPreferencesRepository } from "./repositories/channel-category-preferences"
 import { ChannelStateRepository } from "./repositories/channel-state"
 import { ChannelStateChangesRepository } from "./repositories/channel-state-changes"
@@ -21,6 +22,7 @@ export class Database {
   readonly pushSubscriptions: PushSubscriptionsRepository
   readonly twitchTokens: TwitchTokensRepository
   readonly followedChannels: FollowedChannelsRepository
+  readonly categoryBoxArt: CategoryBoxArtRepository
   readonly channelState: ChannelStateRepository
   readonly channelStateChanges: ChannelStateChangesRepository
   readonly channelCategoryPreferences: ChannelCategoryPreferencesRepository
@@ -38,6 +40,7 @@ export class Database {
     this.pushSubscriptions = new PushSubscriptionsRepository(db)
     this.twitchTokens = new TwitchTokensRepository(db)
     this.followedChannels = new FollowedChannelsRepository(db)
+    this.categoryBoxArt = new CategoryBoxArtRepository(db)
     this.channelState = new ChannelStateRepository(db)
     this.channelStateChanges = new ChannelStateChangesRepository(db)
     this.channelCategoryPreferences = new ChannelCategoryPreferencesRepository(

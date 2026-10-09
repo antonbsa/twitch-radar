@@ -2,7 +2,7 @@ import type { Context } from "hono"
 import type { HonoEnv } from "../../env"
 import { ApiError } from "../../http/errors"
 import { jsonResponse } from "../../http/response"
-import { getValidAccessToken } from "../../services/twitch/token-refresh"
+import { withUserAccessToken } from "../../services/twitch/token-refresh"
 import {
   fetchFollowedChannelsSync,
   persistFollowedChannelsSyncDeferred,
@@ -17,13 +17,8 @@ export async function handleSyncFollows(
   const user = await db.users.findById(userId)
   if (!user) throw new ApiError(404, "user_not_found", "User not found")
 
-  const accessToken = await getValidAccessToken(db, config, userId)
-  const fetched = await fetchFollowedChannelsSync(
-    db,
-    config,
-    userId,
-    user.twitch_user_id,
-    accessToken,
+  const fetched = await withUserAccessToken(db, config, userId, (token) =>
+    fetchFollowedChannelsSync(db, config, userId, user.twitch_user_id, token),
   )
 
   // Respond as soon as the Twitch fetch resolves (issue #83); the D1 writes

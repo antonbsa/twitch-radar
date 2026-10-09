@@ -37,6 +37,12 @@ export const twitchTokens = sqliteTable(
     // token) — the user must reconnect their Twitch account. Cleared by the
     // next successful token upsert (re-auth or successful refresh).
     refreshFailedAt: text("refresh_failed_at"),
+    // Last time the access token was confirmed valid: set when it is issued
+    // (login or refresh) and by the hourly /oauth2/validate sweep.
+    validatedAt: text("validated_at"),
+    // Atomic claim on a token refresh: a caller owns the refresh until this
+    // time passes or it clears the claim (cleared by the refresh upsert).
+    refreshLockedUntil: text("refresh_locked_until"),
   },
   (table) => [index("idx_twitch_tokens_expires_at").on(table.expiresAt)],
 )
@@ -170,6 +176,14 @@ export const channelStateChanges = sqliteTable(
     ),
   ],
 )
+
+// Twitch box art template per category id, filled lazily on read (ADR 0058).
+// A null URL is a cached "Twitch has no art for this id", not a missing row.
+export const categoryBoxArt = sqliteTable("category_box_art", {
+  id: text("id").primaryKey(),
+  boxArtUrl: text("box_art_url"),
+  updatedAt: text("updated_at").notNull(),
+})
 
 export const channelCategoryPreferences = sqliteTable(
   "channel_category_preferences",
