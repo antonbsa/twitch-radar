@@ -35,8 +35,8 @@
   "channel_row.no_category": "Sem categoria",
   "channel_row.viewers_count": "{count} espectadores",
   "channel_row.live_for": "Em {category} há {duration}",
-  "channel_row.live_for_category": "Em {category} há {categoryDuration} · ao vivo há {streamDuration}",
-  "channel_row.live_in_category_unknown": "Em {category} · ao vivo há {duration}",
+  "channel_row.live_in_category": "Em {category}",
+  "channel_row.live_duration": "ao vivo há {duration}",
   "channel_row.last_live": "Esteve em {category} {time}",
   "channel_row.configure_aria": "Configurar {name}",
 

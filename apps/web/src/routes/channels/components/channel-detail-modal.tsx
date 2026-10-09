@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils"
 import type { FollowedChannel } from "@/types/channel"
 import { getLiveCategory } from "@/routes/channels/live-category"
 import { useChannelCategoryNotify } from "@/routes/channels/use-channel-category-notify"
-import { useLiveLabel } from "@/routes/channels/use-live-label"
+import { LiveLabel } from "@/routes/channels/components/live-label"
 import { useChannelSnooze } from "@/routes/channels/use-channel-snooze"
 
 interface ChannelDetailModalProps {
@@ -69,7 +69,6 @@ export function ChannelDetailModal({
   onOpenChange,
 }: ChannelDetailModalProps) {
   const { t } = useLanguage()
-  const liveLabel = useLiveLabel(channel)
   const liveCategory = getLiveCategory(channel)
   const snoozeNotification = useChannelSnooze(channel, liveCategory)
   const notify = useChannelCategoryNotify(channel, liveCategory)
@@ -132,7 +131,7 @@ export function ChannelDetailModal({
           {channel?.is_live ? (
             <div className="flex items-center gap-2">
               <p className="truncate text-xs text-muted-foreground">
-                {liveLabel}
+                <LiveLabel channel={channel} />
               </p>
               {liveCategory && (
                 <ToggleActionButton

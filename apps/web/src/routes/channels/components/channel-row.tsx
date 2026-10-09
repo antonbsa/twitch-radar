@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/context/language-context"
 import { cn } from "@/lib/utils"
 import { formatTimeAgo, formatViewerCount } from "@/lib/format"
-import { useLiveLabel } from "@/routes/channels/use-live-label"
+import { LiveLabel } from "@/routes/channels/components/live-label"
 import type { FollowedChannel } from "@/types/channel"
 
 interface ChannelRowProps {
@@ -30,7 +30,6 @@ export function ChannelRow({
   muted = false,
 }: ChannelRowProps) {
   const { t, language } = useLanguage()
-  const liveLabel = useLiveLabel(channel)
 
   return (
     <div
@@ -85,7 +84,9 @@ export function ChannelRow({
             {preferenceMatch === "global" && (
               <Globe aria-hidden="true" className="size-3 shrink-0" />
             )}
-            <span className="truncate">{liveLabel}</span>
+            <span className="truncate">
+              <LiveLabel channel={channel} />
+            </span>
           </p>
         ) : (
           <p className="truncate text-xs text-muted-foreground">

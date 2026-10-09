@@ -133,9 +133,9 @@ describe("Channels view", () => {
     )
     await expectVisible(row.locator('[data-slot="avatar-badge"]'))
     await expectVisible(row.getByText("1.2K viewers"))
-    // No exact category start was seeded, so the uptime is labelled as such.
-    await expectVisible(row.getByText("In Just Chatting · live 1h 23m"))
-    // The category appears once, inside the "In … · live …" line.
+    // No exact category start was seeded, so only the stream uptime shows.
+    await expectVisible(row.getByText("In Just Chatting", { exact: true }))
+    await expectVisible(row.getByText("live 1h 23m"))
     expect(
       ((await row.textContent()) ?? "").match(/Just Chatting/g),
     ).toHaveLength(1)
@@ -169,7 +169,8 @@ describe("Channels view", () => {
     const row = page.locator(
       `[data-testid="channel-row"][data-broadcaster-user-id="${id}"]`,
     )
-    await expectVisible(row.getByText("In Just Chatting for 40m · live 2h 20m"))
+    await expectVisible(row.getByText("In Just Chatting for 40m"))
+    await expectVisible(row.getByText("live 2h 20m"))
   })
 
   it("should show a single duration when the category never changed", async ({
@@ -202,6 +203,7 @@ describe("Channels view", () => {
       `[data-testid="channel-row"][data-broadcaster-user-id="${id}"]`,
     )
     await expectVisible(row.getByText("In Just Chatting for 1h 23m"))
+    expect(await row.textContent()).not.toContain("live 1h 23m")
   })
   it("should highlight a live channel in a preferred category, marking global matches with a globe", async ({
     authenticatedSession,
