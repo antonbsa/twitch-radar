@@ -108,6 +108,7 @@ Don't add code that only accepts old schema/data states. When a schema or format
   npx vitest run --config vitest.e2e.config.ts tests/web/e2e/alerts.spec.ts
   ```
 - Run each affected full tier once after a large chunk of work. Don't re-run before opening a PR just as a formality.
+- The e2e tier retries once on CI (`retry` in `vitest.e2e.config.ts`) to absorb browser-timing flakes; never add retries to the API or unit tiers, and treat a test that needs its retry repeatedly as a bug to fix.
 - The tiers use fixed ports, distinct from dev's. Another worktree's run holding them is contention, not your bug: leave other sessions' servers running.
 
 ## Tooling
