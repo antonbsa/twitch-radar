@@ -28,6 +28,7 @@
     "prettier:fix": "prettier --write . --ignore-path .gitignore --ignore-path .prettierignore",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "check-i18n": "node infra/scripts/check-i18n.mjs",
+    "check-migrations": "node infra/scripts/check-migrations.mjs",
     "check-secrets:production": "node infra/scripts/deploy/check-secrets.mjs --env production",
     "check-secrets:preview": "node infra/scripts/deploy/check-secrets.mjs --env preview",
     "vapid": "npm run vapid -w @twitch-radar/api",
