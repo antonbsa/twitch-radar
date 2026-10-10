@@ -43,7 +43,7 @@ export function useChannelSnooze(
       },
       {
         onSuccess: () =>
-          toast(
+          toast.success(
             interpolateNodes(tRaw("channel_detail.snooze_toast"), {
               channelName: <strong>{channel.broadcaster_display_name}</strong>,
               categoryName: <strong>{liveCategory.name}</strong>,

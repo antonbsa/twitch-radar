@@ -192,7 +192,7 @@ export function ChannelDetailModal({
                     onClick={() =>
                       unmuteBroadcaster.mutate(activeMute.id, {
                         onSuccess: () =>
-                          toast(
+                          toast.success(
                             t("mute.unmuted_toast", {
                               channel: channel.broadcaster_display_name,
                             }),
@@ -212,7 +212,7 @@ export function ChannelDetailModal({
                     onClick={() =>
                       muteBroadcaster.mutate(channel.broadcaster_user_id, {
                         onSuccess: () =>
-                          toast(
+                          toast.success(
                             t("mute.muted_toast", {
                               channel: channel.broadcaster_display_name,
                             }),

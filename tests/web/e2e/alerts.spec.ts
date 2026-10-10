@@ -193,6 +193,16 @@ describe("Alerts view", () => {
     )
     await expectVisible(page.getByText("Minecraft"))
     await expectHidden(page.getByText("No global alerts set."))
+    // Toast controls are 44px touch targets, like the dialog close buttons.
+    const toast = page.locator("[data-sonner-toast]")
+    for (const control of [
+      toast.getByRole("button", { name: "Enable" }),
+      toast.locator("[data-close-button]"),
+    ]) {
+      await expect
+        .poll(async () => (await control.boundingBox())?.height)
+        .toBeGreaterThanOrEqual(44)
+    }
     // The push prompt takes over the "Alert created" toast's slot (#24).
     expect(await page.locator("[data-sonner-toast]").count()).toBe(1)
     expect(await page.getByText("Alert created:").count()).toBe(0)
