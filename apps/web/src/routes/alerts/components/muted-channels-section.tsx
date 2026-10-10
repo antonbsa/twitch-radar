@@ -70,7 +70,9 @@ export function MutedChannelsSection({ channels }: MutedChannelsSectionProps) {
                   onClick={() =>
                     unmute.mutate(m.id, {
                       onSuccess: () =>
-                        toast(t("mute.unmuted_toast", { channel: name })),
+                        toast.success(
+                          t("mute.unmuted_toast", { channel: name }),
+                        ),
                     })
                   }
                 >
@@ -91,7 +93,7 @@ export function MutedChannelsSection({ channels }: MutedChannelsSectionProps) {
           setAddOpen(false)
           mute.mutate(channel.broadcaster_user_id, {
             onSuccess: () =>
-              toast(
+              toast.success(
                 t("mute.muted_toast", {
                   channel: channel.broadcaster_display_name,
                 }),

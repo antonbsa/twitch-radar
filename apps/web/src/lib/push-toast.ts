@@ -10,13 +10,20 @@ const PREFERENCE_TOAST_ID = "preference-feedback"
  * Shows `message` in the shared preference-feedback slot. Sonner merges an
  * update into the toast already holding the id, so every call sets `action`
  * and `duration` explicitly: otherwise a prompt's Enable button and infinite
- * duration would leak into a later "saved" toast.
+ * duration would leak into a later "saved" toast. `variant` picks the icon.
  */
 export function showPreferenceToast(
   message: ReactNode,
-  { action, duration }: Pick<ExternalToast, "action" | "duration"> = {},
+  {
+    variant = "success",
+    action,
+    duration,
+  }: { variant?: "success" | "info" | "warning" } & Pick<
+    ExternalToast,
+    "action" | "duration"
+  > = {},
 ): void {
-  toast(message, { id: PREFERENCE_TOAST_ID, action, duration })
+  toast[variant](message, { id: PREFERENCE_TOAST_ID, action, duration })
 }
 
 interface ShowEnablePushToastArgs {
@@ -48,11 +55,12 @@ export function showEnablePushToast({
   }
 
   if (status === "denied") {
-    showPreferenceToast(t("push.banner_blocked"))
+    showPreferenceToast(t("push.banner_blocked"), { variant: "warning" })
     return
   }
 
   showPreferenceToast(t("push.banner_prompt"), {
+    variant: "info",
     duration: Infinity,
     action: {
       label: t("push.banner_enable_cta"),
