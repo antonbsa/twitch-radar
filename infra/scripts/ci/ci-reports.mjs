@@ -21,6 +21,16 @@ const [owner, name] = (process.env.GITHUB_REPOSITORY ?? "").split("/")
 const REPO = `${owner}/${name}-ci-reports`
 const PAGES_URL = `https://${owner.toLowerCase()}.github.io/${name}-ci-reports`
 const TIERS = { api: "API tests", e2e: "E2E tests" }
+const INDEX_CSS = `
+:root{color-scheme:light dark}
+body{margin:0;font:16px/1.5 system-ui,sans-serif;background:Canvas;color:CanvasText}
+main{max-width:860px;margin:0 auto;padding:32px 20px}
+h1{font-size:1.6rem;margin:0 0 4px}
+section{margin-top:24px;padding:16px 20px;border:1px solid color-mix(in srgb,CanvasText 18%,transparent);border-radius:10px}
+h2{font-size:1.1rem;margin:0 0 8px}
+ul{margin:0;padding-left:20px}
+a{color:#2563eb}
+`
 
 const [command, pr, ...rest] = process.argv.slice(2)
 const key = process.env.CI_REPORTS_DEPLOY_KEY
@@ -115,17 +125,6 @@ function listFiles(dir, ext) {
     ? readdirSync(dir).filter((name) => name.endsWith(ext))
     : []
 }
-
-const INDEX_CSS = `
-:root{color-scheme:light dark}
-body{margin:0;font:16px/1.5 system-ui,sans-serif;background:Canvas;color:CanvasText}
-main{max-width:860px;margin:0 auto;padding:32px 20px}
-h1{font-size:1.6rem;margin:0 0 4px}
-section{margin-top:24px;padding:16px 20px;border:1px solid color-mix(in srgb,CanvasText 18%,transparent);border-radius:10px}
-h2{font-size:1.1rem;margin:0 0 8px}
-ul{margin:0;padding-left:20px}
-a{color:#2563eb}
-`
 
 function renderIndex(target, runId, runUrl) {
   const base = `${PAGES_URL}/pr-${pr}/${runId}`
