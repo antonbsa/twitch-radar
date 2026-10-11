@@ -156,9 +156,27 @@ describe("Account view", () => {
 
     await page.goto(`${WEB_URL}/account`)
     await page.getByRole("button", { name: "Log Out" }).click()
+    await page
+      .getByRole("alertdialog")
+      .getByRole("button", { name: "Log Out" })
+      .click()
 
     await page.waitForURL("**/login")
     await expect.poll(() => page.getByRole("navigation").count()).toBe(0)
+  })
+
+  it("should stay signed in when the log out confirmation is cancelled", async ({
+    authenticatedSession,
+  }) => {
+    const { page } = authenticatedSession
+
+    await page.goto(`${WEB_URL}/account`)
+    await page.getByRole("button", { name: "Log Out" }).click()
+    await page.getByRole("button", { name: "Cancel" }).click()
+
+    await expect.poll(() => page.getByRole("alertdialog").count()).toBe(0)
+    expect(new URL(page.url()).pathname).toBe("/account")
+    await expectVisible(page.getByRole("button", { name: "Log Out" }))
   })
 
   it("should show Reconnect Twitch on a mid-session 401 without navigating away", async ({

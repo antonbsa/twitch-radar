@@ -4,6 +4,7 @@
   "nav.account": "Account",
 
   "common.loading": "Loading",
+  "common.cancel": "Cancel",
   "common.close": "Close",
 
   "login.title": "Twitch Radar",
@@ -99,6 +100,8 @@
   "account.reconnect_twitch": "Reconnect Twitch",
   "account.reconnecting": "Reconnecting…",
   "account.log_out": "Log Out",
+  "account.log_out_confirm_title": "Log out?",
+  "account.log_out_confirm_description": "You'll need to sign in with Twitch again to use Twitch Radar.",
   "account.language": "Language",
   "account.language_en": "English",
   "account.language_pt-BR": "Português (Brasil)",
