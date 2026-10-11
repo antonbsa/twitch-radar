@@ -102,8 +102,8 @@ jobs:
           CI_REPORTS_DEPLOY_KEY: ${{ secrets.CI_REPORTS_DEPLOY_KEY }}
         run: |
           if [ -d reports ] && [ -n "$(ls -A reports)" ]; then
-            node infra/scripts/ci/ci-reports.mjs publish "$PR" "$GITHUB_RUN_ID" "$RUN_URL" reports
-            echo "url=https://antonbsa.github.io/twitch-radar-ci-reports/pr-$PR/$GITHUB_RUN_ID/" >> "$GITHUB_OUTPUT"
+            url=$(node infra/scripts/ci/ci-reports.mjs publish "$PR" "$GITHUB_RUN_ID" "$RUN_URL" reports)
+            echo "url=$url" >> "$GITHUB_OUTPUT"
           fi
       - name: Update PR comment
         env:

@@ -1,7 +1,9 @@
 // Publishes or removes failed-CI test reports in the separate Pages repo (ADR 0060).
 // Usage: node ci-reports.mjs publish <pr> <run_id> <run_url> <reports_dir>
 //        node ci-reports.mjs remove <pr>
-// Env: CI_REPORTS_DEPLOY_KEY (private SSH deploy key with write access to the reports repo).
+// Env: CI_REPORTS_DEPLOY_KEY (private SSH deploy key with write access to the reports repo),
+// GITHUB_REPOSITORY (set by Actions). The reports repo is `<owner>/<repo>-ci-reports`, so a clone publishes to its own.
+// Prints the published run's URL on stdout; everything else goes to stderr.
 import { execFileSync } from "node:child_process"
 import {
   cpSync,
@@ -15,13 +17,20 @@ import {
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 
-const REPO = "antonbsa/twitch-radar-ci-reports"
-const PAGES_URL = "https://antonbsa.github.io/twitch-radar-ci-reports"
+const [owner, name] = (process.env.GITHUB_REPOSITORY ?? "").split("/")
+const REPO = `${owner}/${name}-ci-reports`
+const PAGES_URL = `https://${owner.toLowerCase()}.github.io/${name}-ci-reports`
 const TIERS = { api: "API tests", e2e: "E2E tests" }
 
 const [command, pr, ...rest] = process.argv.slice(2)
 const key = process.env.CI_REPORTS_DEPLOY_KEY
-if (!key || !["publish", "remove"].includes(command) || !pr) {
+if (
+  !owner ||
+  !name ||
+  !key ||
+  !["publish", "remove"].includes(command) ||
+  !pr
+) {
   console.error(
     "Usage: ci-reports.mjs publish <pr> <run_id> <run_url> <reports_dir> | remove <pr>",
   )
@@ -62,7 +71,7 @@ for (let attempt = 1; ; attempt++) {
   }
 
   if (command === "remove" && base && !existsSync(prDir)) {
-    console.log(`No reports for PR #${pr}; nothing to remove.`)
+    console.error(`No reports for PR #${pr}; nothing to remove.`)
     process.exit(0)
   }
   rmSync(prDir, { recursive: true, force: true })
@@ -84,10 +93,13 @@ for (let attempt = 1; ; attempt++) {
   )
   try {
     git("push", `--force-with-lease=main:${base}`, "origin", "snapshot:main")
+    if (command === "publish") console.log(`${PAGES_URL}/pr-${pr}/${rest[0]}/`)
     break
   } catch (error) {
     if (attempt === MAX_ATTEMPTS) throw error
-    console.log(`Push rejected (attempt ${attempt}); retrying on the new main.`)
+    console.error(
+      `Push rejected (attempt ${attempt}); retrying on the new main.`,
+    )
   }
 }
 
