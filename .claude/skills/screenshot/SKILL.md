@@ -1,5 +1,5 @@
 ---
-name: capturing-ui-screenshots
+name: screenshot
 description: Use to see a UI change in a real browser or to attach before/after screenshots to a PR (npm run pr:screenshot, npm run pr:image).
 ---
 

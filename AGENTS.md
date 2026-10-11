@@ -14,9 +14,9 @@ Issue → ADR/TN if a decision changes → implementation → PR → release.
 
 1. **Issue.** Spec-shaped GitHub issues are the source of truth for milestone 1+ work (ADR 0043): problem/motivation, a resolved proposed solution, acceptance criteria. Every issue needs a milestone: use the one the prompt names, else pick the best fit from `gh api repos/{owner}/{repo}/milestones`, or say none fits and suggest a new one. Without a GitHub issue, a spec-shaped file under `.agents/issues/` works. A milestone overview under `specs/milestones/<name>` is optional, only when several issues need shared goals/scope.
 2. **Decision.** If the work needs an accepted decision, add or update an ADR before broad coding. Research that changes nothing goes in a TN (see below).
-3. **Implement** via [implementing-a-feature](.claude/skills/implementing-a-feature), committed together with the spec/task updates it completes.
-4. **PR** via [creating-pull-requests](.claude/skills/creating-pull-requests): tests, migrations/config and specs/ADRs are part of the review. The skill owns the labels rule.
-5. **Release** via [preparing-a-release](.claude/skills/preparing-a-release). Merging to `main` only deploys preview; production ships when a release is published ([ADR 0041](docs/decisions/0041-release-gated-production-deploys.md)).
+3. **Implement** via [feature](.claude/skills/feature), committed together with the spec/task updates it completes.
+4. **PR** via [open-pr](.claude/skills/open-pr): tests, migrations/config and specs/ADRs are part of the review. The skill owns the labels rule.
+5. **Release** via [release](.claude/skills/release). Merging to `main` only deploys preview; production ships when a release is published ([ADR 0041](docs/decisions/0041-release-gated-production-deploys.md)).
 
 ## ADRs vs Technical Notes
 
@@ -59,8 +59,9 @@ Keep them short: inline is 1-2 lines above the relevant line. JSDoc only when th
 - Body is optional; skip it when the subject says everything. When present: 1–4 `- ` bullets, one line each, no hard wrap. Each says why or what's non-obvious (constraint, rejected alternative, side effect), never a file-by-file how.
 - Context that has a home elsewhere (incident history, design rationale) stays in its issue/ADR/PR; the commit points to it in a footer (`Refs: #73, ADR 0049`) instead of retelling it. Only the first commit of a branch carries the footer; follow-up commits on the same branch skip it, since they ship in the same PR.
 - Merge commits: subject only, plus one bullet if resolving conflicts required a non-obvious choice.
-- When your work changed project files, end the final response with one suggested commit message. While iterating on the same uncommitted work, update that single suggestion to cover the whole change set; start a new one only after a commit or when separate work begins. Skip it for advice-only responses.
-- `Co-Authored-By` trailer: only on commits a skill makes autonomously (e.g. `implementation-round`); never on interactive work the user directed or reviewed. PR descriptions never carry attribution (`attribution.pr` enforces it).
+- When your work changed git-tracked files, end the final response with one suggested commit message; with no tracked change, write nothing about commits (no "no commit needed" line). While iterating on the same uncommitted work, update that single suggestion to cover the whole change set; start a new one only after a commit or when separate work begins.
+- Mention only git-tracked files, in the commit suggestion and the rest of the reply; gitignored paths (`.env.local`, `.agents/`) stay out of it.
+- `Co-Authored-By` trailer: only on commits a skill makes autonomously (e.g. `feature-round`); never on interactive work the user directed or reviewed. PR descriptions never carry attribution (`attribution.pr` enforces it).
 
 ## Markdown
 
@@ -118,7 +119,7 @@ Don't add code that only accepts old schema/data states. When a schema or format
 
 ## Worktrees and `.agents/`
 
-- Tracked files are changed in a worktree on a feature branch, never in the `main` checkout; the only exception is the release commit from `preparing-a-release`. A session on `main` creates one before its first write, as in the "Before the first write" section of [implementing-a-feature](.claude/skills/implementing-a-feature/SKILL.md) (`EnterWorktree`, not `cd`). A session working in a worktree gives its absolute path to every subagent it delegates to.
+- Tracked files are changed in a worktree on a feature branch, never in the `main` checkout; the only exception is the release commit from `release`. A session on `main` creates one before its first write, as in the "Before the first write" section of [feature](.claude/skills/feature/SKILL.md) (`EnterWorktree`, not `cd`). A session working in a worktree gives its absolute path to every subagent it delegates to.
 - Create worktrees at `.agents/worktrees/<branch-name>`, with the directory name matching the branch. Name the branch after the work (`oauth-cancel-callback`), with no `issue-<n>` prefix and no generic `agent-<id>`.
 - A fresh worktree needs `npm install` at its root before anything runs.
 - To see a worktree's UI in the Browser pane, run `npm run dev` from the worktree as a background task with its own `WEB_DEV_PORT`/`API_DEV_PORT`/`API_INSPECTOR_PORT`, then `preview_start` with that `url`. `preview_start {name: "web-dev"}` runs the main checkout's dev server on the expected port, so the page loads fine and only shows that your change is missing; confirm the change actually renders before trusting a check. Data seeded through `/api/__test__/seed` lands in the shared dev D1, so clear it with `POST /api/__test__/reset` before stopping, or mock `/api/**` with Playwright's `page.route` instead.
