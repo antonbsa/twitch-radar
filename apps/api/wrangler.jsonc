@@ -5,6 +5,10 @@
   // AsyncLocalStorage for @sentry/cloudflare and the per-invocation failure
   // buffer in lib/alerting.ts (ADR 0047). Worker-wide, inherited by every env.
   "compatibility_flags": ["nodejs_compat"],
+  // Build-time constant (ADR 0045): esbuild folds `if (__NON_PRODUCTION_FEATURES__)`
+  // so test-seam and sandbox code is absent from the production bundle. `define`
+  // isn't inherited by named environments, so each one sets it explicitly.
+  "define": { "__NON_PRODUCTION_FEATURES__": "true" },
   "d1_databases": [
     {
       "binding": "DB",
@@ -63,6 +67,7 @@
   // are inherited).
   "env": {
     "production": {
+      "define": { "__NON_PRODUCTION_FEATURES__": "false" },
       // Without this, Wrangler defaults to "<name>-production"
       // (`twitch-radar-api-production`), since it suffixes the
       // top-level `name` with the environment name. Set explicitly to
@@ -168,6 +173,7 @@
     // notification pipeline without a real Twitch event.
     "preview": {
       "name": "twitch-radar-preview",
+      "define": { "__NON_PRODUCTION_FEATURES__": "true" },
       "observability": {
         "enabled": true,
         "head_sampling_rate": 1

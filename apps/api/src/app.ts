@@ -45,9 +45,10 @@ import { handleEventsubWebhook } from "./features/eventsub/webhooks"
 import { handleTestInspect } from "./http/test-seam/inspect"
 import { handleTestReset } from "./http/test-seam/reset"
 import { handleTestSeed } from "./http/test-seam/seed"
+import { handleSandboxLogin } from "./features/sandbox/routes"
 import { getRequestId } from "./http/response"
 
-export function buildApp(includeTestSeam: boolean): Hono<HonoEnv> {
+export function buildApp(): Hono<HonoEnv> {
   const app = new Hono<HonoEnv>()
 
   app.use("*", (c, next) => {
@@ -126,15 +127,19 @@ export function buildApp(includeTestSeam: boolean): Hono<HonoEnv> {
 
   app.route("/api", api)
 
-  // Test-seam routes only exist on non-production builds of the app — there
-  // is no per-request guard to bypass because the route is simply never
-  // registered when running as production.
-  if (includeTestSeam) {
+  // Test-seam routes are compiled out of the production bundle (ADR 0045):
+  // there is no per-request guard to bypass because the code isn't there.
+  if (__NON_PRODUCTION_FEATURES__) {
     const testSeam = new Hono<HonoEnv>()
     testSeam.post("/reset", handleTestReset)
     testSeam.post("/seed", handleTestSeed)
     testSeam.post("/inspect", handleTestInspect)
     app.route("/api/__test__", testSeam)
+
+    // Persona login for dev/preview (ADR 0046); same exclusion as the seam.
+    const sandbox = new Hono<HonoEnv>()
+    sandbox.post("/login", handleSandboxLogin)
+    app.route("/api/__sandbox__", sandbox)
   }
 
   app.notFound((c) => {

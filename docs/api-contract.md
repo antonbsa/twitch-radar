@@ -11,7 +11,8 @@ Routes that don't require a session:
 - `GET /health`, `GET /` — liveness.
 - `GET /auth/twitch/start`, `GET /auth/twitch/callback` — the OAuth flow itself.
 - `POST /webhooks/twitch/eventsub` — called by Twitch, not a user; authenticated via HMAC signature over the raw body (ADR 0032), not a session.
-- `/api/__test__/*` — test-seam routes; not registered at all outside non-production builds (ADR 0025), no separate guard.
+- `/api/__test__/*` — test-seam routes; compiled out of production builds (ADR 0045), no separate guard.
+- `/api/__sandbox__/*` — sandbox routes (persona login, ADR 0046); same build-time exclusion, no credential: a persona login can only produce one of three fixed identities.
 
 ## Error Envelope (ADR 0009)
 

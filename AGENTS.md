@@ -77,7 +77,7 @@ Don't hard-wrap prose: one paragraph, one line (`npx prettier --write <file>.md`
 - `PUBLIC_URL` is the single origin API and web are reachable through, in every environment ([ADR 0037](docs/decisions/0037-single-public-url-same-origin-deployment.md)). `twitchRedirectUri` and the EventSub callback URL are derived from it, not separate vars.
 - `wrangler dev --env <preview|production> --remote` binds local-dev values to a shared remote D1/KV and writes bad data into it (issue #73). Use `npm run dev:remote`; see [docs/deployment.md](docs/deployment.md) "Hazard: `wrangler dev --remote` Against A Shared Environment".
 - Both test tiers pass only `--env-file .env.development` to `wrangler dev`, never `.env.local`: it's absent in CI, and a nonexistent path makes wrangler exit at once (surfacing as vitest's "No test files found"). Don't add it back.
-- `/api/__test__/*` routes exist only when `environment !== "production"` (ADR 0025).
+- `/api/__test__/*` and `/api/__sandbox__/*` routes are compiled out of the production bundle via `__NON_PRODUCTION_FEATURES__` (ADRs 0025, 0045, 0046); `npm run check-production-bundle` verifies it.
 
 ## Engineering
 

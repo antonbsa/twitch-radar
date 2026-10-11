@@ -1,0 +1,31 @@
+{
+  "user": {
+    "id": "usr_sandbox_reconnect",
+    "twitchUserId": "sbx_tw_reconnect",
+    "login": "sandbox_reconnect",
+    "displayName": "Sandbox Reconnect"
+  },
+  "tokenState": "reconnect_required",
+  "follows": [
+    {
+      "broadcasterUserId": "sbx_bc_aurora",
+      "login": "aurora_plays",
+      "displayName": "Aurora_Plays",
+      "followedAt": "2024-03-02T18:20:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_fathom",
+      "login": "fathom_fm",
+      "displayName": "Fathom_FM",
+      "followedAt": "2025-08-03T07:15:00Z",
+      "seeded": false,
+      "stream": null
+    }
+  ],
+  "preferences": {
+    "channel": [],
+    "global": []
+  }
+}
