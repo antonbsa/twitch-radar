@@ -2,6 +2,17 @@ import { useState } from "react"
 import { useNavigate } from "react-router"
 import { Loader2Icon } from "lucide-react"
 import { changelogs } from "virtual:changelog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -144,14 +155,33 @@ export function AccountPage() {
         </Button>
       )}
 
-      <Button
-        variant="outline"
-        className="mt-3 w-full"
-        disabled={isLoggingOut}
-        onClick={handleLogout}
-      >
-        {t("account.log_out")}
-      </Button>
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button
+            variant="destructive"
+            className="mt-3 w-full"
+            disabled={isLoggingOut}
+          >
+            {t("account.log_out")}
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("account.log_out_confirm_title")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("account.log_out_confirm_description")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLogout}>
+              {t("account.log_out")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {latestVersion && (
         <div className="mt-6 flex justify-center">
