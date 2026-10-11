@@ -1,11 +1,11 @@
-// Uploads images to the `pr-assets` branch through the GitHub contents API and prints one Markdown line per image for a PR body.
+// Uploads images to `assets/` on main of the `<repo>-ci-reports` repo through the GitHub contents API and prints one Markdown line per image for a PR body (ADR 0060).
 // Usage: npm run pr:image -- <file>... [--dir <dir>]
 import { execFileSync } from "node:child_process"
 import { readFileSync } from "node:fs"
 import { basename, extname } from "node:path"
 import { parseArgs } from "node:util"
 
-const BRANCH = "pr-assets"
+const BRANCH = "main"
 const EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp"])
 
 /** Fails with a message on stderr; stdout stays reserved for the Markdown lines. */
@@ -55,25 +55,26 @@ if (dir === "main" || dir === "HEAD") {
   )
 }
 
-const repo = run("gh", [
+// Same derivation as ci-reports.mjs, so a clone uploads to its own reports repo.
+const repo = `${run("gh", [
   "repo",
   "view",
   "--json",
   "nameWithOwner",
   "--jq",
   ".nameWithOwner",
-])
+])}-ci-reports`
 
 if (ghApi([`repos/${repo}/branches/${BRANCH}`]) === null) {
   fail(
-    `Branch "${BRANCH}" does not exist. Create it once with "One-time setup: pr-assets branch" in .claude/skills/capturing-ui-screenshots/SKILL.md.`,
+    `Repo "${repo}" has no "${BRANCH}" branch. Set it up with "CI Test Reports Repo" in docs/deployment.md.`,
   )
 }
 
 // One at a time: parallel commits to the same branch conflict.
 for (const file of files) {
   const name = basename(file)
-  const encodedPath = `${dir}/${name}`
+  const encodedPath = `assets/${dir}/${name}`
     .split("/")
     .map(encodeURIComponent)
     .join("/")
@@ -83,24 +84,22 @@ for (const file of files) {
   const existingSha = ghApi([`${endpoint}?ref=${BRANCH}`, "--jq", ".sha"])
 
   const body = {
-    message: `chore: add ${dir}/${name}`,
+    message: `chore: add assets/${dir}/${name}`,
     content: readFileSync(file).toString("base64"),
     branch: BRANCH,
     ...(existingSha ? { sha: existingSha } : {}),
   }
 
   // The payload goes through stdin: a base64 PNG exceeds the argument-length limit.
-  const response = JSON.parse(
-    run(
-      "gh",
-      ["api", "-X", "PUT", endpoint, "--input", "-"],
-      JSON.stringify(body),
-    ),
+  run(
+    "gh",
+    ["api", "-X", "PUT", endpoint, "--input", "-"],
+    JSON.stringify(body),
   )
 
-  // Pinned to the commit SHA so re-uploading the same name doesn't change earlier PR descriptions.
+  // Not pinned to a commit: ci-reports.mjs rewrites main as an orphan commit, so old SHAs stop resolving. Re-uploading the same name replaces the image in earlier PR descriptions.
   const stem = basename(name, extname(name))
   console.log(
-    `![${stem}](https://raw.githubusercontent.com/${repo}/${response.commit.sha}/${encodedPath})`,
+    `![${stem}](https://raw.githubusercontent.com/${repo}/${BRANCH}/${encodedPath})`,
   )
 }

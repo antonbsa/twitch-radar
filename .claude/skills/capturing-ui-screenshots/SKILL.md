@@ -31,12 +31,8 @@ Images go in a Markdown table, following recent PRs:
 | **Mobile** | ![a-before](…) | ![a-after](…) |
 ```
 
-## One-time setup: `pr-assets` branch
+## Where images live
 
-`npm run pr:image` needs an orphan `pr-assets` branch on origin. Create it once, from any checkout (it builds an empty commit without touching the working tree):
-
-```bash
-git push origin "$(git commit-tree "$(git hash-object -t tree /dev/null)" -m "chore: init pr-assets")":refs/heads/pr-assets
-```
+`npm run pr:image` commits to `assets/<branch>/` on `main` of the `<repo>-ci-reports` repo (set up in [docs/deployment.md](../../../docs/deployment.md#ci-test-reports-repo); [ADR 0060](../../../docs/decisions/0060-publish-failed-ci-test-reports-to-a-pages-repo.md)) and needs push access to it through `gh`. The links point at `main`, not a commit, so re-uploading a name replaces it in earlier PR descriptions; use a new name to keep both.
 
 Don't upload screenshots containing real tokens, emails or non-test user data: the repo is public.
