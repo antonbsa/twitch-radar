@@ -1,6 +1,7 @@
 import { scheduledJobLogFields } from "../../crons"
 import type { AppConfig } from "../../env"
 import type { Database } from "../../db"
+import { recordFailure } from "../../lib/alerting"
 import { logger, serializeError } from "../../lib/logger"
 import { ensureMonitoredBroadcasters } from "../../features/eventsub/monitoring"
 import {
@@ -321,6 +322,7 @@ export async function persistFollowedChannelsSyncDeferred(
       channelCount: fetched.channels.length,
       ...serializeError(error),
     })
+    recordFailure("Deferred follow sync write failed", error)
   }
 }
 
@@ -352,6 +354,7 @@ export async function syncStaleFollows(
           userId: user.id,
           ...serializeError(error),
         })
+        recordFailure("Scheduled follow sync failed", error)
       }
     }
 
@@ -370,5 +373,6 @@ export async function syncStaleFollows(
       ...logFields,
       ...serializeError(error),
     })
+    recordFailure("Scheduled follow sync run failed", error)
   }
 }

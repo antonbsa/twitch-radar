@@ -15,6 +15,7 @@
     "deploy:preview": "wrangler deploy --env preview"
   },
   "dependencies": {
+    "@sentry/cloudflare": "^11.6.0",
     "drizzle-orm": "^0.45.0",
     "hono": "^4.10.7",
     "nanoid": "^5.1.15",

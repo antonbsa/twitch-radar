@@ -1,5 +1,6 @@
 import type { Database } from "../db"
 import type { AppConfig } from "../env"
+import { recordFailure } from "../lib/alerting"
 import { logger, serializeError } from "../lib/logger"
 import { deliverNotification } from "../features/notifications/deliver"
 import type { NotificationJobMessage } from "../features/notifications/types"
@@ -25,6 +26,7 @@ export async function consumeNotificationJobs(
         deliveryId: (message.body as NotificationJobMessage).deliveryId,
         ...serializeError(error),
       })
+      recordFailure("Notification job failed", error)
       message.retry()
     }
   }

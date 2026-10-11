@@ -1,5 +1,6 @@
 import type { Database } from "../../db"
 import { scheduledJobLogFields } from "../../crons"
+import { recordFailure } from "../../lib/alerting"
 import { logger, serializeError } from "../../lib/logger"
 import type { NotificationJobMessage } from "./types"
 
@@ -152,5 +153,6 @@ export async function sweepNotificationSnoozes(
       ...logFields,
       ...serializeError(error),
     })
+    recordFailure("Notification snooze sweep failed", error)
   }
 }

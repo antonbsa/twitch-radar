@@ -1,5 +1,6 @@
 import { Hono } from "hono"
 import { Database } from "./db"
+import { configureAlerting, reportFailure } from "./lib/alerting"
 import { parseEnv, type HonoEnv } from "./env"
 import { logger } from "./lib/logger"
 import { ApiError, errorResponse } from "./http/errors"
@@ -52,6 +53,7 @@ export function buildApp(includeTestSeam: boolean): Hono<HonoEnv> {
   app.use("*", (c, next) => {
     const config = parseEnv(c.env)
     logger.configure(config.environment)
+    configureAlerting(config)
     c.set("config", config)
     c.set("db", new Database(c.env.DB))
     return next()
@@ -152,7 +154,14 @@ export function buildApp(includeTestSeam: boolean): Hono<HonoEnv> {
       requestId,
     )
   })
-  app.onError((error, c) => errorResponse(error, getRequestId(c.req.raw)))
+  app.onError((error, c) => {
+    // Hono swallows handler errors into a response, so withSentry never sees
+    // them: report the unexpected ones (ApiError is a deliberate 4xx/5xx).
+    if (!(error instanceof ApiError)) {
+      c.executionCtx.waitUntil(reportFailure("fetch", error))
+    }
+    return errorResponse(error, getRequestId(c.req.raw))
+  })
 
   return app
 }

@@ -2,6 +2,9 @@
   "name": "twitch-radar",
   "main": "src/index.ts",
   "compatibility_date": "2026-06-22",
+  // AsyncLocalStorage for @sentry/cloudflare and the per-invocation failure
+  // buffer in lib/alerting.ts (ADR 0047). Worker-wide, inherited by every env.
+  "compatibility_flags": ["nodejs_compat"],
   "d1_databases": [
     {
       "binding": "DB",

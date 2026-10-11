@@ -54,6 +54,15 @@ Push each of these via `wrangler secret put <NAME> --env <production|preview>` (
   ```
   Generate a **separate** pair for `production` and for `preview` — don't reuse the dev keypair or share one between environments. `VAPID_PRIVATE_KEY` is pushed as a secret; the public half also needs to go into that environment's non-secret `vars` (below).
 
+### Error alerting (optional)
+
+Both are optional ([ADR 0047](decisions/0047-error-alerting-via-sentry-and-slack-webhook.md)): an environment without them boots and reports nowhere, and `local` never reports. Push them per environment, from `apps/api`:
+
+- `SENTRY_DSN` — the Sentry project's client key (Project Settings → Client Keys). Events carry the Worker's `ENVIRONMENT` as Sentry's `environment` tag.
+- `SLACK_ALERT_WEBHOOK_URL` — a Slack incoming webhook. Any environment that has it posts to Slack, so keep it on `production` only; for a preview smoke test, point it at a test channel and remove it afterwards.
+
+`SENTRY_DSN` can go on `preview` too (events are tagged `environment:preview`); first check preview is quiet, since a noisy one burns the free plan's 5,000 events per month. In the Sentry project, enable spike protection and create the alert rule (email) filtered on `environment:production`.
+
 ### Rotating `TWITCH_CLIENT_SECRET`
 
 `TWITCH_CLIENT_SECRET` is shared across every environment pointed at the same Twitch app (currently `production` and `preview` both use one app) — rotating it in the Twitch Developer Console immediately invalidates the old secret everywhere, not just in the environment you're thinking about. A rotation that only updates the secret and skips the remaining steps below is exactly what turned a routine rotation into a multi-day incident (issue #73): the missing step wasn't an oversight of a known checklist, there simply wasn't one. Do all of the following, for **every** environment sharing the app, before considering the rotation done:

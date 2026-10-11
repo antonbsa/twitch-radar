@@ -26,6 +26,10 @@ export interface Env {
   VAPID_PRIVATE_KEY: string
   TWITCH_AUTH_BASE_URL?: string
   TWITCH_API_BASE_URL?: string
+  // Error alerting (ADR 0047): both optional, so an environment without them
+  // (local dev, a fresh worktree, CI) reports nowhere instead of failing to boot.
+  SENTRY_DSN?: string
+  SLACK_ALERT_WEBHOOK_URL?: string
 }
 
 const EnvSchema = z
@@ -45,6 +49,8 @@ const EnvSchema = z
     VAPID_PRIVATE_KEY: z.string().length(43),
     TWITCH_AUTH_BASE_URL: z.string().optional().default("https://id.twitch.tv"),
     TWITCH_API_BASE_URL: z.string().optional().default("https://api.twitch.tv"),
+    SENTRY_DSN: z.string().optional(),
+    SLACK_ALERT_WEBHOOK_URL: z.string().optional(),
   })
   .transform((d) => ({
     environment: d.ENVIRONMENT,
@@ -59,6 +65,7 @@ const EnvSchema = z
     vapidPrivateKey: d.VAPID_PRIVATE_KEY,
     twitchAuthBaseUrl: d.TWITCH_AUTH_BASE_URL,
     twitchApiBaseUrl: d.TWITCH_API_BASE_URL,
+    slackAlertWebhookUrl: d.SLACK_ALERT_WEBHOOK_URL,
   }))
 
 export type AppConfig = z.infer<typeof EnvSchema>

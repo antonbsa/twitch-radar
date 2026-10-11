@@ -1,6 +1,7 @@
 import { scheduledJobLogFields } from "../../crons"
 import type { Database } from "../../db"
 import type { AppConfig } from "../../env"
+import { recordFailure } from "../../lib/alerting"
 import { logger, serializeError } from "../../lib/logger"
 import { getAppAccessToken } from "./app-token"
 import { getUsersByIds } from "./users"
@@ -60,5 +61,6 @@ export async function refreshBroadcasterAvatars(
       ...logFields,
       ...serializeError(error),
     })
+    recordFailure("Broadcaster avatar refresh failed", error)
   }
 }
