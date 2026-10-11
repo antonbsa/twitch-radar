@@ -2,6 +2,34 @@
 
 Qué cambió para quienes usan Twitch Radar, una sección por versión publicada. Escrito en lenguaje simple para el panel "Novedades" de la app — sin números de PR, prefijos de commit ni cambios internos; la lista técnica completa vive en cada GitHub Release, generada a partir de las labels de los PRs (ver [ADR 0050](docs/decisions/0050-changelog-as-source-of-truth-for-release-notes.md)). Una sección `## Unreleased`, cuando existe, es ignorada por el panel y por el parser de build.
 
+## v0.4.0 — 2026-10-11
+
+Más control sobre tus alertas: pausa todo, silencia canales y mira más sobre lo que un canal está jugando.
+
+### New
+
+- Puedes pausar todas las notificaciones a la vez, y tus alertas siguen como están para cuando las reactives.
+- Puedes silenciar canales individuales para que dejen de notificarte.
+- Las alertas de "Todos los canales" en una categoría ahora pueden omitir canales específicos que excluyas.
+- La lista de canales muestra cuándo estuvo en directo un canal por última vez y qué jugaba, y resalta tus categorías preferidas.
+- La imagen de las categorías ahora aparece en las alertas, en la lista de exclusiones y en la búsqueda de categorías.
+- Los canales en directo muestran cuánto llevan en la categoría actual junto al tiempo de transmisión.
+- El filtro de canales muestra el número de cada categoría y tiene la opción "Con alertas".
+
+### Improved
+
+- Ya no recibes notificaciones repetidas del mismo canal en poco tiempo.
+- Los mensajes al crear o quitar una alerta ahora nombran el canal y la categoría.
+- Los botones de los mensajes y de cerrar son más grandes y fáciles de tocar, y el interruptor de pausa tiene más contraste en el tema oscuro.
+- El encabezado de los detalles del canal es más compacto, con las acciones secundarias agrupadas.
+- Sigues con la sesión iniciada mientras sigas usando la app.
+- Las caídas temporales de Twitch ahora muestran el mensaje "Twitch no está disponible" en lugar de un error genérico.
+
+### Fixed
+
+- El icono de la app ahora se ve bien al añadirla a la pantalla de inicio del iPhone.
+- La pantalla de pausa ya no salta y los canales muestran la bandera del idioma.
+
 ## v0.3.0 — 2026-10-04
 
 Las notificaciones son mucho más útiles: foto del canal, botón Ver y un texto que realmente dice qué cambió.

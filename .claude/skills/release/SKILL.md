@@ -1,5 +1,5 @@
 ---
-name: preparing-a-release
+name: release
 description: Prepare a production release: pick the version, write the CHANGELOG entries, and create the GitHub release as a draft. Never publishes it.
 disable-model-invocation: true
 ---
@@ -18,7 +18,7 @@ Publishing a GitHub release **is** the production deploy: [`deploy-release.yaml`
 
 3. **Validate every PR in range has a label.** `.github/release.yml` categorizes purely on labels (see "Labels" below); an unlabeled PR silently lands in "Other Changes" instead of the functional category (Features/Fixes/Docs & Decisions) it belongs in. For every merged PR since the last tag with an empty `labels` array:
    - Read its changed files (`gh pr view <n> --json files`) and title/commit prefixes.
-   - Apply `migration` if it touches `infra/migrations`, `config` if it touches `apps/api/wrangler.jsonc` / `apps/api/src/crons.ts` / `apps/api/src/env.ts`, plus the applicable default (`bug` for `fix:`, `enhancement` for `feat:`, `documentation` for `docs:`) - same rule as `creating-pull-requests`. `migration`/`config` don't have their own category in `release.yml` (see "Labels" below) - they still describe risk, surfaced in step 4 and the notes' prose, not in how the PR is grouped.
+   - Apply `migration` if it touches `infra/migrations`, `config` if it touches `apps/api/wrangler.jsonc` / `apps/api/src/crons.ts` / `apps/api/src/env.ts`, plus the applicable default (`bug` for `fix:`, `enhancement` for `feat:`, `documentation` for `docs:`) - same rule as `open-pr`. `migration`/`config` don't have their own category in `release.yml` (see "Labels" below) - they still describe risk, surfaced in step 4 and the notes' prose, not in how the PR is grouped.
    - `chore:`/`refactor:`/`test:`-prefixed PRs that touch none of the risk paths above have no correct default label - leave them unlabeled (they correctly fall into "Other Changes", which exists precisely so unlabeled work isn't dropped, not miscategorized into something it isn't).
    - Present the suggested labels to the human before applying (`gh pr edit <n> --add-label "..."`) - this rewrites shared PR metadata, not local draft state.
 
@@ -77,7 +77,7 @@ gh label create config --color d93f0b --description "Touches wrangler.jsonc, cro
 gh label create skip-changelog --color ededed --description "Omit from generated release notes"
 ```
 
-`migration` and `config` deliberately have no category of their own: a PR carrying one still groups under its functional label (Features/Fixes/Docs & Decisions). They exist so step 4 and anyone auditing later can find what touched migrations/config; `creating-pull-requests` owns applying them at PR open. Unlabeled PRs land in "Other Changes" so nothing is dropped.
+`migration` and `config` deliberately have no category of their own: a PR carrying one still groups under its functional label (Features/Fixes/Docs & Decisions). They exist so step 4 and anyone auditing later can find what touched migrations/config; `open-pr` owns applying them at PR open. Unlabeled PRs land in "Other Changes" so nothing is dropped.
 
 ## Common mistakes
 

@@ -7,6 +7,7 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
+    "resolveJsonModule": true,
     "types": ["@cloudflare/workers-types", "node", "vitest/globals"],
     "noEmit": true
   },

@@ -17,7 +17,8 @@
     "moduleDetection": "force",
     "noEmit": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@fixtures/*": ["../../infra/fixtures/*"]
     }
   },
   "include": ["src"]

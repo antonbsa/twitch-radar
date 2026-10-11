@@ -5,8 +5,14 @@
 // signature (ADR 0032), not that Twitch itself sent the request, so a
 // correctly-signed forged request is indistinguishable to the worker.
 //
-// Only works when the worker's ENVIRONMENT !== "production" (the test seam
-// this script also calls is unregistered in production, see AGENTS.md).
+// Only works on non-production builds (the test seam this script also calls is
+// compiled out of production, ADR 0045).
+//
+// Not redundant with the sandbox's `POST /api/__sandbox__/events` (ADR 0046):
+// this script exists to exercise the real HMAC-verified webhook path, so it
+// needs EVENTSUB_WEBHOOK_SECRET and a local CLI. The sandbox route skips
+// verification and needs only a persona session (the `/sandbox` page), so
+// agents and deployed preview use that one instead.
 //
 // Always seeds the broadcaster live in a baseline category, then sends a
 // channel.update switching into the target category — the

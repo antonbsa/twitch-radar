@@ -1,0 +1,30 @@
+{
+  "user": {
+    "id": "usr_sandbox_empty",
+    "twitchUserId": "sbx_tw_empty",
+    "login": "sandbox_empty",
+    "displayName": "Sandbox Empty"
+  },
+  "tokenState": "valid",
+  "follows": [
+    {
+      "broadcasterUserId": "sbx_bc_ember",
+      "login": "ember_arcade",
+      "displayName": "Ember_Arcade",
+      "followedAt": "2025-05-21T16:30:00Z",
+      "seeded": false,
+      "stream": {
+        "id": "sbx_stream_ember",
+        "categoryId": "516575",
+        "categoryName": "VALORANT",
+        "title": "Ranked grind to Immortal",
+        "viewerCount": 52,
+        "startedMinutesAgo": 30
+      }
+    }
+  ],
+  "preferences": {
+    "channel": [],
+    "global": []
+  }
+}

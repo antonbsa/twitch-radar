@@ -11,7 +11,8 @@ Routes that don't require a session:
 - `GET /health`, `GET /` — liveness.
 - `GET /auth/twitch/start`, `GET /auth/twitch/callback` — the OAuth flow itself.
 - `POST /webhooks/twitch/eventsub` — called by Twitch, not a user; authenticated via HMAC signature over the raw body (ADR 0032), not a session.
-- `/api/__test__/*` — test-seam routes; not registered at all outside non-production builds (ADR 0025), no separate guard.
+- `/api/__test__/*` — test-seam routes; compiled out of production builds (ADR 0045), no separate guard.
+- `/api/__sandbox__/*` — sandbox routes (persona login, ADR 0046); same build-time exclusion, no credential: a persona login can only produce one of six fixed identities, optionally with `overrides` of that persona's settings (ADR 0046). `/api/__sandbox__/helix/*` and `/api/__sandbox__/auth/*` fake the Twitch Helix and id.twitch.tv calls the app makes, answering from the persona fixtures; they are only reached when `TWITCH_API_BASE_URL`/`TWITCH_AUTH_BASE_URL` point at them (`npm run dev:sandbox`). `POST /api/__sandbox__/events` (session required, persona users only) forges a `stream.online` or `channel.update` for one of the persona's followed channels and runs it through the real event processing and notification matching, skipping only HMAC verification.
 
 ## Error Envelope (ADR 0009)
 

@@ -1,5 +1,5 @@
 ---
-name: capturing-ui-screenshots
+name: screenshot
 description: Use to see a UI change in a real browser or to attach before/after screenshots to a PR (npm run pr:screenshot, npm run pr:image).
 ---
 
@@ -19,16 +19,12 @@ Before seeing a UI change (checking your own work, or attaching a screenshot to 
 
 ## Layout in the PR description
 
-Images go in a Markdown table, following recent PRs:
-
-- Header row: what each column shows. `Before | After` for a comparison, or the screen/state names (`List | Channel details`, `Mobile | Desktop`) when there is no "before".
-- Extra rows only when there is another dimension (e.g. Desktop and Mobile); then add a first column with the row label, with an empty header cell.
-- A single image needs no table.
+Images go in a Markdown table with two columns, `Before | After`, and one row holding only the images: no row-label column (`**Mobile**`, `**Desktop**`) and no extra rows. A single image (no "before" to compare) needs no table.
 
 ```md
-|            | Before         | After         |
-| ---------- | -------------- | ------------- |
-| **Mobile** | ![a-before](…) | ![a-after](…) |
+| Before         | After         |
+| -------------- | ------------- |
+| ![a-before](…) | ![a-after](…) |
 ```
 
 ## Where images live

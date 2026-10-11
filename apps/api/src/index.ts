@@ -13,15 +13,14 @@ import { consumeNotificationJobs } from "./queues/notification-jobs"
 import { consumeTwitchEvents } from "./queues/twitch-events"
 import { runScheduled } from "./scheduled"
 
-// `ENVIRONMENT` is a static binding for the life of an isolate, so which
-// routes exist is decided once (on the first request) rather than per request.
+// Built once per isolate, on the first request, rather than per request.
 let app: Hono<HonoEnv> | undefined
 
 // withSentry covers fetch, queue and scheduled and captures what escapes them;
 // failures the code catches itself go through lib/alerting.ts (ADR 0047).
 export default Sentry.withSentry(sentryOptions, {
   fetch(request: Request, env: Env, ctx: ExecutionContext) {
-    if (!app) app = buildApp(parseEnv(env).environment !== "production")
+    if (!app) app = buildApp()
     return app.fetch(request, env, ctx)
   },
 

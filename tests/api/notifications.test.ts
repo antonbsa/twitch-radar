@@ -125,6 +125,9 @@ describe("notification matching and delivery", () => {
     )
     expect(state.notificationDeliveries[0].eventsub_message_id).not.toBeNull()
     expect(state.notificationDeliveries[0].sent_at).not.toBeNull()
+    expect(
+      (await orchestrator.mockTwitch.requestHeaders("/push/d1")).topic,
+    ).toBe(BROADCASTER_ID)
   })
 
   it("should send one delivery when per-channel and global preferences both match", async () => {
@@ -746,6 +749,10 @@ describe("notification snooze sweep", () => {
       category_id: MINECRAFT.id,
       status: "sent",
     })
+    expect(
+      (await orchestrator.mockTwitch.requestHeaders("/push/snooze-sweep1"))
+        .topic,
+    ).toBe(`snooze-${BROADCASTER_ID}`)
   })
 
   it("should expire the snooze when the channel left the category", async () => {

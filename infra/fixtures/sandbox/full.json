@@ -1,0 +1,1032 @@
+{
+  "user": {
+    "id": "usr_sandbox_full",
+    "twitchUserId": "sbx_tw_full",
+    "login": "sandbox_full",
+    "displayName": "Sandbox Full"
+  },
+  "tokenState": "valid",
+  "follows": [
+    {
+      "broadcasterUserId": "sbx_bc_aurora",
+      "login": "aurora_plays",
+      "displayName": "Aurora_Plays",
+      "followedAt": "2024-03-02T18:20:00Z",
+      "seeded": true,
+      "stream": {
+        "id": "sbx_stream_aurora",
+        "categoryId": "509658",
+        "categoryName": "Just Chatting",
+        "title": "Sunday chill and chat",
+        "viewerCount": 1240,
+        "startedMinutesAgo": 95
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_bytewolf",
+      "login": "bytewolf",
+      "displayName": "ByteWolf",
+      "followedAt": "2023-11-19T09:05:00Z",
+      "seeded": true,
+      "stream": {
+        "id": "sbx_stream_bytewolf",
+        "categoryId": "27471",
+        "categoryName": "Minecraft",
+        "title": "Hardcore world, day 40",
+        "viewerCount": 387,
+        "startedMinutesAgo": 210
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_cinder",
+      "login": "cinder_speedruns",
+      "displayName": "Cinder_Speedruns",
+      "followedAt": "2024-07-14T21:40:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_driftwood",
+      "login": "driftwood_tv",
+      "displayName": "Driftwood_TV",
+      "followedAt": "2025-01-08T12:00:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_ember",
+      "login": "ember_arcade",
+      "displayName": "Ember_Arcade",
+      "followedAt": "2025-05-21T16:30:00Z",
+      "seeded": false,
+      "stream": {
+        "id": "sbx_stream_ember",
+        "categoryId": "516575",
+        "categoryName": "VALORANT",
+        "title": "Ranked grind to Immortal",
+        "viewerCount": 52,
+        "startedMinutesAgo": 30
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_fathom",
+      "login": "fathom_fm",
+      "displayName": "Fathom_FM",
+      "followedAt": "2025-08-03T07:15:00Z",
+      "seeded": false,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_frostowl",
+      "login": "frost_owl",
+      "displayName": "Frost_Owl",
+      "followedAt": "2024-05-03T00:48:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_cobaltfox",
+      "login": "cobalt_fox",
+      "displayName": "Cobalt_Fox",
+      "followedAt": "2024-11-05T22:25:00Z",
+      "seeded": true,
+      "stream": {
+        "id": "sbx_stream_cobaltfox",
+        "categoryId": "513143",
+        "categoryName": "Teamfight Tactics",
+        "title": "Hyper roll",
+        "viewerCount": 181,
+        "startedMinutesAgo": 82
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_ivoryanvil",
+      "login": "ivory_anvil",
+      "displayName": "Ivory_Anvil",
+      "followedAt": "2021-01-03T16:11:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_turboharborofficial",
+      "login": "turbo_harborofficial",
+      "displayName": "Turbo_HarborOfficial",
+      "followedAt": "2022-09-06T18:31:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_mistypanda",
+      "login": "misty_panda",
+      "displayName": "Misty_Panda",
+      "followedAt": "2025-08-04T18:48:00Z",
+      "seeded": true,
+      "stream": {
+        "id": "sbx_stream_mistypanda",
+        "categoryId": "518203",
+        "categoryName": "Sports",
+        "title": "Match day watch-along",
+        "viewerCount": 3,
+        "startedMinutesAgo": 172
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_fuzzyripple",
+      "login": "fuzzy_ripple",
+      "displayName": "Fuzzy_Ripple",
+      "followedAt": "2025-04-08T12:06:00Z",
+      "seeded": false,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_cobaltbeaconplays",
+      "login": "cobalt_beaconplays",
+      "displayName": "Cobalt_BeaconPlays",
+      "followedAt": "2021-09-17T02:20:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_atomicquilllive",
+      "login": "atomic_quilllive",
+      "displayName": "Atomic_QuillLive",
+      "followedAt": "2022-03-18T13:47:00Z",
+      "seeded": true,
+      "stream": {
+        "id": "sbx_stream_atomicquilllive",
+        "categoryId": "30921",
+        "categoryName": "Rocket League",
+        "title": "Ranked doubles",
+        "viewerCount": 3,
+        "startedMinutesAgo": 108
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_staticowlplays",
+      "login": "static_owlplays",
+      "displayName": "Static_OwlPlays",
+      "followedAt": "2023-05-07T07:31:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_rustyquillclub",
+      "login": "rusty_quillclub",
+      "displayName": "Rusty_QuillClub",
+      "followedAt": "2022-09-09T00:18:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_irontigertv",
+      "login": "iron_tigertv",
+      "displayName": "Iron_TigerTV",
+      "followedAt": "2022-08-27T21:23:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_staticwillowofficial",
+      "login": "static_willowofficial",
+      "displayName": "Static_WillowOfficial",
+      "followedAt": "2024-04-19T00:31:00Z",
+      "seeded": false,
+      "stream": {
+        "id": "sbx_stream_staticwillowofficial",
+        "categoryId": "32399",
+        "categoryName": "Counter-Strike",
+        "title": "Pro match watch-along",
+        "viewerCount": 3,
+        "startedMinutesAgo": 138
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_saltysparrowofficial",
+      "login": "salty_sparrowofficial",
+      "displayName": "Salty_SparrowOfficial",
+      "followedAt": "2022-01-25T18:06:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_pixelonyxstreams",
+      "login": "pixel_onyxstreams",
+      "displayName": "Pixel_OnyxStreams",
+      "followedAt": "2024-08-19T01:03:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_solarkernel",
+      "login": "solar_kernel",
+      "displayName": "Solar_Kernel",
+      "followedAt": "2022-02-24T01:43:00Z",
+      "seeded": true,
+      "stream": {
+        "id": "sbx_stream_solarkernel",
+        "categoryId": "513143",
+        "categoryName": "Teamfight Tactics",
+        "title": "Set rotation climb",
+        "viewerCount": 3,
+        "startedMinutesAgo": 223
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_crimsonharbor",
+      "login": "crimson_harbor",
+      "displayName": "Crimson_Harbor",
+      "followedAt": "2025-01-18T19:37:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_neonravenlab",
+      "login": "neon_ravenlab",
+      "displayName": "Neon_RavenLab",
+      "followedAt": "2022-11-18T23:39:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_hollowgadget",
+      "login": "hollow_gadget",
+      "displayName": "Hollow_Gadget",
+      "followedAt": "2025-04-24T17:21:00Z",
+      "seeded": false,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_velvetmoth",
+      "login": "velvet_moth",
+      "displayName": "Velvet_Moth",
+      "followedAt": "2023-07-19T21:56:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_silentechogaming",
+      "login": "silent_echo_gaming",
+      "displayName": "Silent_Echo_Gaming",
+      "followedAt": "2022-04-06T03:10:00Z",
+      "seeded": true,
+      "stream": {
+        "id": "sbx_stream_silentechogaming",
+        "categoryId": "509658",
+        "categoryName": "Just Chatting",
+        "title": "Q&A while I edit",
+        "viewerCount": 4,
+        "startedMinutesAgo": 106
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_saltygadgetlab",
+      "login": "salty_gadgetlab",
+      "displayName": "Salty_GadgetLab",
+      "followedAt": "2022-09-07T07:50:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_hollowmothlab",
+      "login": "hollow_mothlab",
+      "displayName": "Hollow_MothLab",
+      "followedAt": "2021-01-15T00:14:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_cobaltjester",
+      "login": "cobalt_jester",
+      "displayName": "Cobalt_Jester",
+      "followedAt": "2021-02-10T06:56:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_atomicgadget",
+      "login": "atomic_gadget",
+      "displayName": "Atomic_Gadget",
+      "followedAt": "2021-03-21T14:17:00Z",
+      "seeded": false,
+      "stream": {
+        "id": "sbx_stream_atomicgadget",
+        "categoryId": "26936",
+        "categoryName": "Music",
+        "title": "Lo-fi beats to study to",
+        "viewerCount": 3,
+        "startedMinutesAgo": 19
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_atomicharbor",
+      "login": "atomic_harbor",
+      "displayName": "Atomic_Harbor",
+      "followedAt": "2024-01-11T19:43:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_rustymaple",
+      "login": "rusty_maple",
+      "displayName": "Rusty_Maple",
+      "followedAt": "2023-10-11T02:55:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_quietechotv",
+      "login": "quiet_echotv",
+      "displayName": "Quiet_EchoTV",
+      "followedAt": "2022-06-18T08:10:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_fuzzytiger",
+      "login": "fuzzy_tiger",
+      "displayName": "Fuzzy_Tiger",
+      "followedAt": "2024-10-01T00:09:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_frostvortexlive",
+      "login": "frost_vortexlive",
+      "displayName": "Frost_VortexLive",
+      "followedAt": "2021-03-21T13:27:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_quietpandalive",
+      "login": "quiet_pandalive",
+      "displayName": "Quiet_PandaLive",
+      "followedAt": "2024-06-13T10:32:00Z",
+      "seeded": false,
+      "stream": {
+        "id": "sbx_stream_quietpandalive",
+        "categoryId": "512953",
+        "categoryName": "Elden Ring",
+        "title": "No-hit run attempt",
+        "viewerCount": 1074,
+        "startedMinutesAgo": 139
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_goldencomet",
+      "login": "golden_comet",
+      "displayName": "Golden_Comet",
+      "followedAt": "2022-01-18T12:33:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_saltyotter",
+      "login": "salty_otter",
+      "displayName": "Salty_Otter",
+      "followedAt": "2021-05-12T18:11:00Z",
+      "seeded": true,
+      "stream": {
+        "id": "sbx_stream_saltyotter",
+        "categoryId": "32982",
+        "categoryName": "Grand Theft Auto V",
+        "title": "RP server night",
+        "viewerCount": 497,
+        "startedMinutesAgo": 101
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_neoncipher",
+      "login": "neon_cipher",
+      "displayName": "Neon_Cipher",
+      "followedAt": "2025-06-22T17:04:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_cosmicfoxclub",
+      "login": "cosmic_foxclub",
+      "displayName": "Cosmic_FoxClub",
+      "followedAt": "2025-08-15T21:08:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_frostorbitclub",
+      "login": "frost_orbitclub",
+      "displayName": "Frost_OrbitClub",
+      "followedAt": "2024-09-24T17:41:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_roguebeacon",
+      "login": "rogue_beacon",
+      "displayName": "Rogue_Beacon",
+      "followedAt": "2024-04-15T04:10:00Z",
+      "seeded": false,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_frostkernelofficial",
+      "login": "frost_kernelofficial",
+      "displayName": "Frost_KernelOfficial",
+      "followedAt": "2022-03-26T03:13:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_luckyecho",
+      "login": "lucky_echo",
+      "displayName": "Lucky_Echo",
+      "followedAt": "2025-10-28T07:38:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_paperprism",
+      "login": "paper_prism",
+      "displayName": "Paper_Prism",
+      "followedAt": "2021-04-24T20:26:00Z",
+      "seeded": true,
+      "stream": {
+        "id": "sbx_stream_paperprism",
+        "categoryId": "27471",
+        "categoryName": "Minecraft",
+        "title": "Modded run, day 12",
+        "viewerCount": 16,
+        "startedMinutesAgo": 8
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_saltynimbus",
+      "login": "salty_nimbus",
+      "displayName": "Salty_Nimbus",
+      "followedAt": "2024-05-01T18:57:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_turboorbitlive",
+      "login": "turbo_orbitlive",
+      "displayName": "Turbo_OrbitLive",
+      "followedAt": "2023-10-22T16:34:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_ivoryharbor",
+      "login": "ivory_harbor",
+      "displayName": "Ivory_Harbor",
+      "followedAt": "2022-10-14T16:41:00Z",
+      "seeded": false,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_atomiccomet",
+      "login": "atomic_comet",
+      "displayName": "Atomic_Comet",
+      "followedAt": "2023-03-11T07:56:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_rustyvortex",
+      "login": "rusty_vortex",
+      "displayName": "Rusty_Vortex",
+      "followedAt": "2023-08-21T16:25:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_atomicotterclub",
+      "login": "atomic_otterclub",
+      "displayName": "Atomic_OtterClub",
+      "followedAt": "2021-04-12T08:59:00Z",
+      "seeded": true,
+      "stream": {
+        "id": "sbx_stream_atomicotterclub",
+        "categoryId": "512953",
+        "categoryName": "Elden Ring",
+        "title": "Boss rush with viewers",
+        "viewerCount": 73,
+        "startedMinutesAgo": 111
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_lunarwillow",
+      "login": "lunar_willow",
+      "displayName": "Lunar_Willow",
+      "followedAt": "2021-10-25T10:03:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_ivorylantern",
+      "login": "ivory_lantern",
+      "displayName": "Ivory_Lantern",
+      "followedAt": "2024-05-14T15:38:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_wildpanda",
+      "login": "wild_panda",
+      "displayName": "Wild_Panda",
+      "followedAt": "2024-08-09T13:15:00Z",
+      "seeded": false,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_mistypebble",
+      "login": "misty_pebble",
+      "displayName": "Misty_Pebble",
+      "followedAt": "2025-11-14T17:19:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_cosmickernel",
+      "login": "cosmic_kernel",
+      "displayName": "Cosmic_Kernel",
+      "followedAt": "2021-04-12T13:39:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_frostnimbustv",
+      "login": "frost_nimbustv",
+      "displayName": "Frost_NimbusTV",
+      "followedAt": "2025-06-22T12:23:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_frostfoxcave",
+      "login": "frost_foxcave",
+      "displayName": "Frost_FoxCave",
+      "followedAt": "2024-10-27T04:41:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_hollowquillstreams",
+      "login": "hollow_quillstreams",
+      "displayName": "Hollow_QuillStreams",
+      "followedAt": "2022-04-06T01:28:00Z",
+      "seeded": true,
+      "stream": {
+        "id": "sbx_stream_hollowquillstreams",
+        "categoryId": "509660",
+        "categoryName": "Art",
+        "title": "Pixel art session",
+        "viewerCount": 354,
+        "startedMinutesAgo": 68
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_gloomyprismplays",
+      "login": "gloomy_prismplays",
+      "displayName": "Gloomy_PrismPlays",
+      "followedAt": "2025-03-15T18:41:00Z",
+      "seeded": false,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_mistymothgaming",
+      "login": "misty_moth_gaming",
+      "displayName": "Misty_Moth_Gaming",
+      "followedAt": "2021-08-15T08:08:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_atomicvortex",
+      "login": "atomic_vortex",
+      "displayName": "Atomic_Vortex",
+      "followedAt": "2023-02-08T04:28:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_velvetcometgaming",
+      "login": "velvet_comet_gaming",
+      "displayName": "Velvet_Comet_Gaming",
+      "followedAt": "2025-08-18T06:47:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_hollowharborlab",
+      "login": "hollow_harborlab",
+      "displayName": "Hollow_HarborLab",
+      "followedAt": "2025-12-22T00:49:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_atomicdeltahq",
+      "login": "atomic_deltahq",
+      "displayName": "Atomic_DeltaHQ",
+      "followedAt": "2021-07-17T08:16:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_solarripple",
+      "login": "solar_ripple",
+      "displayName": "Solar_Ripple",
+      "followedAt": "2024-05-28T06:40:00Z",
+      "seeded": false,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_fuzzycipherclub",
+      "login": "fuzzy_cipherclub",
+      "displayName": "Fuzzy_CipherClub",
+      "followedAt": "2024-09-09T08:12:00Z",
+      "seeded": true,
+      "stream": {
+        "id": "sbx_stream_fuzzycipherclub",
+        "categoryId": "32982",
+        "categoryName": "Grand Theft Auto V",
+        "title": "Heist grind",
+        "viewerCount": 25,
+        "startedMinutesAgo": 288
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_cobaltripplecave",
+      "login": "cobalt_ripplecave",
+      "displayName": "Cobalt_RippleCave",
+      "followedAt": "2025-08-12T10:51:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_silentbeacon",
+      "login": "silent_beacon",
+      "displayName": "Silent_Beacon",
+      "followedAt": "2025-12-18T09:49:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_quietsparrowhq",
+      "login": "quiet_sparrowhq",
+      "displayName": "Quiet_SparrowHQ",
+      "followedAt": "2024-07-02T13:34:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_wildharborstreams",
+      "login": "wild_harborstreams",
+      "displayName": "Wild_HarborStreams",
+      "followedAt": "2023-12-18T14:45:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_ivorysparrow",
+      "login": "ivory_sparrow",
+      "displayName": "Ivory_Sparrow",
+      "followedAt": "2022-11-20T08:36:00Z",
+      "seeded": false,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_neonmapleofficial",
+      "login": "neon_mapleofficial",
+      "displayName": "Neon_MapleOfficial",
+      "followedAt": "2023-02-24T12:29:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_velvetcomet",
+      "login": "velvet_comet",
+      "displayName": "Velvet_Comet",
+      "followedAt": "2023-02-25T17:49:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_luckyfox",
+      "login": "lucky_fox",
+      "displayName": "Lucky_Fox",
+      "followedAt": "2021-03-25T16:54:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_hollowlantern",
+      "login": "hollow_lantern",
+      "displayName": "Hollow_Lantern",
+      "followedAt": "2022-03-16T02:59:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_velvetharborlive",
+      "login": "velvet_harborlive",
+      "displayName": "Velvet_HarborLive",
+      "followedAt": "2023-03-28T13:01:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_amberotterofficial",
+      "login": "amber_otterofficial",
+      "displayName": "Amber_OtterOfficial",
+      "followedAt": "2022-11-02T11:49:00Z",
+      "seeded": false,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_crimsonripple",
+      "login": "crimson_ripple",
+      "displayName": "Crimson_Ripple",
+      "followedAt": "2023-01-23T19:04:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_velvetmaple",
+      "login": "velvet_maple",
+      "displayName": "Velvet_Maple",
+      "followedAt": "2022-01-22T20:24:00Z",
+      "seeded": true,
+      "stream": {
+        "id": "sbx_stream_velvetmaple",
+        "categoryId": "516575",
+        "categoryName": "VALORANT",
+        "title": "Ranked climb to Radiant",
+        "viewerCount": 564,
+        "startedMinutesAgo": 396
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_wildnimbus",
+      "login": "wild_nimbus",
+      "displayName": "Wild_Nimbus",
+      "followedAt": "2023-10-16T16:58:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_ironpandaofficial",
+      "login": "iron_pandaofficial",
+      "displayName": "Iron_PandaOfficial",
+      "followedAt": "2021-06-12T08:39:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_lunarowlcave",
+      "login": "lunar_owlcave",
+      "displayName": "Lunar_OwlCave",
+      "followedAt": "2024-04-11T03:12:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_fuzzylantern",
+      "login": "fuzzy_lantern",
+      "displayName": "Fuzzy_Lantern",
+      "followedAt": "2021-08-16T02:28:00Z",
+      "seeded": false,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_fuzzynimbus",
+      "login": "fuzzy_nimbus",
+      "displayName": "Fuzzy_Nimbus",
+      "followedAt": "2023-06-05T10:34:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_pixelpandalive",
+      "login": "pixel_pandalive",
+      "displayName": "Pixel_PandaLive",
+      "followedAt": "2024-05-26T04:20:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_sunnyvortex",
+      "login": "sunny_vortex",
+      "displayName": "Sunny_Vortex",
+      "followedAt": "2024-01-27T05:17:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_ambernimbus",
+      "login": "amber_nimbus",
+      "displayName": "Amber_Nimbus",
+      "followedAt": "2022-10-03T06:07:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_cosmicharbor",
+      "login": "cosmic_harbor",
+      "displayName": "Cosmic_Harbor",
+      "followedAt": "2025-02-15T02:12:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_ironjester",
+      "login": "iron_jester",
+      "displayName": "Iron_Jester",
+      "followedAt": "2025-08-05T23:43:00Z",
+      "seeded": false,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_frosttiger",
+      "login": "frost_tiger",
+      "displayName": "Frost_Tiger",
+      "followedAt": "2021-06-22T05:12:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_hollowonyxplays",
+      "login": "hollow_onyxplays",
+      "displayName": "Hollow_OnyxPlays",
+      "followedAt": "2025-06-27T21:25:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_roguepebbleofficial",
+      "login": "rogue_pebbleofficial",
+      "displayName": "Rogue_PebbleOfficial",
+      "followedAt": "2024-11-18T04:51:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_neonsparrow",
+      "login": "neon_sparrow",
+      "displayName": "Neon_Sparrow",
+      "followedAt": "2024-10-07T21:42:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_lunarpanda",
+      "login": "lunar_panda",
+      "displayName": "Lunar_Panda",
+      "followedAt": "2021-03-07T07:27:00Z",
+      "seeded": true,
+      "stream": {
+        "id": "sbx_stream_lunarpanda",
+        "categoryId": "511224",
+        "categoryName": "Apex Legends",
+        "title": "Predator push",
+        "viewerCount": 5,
+        "startedMinutesAgo": 235
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_cobaltharborhq",
+      "login": "cobalt_harborhq",
+      "displayName": "Cobalt_HarborHQ",
+      "followedAt": "2024-10-12T07:40:00Z",
+      "seeded": false,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_ivoryotterofficial",
+      "login": "ivory_otterofficial",
+      "displayName": "Ivory_OtterOfficial",
+      "followedAt": "2025-10-24T08:58:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_amberwillow",
+      "login": "amber_willow",
+      "displayName": "Amber_Willow",
+      "followedAt": "2023-09-23T20:23:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_cobaltcipherlive",
+      "login": "cobalt_cipherlive",
+      "displayName": "Cobalt_CipherLive",
+      "followedAt": "2021-05-18T20:49:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_lunarmoth",
+      "login": "lunar_moth",
+      "displayName": "Lunar_Moth",
+      "followedAt": "2025-07-13T03:26:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_hollowmoth",
+      "login": "hollow_moth",
+      "displayName": "Hollow_Moth",
+      "followedAt": "2021-04-03T17:22:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_roguejester",
+      "login": "rogue_jester",
+      "displayName": "Rogue_Jester",
+      "followedAt": "2021-11-01T07:26:00Z",
+      "seeded": false,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_mistyvortexhq",
+      "login": "misty_vortexhq",
+      "displayName": "Misty_VortexHQ",
+      "followedAt": "2024-06-24T19:11:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_staticowllab",
+      "login": "static_owllab",
+      "displayName": "Static_OwlLab",
+      "followedAt": "2024-10-14T12:05:00Z",
+      "seeded": true,
+      "stream": {
+        "id": "sbx_stream_staticowllab",
+        "categoryId": "27471",
+        "categoryName": "Minecraft",
+        "title": "Modded run, day 12",
+        "viewerCount": 48,
+        "startedMinutesAgo": 168
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_ivoryvortex",
+      "login": "ivory_vortex",
+      "displayName": "Ivory_Vortex",
+      "followedAt": "2022-09-16T10:55:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_pixelpandaofficial",
+      "login": "pixel_pandaofficial",
+      "displayName": "Pixel_PandaOfficial",
+      "followedAt": "2021-09-16T19:15:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_luckybeaconhq",
+      "login": "lucky_beaconhq",
+      "displayName": "Lucky_BeaconHQ",
+      "followedAt": "2025-02-26T09:09:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_zestywillow",
+      "login": "zesty_willow",
+      "displayName": "Zesty_Willow",
+      "followedAt": "2022-05-27T20:56:00Z",
+      "seeded": false,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_quietvortex",
+      "login": "quiet_vortex",
+      "displayName": "Quiet_Vortex",
+      "followedAt": "2025-04-25T09:48:00Z",
+      "seeded": true,
+      "stream": null
+    }
+  ],
+  "preferences": {
+    "channel": [
+      {
+        "broadcasterUserId": "sbx_bc_cinder",
+        "categoryId": "512953",
+        "categoryName": "Elden Ring"
+      }
+    ],
+    "global": [
+      {
+        "categoryId": "27471",
+        "categoryName": "Minecraft",
+        "excludedBroadcasterUserIds": []
+      }
+    ]
+  }
+}

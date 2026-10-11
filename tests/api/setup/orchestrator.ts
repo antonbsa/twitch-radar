@@ -77,6 +77,13 @@ const mockTwitch = {
     return (await res.json()) as string[]
   },
 
+  /** Headers of the last answered request to `path` (with query) since the last reset. */
+  async requestHeaders(path: string): Promise<Record<string, string>> {
+    const res = await fetch(`${MOCK_TWITCH_URL}/__mock/request-headers`)
+    const all = (await res.json()) as Record<string, Record<string, string>>
+    return all[path] ?? {}
+  },
+
   onTokenExchange(body: unknown, status = 200) {
     return this.queue("/oauth2/token", body, status)
   },

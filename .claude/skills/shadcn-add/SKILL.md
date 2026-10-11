@@ -1,5 +1,5 @@
 ---
-name: adding-a-shadcn-component
+name: shadcn-add
 description: Use before running `npx shadcn add <component>` in apps/web; the CLI misconfigures paths, imports and dependencies here.
 ---
 

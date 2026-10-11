@@ -23,7 +23,7 @@ export function ChannelRowSkeleton() {
         </div>
       </div>
 
-      <Skeleton className="size-7 shrink-0" />
+      <Skeleton className="size-11 shrink-0 md:size-7" />
     </div>
   )
 }
