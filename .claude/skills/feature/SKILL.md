@@ -1,5 +1,5 @@
 ---
-name: implementing-a-feature
+name: feature
 description: Use when asked to implement a feature from a GitHub issue, local issue file, or spec path in this repo, before writing any implementation code.
 ---
 
@@ -12,7 +12,7 @@ Every write this skill makes happens off `main`: a spec draft, an ADR, code, the
 git fetch origin main
 git worktree add --no-track -b <branch-name> .agents/worktrees/<branch-name> origin/main
 ```
-Then call `EnterWorktree` with `path: .agents/worktrees/<branch-name>`, which moves the whole session (file tools, nested `AGENTS.md`) into the worktree; a Bash `cd` moves only the shell, and Read/Edit/Write would keep hitting the `main` checkout. Run `npm install` at its root before the first command that runs project code. Uncommitted changes in the `main` checkout stay behind there: if any relate to this work, ask the user before branching. On a branch already made for this work (e.g. dispatched by `implementation-round` into its worktree), write where you are; on a branch for unrelated work, ask the user before writing.
+Then call `EnterWorktree` with `path: .agents/worktrees/<branch-name>`, which moves the whole session (file tools, nested `AGENTS.md`) into the worktree; a Bash `cd` moves only the shell, and Read/Edit/Write would keep hitting the `main` checkout. Run `npm install` at its root before the first command that runs project code. Uncommitted changes in the `main` checkout stay behind there: if any relate to this work, ask the user before branching. On a branch already made for this work (e.g. dispatched by `feature-round` into its worktree), write where you are; on a branch for unrelated work, ask the user before writing.
 
 ## What to do
 
@@ -32,7 +32,7 @@ Then call `EnterWorktree` with `path: .agents/worktrees/<branch-name>`, which mo
 
 4. **For bug reports, confirm the repro before fixing.** If the input's `Proposed solution` (or equivalent) has an unconfirmed repro, an unidentified root cause, or hedges with "if it still reproduces" / "possible explanations" — reproduce it on the feature branch first (or write a failing test that captures it) before touching implementation code. Invoke the superpowers:systematic-debugging skill for the root-cause work itself. If it doesn't reproduce, say so and stop — close/report that instead of fixing a guessed cause.
 
-5. **Implement.** Follow the conventions in [AGENTS.md](../../../AGENTS.md) (nested package files load as you work there) and any referenced ADRs. Delegate to `api-engineer`, `web-engineer` or `infra-engineer` when the work is confined to their domain. Follow AGENTS.md "Tests" for how much to run while iterating: filtered tests for a small change, the full relevant tier once after a large chunk of work. For a change with a visible UI effect, capture a screenshot with the [capturing-ui-screenshots](../capturing-ui-screenshots/SKILL.md) skill to see it working.
+5. **Implement.** Follow the conventions in [AGENTS.md](../../../AGENTS.md) (nested package files load as you work there) and any referenced ADRs. Delegate to `api-engineer`, `web-engineer` or `infra-engineer` when the work is confined to their domain. Follow AGENTS.md "Tests" for how much to run while iterating: filtered tests for a small change, the full relevant tier once after a large chunk of work. For a change with a visible UI effect, capture a screenshot with the [screenshot](../screenshot/SKILL.md) skill to see it working.
 
 6. **Write (or rewrite) the handoff doc.** Create `.agents/handoff-<slug>.md` (slug derived from the spec/issue name) — or, if it already exists for this branch (this is a follow-up run of this skill), overwrite it in full — using the structure in [HANDOFF_TEMPLATE.md](HANDOFF_TEMPLATE.md). The file always reflects the branch's current, final state: rewrite it whole on every iteration rather than appending, as if it had been written this way from the start — never describe an earlier iteration or an approach abandoned since. Fill in:
    - Objective/Problem and Scope, from the driving issue/spec and the actual change.
