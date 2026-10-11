@@ -33,7 +33,7 @@ describe("Auth gate", () => {
     await page.goto(`${WEB_URL}/login`)
     const connect = page.locator(`a[href="/api/auth/twitch/start"]`)
     expect(await connect.getAttribute("aria-busy")).toBe("false")
-    expect(await connect.getAttribute("href")).toBe("/api/auth/twitch/broken")
+    expect(await connect.getAttribute("href")).toBe("/api/auth/twitch/start")
 
     await preventLinkNavigation(page, "/api/auth/twitch/start")
     await connect.click()
