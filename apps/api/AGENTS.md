@@ -65,6 +65,13 @@ for (let i = 0; i < ids.length; i += BATCH_SIZE) {
 - `put(key, value, { expirationTtl })` rejects a TTL under 60 seconds (`Invalid expiration_ttl ... must be at least 60`). It only fails at runtime against the real `wrangler dev` worker, so typecheck and lint pass and the route silently 500s. For a shorter effective window, store a timestamp with a 60s TTL and compare elapsed time yourself. Verify a new TTL by running `tests/api` once, not just typecheck.
 - Most `tests/api` files share the fixed `E2E_USER_ID` (`usr_e2e`). `clearDatabase()` wipes D1 and `session:*` KV keys but nothing else, so a new user-keyed KV namespace leaks between tests unless it's cleared in both reset paths of `handleTestReset` in `http/test-seam/reset.ts`: the `scope: "all"` branch (prefix-scan delete, like `deleteAllSessions`) and the scoped `E2E_USER_ID` branch (single-key delete, like `deleteSessionsForUser`). Confirm with the full `npm run test:api` suite, since a single-file run can pass while the full run exposes the leak.
 
+## Error alerting
+
+- Symptom: a failure shows up only in Workers Logs, with no Sentry issue or Slack message, and the Cloudflare error count stays at zero. Why it slips past local checks: a `catch` that calls `logger.error` handles the error, so the invocation succeeds and `withSentry` never sees it (ADR 0047); tests pass and nothing else flags the gap.
+- Every `catch` that logs a failure with `logger.error` also calls `recordFailure(<same message>, error)` from `lib/alerting.ts`. It buffers per invocation and sends one aggregated report; `reportFailure` is the awaitable variant for `waitUntil`.
+- A promise handed to `c.executionCtx.waitUntil` catches, logs and `recordFailure`s its own error (see `persistFollowedChannelsSyncDeferred`), since a rejection there reaches no handler.
+- Verify for real: `npx wrangler tail --env preview` while forcing the failure (delete the `twitch:app_access_token` KV key, then set a bad `TWITCH_CLIENT_SECRET`) and confirm the Sentry issue and the Slack message. [docs/deployment.md](../../docs/deployment.md) "Error alerting" has the setup.
+
 ## Change together
 
 - There is one cron trigger per environment, `* * * * *`, and `scheduled.ts` picks the jobs due from the minute of `controller.scheduledTime` (table in `src/crons.ts`, ADR 0057). Cloudflare caps cron triggers account-wide (5), so a new scheduled job adds a minute-table entry and a `scheduledJobLogFields` name, never a `wrangler.jsonc` trigger. Keep `CRON_MINUTELY` and every `triggers.crons` in `wrangler.jsonc` identical.
