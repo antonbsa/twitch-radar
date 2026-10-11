@@ -1,0 +1,20 @@
+name: CI reports cleanup
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+jobs:
+  cleanup:
+    name: Remove PR reports
+    # Fork PRs get no secrets and never published anything.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - name: Remove reports
+        env:
+          CI_REPORTS_DEPLOY_KEY: ${{ secrets.CI_REPORTS_DEPLOY_KEY }}
+        run: node infra/scripts/ci/ci-reports.mjs remove ${{ github.event.pull_request.number }}

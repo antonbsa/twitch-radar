@@ -62,6 +62,7 @@ Other project documents may state goals, requirements, task scope, validation st
 - [0057 - Single Minutely Cron Trigger With Time-Based Job Dispatch](0057-single-minutely-cron-trigger.md)
 - [0058 - Cache Category Box Art In D1 And Attach It To API Responses](0058-cache-category-box-art-in-d1.md)
 - [0059 - Timestamp-Prefixed D1 Migrations](0059-timestamp-prefixed-d1-migrations.md)
+- [0060 - Publish Failed CI Test Reports To A Separate Pages Repo](0060-publish-failed-ci-test-reports-to-a-pages-repo.md)
 
 ## Proposed ADRs
 

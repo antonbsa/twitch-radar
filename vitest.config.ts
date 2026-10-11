@@ -15,5 +15,13 @@ export default defineConfig({
     testTimeout: 15_000,
     hookTimeout: 15_000,
     env: loadDevVars(),
+    // Setting reporters replaces the defaults, so keep `default`; the html
+    // report is what CI publishes on failure (ADR 0060).
+    reporters: [
+      "default",
+      ...(process.env.CI ? ["github-actions"] : []),
+      "html",
+    ],
+    outputFile: { html: "test-results/api/report/index.html" },
   },
 })

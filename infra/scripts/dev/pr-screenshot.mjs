@@ -71,7 +71,7 @@ function captureBefore() {
 }
 
 // The two runs share the e2e tier's fixed ports, so they go one after the other.
-// "after" goes first: the tier's globalSetup wipes test-results/, which would delete copied "before" images.
+// "after" goes first: the tier's globalSetup wipes test-results/pr-screenshots, which would delete copied "before" images.
 runSpec(root, values.before ? "after" : undefined)
 if (values.before) captureBefore()
 

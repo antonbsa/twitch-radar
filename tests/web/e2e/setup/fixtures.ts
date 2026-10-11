@@ -4,9 +4,10 @@ import { seedAuthenticatedUser } from "../orchestrator/test-seam-client"
 import { closeBrowser, openBrowser, type BrowserSession } from "./browser"
 
 /**
- * Screenshots on failure aren't automatic here: this tier drives Playwright
- * directly from plain vitest tests (see ADR 0025) rather than through
- * `@vitest/browser`, which is the only thing that captures these for you.
+ * Screenshots and traces on failure aren't automatic here: this tier drives
+ * Playwright directly from plain vitest tests (see ADR 0025) rather than
+ * through `@vitest/browser`, which is the only thing that captures these for
+ * you. CI publishes them next to the html report (ADR 0060).
  *
  * Vitest fixture teardown doesn't reject `use()` when the test fails — the
  * fixture's cleanup phase is triggered by the runner regardless of outcome
@@ -16,17 +17,28 @@ import { closeBrowser, openBrowser, type BrowserSession } from "./browser"
  * where the test's pass/fail state is known and the page is still open.
  * (`ctx.annotate` isn't usable here — by this point vitest already considers
  * the test finished and rejects further annotations on it.)
+ *
+ * Also closes the session, since the trace is only saved (or dropped) at close.
  */
-async function runWithFailureScreenshot<T>(
+async function runWithFailureArtifacts<T>(
   ctx: Pick<TestContext, "task">,
-  page: Page,
+  session: BrowserSession,
   use: (value: T) => Promise<void>,
   value: T,
 ) {
-  await use(value)
-  if (ctx.task.result?.state === "fail") {
-    const path = `test-results/failures/${ctx.task.name.replace(/[^a-z0-9]+/gi, "-")}.png`
-    await page.screenshot({ path, fullPage: true })
+  let tracePath: string | undefined
+  try {
+    await use(value)
+    if (ctx.task.result?.state === "fail") {
+      const name = ctx.task.name.replace(/[^a-z0-9]+/gi, "-")
+      await session.page.screenshot({
+        path: `test-results/e2e/failures/${name}.png`,
+        fullPage: true,
+      })
+      tracePath = `test-results/e2e/traces/${name}.zip`
+    }
+  } finally {
+    await closeBrowser(session, tracePath)
   }
 }
 
@@ -66,25 +78,17 @@ export const it = base.extend<E2eFixtures>({
       lastFollowSyncAt: new Date().toISOString(),
     })
     const session = await openBrowser(sessionId)
-    try {
-      await runWithFailureScreenshot({ task }, session.page, use, {
-        session,
-        page: session.page,
-        sessionId,
-        userId,
-      })
-    } finally {
-      await closeBrowser(session)
-    }
+    await runWithFailureArtifacts({ task }, session, use, {
+      session,
+      page: session.page,
+      sessionId,
+      userId,
+    })
   },
 
   guestSession: async ({ task }, use) => {
     const session = await openBrowser()
-    try {
-      await runWithFailureScreenshot({ task }, session.page, use, session)
-    } finally {
-      await closeBrowser(session)
-    }
+    await runWithFailureArtifacts({ task }, session, use, session)
   },
 })
 

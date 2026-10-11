@@ -109,6 +109,7 @@ Don't add code that only accepts old schema/data states. When a schema or format
   ```
 - Run each affected full tier once after a large chunk of work. Don't re-run before opening a PR just as a formality.
 - The e2e tier retries once on CI (`retry` in `vitest.e2e.config.ts`) to absorb browser-timing flakes; never add retries to the API or unit tiers, and treat a test that needs its retry repeatedly as a bug to fix.
+- A failing same-repo PR run comments a link to its published report (html report, server logs, E2E screenshots and traces; [ADR 0060](docs/decisions/0060-publish-failed-ci-test-reports-to-a-pages-repo.md)). Read it before reproducing a CI failure locally.
 - The tiers use fixed ports, distinct from dev's. Another worktree's run holding them is contention, not your bug: leave other sessions' servers running.
 
 ## Tooling
