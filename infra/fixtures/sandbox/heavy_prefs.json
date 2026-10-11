@@ -1,0 +1,850 @@
+{
+  "user": {
+    "id": "usr_sandbox_heavy_prefs",
+    "twitchUserId": "sbx_tw_heavy_prefs",
+    "login": "sandbox_heavy_prefs",
+    "displayName": "Sandbox Heavy Prefs"
+  },
+  "tokenState": "valid",
+  "follows": [
+    {
+      "broadcasterUserId": "sbx_bc_aurora",
+      "login": "aurora_plays",
+      "displayName": "Aurora_Plays",
+      "followedAt": "2024-03-02T18:20:00Z",
+      "seeded": true,
+      "stream": {
+        "id": "sbx_stream_aurora",
+        "categoryId": "509658",
+        "categoryName": "Just Chatting",
+        "title": "Sunday chill and chat",
+        "viewerCount": 1240,
+        "startedMinutesAgo": 95
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_bytewolf",
+      "login": "bytewolf",
+      "displayName": "ByteWolf",
+      "followedAt": "2023-11-19T09:05:00Z",
+      "seeded": true,
+      "stream": {
+        "id": "sbx_stream_bytewolf",
+        "categoryId": "27471",
+        "categoryName": "Minecraft",
+        "title": "Hardcore world, day 40",
+        "viewerCount": 387,
+        "startedMinutesAgo": 210
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_cinder",
+      "login": "cinder_speedruns",
+      "displayName": "Cinder_Speedruns",
+      "followedAt": "2024-07-14T21:40:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_driftwood",
+      "login": "driftwood_tv",
+      "displayName": "Driftwood_TV",
+      "followedAt": "2025-01-08T12:00:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_ember",
+      "login": "ember_arcade",
+      "displayName": "Ember_Arcade",
+      "followedAt": "2025-05-21T16:30:00Z",
+      "seeded": true,
+      "stream": {
+        "id": "sbx_stream_ember",
+        "categoryId": "516575",
+        "categoryName": "VALORANT",
+        "title": "Ranked grind to Immortal",
+        "viewerCount": 52,
+        "startedMinutesAgo": 30
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_fathom",
+      "login": "fathom_fm",
+      "displayName": "Fathom_FM",
+      "followedAt": "2025-08-03T07:15:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_frostowl",
+      "login": "frost_owl",
+      "displayName": "Frost_Owl",
+      "followedAt": "2024-05-03T00:48:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_cobaltfox",
+      "login": "cobalt_fox",
+      "displayName": "Cobalt_Fox",
+      "followedAt": "2024-11-05T22:25:00Z",
+      "seeded": true,
+      "stream": {
+        "id": "sbx_stream_cobaltfox",
+        "categoryId": "513143",
+        "categoryName": "Teamfight Tactics",
+        "title": "Hyper roll",
+        "viewerCount": 181,
+        "startedMinutesAgo": 82
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_ivoryanvil",
+      "login": "ivory_anvil",
+      "displayName": "Ivory_Anvil",
+      "followedAt": "2021-01-03T16:11:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_turboharborofficial",
+      "login": "turbo_harborofficial",
+      "displayName": "Turbo_HarborOfficial",
+      "followedAt": "2022-09-06T18:31:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_mistypanda",
+      "login": "misty_panda",
+      "displayName": "Misty_Panda",
+      "followedAt": "2025-08-04T18:48:00Z",
+      "seeded": true,
+      "stream": {
+        "id": "sbx_stream_mistypanda",
+        "categoryId": "518203",
+        "categoryName": "Sports",
+        "title": "Match day watch-along",
+        "viewerCount": 3,
+        "startedMinutesAgo": 172
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_fuzzyripple",
+      "login": "fuzzy_ripple",
+      "displayName": "Fuzzy_Ripple",
+      "followedAt": "2025-04-08T12:06:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_cobaltbeaconplays",
+      "login": "cobalt_beaconplays",
+      "displayName": "Cobalt_BeaconPlays",
+      "followedAt": "2021-09-17T02:20:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_atomicquilllive",
+      "login": "atomic_quilllive",
+      "displayName": "Atomic_QuillLive",
+      "followedAt": "2022-03-18T13:47:00Z",
+      "seeded": true,
+      "stream": {
+        "id": "sbx_stream_atomicquilllive",
+        "categoryId": "30921",
+        "categoryName": "Rocket League",
+        "title": "Ranked doubles",
+        "viewerCount": 3,
+        "startedMinutesAgo": 108
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_staticowlplays",
+      "login": "static_owlplays",
+      "displayName": "Static_OwlPlays",
+      "followedAt": "2023-05-07T07:31:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_rustyquillclub",
+      "login": "rusty_quillclub",
+      "displayName": "Rusty_QuillClub",
+      "followedAt": "2022-09-09T00:18:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_irontigertv",
+      "login": "iron_tigertv",
+      "displayName": "Iron_TigerTV",
+      "followedAt": "2022-08-27T21:23:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_staticwillowofficial",
+      "login": "static_willowofficial",
+      "displayName": "Static_WillowOfficial",
+      "followedAt": "2024-04-19T00:31:00Z",
+      "seeded": true,
+      "stream": {
+        "id": "sbx_stream_staticwillowofficial",
+        "categoryId": "32399",
+        "categoryName": "Counter-Strike",
+        "title": "Pro match watch-along",
+        "viewerCount": 3,
+        "startedMinutesAgo": 138
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_saltysparrowofficial",
+      "login": "salty_sparrowofficial",
+      "displayName": "Salty_SparrowOfficial",
+      "followedAt": "2022-01-25T18:06:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_pixelonyxstreams",
+      "login": "pixel_onyxstreams",
+      "displayName": "Pixel_OnyxStreams",
+      "followedAt": "2024-08-19T01:03:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_solarkernel",
+      "login": "solar_kernel",
+      "displayName": "Solar_Kernel",
+      "followedAt": "2022-02-24T01:43:00Z",
+      "seeded": true,
+      "stream": {
+        "id": "sbx_stream_solarkernel",
+        "categoryId": "513143",
+        "categoryName": "Teamfight Tactics",
+        "title": "Set rotation climb",
+        "viewerCount": 3,
+        "startedMinutesAgo": 223
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_crimsonharbor",
+      "login": "crimson_harbor",
+      "displayName": "Crimson_Harbor",
+      "followedAt": "2025-01-18T19:37:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_neonravenlab",
+      "login": "neon_ravenlab",
+      "displayName": "Neon_RavenLab",
+      "followedAt": "2022-11-18T23:39:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_hollowgadget",
+      "login": "hollow_gadget",
+      "displayName": "Hollow_Gadget",
+      "followedAt": "2025-04-24T17:21:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_velvetmoth",
+      "login": "velvet_moth",
+      "displayName": "Velvet_Moth",
+      "followedAt": "2023-07-19T21:56:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_silentechogaming",
+      "login": "silent_echo_gaming",
+      "displayName": "Silent_Echo_Gaming",
+      "followedAt": "2022-04-06T03:10:00Z",
+      "seeded": true,
+      "stream": {
+        "id": "sbx_stream_silentechogaming",
+        "categoryId": "509658",
+        "categoryName": "Just Chatting",
+        "title": "Q&A while I edit",
+        "viewerCount": 4,
+        "startedMinutesAgo": 106
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_saltygadgetlab",
+      "login": "salty_gadgetlab",
+      "displayName": "Salty_GadgetLab",
+      "followedAt": "2022-09-07T07:50:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_hollowmothlab",
+      "login": "hollow_mothlab",
+      "displayName": "Hollow_MothLab",
+      "followedAt": "2021-01-15T00:14:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_cobaltjester",
+      "login": "cobalt_jester",
+      "displayName": "Cobalt_Jester",
+      "followedAt": "2021-02-10T06:56:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_atomicgadget",
+      "login": "atomic_gadget",
+      "displayName": "Atomic_Gadget",
+      "followedAt": "2021-03-21T14:17:00Z",
+      "seeded": true,
+      "stream": {
+        "id": "sbx_stream_atomicgadget",
+        "categoryId": "26936",
+        "categoryName": "Music",
+        "title": "Lo-fi beats to study to",
+        "viewerCount": 3,
+        "startedMinutesAgo": 19
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_atomicharbor",
+      "login": "atomic_harbor",
+      "displayName": "Atomic_Harbor",
+      "followedAt": "2024-01-11T19:43:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_rustymaple",
+      "login": "rusty_maple",
+      "displayName": "Rusty_Maple",
+      "followedAt": "2023-10-11T02:55:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_quietechotv",
+      "login": "quiet_echotv",
+      "displayName": "Quiet_EchoTV",
+      "followedAt": "2022-06-18T08:10:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_fuzzytiger",
+      "login": "fuzzy_tiger",
+      "displayName": "Fuzzy_Tiger",
+      "followedAt": "2024-10-01T00:09:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_frostvortexlive",
+      "login": "frost_vortexlive",
+      "displayName": "Frost_VortexLive",
+      "followedAt": "2021-03-21T13:27:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_quietpandalive",
+      "login": "quiet_pandalive",
+      "displayName": "Quiet_PandaLive",
+      "followedAt": "2024-06-13T10:32:00Z",
+      "seeded": true,
+      "stream": {
+        "id": "sbx_stream_quietpandalive",
+        "categoryId": "512953",
+        "categoryName": "Elden Ring",
+        "title": "No-hit run attempt",
+        "viewerCount": 1074,
+        "startedMinutesAgo": 139
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_goldencomet",
+      "login": "golden_comet",
+      "displayName": "Golden_Comet",
+      "followedAt": "2022-01-18T12:33:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_saltyotter",
+      "login": "salty_otter",
+      "displayName": "Salty_Otter",
+      "followedAt": "2021-05-12T18:11:00Z",
+      "seeded": true,
+      "stream": {
+        "id": "sbx_stream_saltyotter",
+        "categoryId": "32982",
+        "categoryName": "Grand Theft Auto V",
+        "title": "RP server night",
+        "viewerCount": 497,
+        "startedMinutesAgo": 101
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_neoncipher",
+      "login": "neon_cipher",
+      "displayName": "Neon_Cipher",
+      "followedAt": "2025-06-22T17:04:00Z",
+      "seeded": false,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_cosmicfoxclub",
+      "login": "cosmic_foxclub",
+      "displayName": "Cosmic_FoxClub",
+      "followedAt": "2025-08-15T21:08:00Z",
+      "seeded": false,
+      "stream": null
+    }
+  ],
+  "preferences": {
+    "channel": [
+      {
+        "broadcasterUserId": "sbx_bc_aurora",
+        "categoryId": "509658",
+        "categoryName": "Just Chatting"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_aurora",
+        "categoryId": "491487",
+        "categoryName": "Dead by Daylight"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_bytewolf",
+        "categoryId": "27471",
+        "categoryName": "Minecraft"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_bytewolf",
+        "categoryId": "518203",
+        "categoryName": "Sports"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_cinder",
+        "categoryId": "512953",
+        "categoryName": "Elden Ring"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_cinder",
+        "categoryId": "26936",
+        "categoryName": "Music"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_driftwood",
+        "categoryId": "516575",
+        "categoryName": "VALORANT"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_driftwood",
+        "categoryId": "32399",
+        "categoryName": "Counter-Strike"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_ember",
+        "categoryId": "33214",
+        "categoryName": "Fortnite"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_ember",
+        "categoryId": "511224",
+        "categoryName": "Apex Legends"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_fathom",
+        "categoryId": "32982",
+        "categoryName": "Grand Theft Auto V"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_fathom",
+        "categoryId": "30921",
+        "categoryName": "Rocket League"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_frostowl",
+        "categoryId": "21779",
+        "categoryName": "League of Legends"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_frostowl",
+        "categoryId": "509660",
+        "categoryName": "Art"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_cobaltfox",
+        "categoryId": "491487",
+        "categoryName": "Dead by Daylight"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_cobaltfox",
+        "categoryId": "1469308723",
+        "categoryName": "Software and Game Development"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_ivoryanvil",
+        "categoryId": "518203",
+        "categoryName": "Sports"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_ivoryanvil",
+        "categoryId": "743",
+        "categoryName": "Chess"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_turboharborofficial",
+        "categoryId": "26936",
+        "categoryName": "Music"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_turboharborofficial",
+        "categoryId": "489401",
+        "categoryName": "Stardew Valley"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_mistypanda",
+        "categoryId": "32399",
+        "categoryName": "Counter-Strike"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_mistypanda",
+        "categoryId": "515025",
+        "categoryName": "Overwatch 2"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_fuzzyripple",
+        "categoryId": "511224",
+        "categoryName": "Apex Legends"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_fuzzyripple",
+        "categoryId": "513143",
+        "categoryName": "Teamfight Tactics"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_cobaltbeaconplays",
+        "categoryId": "30921",
+        "categoryName": "Rocket League"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_cobaltbeaconplays",
+        "categoryId": "512710",
+        "categoryName": "Call of Duty: Warzone"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_atomicquilllive",
+        "categoryId": "509660",
+        "categoryName": "Art"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_atomicquilllive",
+        "categoryId": "509659",
+        "categoryName": "ASMR"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_staticowlplays",
+        "categoryId": "1469308723",
+        "categoryName": "Software and Game Development"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_staticowlplays",
+        "categoryId": "417752",
+        "categoryName": "Talk Shows & Podcasts"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_rustyquillclub",
+        "categoryId": "743",
+        "categoryName": "Chess"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_rustyquillclub",
+        "categoryId": "498566",
+        "categoryName": "Slots"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_irontigertv",
+        "categoryId": "489401",
+        "categoryName": "Stardew Valley"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_irontigertv",
+        "categoryId": "509658",
+        "categoryName": "Just Chatting"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_staticwillowofficial",
+        "categoryId": "515025",
+        "categoryName": "Overwatch 2"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_staticwillowofficial",
+        "categoryId": "27471",
+        "categoryName": "Minecraft"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_saltysparrowofficial",
+        "categoryId": "513143",
+        "categoryName": "Teamfight Tactics"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_saltysparrowofficial",
+        "categoryId": "512953",
+        "categoryName": "Elden Ring"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_pixelonyxstreams",
+        "categoryId": "512710",
+        "categoryName": "Call of Duty: Warzone"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_pixelonyxstreams",
+        "categoryId": "516575",
+        "categoryName": "VALORANT"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_solarkernel",
+        "categoryId": "509659",
+        "categoryName": "ASMR"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_solarkernel",
+        "categoryId": "33214",
+        "categoryName": "Fortnite"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_crimsonharbor",
+        "categoryId": "417752",
+        "categoryName": "Talk Shows & Podcasts"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_crimsonharbor",
+        "categoryId": "32982",
+        "categoryName": "Grand Theft Auto V"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_neonravenlab",
+        "categoryId": "498566",
+        "categoryName": "Slots"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_neonravenlab",
+        "categoryId": "21779",
+        "categoryName": "League of Legends"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_hollowgadget",
+        "categoryId": "509658",
+        "categoryName": "Just Chatting"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_hollowgadget",
+        "categoryId": "491487",
+        "categoryName": "Dead by Daylight"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_velvetmoth",
+        "categoryId": "27471",
+        "categoryName": "Minecraft"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_velvetmoth",
+        "categoryId": "518203",
+        "categoryName": "Sports"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_silentechogaming",
+        "categoryId": "512953",
+        "categoryName": "Elden Ring"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_silentechogaming",
+        "categoryId": "26936",
+        "categoryName": "Music"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_saltygadgetlab",
+        "categoryId": "516575",
+        "categoryName": "VALORANT"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_saltygadgetlab",
+        "categoryId": "32399",
+        "categoryName": "Counter-Strike"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_hollowmothlab",
+        "categoryId": "33214",
+        "categoryName": "Fortnite"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_hollowmothlab",
+        "categoryId": "511224",
+        "categoryName": "Apex Legends"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_cobaltjester",
+        "categoryId": "32982",
+        "categoryName": "Grand Theft Auto V"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_cobaltjester",
+        "categoryId": "30921",
+        "categoryName": "Rocket League"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_atomicgadget",
+        "categoryId": "21779",
+        "categoryName": "League of Legends"
+      },
+      {
+        "broadcasterUserId": "sbx_bc_atomicgadget",
+        "categoryId": "509660",
+        "categoryName": "Art"
+      }
+    ],
+    "global": [
+      {
+        "categoryId": "509658",
+        "categoryName": "Just Chatting",
+        "excludedBroadcasterUserIds": []
+      },
+      {
+        "categoryId": "27471",
+        "categoryName": "Minecraft",
+        "excludedBroadcasterUserIds": ["sbx_bc_bytewolf"]
+      },
+      {
+        "categoryId": "512953",
+        "categoryName": "Elden Ring",
+        "excludedBroadcasterUserIds": ["sbx_bc_cinder", "sbx_bc_driftwood"]
+      },
+      {
+        "categoryId": "516575",
+        "categoryName": "VALORANT",
+        "excludedBroadcasterUserIds": [
+          "sbx_bc_driftwood",
+          "sbx_bc_ember",
+          "sbx_bc_fathom"
+        ]
+      },
+      {
+        "categoryId": "33214",
+        "categoryName": "Fortnite",
+        "excludedBroadcasterUserIds": []
+      },
+      {
+        "categoryId": "32982",
+        "categoryName": "Grand Theft Auto V",
+        "excludedBroadcasterUserIds": ["sbx_bc_fathom"]
+      },
+      {
+        "categoryId": "21779",
+        "categoryName": "League of Legends",
+        "excludedBroadcasterUserIds": ["sbx_bc_frostowl", "sbx_bc_cobaltfox"]
+      },
+      {
+        "categoryId": "491487",
+        "categoryName": "Dead by Daylight",
+        "excludedBroadcasterUserIds": [
+          "sbx_bc_cobaltfox",
+          "sbx_bc_ivoryanvil",
+          "sbx_bc_turboharborofficial"
+        ]
+      },
+      {
+        "categoryId": "518203",
+        "categoryName": "Sports",
+        "excludedBroadcasterUserIds": []
+      },
+      {
+        "categoryId": "26936",
+        "categoryName": "Music",
+        "excludedBroadcasterUserIds": ["sbx_bc_turboharborofficial"]
+      },
+      {
+        "categoryId": "32399",
+        "categoryName": "Counter-Strike",
+        "excludedBroadcasterUserIds": [
+          "sbx_bc_mistypanda",
+          "sbx_bc_fuzzyripple"
+        ]
+      },
+      {
+        "categoryId": "511224",
+        "categoryName": "Apex Legends",
+        "excludedBroadcasterUserIds": [
+          "sbx_bc_fuzzyripple",
+          "sbx_bc_cobaltbeaconplays",
+          "sbx_bc_atomicquilllive"
+        ]
+      },
+      {
+        "categoryId": "30921",
+        "categoryName": "Rocket League",
+        "excludedBroadcasterUserIds": []
+      },
+      {
+        "categoryId": "509660",
+        "categoryName": "Art",
+        "excludedBroadcasterUserIds": ["sbx_bc_atomicquilllive"]
+      },
+      {
+        "categoryId": "1469308723",
+        "categoryName": "Software and Game Development",
+        "excludedBroadcasterUserIds": [
+          "sbx_bc_staticowlplays",
+          "sbx_bc_rustyquillclub"
+        ]
+      },
+      {
+        "categoryId": "743",
+        "categoryName": "Chess",
+        "excludedBroadcasterUserIds": [
+          "sbx_bc_rustyquillclub",
+          "sbx_bc_irontigertv",
+          "sbx_bc_staticwillowofficial"
+        ]
+      },
+      {
+        "categoryId": "489401",
+        "categoryName": "Stardew Valley",
+        "excludedBroadcasterUserIds": []
+      },
+      {
+        "categoryId": "515025",
+        "categoryName": "Overwatch 2",
+        "excludedBroadcasterUserIds": ["sbx_bc_staticwillowofficial"]
+      },
+      {
+        "categoryId": "513143",
+        "categoryName": "Teamfight Tactics",
+        "excludedBroadcasterUserIds": [
+          "sbx_bc_saltysparrowofficial",
+          "sbx_bc_pixelonyxstreams"
+        ]
+      },
+      {
+        "categoryId": "512710",
+        "categoryName": "Call of Duty: Warzone",
+        "excludedBroadcasterUserIds": [
+          "sbx_bc_pixelonyxstreams",
+          "sbx_bc_solarkernel",
+          "sbx_bc_crimsonharbor"
+        ]
+      }
+    ]
+  }
+}

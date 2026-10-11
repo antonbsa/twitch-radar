@@ -6,16 +6,21 @@ import { changelogPlugin } from "./vite-plugins/changelog-plugin"
 import { appIconPlugin } from "./vite-plugins/app-icon-plugin"
 import { loadDevEnv } from "../../infra/scripts/dev/load-env.mjs"
 
-export default defineConfig(() => {
+export default defineConfig(({ mode }) => {
   const envDir = fileURLToPath(new URL("../..", import.meta.url))
   const { apiPort, webPort } = loadDevEnv()
 
   return {
     envDir,
+    // Build-time, so sandbox code is dropped from the production bundle (ADR 0045).
+    define: { __NON_PRODUCTION_FEATURES__: mode !== "production" },
     plugins: [react(), tailwindcss(), changelogPlugin(), appIconPlugin()],
     resolve: {
       alias: {
         "@": fileURLToPath(new URL("./src", import.meta.url)),
+        "@fixtures": fileURLToPath(
+          new URL("../../infra/fixtures", import.meta.url),
+        ),
       },
     },
     server: {

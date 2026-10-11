@@ -1,4 +1,4 @@
-import { useSearchParams } from "react-router"
+import { Link, useSearchParams } from "react-router"
 import { Loader2Icon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/context/language-context"
@@ -40,6 +40,14 @@ export function LoginPage() {
           {t(isConnecting ? "login.connecting" : "login.connect")}
         </a>
       </Button>
+      {__NON_PRODUCTION_FEATURES__ && (
+        <Link
+          to="/sandbox"
+          className="text-xs text-muted-foreground underline-offset-4 hover:underline"
+        >
+          {t("login.sandbox")}
+        </Link>
+      )}
     </div>
   )
 }

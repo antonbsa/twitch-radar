@@ -41,3 +41,12 @@ The existing test seam ([ADR 0025](0025-e2e-ui-tests-with-playwright-and-test-se
 - `infra/fixtures/sandbox/` becomes a new committed directory; its fixtures are product-adjacent test data, reviewed like code.
 - The auth-gate screen gains a discreet link to `/sandbox`, visible only when the sandbox is reachable (i.e., never in production, per build-time exclusion).
 - `mock-eventsub.mjs`'s doc comment should eventually note the sandbox's `/api/__sandbox__/events` as the alternative path for agents/manual use that don't have `EVENTSUB_WEBHOOK_SECRET`, so the two aren't mistaken for duplicates.
+
+## Amendment: more personas and login overrides
+
+The persona set grew from three to six, and `POST /api/__sandbox__/login` accepts optional `overrides`. The safety property is unchanged: the persona is still a closed enum of fixed fixtures, so "three" above reads as "the fixed set" (now `full`, `empty`, `reconnect`, `muted_paused`, `heavy_prefs`, `rate_limited`).
+
+- **New personas**: `muted_paused` (all notifications paused, one muted channel, one global-preference exclusion, so every suppressor is active), `heavy_prefs` (60 channel and 20 global preferences with exclusions, for long lists), `rate_limited` (the fake Helix answers its follow and stream reads with `429` and `Retry-After: 30`, so Sync and the live refresh fail). Fixtures gain optional `notificationsPaused`, `language`, `mutedBroadcasterUserIds` and `rateLimited`.
+- **Overrides**: `{ persona, overrides? }` where `overrides` is a strict zod object with optional `tokenState`, `notificationsPaused`, `language`, `mutedBroadcasterUserIds` and `preferences` (`channel`, `global` with `excludedBroadcasterUserIds`). Each key present replaces the fixture's value wholesale, with no deep merge. Channels must be seeded follows of that persona and categories must be in `categories.json` (which supplies the names); anything else is a `400`. Overrides only change the chosen persona's rows, and the next login without them restores the fixture baseline.
+- **Rejected: overriding the Helix side.** `rateLimited` is a fixture property, not an override, because the fake Helix answers from the static fixtures and has no per-login state to read; making it overridable would need a stored per-persona flag for one rarely changed switch. Follows and live streams are likewise fixture-only.
+- **Rejected: overrides in the `/sandbox` page.** Agents and tests call the endpoint; the page keeps one button per persona, and after login the app's own settings screens change anything interactively.

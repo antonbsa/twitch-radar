@@ -9,6 +9,7 @@ import { LoginPage } from "@/routes/login"
 import { ChannelsPage } from "@/routes/channels"
 import { AlertsPage } from "@/routes/alerts"
 import { AccountPage } from "@/routes/account"
+import { SandboxPage } from "@/routes/sandbox"
 
 /**
  * Reconciles the client-guessed language (localStorage/navigator, set before
@@ -40,6 +41,9 @@ export function App() {
             </AuthGate>
           }
         />
+        {__NON_PRODUCTION_FEATURES__ && (
+          <Route path="/sandbox" element={<SandboxPage />} />
+        )}
         <Route
           element={
             <AuthGate when="authenticated" redirectTo="/login">

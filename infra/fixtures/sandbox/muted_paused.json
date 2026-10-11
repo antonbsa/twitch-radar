@@ -1,0 +1,183 @@
+{
+  "user": {
+    "id": "usr_sandbox_muted_paused",
+    "twitchUserId": "sbx_tw_muted_paused",
+    "login": "sandbox_muted_paused",
+    "displayName": "Sandbox Muted Paused"
+  },
+  "tokenState": "valid",
+  "notificationsPaused": true,
+  "mutedBroadcasterUserIds": ["sbx_bc_aurora"],
+  "follows": [
+    {
+      "broadcasterUserId": "sbx_bc_aurora",
+      "login": "aurora_plays",
+      "displayName": "Aurora_Plays",
+      "followedAt": "2024-03-02T18:20:00Z",
+      "seeded": true,
+      "stream": {
+        "id": "sbx_stream_aurora",
+        "categoryId": "509658",
+        "categoryName": "Just Chatting",
+        "title": "Sunday chill and chat",
+        "viewerCount": 1240,
+        "startedMinutesAgo": 95
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_bytewolf",
+      "login": "bytewolf",
+      "displayName": "ByteWolf",
+      "followedAt": "2023-11-19T09:05:00Z",
+      "seeded": true,
+      "stream": {
+        "id": "sbx_stream_bytewolf",
+        "categoryId": "27471",
+        "categoryName": "Minecraft",
+        "title": "Hardcore world, day 40",
+        "viewerCount": 387,
+        "startedMinutesAgo": 210
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_cinder",
+      "login": "cinder_speedruns",
+      "displayName": "Cinder_Speedruns",
+      "followedAt": "2024-07-14T21:40:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_driftwood",
+      "login": "driftwood_tv",
+      "displayName": "Driftwood_TV",
+      "followedAt": "2025-01-08T12:00:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_ember",
+      "login": "ember_arcade",
+      "displayName": "Ember_Arcade",
+      "followedAt": "2025-05-21T16:30:00Z",
+      "seeded": true,
+      "stream": {
+        "id": "sbx_stream_ember",
+        "categoryId": "516575",
+        "categoryName": "VALORANT",
+        "title": "Ranked grind to Immortal",
+        "viewerCount": 52,
+        "startedMinutesAgo": 30
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_fathom",
+      "login": "fathom_fm",
+      "displayName": "Fathom_FM",
+      "followedAt": "2025-08-03T07:15:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_frostowl",
+      "login": "frost_owl",
+      "displayName": "Frost_Owl",
+      "followedAt": "2024-05-03T00:48:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_cobaltfox",
+      "login": "cobalt_fox",
+      "displayName": "Cobalt_Fox",
+      "followedAt": "2024-11-05T22:25:00Z",
+      "seeded": true,
+      "stream": {
+        "id": "sbx_stream_cobaltfox",
+        "categoryId": "513143",
+        "categoryName": "Teamfight Tactics",
+        "title": "Hyper roll",
+        "viewerCount": 181,
+        "startedMinutesAgo": 82
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_ivoryanvil",
+      "login": "ivory_anvil",
+      "displayName": "Ivory_Anvil",
+      "followedAt": "2021-01-03T16:11:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_turboharborofficial",
+      "login": "turbo_harborofficial",
+      "displayName": "Turbo_HarborOfficial",
+      "followedAt": "2022-09-06T18:31:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_mistypanda",
+      "login": "misty_panda",
+      "displayName": "Misty_Panda",
+      "followedAt": "2025-08-04T18:48:00Z",
+      "seeded": true,
+      "stream": {
+        "id": "sbx_stream_mistypanda",
+        "categoryId": "518203",
+        "categoryName": "Sports",
+        "title": "Match day watch-along",
+        "viewerCount": 3,
+        "startedMinutesAgo": 172
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_fuzzyripple",
+      "login": "fuzzy_ripple",
+      "displayName": "Fuzzy_Ripple",
+      "followedAt": "2025-04-08T12:06:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_cobaltbeaconplays",
+      "login": "cobalt_beaconplays",
+      "displayName": "Cobalt_BeaconPlays",
+      "followedAt": "2021-09-17T02:20:00Z",
+      "seeded": false,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_atomicquilllive",
+      "login": "atomic_quilllive",
+      "displayName": "Atomic_QuillLive",
+      "followedAt": "2022-03-18T13:47:00Z",
+      "seeded": false,
+      "stream": {
+        "id": "sbx_stream_atomicquilllive",
+        "categoryId": "30921",
+        "categoryName": "Rocket League",
+        "title": "Ranked doubles",
+        "viewerCount": 3,
+        "startedMinutesAgo": 108
+      }
+    }
+  ],
+  "preferences": {
+    "channel": [
+      {
+        "broadcasterUserId": "sbx_bc_cinder",
+        "categoryId": "512953",
+        "categoryName": "Elden Ring"
+      }
+    ],
+    "global": [
+      {
+        "categoryId": "27471",
+        "categoryName": "Minecraft",
+        "excludedBroadcasterUserIds": ["sbx_bc_bytewolf"]
+      }
+    ]
+  }
+}
