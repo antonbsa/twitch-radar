@@ -116,6 +116,17 @@ function listFiles(dir, ext) {
     : []
 }
 
+const INDEX_CSS = `
+:root{color-scheme:light dark}
+body{margin:0;font:16px/1.5 system-ui,sans-serif;background:Canvas;color:CanvasText}
+main{max-width:860px;margin:0 auto;padding:32px 20px}
+h1{font-size:1.6rem;margin:0 0 4px}
+section{margin-top:24px;padding:16px 20px;border:1px solid color-mix(in srgb,CanvasText 18%,transparent);border-radius:10px}
+h2{font-size:1.1rem;margin:0 0 8px}
+ul{margin:0;padding-left:20px}
+a{color:#2563eb}
+`
+
 function renderIndex(target, runId, runUrl) {
   const base = `${PAGES_URL}/pr-${pr}/${runId}`
   const link = (href, label) => `<li><a href="${href}">${label}</a></li>`
@@ -136,15 +147,14 @@ function renderIndex(target, runId, runUrl) {
           link(`https://trace.playwright.dev/?trace=${url}`, `Trace: ${trace}`),
         )
       }
-      const shots = listFiles(join(dir, "failures"), ".png").map(
-        (shot) =>
-          `<figure><figcaption>${shot}</figcaption><img src="${tier}/failures/${shot}" width="390"></figure>`,
-      )
-      return `<h2>${title}</h2><ul>${items.join("")}</ul>${shots.join("")}`
+      return `<section><h2>${title}</h2><ul>${items.join("")}</ul></section>`
     })
-  return `<!doctype html><meta charset="utf-8"><title>PR #${pr} test report</title>
+  return `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PR #${pr} test report</title>
+<style>${INDEX_CSS}</style>
+<main>
 <h1>PR #${pr} test report</h1>
 <p><a href="${runUrl}">Workflow run</a></p>
 ${sections.join("\n")}
+</main>
 `
 }

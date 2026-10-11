@@ -3,22 +3,23 @@ import type { Page } from "playwright"
 import { seedAuthenticatedUser } from "../orchestrator/test-seam-client"
 import { closeBrowser, openBrowser, type BrowserSession } from "./browser"
 
+/** Browser session of each running test, by task id, so the `it` wrapper can screenshot it. */
+const sessions = new Map<string, BrowserSession>()
+
 /**
- * Screenshots and traces on failure aren't automatic here: this tier drives
- * Playwright directly from plain vitest tests (see ADR 0025) rather than
- * through `@vitest/browser`, which is the only thing that captures these for
- * you. CI publishes them next to the html report (ADR 0060).
+ * Failure artifacts aren't automatic here: this tier drives Playwright directly
+ * from plain vitest tests (see ADR 0025) rather than through `@vitest/browser`,
+ * which is the only thing that captures them for you. CI publishes them with
+ * the html report (ADR 0060).
  *
- * Vitest fixture teardown doesn't reject `use()` when the test fails — the
- * fixture's cleanup phase is triggered by the runner regardless of outcome
- * (see `resolveFixtureFunction` in `@vitest/runner`), and `onTestFailed`
- * fires only after that teardown has already closed the browser. So this
- * checks `task.result` right after `use()` settles, which is the one point
- * where the test's pass/fail state is known and the page is still open.
- * (`ctx.annotate` isn't usable here — by this point vitest already considers
- * the test finished and rejects further annotations on it.)
- *
- * Also closes the session, since the trace is only saved (or dropped) at close.
+ * The screenshot is attached to the test as an annotation (see `it` below), so
+ * it renders under the error in the html report. The trace can't be: vitest
+ * rejects `annotate` once the test has finished, and fixture teardown runs
+ * after that. The fixture instead checks `task.result` right after `use()`
+ * settles, the one point where the pass/fail state is known and the page is
+ * still open (`onTestFailed` fires only after the browser is closed), and
+ * saves the trace file, closing the session since the trace is only written
+ * (or dropped) at close.
  */
 async function runWithFailureArtifacts<T>(
   ctx: Pick<TestContext, "task">,
@@ -27,19 +28,43 @@ async function runWithFailureArtifacts<T>(
   value: T,
 ) {
   let tracePath: string | undefined
+  sessions.set(ctx.task.id, session)
   try {
     await use(value)
     if (ctx.task.result?.state === "fail") {
       const name = ctx.task.name.replace(/[^a-z0-9]+/gi, "-")
-      await session.page.screenshot({
-        path: `test-results/e2e/failures/${name}.png`,
-        fullPage: true,
-      })
       tracePath = `test-results/e2e/traces/${name}.zip`
     }
   } finally {
+    sessions.delete(ctx.task.id)
     await closeBrowser(session, tracePath)
   }
+}
+
+/**
+ * Wraps a test body to attach a full-page screenshot as an annotation when it
+ * throws: inside the body is the only place `annotate` still works.
+ */
+function withFailureScreenshot(fn: (ctx: TestContext) => Promise<void>) {
+  const wrapped = async (ctx: TestContext) => {
+    try {
+      await fn(ctx)
+    } catch (error) {
+      const page = sessions.get(ctx.task.id)?.page
+      if (page) {
+        const body = await page.screenshot({ fullPage: true })
+        await ctx.annotate("Failure screenshot", {
+          contentType: "image/png",
+          body,
+        })
+      }
+      throw error
+    }
+  }
+  // Vitest finds the fixtures a test uses by parsing the function source, so
+  // the wrapper has to report the original's, or no fixture would be set up.
+  wrapped.toString = () => fn.toString()
+  return wrapped
 }
 
 export interface AuthenticatedSession {
@@ -62,7 +87,7 @@ interface E2eFixtures {
   guestSession: BrowserSession
 }
 
-export const it = base.extend<E2eFixtures>({
+const e2eTest = base.extend<E2eFixtures>({
   authenticatedSession: async ({ task }, use) => {
     // Seed a live (non-expired, never-failed) Twitch token by default so
     // GET /me's twitch_reconnect_required comes back false — matching the
@@ -89,6 +114,18 @@ export const it = base.extend<E2eFixtures>({
   guestSession: async ({ task }, use) => {
     const session = await openBrowser()
     await runWithFailureArtifacts({ task }, session, use, session)
+  },
+})
+
+export const it = new Proxy(e2eTest, {
+  apply(target, thisArg, args: unknown[]) {
+    return Reflect.apply(
+      target,
+      thisArg,
+      args.map((arg) =>
+        typeof arg === "function" ? withFailureScreenshot(arg as never) : arg,
+      ),
+    )
   },
 })
 
