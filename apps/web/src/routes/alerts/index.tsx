@@ -149,7 +149,7 @@ export function AlertsPage() {
               size="icon"
               onClick={() => setAddChannelOpen(true)}
               aria-label={t("alerts.add_channel")}
-              className="h-11 w-11 shrink-0"
+              className="shrink-0"
             >
               <Plus className="size-5" />
             </Button>

@@ -41,7 +41,7 @@ export function MutedChannelsSection({ channels }: MutedChannelsSectionProps) {
           size="icon"
           onClick={() => setAddOpen(true)}
           aria-label={t("alerts.mute_add_aria")}
-          className="h-11 w-11 shrink-0"
+          className="shrink-0"
         >
           <PlusIcon className="size-5" />
         </Button>

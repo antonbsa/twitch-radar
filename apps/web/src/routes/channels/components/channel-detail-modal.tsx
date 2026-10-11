@@ -226,7 +226,7 @@ export function ChannelDetailModal({
                 )}
               </div>
 
-              <Button size="lg" asChild className="h-11 text-base">
+              <Button size="lg" asChild className="text-base">
                 <a
                   href={`https://twitch.tv/${channel.broadcaster_login}`}
                   target="_blank"
