@@ -1,0 +1,1 @@
+CREATE INDEX `idx_twitch_tokens_refresh_failed_validated` ON `twitch_tokens` (`refresh_failed_at`,`validated_at`);

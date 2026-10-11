@@ -44,7 +44,14 @@ export const twitchTokens = sqliteTable(
     // time passes or it clears the claim (cleared by the refresh upsert).
     refreshLockedUntil: text("refresh_locked_until"),
   },
-  (table) => [index("idx_twitch_tokens_expires_at").on(table.expiresAt)],
+  (table) => [
+    index("idx_twitch_tokens_expires_at").on(table.expiresAt),
+    // Serves the minutely validation sweep (findDueForValidation).
+    index("idx_twitch_tokens_refresh_failed_validated").on(
+      table.refreshFailedAt,
+      table.validatedAt,
+    ),
+  ],
 )
 
 export const pushSubscriptions = sqliteTable(
@@ -123,6 +130,13 @@ export const eventsubSubscriptions = sqliteTable(
     ).on(table.broadcasterUserId, table.eventType, table.eventVersion),
     index("idx_eventsub_subscriptions_broadcaster_user_id").on(
       table.broadcasterUserId,
+    ),
+    // Serves the minutely findPending sweep; without it every run scans the
+    // whole table. Not partial: Drizzle binds 'pending', which SQLite can't match to a partial index.
+    index("idx_eventsub_subscriptions_status_created_at").on(
+      table.status,
+      table.createdAt,
+      table.id,
     ),
   ],
 )
@@ -203,6 +217,11 @@ export const channelCategoryPreferences = sqliteTable(
       "channel_category_preferences_user_id_broadcaster_user_id_category_id_unique",
     ).on(table.userId, table.broadcasterUserId, table.categoryId),
     index("idx_channel_category_preferences_user_id").on(table.userId),
+    // Serves the per-EventSub-event match lookup.
+    index("idx_channel_category_preferences_broadcaster_category").on(
+      table.broadcasterUserId,
+      table.categoryId,
+    ),
   ],
 )
 
@@ -224,6 +243,8 @@ export const globalCategoryPreferences = sqliteTable(
       table.categoryId,
     ),
     index("idx_global_category_preferences_user_id").on(table.userId),
+    // Serves the per-EventSub-event match lookup.
+    index("idx_global_category_preferences_category_id").on(table.categoryId),
   ],
 )
 

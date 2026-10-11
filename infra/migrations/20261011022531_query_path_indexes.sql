@@ -1,0 +1,3 @@
+CREATE INDEX `idx_channel_category_preferences_broadcaster_category` ON `channel_category_preferences` (`broadcaster_user_id`,`category_id`);--> statement-breakpoint
+CREATE INDEX `idx_eventsub_subscriptions_status_created_at` ON `eventsub_subscriptions` (`status`,`created_at`,`id`);--> statement-breakpoint
+CREATE INDEX `idx_global_category_preferences_category_id` ON `global_category_preferences` (`category_id`);
