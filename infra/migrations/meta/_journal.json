@@ -106,6 +106,13 @@
       "when": 1791556516384,
       "tag": "0015_channel_state_category_started_at",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "6",
+      "when": 1791685531565,
+      "tag": "20261011022531_query_path_indexes",
+      "breakpoints": true
     }
   ]
 }
