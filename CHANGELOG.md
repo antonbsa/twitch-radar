@@ -2,6 +2,34 @@
 
 What changed for people using Twitch Radar, one section per released version. Written in plain language for the in-app "What's New" sheet — no PR numbers, commit prefixes, or internal-only changes; the full engineering list lives in each GitHub Release, generated from PR labels below this entry (see [ADR 0050](docs/decisions/0050-changelog-as-source-of-truth-for-release-notes.md)). An `## Unreleased` section, when present, is ignored by the widget and its build-time parser.
 
+## v0.4.0 — 2026-10-11
+
+More control over your alerts: pause everything, mute single channels, and see more about what a channel is playing.
+
+### New
+
+- You can pause all notifications at once, and your alerts stay as they are for when you turn them back on.
+- You can mute individual channels so they stop notifying you.
+- Alerts for all channels in a category can now skip specific channels you exclude.
+- The channel list shows when a channel was last live and what it was playing, and highlights your preferred categories.
+- Category artwork now shows on alerts, in the exclusions list and in category search results.
+- Live channels show how long they have been in the current category next to how long the stream has been running.
+- The channels filter shows a count for each category and has a "With alerts" option.
+
+### Improved
+
+- You no longer get repeated notifications from the same channel in quick succession.
+- Messages after you add or remove an alert now name the channel and the category.
+- Message buttons and close buttons are bigger and easier to tap, and the pause switch is easier to see in the dark theme.
+- The channel details header is tighter, with its secondary actions grouped together.
+- You stay signed in for as long as you keep using the app.
+- Temporary Twitch outages now show a clear "Twitch is unavailable" message instead of a generic error.
+
+### Fixed
+
+- The app icon now shows correctly when added to an iPhone home screen.
+- The pause screen no longer jumps around, and channels show their language flag.
+
 ## v0.3.0 — 2026-10-04
 
 Notifications get a lot more useful: channel pictures, a Watch button, and text that actually tells you what changed.

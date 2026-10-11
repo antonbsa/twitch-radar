@@ -2,6 +2,34 @@
 
 O que mudou para quem usa o Twitch Radar, uma seção por versão lançada. Escrito em linguagem simples para o painel "Novidades" do app — sem números de PR, prefixos de commit ou mudanças internas; a lista técnica completa fica em cada GitHub Release, gerada a partir das labels dos PRs (ver [ADR 0050](docs/decisions/0050-changelog-as-source-of-truth-for-release-notes.md)). Uma seção `## Unreleased`, quando presente, é ignorada pelo painel e pelo parser de build.
 
+## v0.4.0 — 2026-10-11
+
+Mais controle sobre seus alertas: pause tudo, silencie canais e veja mais sobre o que um canal está jogando.
+
+### New
+
+- Você pode pausar todas as notificações de uma vez, e seus alertas continuam como estão para quando você reativá-las.
+- Você pode silenciar canais individuais para que parem de te notificar.
+- Alertas de "Todos os canais" em uma categoria agora podem ignorar canais específicos que você excluir.
+- A lista de canais mostra quando um canal esteve ao vivo pela última vez e o que estava jogando, e destaca suas categorias preferidas.
+- A arte das categorias agora aparece nos alertas, na lista de exclusões e na busca de categorias.
+- Canais ao vivo mostram há quanto tempo estão na categoria atual ao lado do tempo de transmissão.
+- O filtro de canais mostra a contagem de cada categoria e tem a opção "Com alertas".
+
+### Improved
+
+- Você não recebe mais notificações repetidas do mesmo canal em sequência.
+- As mensagens ao criar ou remover um alerta agora citam o canal e a categoria.
+- Os botões das mensagens e de fechar ficaram maiores e mais fáceis de tocar, e o botão de pausar tem mais contraste no tema escuro.
+- O cabeçalho dos detalhes do canal ficou mais enxuto, com as ações secundárias agrupadas.
+- Você continua conectado enquanto continuar usando o app.
+- Quedas temporárias da Twitch agora mostram a mensagem "Twitch indisponível" em vez de um erro genérico.
+
+### Fixed
+
+- O ícone do app agora aparece corretamente ao adicioná-lo à tela de início do iPhone.
+- A tela de pausa não pula mais e os canais mostram a bandeira do idioma.
+
 ## v0.3.0 — 2026-10-04
 
 As notificações ficaram muito mais úteis: foto do canal, botão Assistir e um texto que realmente diz o que mudou.
