@@ -43,7 +43,9 @@ describe("sandbox fake Helix", () => {
     },
   )
 
-  it("should return the persona's full follow list", async () => {
+  // Real Twitch pages at 100, so the 109-follow fixture needs the client's cursor loop.
+  it("should return the persona's full follow list across pages", async () => {
+    expect(FULL.follows.length).toBeGreaterThan(100)
     const channels = await getAllFollowedChannels(
       CLIENT_ID,
       FULL_TOKEN,
@@ -62,11 +64,12 @@ describe("sandbox fake Helix", () => {
       FULL.user.twitchUserId,
       API_BASE,
     )
-    expect(streams.map((s) => s.user_id).sort()).toEqual([
-      "sbx_bc_aurora",
-      "sbx_bc_bytewolf",
-      "sbx_bc_ember",
-    ])
+    expect(streams.map((s) => s.user_id).sort()).toEqual(
+      FULL.follows
+        .filter((f) => f.stream)
+        .map((f) => f.broadcasterUserId)
+        .sort(),
+    )
   })
 
   it("should look up streams by broadcaster id", async () => {

@@ -1,5 +1,8 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest"
 import { orchestrator } from "./setup/orchestrator"
+import { getPersonaFixture } from "../../apps/api/src/features/sandbox/personas"
+
+const SEEDED_FULL = getPersonaFixture("full").follows.filter((f) => f.seeded)
 
 beforeEach(async () => {
   await orchestrator.clearDatabase()
@@ -62,13 +65,10 @@ describe("POST /api/__sandbox__/login", () => {
       data: { broadcaster_user_id: string; is_live: boolean }[]
     }>("/api/channels/followed", cookie)
     const ids = followed.data.map((c) => c.broadcaster_user_id).sort()
-    expect(ids).toEqual([
-      "sbx_bc_aurora",
-      "sbx_bc_bytewolf",
-      "sbx_bc_cinder",
-      "sbx_bc_driftwood",
-    ])
-    expect(followed.data.filter((c) => c.is_live)).toHaveLength(2)
+    expect(ids).toEqual(SEEDED_FULL.map((f) => f.broadcasterUserId).sort())
+    expect(followed.data.filter((c) => c.is_live)).toHaveLength(
+      SEEDED_FULL.filter((f) => f.stream).length,
+    )
 
     const prefs = await getJson<{
       data: { channel: unknown[]; global: unknown[] }
@@ -119,6 +119,6 @@ describe("POST /api/__sandbox__/login", () => {
       "/api/channels/followed",
       cookie,
     )
-    expect(followed.data).toHaveLength(4)
+    expect(followed.data).toHaveLength(SEEDED_FULL.length)
   })
 })

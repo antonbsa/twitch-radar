@@ -105,6 +105,21 @@ async function liveStreams(c: Context<HonoEnv>, follows: FixtureFollow[]) {
   })
 }
 
+/**
+ * Twitch's `first`/`after` paging (default 20, max 100) with the next offset
+ * as the cursor, so a persona with over 100 follows exercises the client's
+ * multi-page loop like a real account does.
+ */
+const paginate = <T>(c: Context<HonoEnv>, items: T[]) => {
+  const first = Math.min(Number(c.req.query("first")) || 20, 100)
+  const start = Number(c.req.query("after")) || 0
+  const next = start + first
+  return {
+    data: items.slice(start, next),
+    pagination: next < items.length ? { cursor: String(next) } : {},
+  }
+}
+
 const toUser = (id: string, login: string, displayName: string) => ({
   id,
   login,
@@ -149,24 +164,22 @@ export function buildHelixRouter(): Hono<HonoEnv> {
   helix.get("/channels/followed", (c) => {
     const fixture = personaByTwitchUserId(c.req.query("user_id"))
     const follows = fixture?.follows ?? []
+    const { data, pagination } = paginate(c, follows)
     return c.json({
       total: follows.length,
-      data: follows.map((f) => ({
+      data: data.map((f) => ({
         broadcaster_id: f.broadcasterUserId,
         broadcaster_login: f.login,
         broadcaster_name: f.displayName,
         followed_at: f.followedAt,
       })),
-      pagination: {},
+      pagination,
     })
   })
 
   helix.get("/streams/followed", async (c) => {
     const fixture = personaByTwitchUserId(c.req.query("user_id"))
-    return c.json({
-      data: await liveStreams(c, fixture?.follows ?? []),
-      pagination: {},
-    })
+    return c.json(paginate(c, await liveStreams(c, fixture?.follows ?? [])))
   })
 
   helix.get("/streams", async (c) => {
