@@ -1,0 +1,120 @@
+{
+  "user": {
+    "id": "usr_sandbox_rate_limited",
+    "twitchUserId": "sbx_tw_rate_limited",
+    "login": "sandbox_rate_limited",
+    "displayName": "Sandbox Rate Limited"
+  },
+  "tokenState": "valid",
+  "rateLimited": true,
+  "follows": [
+    {
+      "broadcasterUserId": "sbx_bc_aurora",
+      "login": "aurora_plays",
+      "displayName": "Aurora_Plays",
+      "followedAt": "2024-03-02T18:20:00Z",
+      "seeded": true,
+      "stream": {
+        "id": "sbx_stream_aurora",
+        "categoryId": "509658",
+        "categoryName": "Just Chatting",
+        "title": "Sunday chill and chat",
+        "viewerCount": 1240,
+        "startedMinutesAgo": 95
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_bytewolf",
+      "login": "bytewolf",
+      "displayName": "ByteWolf",
+      "followedAt": "2023-11-19T09:05:00Z",
+      "seeded": true,
+      "stream": {
+        "id": "sbx_stream_bytewolf",
+        "categoryId": "27471",
+        "categoryName": "Minecraft",
+        "title": "Hardcore world, day 40",
+        "viewerCount": 387,
+        "startedMinutesAgo": 210
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_cinder",
+      "login": "cinder_speedruns",
+      "displayName": "Cinder_Speedruns",
+      "followedAt": "2024-07-14T21:40:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_driftwood",
+      "login": "driftwood_tv",
+      "displayName": "Driftwood_TV",
+      "followedAt": "2025-01-08T12:00:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_ember",
+      "login": "ember_arcade",
+      "displayName": "Ember_Arcade",
+      "followedAt": "2025-05-21T16:30:00Z",
+      "seeded": true,
+      "stream": {
+        "id": "sbx_stream_ember",
+        "categoryId": "516575",
+        "categoryName": "VALORANT",
+        "title": "Ranked grind to Immortal",
+        "viewerCount": 52,
+        "startedMinutesAgo": 30
+      }
+    },
+    {
+      "broadcasterUserId": "sbx_bc_fathom",
+      "login": "fathom_fm",
+      "displayName": "Fathom_FM",
+      "followedAt": "2025-08-03T07:15:00Z",
+      "seeded": true,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_frostowl",
+      "login": "frost_owl",
+      "displayName": "Frost_Owl",
+      "followedAt": "2024-05-03T00:48:00Z",
+      "seeded": false,
+      "stream": null
+    },
+    {
+      "broadcasterUserId": "sbx_bc_cobaltfox",
+      "login": "cobalt_fox",
+      "displayName": "Cobalt_Fox",
+      "followedAt": "2024-11-05T22:25:00Z",
+      "seeded": false,
+      "stream": {
+        "id": "sbx_stream_cobaltfox",
+        "categoryId": "513143",
+        "categoryName": "Teamfight Tactics",
+        "title": "Hyper roll",
+        "viewerCount": 181,
+        "startedMinutesAgo": 82
+      }
+    }
+  ],
+  "preferences": {
+    "channel": [
+      {
+        "broadcasterUserId": "sbx_bc_cinder",
+        "categoryId": "512953",
+        "categoryName": "Elden Ring"
+      }
+    ],
+    "global": [
+      {
+        "categoryId": "27471",
+        "categoryName": "Minecraft",
+        "excludedBroadcasterUserIds": []
+      }
+    ]
+  }
+}

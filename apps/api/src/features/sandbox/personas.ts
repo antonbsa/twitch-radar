@@ -1,9 +1,20 @@
 import categories from "../../../../../infra/fixtures/sandbox/categories.json"
 import empty from "../../../../../infra/fixtures/sandbox/empty.json"
 import full from "../../../../../infra/fixtures/sandbox/full.json"
+import heavyPrefs from "../../../../../infra/fixtures/sandbox/heavy_prefs.json"
+import mutedPaused from "../../../../../infra/fixtures/sandbox/muted_paused.json"
+import rateLimited from "../../../../../infra/fixtures/sandbox/rate_limited.json"
 import reconnect from "../../../../../infra/fixtures/sandbox/reconnect.json"
+import type { Language } from "../../db/repositories/users"
 
-export const PERSONAS = ["full", "empty", "reconnect"] as const
+export const PERSONAS = [
+  "full",
+  "empty",
+  "reconnect",
+  "muted_paused",
+  "heavy_prefs",
+  "rate_limited",
+] as const
 export type Persona = (typeof PERSONAS)[number]
 
 export interface FixtureStream {
@@ -35,6 +46,12 @@ export interface PersonaFixture {
     displayName: string
   }
   tokenState: "valid" | "reconnect_required"
+  // The settings below default to off/"en"/none when absent.
+  notificationsPaused?: boolean
+  language?: Language
+  mutedBroadcasterUserIds?: string[]
+  // The fake Helix answers this persona's follow and stream reads with 429.
+  rateLimited?: boolean
   follows: FixtureFollow[]
   preferences: {
     channel: {
@@ -54,6 +71,9 @@ const FIXTURES: Record<Persona, PersonaFixture> = {
   full: full as PersonaFixture,
   empty: empty as PersonaFixture,
   reconnect: reconnect as PersonaFixture,
+  muted_paused: mutedPaused as PersonaFixture,
+  heavy_prefs: heavyPrefs as PersonaFixture,
+  rate_limited: rateLimited as PersonaFixture,
 }
 
 export const getPersonaFixture = (persona: Persona): PersonaFixture =>

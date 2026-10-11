@@ -1,7 +1,14 @@
 import { useMutation } from "@tanstack/react-query"
 import { api } from "@/lib/api"
 
-export const SANDBOX_PERSONAS = ["full", "empty", "reconnect"] as const
+export const SANDBOX_PERSONAS = [
+  "full",
+  "empty",
+  "reconnect",
+  "muted_paused",
+  "heavy_prefs",
+  "rate_limited",
+] as const
 export type SandboxPersona = (typeof SANDBOX_PERSONAS)[number]
 
 /** Not session-aware: a 401 here is not a lapsed session, there is none yet. */

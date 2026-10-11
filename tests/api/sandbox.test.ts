@@ -1,6 +1,9 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest"
 import { orchestrator } from "./setup/orchestrator"
-import { getPersonaFixture } from "../../apps/api/src/features/sandbox/personas"
+import {
+  getPersonaFixture,
+  PERSONAS,
+} from "../../apps/api/src/features/sandbox/personas"
 
 const SEEDED_FULL = getPersonaFixture("full").follows.filter((f) => f.seeded)
 
@@ -12,12 +15,20 @@ afterAll(async () => {
   await orchestrator.clearDatabase()
 })
 
-async function loginAs(persona: unknown) {
+async function loginAs(persona: unknown, overrides?: unknown) {
   return fetch(`${orchestrator.baseUrl}/api/__sandbox__/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ persona }),
+    body: JSON.stringify({ persona, overrides }),
   })
+}
+
+interface Me {
+  data: {
+    language: string
+    notifications_paused_at: string | null
+    twitch_reconnect_required: boolean
+  }
 }
 
 async function getJson<T>(path: string, cookie: string): Promise<T> {
@@ -44,7 +55,7 @@ describe("POST /api/__sandbox__/login", () => {
     },
   )
 
-  it.each(["full", "empty", "reconnect"])(
+  it.each(PERSONAS)(
     "should return a session cookie that authenticates /me as the %s persona",
     async (persona) => {
       const res = await loginAs(persona)
@@ -120,5 +131,88 @@ describe("POST /api/__sandbox__/login", () => {
       cookie,
     )
     expect(followed.data).toHaveLength(SEEDED_FULL.length)
+  })
+
+  it("should seed the muted_paused persona's pause, mute and exclusion", async () => {
+    const cookie = sessionCookie(await loginAs("muted_paused"))
+
+    const me = await getJson<Me>("/api/me", cookie)
+    expect(me.data.notifications_paused_at).not.toBeNull()
+    const mutes = await getJson<{ data: { broadcaster_user_id: string }[] }>(
+      "/api/notifications/mutes",
+      cookie,
+    )
+    expect(mutes.data.map((m) => m.broadcaster_user_id)).toEqual([
+      "sbx_bc_aurora",
+    ])
+    const prefs = await getJson<{
+      data: { global: { exclusions: unknown[] }[] }
+    }>("/api/preferences", cookie)
+    expect(prefs.data.global[0].exclusions).toHaveLength(1)
+  })
+
+  it("should seed the heavy_prefs persona's preference volume", async () => {
+    const prefs = await getJson<{
+      data: { channel: unknown[]; global: unknown[] }
+    }>("/api/preferences", sessionCookie(await loginAs("heavy_prefs")))
+    expect(prefs.data.channel).toHaveLength(60)
+    expect(prefs.data.global).toHaveLength(20)
+  })
+})
+
+describe("POST /api/__sandbox__/login overrides", () => {
+  it("should replace the fixture's settings, then restore them on the next plain login", async () => {
+    const cookie = sessionCookie(
+      await loginAs("full", {
+        notificationsPaused: true,
+        language: "pt-BR",
+        tokenState: "reconnect_required",
+        mutedBroadcasterUserIds: ["sbx_bc_aurora"],
+        preferences: {
+          global: [
+            {
+              categoryId: "512953",
+              excludedBroadcasterUserIds: ["sbx_bc_cinder"],
+            },
+          ],
+        },
+      }),
+    )
+
+    const me = await getJson<Me>("/api/me", cookie)
+    expect(me.data).toMatchObject({
+      language: "pt-BR",
+      twitch_reconnect_required: true,
+    })
+    expect(me.data.notifications_paused_at).not.toBeNull()
+    const prefs = await getJson<{
+      data: {
+        channel: unknown[]
+        global: { category_name: string; exclusions: unknown[] }[]
+      }
+    }>("/api/preferences", cookie)
+    expect(prefs.data.channel).toHaveLength(0)
+    expect(prefs.data.global).toMatchObject([{ category_name: "Elden Ring" }])
+    expect(prefs.data.global[0].exclusions).toHaveLength(1)
+
+    const restored = await getJson<Me>(
+      "/api/me",
+      sessionCookie(await loginAs("full")),
+    )
+    expect(restored.data).toMatchObject({
+      language: "en",
+      notifications_paused_at: null,
+      twitch_reconnect_required: false,
+    })
+  })
+
+  it.each([
+    ["an unsynced channel", { mutedBroadcasterUserIds: ["sbx_bc_ember"] }],
+    ["an unknown category", { preferences: { global: [{ categoryId: "0" }] } }],
+    ["an unknown key", { userId: "usr_other" }],
+    ["a bad language", { language: "fr" }],
+  ])("should reject %s with 400", async (_name, overrides) => {
+    const res = await loginAs("full", overrides)
+    expect(res.status).toBe(400)
   })
 })

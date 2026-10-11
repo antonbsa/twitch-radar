@@ -5,7 +5,7 @@ description: Use when asked to log in as a persona, emit a notification/go-live/
 
 # Sandbox Personas And Event Injection
 
-Personas are fixed fictional users (`full`: 109 follows, 90 pre-synced, 19 live, one channel and one global preference; `empty`: zero synced follows; `reconnect`: token needing re-auth). Fixtures: `infra/fixtures/sandbox/<persona>.json`. Use the sandbox, not `mock-eventsub.mjs`, for anything an agent does: it needs no webhook secret and works in preview.
+Personas are fixed fictional users: `full` (109 follows, 90 pre-synced, 19 live, one channel and one global preference), `empty` (zero synced follows), `reconnect` (token needing re-auth), `muted_paused` (notifications paused, one mute, one exclusion), `heavy_prefs` (60 channel and 20 global preferences), `rate_limited` (Helix answers follow/stream reads with 429). Fixtures: `infra/fixtures/sandbox/<persona>.json`. Use the sandbox, not `mock-eventsub.mjs`, for anything an agent does: it needs no webhook secret and works in preview.
 
 1. Start the stack with `npm run dev:sandbox` (plain `npm run dev` leaves Sync and category search calling real Twitch). The web origin is `http://localhost:<WEB_DEV_PORT>` (default 5173); `/api` proxies to the worker.
 2. Log in over HTTP and keep the cookie: `curl -c jar -X POST -H 'Content-Type: application/json' -d '{"persona":"full"}' http://localhost:5173/api/__sandbox__/login`. In a browser, open `/sandbox` and click the persona. Logging in again resets the persona's follows, preferences, snoozes and mutes to the fixture.
@@ -16,7 +16,14 @@ Personas are fixed fictional users (`full`: 109 follows, 90 pre-synced, 19 live,
 
 ## Changing a persona's settings
 
-The persona cookie is a real session, so the app's own API changes settings for the test case (`docs/api-contract.md`): preferences under `/api/preferences`, `PATCH /api/me/notifications-paused`, `POST /api/notifications/mutes`, `POST /api/notifications/snooze`, `PATCH /api/me/language`. Set up the case, then emit the event. The changes last until the next login of that persona.
+Pass `overrides` at login to set up the case before emitting the event. Keys are optional and each one replaces the fixture's value wholesale:
+
+`curl -c jar -X POST -H 'Content-Type: application/json' -d '{"persona":"full","overrides":{"notificationsPaused":false,"language":"pt-BR","tokenState":"valid","mutedBroadcasterUserIds":["sbx_bc_aurora"],"preferences":{"channel":[{"broadcasterUserId":"sbx_bc_cinder","categoryId":"512953"}],"global":[{"categoryId":"27471","excludedBroadcasterUserIds":["sbx_bc_bytewolf"]}]}}}' http://localhost:5173/api/__sandbox__/login`
+
+- `preferences` replaces both lists (omit `channel` or `global` for none); channels and exclusions must be pre-synced follows of the persona, categories must be in `categories.json`, else 400.
+- Pick the closest persona and override the difference; `muted_paused` already has every suppressor on, so `{"notificationsPaused":false,"mutedBroadcasterUserIds":[]}` isolates the rest.
+- Follows, live streams and `rate_limited` are fixture-only; to change those edit the fixture.
+- After login the persona cookie is a real session, so the app's own API (`/api/preferences`, `PATCH /api/me/notifications-paused`, `POST /api/notifications/mutes`, `POST /api/notifications/snooze`, `PATCH /api/me/language`) changes settings mid-test. The next login restores the fixture, or whatever `overrides` it carries.
 
 ## Gotchas
 

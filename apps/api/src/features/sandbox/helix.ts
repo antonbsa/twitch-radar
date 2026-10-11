@@ -120,6 +120,16 @@ const paginate = <T>(c: Context<HonoEnv>, items: T[]) => {
   }
 }
 
+/** Twitch's rate-limit answer, for personas flagged `rateLimited`. */
+const tooManyRequests = (c: Context<HonoEnv>) =>
+  c.json(
+    { status: 429, error: "Too Many Requests", message: "Rate limited" },
+    429,
+    {
+      "Retry-After": "30",
+    },
+  )
+
 const toUser = (id: string, login: string, displayName: string) => ({
   id,
   login,
@@ -163,6 +173,7 @@ export function buildHelixRouter(): Hono<HonoEnv> {
 
   helix.get("/channels/followed", (c) => {
     const fixture = personaByTwitchUserId(c.req.query("user_id"))
+    if (fixture?.rateLimited) return tooManyRequests(c)
     const follows = fixture?.follows ?? []
     const { data, pagination } = paginate(c, follows)
     return c.json({
@@ -179,10 +190,14 @@ export function buildHelixRouter(): Hono<HonoEnv> {
 
   helix.get("/streams/followed", async (c) => {
     const fixture = personaByTwitchUserId(c.req.query("user_id"))
+    if (fixture?.rateLimited) return tooManyRequests(c)
     return c.json(paginate(c, await liveStreams(c, fixture?.follows ?? [])))
   })
 
   helix.get("/streams", async (c) => {
+    const caller = personaFromAccessToken(bearerToken(c))
+    if (caller && getPersonaFixture(caller).rateLimited)
+      return tooManyRequests(c)
     const wanted = new Set(c.req.queries("user_id") ?? [])
     const follows = new Map<string, FixtureFollow>()
     for (const fixture of fixtures()) {

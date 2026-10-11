@@ -57,6 +57,21 @@ describe("sandbox fake Helix", () => {
     )
   })
 
+  it("should answer the rate_limited persona's follow and stream reads with 429", async () => {
+    const limited = getPersonaFixture("rate_limited")
+    const token = accessTokenFor("rate_limited")
+    for (const path of ["channels/followed", "streams/followed"]) {
+      const res = await fetch(
+        `${API_BASE}/helix/${path}?user_id=${limited.user.twitchUserId}`,
+        {
+          headers: { Authorization: `Bearer ${token}`, "Client-Id": CLIENT_ID },
+        },
+      )
+      expect(res.status).toBe(429)
+      expect(res.headers.get("Retry-After")).toBe("30")
+    }
+  })
+
   it("should return only live follows from streams/followed", async () => {
     const streams = await getAllFollowedStreams(
       CLIENT_ID,

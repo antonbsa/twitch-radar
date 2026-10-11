@@ -11,19 +11,106 @@ import {
   notificationSnoozes,
 } from "../../db/schema"
 import type { HonoEnv } from "../../env"
+import { SUPPORTED_LANGUAGES } from "../../db/repositories/users"
+import { ApiError } from "../../http/errors"
 import { encryptToken } from "../../lib/crypto"
 import { parseBody } from "../../http/handlers"
 import { jsonResponse } from "../../http/response"
 import { createSession, sessionCookieHeader } from "../auth/session"
 import {
   accessTokenFor,
+  CATEGORIES,
   getPersonaFixture,
   PERSONAS,
   refreshTokenFor,
   type Persona,
+  type PersonaFixture,
 } from "./personas"
 
-const LoginSchema = z.object({ persona: z.enum(PERSONAS) })
+// Each key present replaces the fixture's value wholesale (no deep merge), and
+// only rows of the chosen persona are touched, so the closed persona enum
+// stays the safety property (ADR 0046).
+const OverridesSchema = z.strictObject({
+  tokenState: z.enum(["valid", "reconnect_required"]).optional(),
+  notificationsPaused: z.boolean().optional(),
+  language: z.enum(SUPPORTED_LANGUAGES).optional(),
+  mutedBroadcasterUserIds: z.array(z.string()).optional(),
+  preferences: z
+    .strictObject({
+      channel: z
+        .array(
+          z.strictObject({
+            broadcasterUserId: z.string(),
+            categoryId: z.string(),
+          }),
+        )
+        .default([]),
+      global: z
+        .array(
+          z.strictObject({
+            categoryId: z.string(),
+            excludedBroadcasterUserIds: z.array(z.string()).default([]),
+          }),
+        )
+        .default([]),
+    })
+    .optional(),
+})
+type Overrides = z.infer<typeof OverridesSchema>
+
+const LoginSchema = z.object({
+  persona: z.enum(PERSONAS),
+  overrides: OverridesSchema.optional(),
+})
+
+/**
+ * The persona's fixture with `overrides` applied. Channels must be seeded
+ * follows of the persona (the rows login writes) and categories must be in
+ * the fixture catalog, which also supplies their display names.
+ */
+function applyOverrides(
+  fixture: PersonaFixture,
+  overrides: Overrides = {},
+): PersonaFixture {
+  const seededIds = new Set(
+    fixture.follows.filter((f) => f.seeded).map((f) => f.broadcasterUserId),
+  )
+  const invalid = (message: string) =>
+    new ApiError(400, "invalid_request", message)
+  const categoryName = (categoryId: string) => {
+    const category = CATEGORIES.find((c) => c.id === categoryId)
+    if (!category) throw invalid(`Unknown sandbox category: ${categoryId}`)
+    return category.name
+  }
+  const requireSeeded = (broadcasterUserId: string) => {
+    if (!seededIds.has(broadcasterUserId))
+      throw invalid(`Not a seeded follow of this persona: ${broadcasterUserId}`)
+    return broadcasterUserId
+  }
+
+  const { preferences, mutedBroadcasterUserIds, ...settings } = overrides
+  mutedBroadcasterUserIds?.forEach(requireSeeded)
+  return {
+    ...fixture,
+    ...settings,
+    ...(mutedBroadcasterUserIds && { mutedBroadcasterUserIds }),
+    ...(preferences && {
+      preferences: {
+        channel: preferences.channel.map((pref) => ({
+          broadcasterUserId: requireSeeded(pref.broadcasterUserId),
+          categoryId: pref.categoryId,
+          categoryName: categoryName(pref.categoryId),
+        })),
+        global: preferences.global.map((pref) => ({
+          categoryId: pref.categoryId,
+          categoryName: categoryName(pref.categoryId),
+          excludedBroadcasterUserIds:
+            pref.excludedBroadcasterUserIds.map(requireSeeded),
+        })),
+      },
+    }),
+  }
+}
 
 const TOKEN_TTL_MS = 4 * 60 * 60 * 1000
 
@@ -72,9 +159,13 @@ async function resetPersonaState(c: Context<HonoEnv>, userId: string) {
  * Upserts the persona's user, Twitch token, seeded follows, channel state and
  * preferences.
  */
-async function seedPersona(c: Context<HonoEnv>, persona: Persona) {
+async function seedPersona(
+  c: Context<HonoEnv>,
+  persona: Persona,
+  overrides?: Overrides,
+) {
   const { db, config } = c.var
-  const fixture = getPersonaFixture(persona)
+  const fixture = applyOverrides(getPersonaFixture(persona), overrides)
   const userId = fixture.user.id
   const now = new Date().toISOString()
 
@@ -103,6 +194,16 @@ async function seedPersona(c: Context<HonoEnv>, persona: Persona) {
   })
   if (fixture.tokenState === "reconnect_required") {
     await db.twitchTokens.markRefreshFailed(userId, now)
+  }
+
+  await db.users.updateLanguage(userId, fixture.language ?? "en", now)
+  await db.users.setNotificationsPausedAt(
+    userId,
+    fixture.notificationsPaused ? now : null,
+    now,
+  )
+  for (const broadcasterUserId of fixture.mutedBroadcasterUserIds ?? []) {
+    await db.broadcasterMutes.create({ userId, broadcasterUserId, now })
   }
 
   // Stamped fresh so the app's auto-sync on load doesn't consume the fixture's
@@ -169,8 +270,12 @@ async function seedPersona(c: Context<HonoEnv>, persona: Persona) {
 export async function handleSandboxLogin(
   c: Context<HonoEnv>,
 ): Promise<Response> {
-  const { persona } = await parseBody(c, LoginSchema, "Invalid persona")
-  const userId = await seedPersona(c, persona)
+  const { persona, overrides } = await parseBody(
+    c,
+    LoginSchema,
+    "Invalid persona",
+  )
+  const userId = await seedPersona(c, persona, overrides)
   const sessionId = await createSession(c.env.KV_APP_CACHE, userId)
 
   return jsonResponse(
