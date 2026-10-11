@@ -38,12 +38,18 @@ export async function deliverNotification(
   }
 
   const payload = JSON.stringify(message.payload)
+  // Snooze reminders get their own topic so a pending reminder and a newer
+  // alert for the same broadcaster don't replace each other.
+  const topic =
+    delivery.trigger_type === "snooze_reminder"
+      ? `snooze-${message.payload.broadcasterUserId}`
+      : message.payload.broadcasterUserId
   const now = new Date().toISOString()
   let sentSubscriptionId: string | null = null
   const errors: string[] = []
 
   for (const subscription of subscriptions) {
-    const result = await sendWebPush(config, subscription, payload)
+    const result = await sendWebPush(config, subscription, payload, topic)
     if (result.ok) {
       sentSubscriptionId ??= subscription.id
       continue

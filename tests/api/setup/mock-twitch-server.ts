@@ -1,4 +1,4 @@
-import { createServer, type Server } from "node:http"
+import { createServer, type IncomingHttpHeaders, type Server } from "node:http"
 import type { AddressInfo } from "node:net"
 
 type QueueEntry = {
@@ -11,10 +11,13 @@ type QueueEntry = {
 const queue: QueueEntry[] = []
 // URLs of answered Twitch calls, so tests can assert which ids were requested.
 const requests: string[] = []
+// Headers of the last answered request per URL, for asserting e.g. push headers.
+const requestHeaders: Record<string, IncomingHttpHeaders> = {}
 
 function handleRequest(
   method: string,
   url: string,
+  headers: IncomingHttpHeaders,
   rawBody: string,
   respond: (
     status: number,
@@ -33,9 +36,15 @@ function handleRequest(
     return
   }
 
+  if (url === "/__mock/request-headers" && method === "GET") {
+    respond(200, JSON.stringify(requestHeaders))
+    return
+  }
+
   if (url === "/__mock" && method === "DELETE") {
     queue.length = 0
     requests.length = 0
+    for (const key of Object.keys(requestHeaders)) delete requestHeaders[key]
     respond(204, "")
     return
   }
@@ -49,6 +58,7 @@ function handleRequest(
 
   const [entry] = queue.splice(idx, 1)
   requests.push(url)
+  requestHeaders[url] = headers
   respond(entry.status, JSON.stringify(entry.body), entry.headers)
 }
 
@@ -60,6 +70,7 @@ export function createMockTwitchServer(): Server {
       handleRequest(
         req.method ?? "GET",
         req.url ?? "/",
+        req.headers,
         body,
         (status, responseBody, headers) => {
           res.writeHead(status, {
