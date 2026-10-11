@@ -113,6 +113,20 @@
       "when": 1791685531565,
       "tag": "20261011022531_query_path_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1791687178960,
+      "tag": "20261011025258_twitch_tokens_validation_index",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1791687179627,
+      "tag": "20261011025259_backfill_twitch_token_validated_at",
+      "breakpoints": true
     }
   ]
 }

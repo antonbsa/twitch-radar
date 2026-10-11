@@ -85,8 +85,9 @@ export class TwitchTokensRepository {
   }
 
   /**
-   * Tokens not yet confirmed valid since `cutoff` (never-validated first) that
-   * haven't failed a refresh — the validation sweep's work queue.
+   * Tokens not confirmed valid since `cutoff` (oldest first) that haven't
+   * failed a refresh — the validation sweep's work queue. Every write path
+   * stamps `validated_at`, so it is never null.
    */
   async findDueForValidation(
     cutoff: string,
@@ -98,10 +99,7 @@ export class TwitchTokensRepository {
       .where(
         and(
           isNull(twitchTokens.refreshFailedAt),
-          or(
-            isNull(twitchTokens.validatedAt),
-            lt(twitchTokens.validatedAt, cutoff),
-          ),
+          lt(twitchTokens.validatedAt, cutoff),
         ),
       )
       .orderBy(asc(twitchTokens.validatedAt))

@@ -44,7 +44,14 @@ export const twitchTokens = sqliteTable(
     // time passes or it clears the claim (cleared by the refresh upsert).
     refreshLockedUntil: text("refresh_locked_until"),
   },
-  (table) => [index("idx_twitch_tokens_expires_at").on(table.expiresAt)],
+  (table) => [
+    index("idx_twitch_tokens_expires_at").on(table.expiresAt),
+    // Serves the minutely validation sweep (findDueForValidation).
+    index("idx_twitch_tokens_refresh_failed_validated").on(
+      table.refreshFailedAt,
+      table.validatedAt,
+    ),
+  ],
 )
 
 export const pushSubscriptions = sqliteTable(
