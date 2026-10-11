@@ -15,13 +15,16 @@ import { encryptToken } from "../../lib/crypto"
 import { parseBody } from "../../http/handlers"
 import { jsonResponse } from "../../http/response"
 import { createSession, sessionCookieHeader } from "../auth/session"
-import { getPersonaFixture, PERSONAS, type Persona } from "./personas"
+import {
+  accessTokenFor,
+  getPersonaFixture,
+  PERSONAS,
+  refreshTokenFor,
+  type Persona,
+} from "./personas"
 
 const LoginSchema = z.object({ persona: z.enum(PERSONAS) })
 
-// Placeholder credentials: the fake Helix accepts any bearer token (ADR 0046).
-const SANDBOX_ACCESS_TOKEN = "sandbox-access-token"
-const SANDBOX_REFRESH_TOKEN = "sandbox-refresh-token"
 const TOKEN_TTL_MS = 4 * 60 * 60 * 1000
 
 /**
@@ -87,11 +90,11 @@ async function seedPersona(c: Context<HonoEnv>, persona: Persona) {
   await db.twitchTokens.upsert({
     userId,
     accessToken: await encryptToken(
-      SANDBOX_ACCESS_TOKEN,
+      accessTokenFor(persona),
       config.tokenEncryptionKey,
     ),
     refreshToken: await encryptToken(
-      SANDBOX_REFRESH_TOKEN,
+      refreshTokenFor(persona),
       config.tokenEncryptionKey,
     ),
     expiresAt: new Date(Date.now() + TOKEN_TTL_MS).toISOString(),

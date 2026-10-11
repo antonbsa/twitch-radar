@@ -8,6 +8,7 @@
   ],
   "scripts": {
     "dev": "concurrently --kill-others -n api,web -c blue,green \"npm run dev:api\" \"npm run dev:web\"",
+    "dev:sandbox": "SANDBOX_HELIX=1 npm run dev",
     "dev:api": "npm run dev -w @twitch-radar/api",
     "dev:web": "npm run dev -w @twitch-radar/web",
     "dev:mobile": "node infra/scripts/dev/dev-mobile.mjs",

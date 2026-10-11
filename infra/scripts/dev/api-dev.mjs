@@ -5,6 +5,10 @@
  * Fails before wrangler starts if a "must be overwritten" var from
  * .env.development still resolves to its own placeholder value.
  *
+ * With SANDBOX_HELIX=1 (`npm run dev:sandbox`) the worker's Twitch base URLs
+ * point at its own fake Helix (ADR 0046), so sandbox personas can sync and
+ * search without a Twitch account. Real Twitch API calls are off in that mode.
+ *
  * Usage: npm run dev -w @twitch-radar/api
  */
 
@@ -41,6 +45,18 @@ function assertLocalOverridesPresent() {
 
 assertLocalOverridesPresent()
 
+// The worker's own port, not PUBLIC_URL: PUBLIC_URL may be a tunnel, and a
+// call out through it and back in would be slower and could loop.
+const sandboxApiBase = `http://localhost:${env.apiPort}/api/__sandbox__`
+const sandboxHelixVars = process.env.SANDBOX_HELIX
+  ? [
+      "--var",
+      `TWITCH_API_BASE_URL:${sandboxApiBase}`,
+      "--var",
+      `TWITCH_AUTH_BASE_URL:${sandboxApiBase}/auth`,
+    ]
+  : []
+
 const child = spawn(
   "npx",
   [
@@ -54,6 +70,7 @@ const child = spawn(
     // Derived from WEB_DEV_PORT unless a .env.local sets it (see load-env.mjs).
     "--var",
     `PUBLIC_URL:${env.publicUrl}`,
+    ...sandboxHelixVars,
   ],
   { cwd: API_DIR, stdio: "inherit", env: process.env },
 )

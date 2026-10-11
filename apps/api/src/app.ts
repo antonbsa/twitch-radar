@@ -45,6 +45,7 @@ import { handleEventsubWebhook } from "./features/eventsub/webhooks"
 import { handleTestInspect } from "./http/test-seam/inspect"
 import { handleTestReset } from "./http/test-seam/reset"
 import { handleTestSeed } from "./http/test-seam/seed"
+import { buildAuthRouter, buildHelixRouter } from "./features/sandbox/helix"
 import { handleSandboxLogin } from "./features/sandbox/routes"
 import { getRequestId } from "./http/response"
 
@@ -136,9 +137,11 @@ export function buildApp(): Hono<HonoEnv> {
     testSeam.post("/inspect", handleTestInspect)
     app.route("/api/__test__", testSeam)
 
-    // Persona login for dev/preview (ADR 0046); same exclusion as the seam.
+    // Persona login and fake Twitch for dev/preview (ADR 0046); same exclusion as the seam.
     const sandbox = new Hono<HonoEnv>()
     sandbox.post("/login", handleSandboxLogin)
+    sandbox.route("/helix", buildHelixRouter())
+    sandbox.route("/auth", buildAuthRouter())
     app.route("/api/__sandbox__", sandbox)
   }
 
