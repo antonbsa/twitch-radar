@@ -25,4 +25,23 @@ describe("Sandbox", () => {
     await expectVisible(page.getByText("Aurora_Plays"))
     expect(await page.getByRole("button", { name: /^Full/ }).count()).toBe(0)
   })
+
+  it("should send a live event for a followed channel from the event controls", async ({
+    guestSession,
+  }) => {
+    const { page } = guestSession
+
+    await page.goto(`${WEB_URL}/sandbox`)
+    await page.getByRole("button", { name: /^Full/ }).click()
+    await page.waitForURL("**/channels")
+    await page.goto(`${WEB_URL}/sandbox`)
+
+    // Aurora is live in the fixture, so its "Switch category" is enabled.
+    const aurora = page
+      .getByRole("listitem")
+      .filter({ hasText: "Aurora_Plays" })
+    const event = page.waitForResponse("**/api/__sandbox__/events")
+    await aurora.getByRole("button", { name: "Switch category" }).click()
+    expect((await event).status()).toBe(200)
+  })
 })

@@ -45,6 +45,7 @@ import { handleEventsubWebhook } from "./features/eventsub/webhooks"
 import { handleTestInspect } from "./http/test-seam/inspect"
 import { handleTestReset } from "./http/test-seam/reset"
 import { handleTestSeed } from "./http/test-seam/seed"
+import { handleSandboxEvent } from "./features/sandbox/events"
 import { buildAuthRouter, buildHelixRouter } from "./features/sandbox/helix"
 import { handleSandboxLogin } from "./features/sandbox/routes"
 import { getRequestId } from "./http/response"
@@ -142,6 +143,9 @@ export function buildApp(): Hono<HonoEnv> {
     sandbox.post("/login", handleSandboxLogin)
     sandbox.route("/helix", buildHelixRouter())
     sandbox.route("/auth", buildAuthRouter())
+    const sandboxEvents = authedRouter()
+    sandboxEvents.post("/", handleSandboxEvent)
+    sandbox.route("/events", sandboxEvents)
     app.route("/api/__sandbox__", sandbox)
   }
 

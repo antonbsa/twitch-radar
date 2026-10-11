@@ -34,7 +34,7 @@ const FORBIDDEN = {
     "usr_e2e",
     "e2e_twitch_user",
   ],
-  web: ["__sandbox__", "sandbox.persona"],
+  web: ["__sandbox__", "sandbox.persona", "usr_sandbox_"],
 }
 
 function run(command, args, cwd) {

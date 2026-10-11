@@ -13,7 +13,7 @@ import { isTwitchUnavailableError } from "@/lib/errors"
 import { useSessionAwareMutation } from "@/hooks/use-session-aware-mutation"
 import type { FollowedChannel } from "@/types/channel"
 
-const FOLLOWED_CHANNELS_QUERY_KEY = ["followed-channels"]
+export const FOLLOWED_CHANNELS_QUERY_KEY = ["followed-channels"]
 const SYNC_FOLLOWS_MUTATION_KEY = ["sync-follows"]
 const AUTO_SYNC_FOLLOWS_MUTATION_KEY = [...SYNC_FOLLOWS_MUTATION_KEY, "auto"]
 

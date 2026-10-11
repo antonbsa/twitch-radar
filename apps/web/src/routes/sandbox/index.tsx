@@ -4,16 +4,17 @@ import { useAuth } from "@/context/auth-context"
 import { useLanguage } from "@/context/language-context"
 import { SANDBOX_PERSONAS, useSandboxLogin } from "@/hooks/use-sandbox-login"
 import { showMutationErrorToast } from "@/lib/error-toast"
+import { SandboxEvents } from "@/routes/sandbox/components/sandbox-events"
 
 /** Dev/preview only (ADR 0046): one button per persona, no credentials. */
 export function SandboxPage() {
   const { t } = useLanguage()
-  const { refetch } = useAuth()
+  const { user, refetch } = useAuth()
   const navigate = useNavigate()
   const login = useSandboxLogin()
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-6 px-6">
+    <div className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-6 px-6 py-10">
       <div className="space-y-2 text-center">
         <h1 className="text-2xl font-semibold">{t("sandbox.title")}</h1>
         <p className="text-sm text-muted-foreground">{t("sandbox.tagline")}</p>
@@ -46,6 +47,7 @@ export function SandboxPage() {
           </li>
         ))}
       </ul>
+      {user?.id.startsWith("usr_sandbox_") && <SandboxEvents />}
     </div>
   )
 }

@@ -18,6 +18,9 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         "@": fileURLToPath(new URL("./src", import.meta.url)),
+        "@fixtures": fileURLToPath(
+          new URL("../../infra/fixtures", import.meta.url),
+        ),
       },
     },
     server: {

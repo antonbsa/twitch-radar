@@ -1,5 +1,6 @@
 import { Hono, type Context } from "hono"
 import { nanoid } from "nanoid"
+import type { ChannelStateRecord } from "../../db/repositories/channel-state"
 import type { HonoEnv } from "../../env"
 import {
   boxArtUrl,
@@ -32,24 +33,76 @@ const personaByTwitchUserId = (twitchUserId: string | undefined) =>
 const bearerToken = (c: Context<HonoEnv>): string | undefined =>
   c.req.header("Authorization")?.replace(/^(Bearer|OAuth) /, "")
 
-const toStream = (follow: FixtureFollow) => {
-  const stream = follow.stream!
-  return {
-    id: stream.id,
-    user_id: follow.broadcasterUserId,
-    user_login: follow.login,
-    user_name: follow.displayName,
-    game_id: stream.categoryId,
-    game_name: stream.categoryName,
-    type: "live",
-    title: stream.title,
-    viewer_count: stream.viewerCount,
-    started_at: new Date(
-      Date.now() - stream.startedMinutesAgo * 60_000,
-    ).toISOString(),
-    // Empty so the app falls back to its no-thumbnail state.
-    thumbnail_url: "",
+interface LiveStream {
+  id: string
+  categoryId: string
+  categoryName: string
+  title: string
+  viewerCount: number
+  startedAt: string
+}
+
+/**
+ * What Twitch would say right now about a follow. Once a channel has a
+ * `channel_state` row (a sync wrote it, or a sandbox event moved it) that row
+ * wins over the fixture, so a "go live" or category switch isn't undone by the
+ * next sync or stream lookup. The follow list stays fixture-only (ADR 0046).
+ */
+const liveStreamOf = (
+  follow: FixtureFollow,
+  state: ChannelStateRecord | undefined,
+): LiveStream | null => {
+  if (state) {
+    return state.is_live && state.stream_id && state.category_id
+      ? {
+          id: state.stream_id,
+          categoryId: state.category_id,
+          categoryName: state.category_name ?? state.category_id,
+          title: state.title ?? "",
+          viewerCount: state.viewer_count ?? 0,
+          startedAt: state.started_at ?? new Date().toISOString(),
+        }
+      : null
   }
+  const { stream } = follow
+  return stream
+    ? {
+        id: stream.id,
+        categoryId: stream.categoryId,
+        categoryName: stream.categoryName,
+        title: stream.title,
+        viewerCount: stream.viewerCount,
+        startedAt: new Date(
+          Date.now() - stream.startedMinutesAgo * 60_000,
+        ).toISOString(),
+      }
+    : null
+}
+
+const toStream = (follow: FixtureFollow, stream: LiveStream) => ({
+  id: stream.id,
+  user_id: follow.broadcasterUserId,
+  user_login: follow.login,
+  user_name: follow.displayName,
+  game_id: stream.categoryId,
+  game_name: stream.categoryName,
+  type: "live",
+  title: stream.title,
+  viewer_count: stream.viewerCount,
+  started_at: stream.startedAt,
+  // Empty so the app falls back to its no-thumbnail state.
+  thumbnail_url: "",
+})
+
+async function liveStreams(c: Context<HonoEnv>, follows: FixtureFollow[]) {
+  const states = await c.var.db.channelState.findByBroadcasterUserIds(
+    follows.map((f) => f.broadcasterUserId),
+  )
+  const stateById = new Map(states.map((s) => [s.broadcaster_user_id, s]))
+  return follows.flatMap((follow) => {
+    const stream = liveStreamOf(follow, stateById.get(follow.broadcasterUserId))
+    return stream ? [toStream(follow, stream)] : []
+  })
 }
 
 const toUser = (id: string, login: string, displayName: string) => ({
@@ -108,23 +161,26 @@ export function buildHelixRouter(): Hono<HonoEnv> {
     })
   })
 
-  helix.get("/streams/followed", (c) => {
+  helix.get("/streams/followed", async (c) => {
     const fixture = personaByTwitchUserId(c.req.query("user_id"))
-    const live = (fixture?.follows ?? []).filter((f) => f.stream)
-    return c.json({ data: live.map(toStream), pagination: {} })
+    return c.json({
+      data: await liveStreams(c, fixture?.follows ?? []),
+      pagination: {},
+    })
   })
 
-  helix.get("/streams", (c) => {
+  helix.get("/streams", async (c) => {
     const wanted = new Set(c.req.queries("user_id") ?? [])
-    const live = new Map<string, FixtureFollow>()
-    for (const { follows } of fixtures()) {
-      for (const f of follows) {
-        if (f.stream && wanted.has(f.broadcasterUserId)) {
-          live.set(f.broadcasterUserId, f)
-        }
+    const follows = new Map<string, FixtureFollow>()
+    for (const fixture of fixtures()) {
+      for (const f of fixture.follows) {
+        if (wanted.has(f.broadcasterUserId)) follows.set(f.broadcasterUserId, f)
       }
     }
-    return c.json({ data: [...live.values()].map(toStream), pagination: {} })
+    return c.json({
+      data: await liveStreams(c, [...follows.values()]),
+      pagination: {},
+    })
   })
 
   const toCategory = (category: { id: string; name: string }) => ({
