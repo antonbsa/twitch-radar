@@ -10,6 +10,12 @@ on:
   # Deploy workflows call this so they gate on the same checks as PRs.
   workflow_call:
 
+# A newer push to the same PR cancels the superseded run. Other events key on the sha so each
+# commit's run (and a deploy's called run) finishes untouched (ADR 0061).
+concurrency:
+  group: code-quality-${{ github.event_name == 'pull_request' && github.head_ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   eslint:
     name: EsLint

@@ -18,6 +18,10 @@ jobs:
   deploy:
     name: Deploy to Cloudflare (production)
     needs: [code-quality, tests]
+    # Deploys queue instead of overlapping; a deploy is never cancelled mid-run (ADR 0061).
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5

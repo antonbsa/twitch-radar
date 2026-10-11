@@ -48,6 +48,10 @@ jobs:
   deploy:
     name: Deploy to Cloudflare (preview)
     needs: [check-pr-origin, code-quality, tests]
+    # Deploys queue instead of overlapping; a deploy is never cancelled mid-run (ADR 0061).
+    concurrency:
+      group: deploy-preview
+      cancel-in-progress: false
     # Skipped checks (push via PR) must not skip the deploy; any failure still blocks it.
     if: ${{ !failure() && !cancelled() }}
     runs-on: ubuntu-latest
