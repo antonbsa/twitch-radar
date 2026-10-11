@@ -1,6 +1,7 @@
 import { scheduledJobLogFields } from "../../crons"
 import type { AppConfig } from "../../env"
 import type { Database } from "../../db"
+import { recordFailure } from "../../lib/alerting"
 import { logger, serializeError } from "../../lib/logger"
 import { createEventsubSubscription } from "../../services/twitch/eventsub"
 import { getAppAccessToken } from "../../services/twitch/app-token"
@@ -100,6 +101,7 @@ export async function createPendingEventsubSubscriptions(
           status: failed ? "failed" : "pending",
           ...serializeError(error),
         })
+        recordFailure("EventSub subscription create failed", error)
       }
     }
 
@@ -119,5 +121,6 @@ export async function createPendingEventsubSubscriptions(
       ...logFields,
       ...serializeError(error),
     })
+    recordFailure("Pending EventSub subscription creation run failed", error)
   }
 }

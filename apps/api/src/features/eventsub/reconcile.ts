@@ -2,6 +2,7 @@ import { scheduledJobLogFields } from "../../crons"
 import type { AppConfig } from "../../env"
 import type { Database } from "../../db"
 import { MONITORED_EVENT_TYPES } from "../../db/repositories/eventsub-subscriptions"
+import { recordFailure } from "../../lib/alerting"
 import { logger, serializeError } from "../../lib/logger"
 import { eventsubCallbackUrl } from "./monitoring"
 import { getAppAccessToken } from "../../services/twitch/app-token"
@@ -68,6 +69,7 @@ export async function reconcileEventsubSubscriptions(
       ...RECONCILE_LOG_FIELDS,
       ...serializeError(error),
     })
+    recordFailure("EventSub reconciliation run failed", error)
   }
 }
 
@@ -125,6 +127,7 @@ async function reconcile(
         twitchSubscriptionId,
         ...serializeError(error),
       })
+      recordFailure("EventSub subscription delete failed", error)
       return false
     }
   }

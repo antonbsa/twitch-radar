@@ -1,6 +1,7 @@
 import { scheduledJobLogFields } from "../../crons"
 import type { AppConfig } from "../../env"
 import { ApiError } from "../../http/errors"
+import { recordFailure } from "../../lib/alerting"
 import { logger, serializeError } from "../../lib/logger"
 import { decryptToken, encryptToken } from "../../lib/crypto"
 import { TwitchApiError, classifyTwitchError } from "./errors"
@@ -292,6 +293,7 @@ export async function refreshExpiringTwitchTokens(
           userId: record.user_id,
           ...serializeError(error),
         })
+        recordFailure("Scheduled Twitch token refresh failed", error)
       }
     }
 
@@ -311,6 +313,7 @@ export async function refreshExpiringTwitchTokens(
       ...logFields,
       ...serializeError(error),
     })
+    recordFailure("Scheduled Twitch token refresh sweep failed", error)
   }
 
   await validateTwitchTokens(db, config)
@@ -366,6 +369,7 @@ async function validateTwitchTokens(
           userId: record.user_id,
           ...serializeError(error),
         })
+        recordFailure("Twitch token validation failed", error)
       }
     }
 
@@ -381,5 +385,6 @@ async function validateTwitchTokens(
       ...logFields,
       ...serializeError(error),
     })
+    recordFailure("Twitch token validation sweep failed", error)
   }
 }

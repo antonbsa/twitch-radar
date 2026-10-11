@@ -1,6 +1,7 @@
 import { isAnyPeriodicJobDue, isPeriodicJobDue } from "./crons"
 import { Database } from "./db"
 import { parseEnv, type Env } from "./env"
+import { configureAlerting, recordFailure } from "./lib/alerting"
 import { logger, serializeError } from "./lib/logger"
 import {
   createPendingEventsubSubscriptions,
@@ -33,6 +34,7 @@ export async function runScheduled(
   try {
     const config = parseEnv(env)
     logger.configure(config.environment)
+    configureAlerting(config)
     const db = new Database(env.DB)
 
     const { scheduledTime } = controller
@@ -62,5 +64,6 @@ export async function runScheduled(
       cron: controller.cron,
       ...serializeError(error),
     })
+    recordFailure("Scheduled job failed", error)
   }
 }

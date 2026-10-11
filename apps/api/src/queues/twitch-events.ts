@@ -1,5 +1,6 @@
 import type { Database } from "../db"
 import type { AppConfig, Env } from "../env"
+import { recordFailure } from "../lib/alerting"
 import { logger, serializeError } from "../lib/logger"
 import { processTwitchEventMessage } from "../features/eventsub/process"
 import { matchAndCreateDeliveries } from "../features/notifications/match"
@@ -39,6 +40,7 @@ export async function consumeTwitchEvents(
         messageId: eventMessage.messageId,
         ...serializeError(error),
       })
+      recordFailure("Twitch event processing failed", error)
       message.retry()
     }
   }
