@@ -1,21 +1,10 @@
 import { useState } from "react"
-import { useNavigate } from "react-router"
 import { Loader2Icon } from "lucide-react"
 import { changelogs } from "virtual:changelog"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { LogOutButton } from "@/routes/account/components/log-out-button"
 import { LanguageSelector } from "@/routes/account/components/language-selector"
 import { WhatsNewSheet } from "@/routes/account/components/whats-new-sheet"
 import { useAuth } from "@/context/auth-context"
@@ -43,26 +32,14 @@ function notificationStatusKey(status: PushStatus): string {
 }
 
 export function AccountPage() {
-  const { user, reconnectRequired, logout } = useAuth()
+  const { user, reconnectRequired } = useAuth()
   const { t } = useLanguage()
-  const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [whatsNewOpen, setWhatsNewOpen] = useState(false)
   const push = usePushNotifications()
-  const navigate = useNavigate()
   const syncFollows = useManualSyncFollows()
   const [isReconnecting, markReconnecting] = useNavigationPending()
   // All changelogs share the same version/date; English is enough for the badge.
   const latestVersion = changelogs.en[0]
-
-  async function handleLogout() {
-    setIsLoggingOut(true)
-    try {
-      await logout()
-      navigate("/login", { replace: true })
-    } finally {
-      setIsLoggingOut(false)
-    }
-  }
 
   return (
     <div className="p-4">
@@ -155,33 +132,7 @@ export function AccountPage() {
         </Button>
       )}
 
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button
-            variant="destructive"
-            className="mt-3 w-full"
-            disabled={isLoggingOut}
-          >
-            {t("account.log_out")}
-          </Button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {t("account.log_out_confirm_title")}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {t("account.log_out_confirm_description")}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-            <AlertDialogAction onClick={handleLogout}>
-              {t("account.log_out")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <LogOutButton />
 
       {latestVersion && (
         <div className="mt-6 flex justify-center">
