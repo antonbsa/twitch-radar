@@ -10,6 +10,10 @@ const PUSH_TTL_SECONDS = 60 * 60
 // RFC 8292 caps VAPID JWT lifetime at 24h; 12h leaves ample clock-skew room.
 const VAPID_JWT_LIFETIME_SECONDS = 12 * 60 * 60
 
+// Apple's push service is reported to reject any `Topic` header with
+// 400 BadWebPushTopic, so it is omitted there (issue #118).
+const APPLE_PUSH_HOST = "web.push.apple.com"
+
 export type WebPushSendResult =
   | { ok: true; status: number }
   | {
@@ -206,15 +210,24 @@ async function encryptPayload(
   )
 }
 
+function isApplePushEndpoint(endpoint: string): boolean {
+  return new URL(endpoint).hostname === APPLE_PUSH_HOST
+}
+
 /**
  * Sends one Web Push message (ADR 0035). Never throws for delivery problems
  * — the result tells the caller whether the send worked and whether the
  * subscription is gone for good.
+ *
+ * `topic` (RFC 8030, ≤32 URL-safe base64 chars) makes the push service
+ * replace a still-undelivered message with the same topic, so an offline
+ * device gets only the latest one.
  */
 export async function sendWebPush(
   config: AppConfig,
   subscription: Pick<PushSubscriptionRecord, "endpoint" | "p256dh" | "auth">,
   payload: string,
+  topic?: string,
 ): Promise<WebPushSendResult> {
   let authorization: string
   try {
@@ -257,6 +270,9 @@ export async function sendWebPush(
         "Content-Encoding": "aes128gcm",
         "Content-Type": "application/octet-stream",
         Authorization: authorization,
+        ...(topic && !isApplePushEndpoint(subscription.endpoint)
+          ? { Topic: topic }
+          : {}),
       },
       body,
     })
