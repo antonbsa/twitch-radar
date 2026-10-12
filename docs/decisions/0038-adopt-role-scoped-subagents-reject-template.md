@@ -2,7 +2,7 @@
 
 ## Status
 
-Superseded in part by [ADR 0052](0052-nested-agents-md-and-slim-subagents.md): the decision to add role-scoped subagents and reject the rest of the template pattern stands, but subagents no longer point at root `AGENTS.md` source layout sections (none exist); package conventions live in nested `AGENTS.md` files.
+Superseded in part by [ADR 0052](0052-nested-agents-md-and-slim-subagents.md) and [ADR 0062](0062-human-facing-architecture-docs.md). ADR 0062 allows an architecture document written for human readers (agents still get no codemap). From ADR 0052: the decision to add role-scoped subagents and reject the rest of the template pattern stands, but subagents no longer point at root `AGENTS.md` source layout sections (none exist); package conventions live in nested `AGENTS.md` files.
 
 ## Context
 

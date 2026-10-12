@@ -32,10 +32,11 @@ Open `http://localhost:5173`. Signing in with a real Twitch account needs creden
 
 - [Documentation index](docs/README.md)
 - [Product](docs/product.md): what it is for, when a notification is and isn't sent, non-goals
+- [Architecture](docs/architecture/overview.md): how it works end to end and why, one page per subsystem, plus how the project is run
 - [Development](docs/development.md): local setup, env vars, push and mobile testing, queues and crons
 - [Deployment](docs/deployment.md): Cloudflare setup, secrets, preview and production releases
 - [Architecture decisions](docs/decisions/README.md) and [technical notes](docs/notes/README.md)
-- [MVP architecture](specs/mvp/00.%20architecture.md) (the original plan, closed to new work)
+- [MVP architecture spec](specs/mvp/00.%20architecture.md) (the original plan, kept as history)
 - [Project guidance](AGENTS.md)
 
 ## Contributing
