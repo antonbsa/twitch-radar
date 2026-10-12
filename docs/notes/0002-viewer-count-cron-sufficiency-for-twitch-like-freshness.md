@@ -9,8 +9,8 @@ Deferred
 - [0001 - Viewer Count Freshness and Rate-Limit Scalability](0001-viewer-count-freshness-and-rate-limit-scalability.md) — superseded by this note's conclusion
 - [ADR 0030 - monitored-broadcaster lifecycle](../decisions/0030-monitored-broadcaster-lifecycle-and-state-seeding.md)
 - [ADR 0036 - scheduled ops jobs](../decisions/0036-scheduled-ops-jobs.md)
-- [apps/api/src/services/twitch/client.ts](../../apps/api/src/services/twitch/client.ts) — `getStreamsByUserIds`
-- [apps/api/src/crons.ts](../../apps/api/src/crons.ts)
+- `getStreamsByUserIds` in the Twitch client
+- apps/api/src/crons.ts
 
 ## Question
 
@@ -27,7 +27,7 @@ TN 0001 concluded that no fixed-interval refresh of `viewer_count` was needed be
 
 **Cron cost is driven by run size, not cadence.** What consumes the shared app-token bucket is `ceil(live monitored broadcasters / 100)` requests fired per execution, not how often the cron fires. Going from 5-min to 3-min doesn't change that per-execution cost — it only makes the same small execution happen more often (20/hour vs. 12/hour). The bucket (800 pts/min) refills continuously, so the only way to actually approach the limit is a single execution's request count getting large, which requires on the order of ~80,000 distinct live monitored broadcasters in one run — many orders of magnitude past current/foreseeable scale. Cadence and cost are effectively decoupled at this scale; the only real cost of a shorter interval is a proportionally higher total request volume over time, which isn't rate-limited or quota-capped on this endpoint.
 
-**Manual verification recipe** (for spot-checking actual freshness/behavior against a real channel, using an app access token via client-credentials grant — same mechanism as [`fetchAppAccessToken`](../../apps/api/src/services/twitch/client.ts)):
+**Manual verification recipe** (for spot-checking actual freshness/behavior against a real channel, using an app access token via client-credentials grant — same mechanism as `fetchAppAccessToken`):
 
 ```bash
 # 1. Get an app access token
@@ -61,4 +61,4 @@ No code or spec change resulted from this discussion. If the product decides to 
 
 ## If we revisit this
 
-Revisit when there is an actual task to implement periodic `viewer_count` refresh. At that point, write an ADR that references this note and TN 0001, specifying: cron cadence (3 min, per this note), scope (which broadcasters — likely only those currently live, mirroring the `stream.online` seeding already in [`process.ts`](../../apps/api/src/services/eventsub/process.ts)), and confirming the rate-limit headroom assumption still holds at whatever broadcaster count exists at implementation time.
+Revisit when there is an actual task to implement periodic `viewer_count` refresh. At that point, write an ADR that references this note and TN 0001, specifying: cron cadence (3 min, per this note), scope (which broadcasters — likely only those currently live, mirroring the `stream.online` seeding already in `process.ts`), and confirming the rate-limit headroom assumption still holds at whatever broadcaster count exists at implementation time.

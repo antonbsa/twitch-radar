@@ -13,13 +13,13 @@ The Worker has a single Cron Trigger per environment, firing every minute. Cloud
 | Every minute | Token refresh | Refreshes tokens about to expire and validates tokens about hourly ([auth](auth.md)) |
 | Minutes 0 and 30 | Reconciliation | Repairs EventSub subscriptions against Twitch and the monitored set |
 | Minute 10 | Follow sync | Re-syncs follows that went stale ([follow sync](follow-sync.md)) |
-| First of the month, 04:00 UTC | Avatar refresh | Refreshes stored broadcaster avatars, inside the follow sync slot |
+| First of the month, 04:10 UTC | Avatar refresh | Refreshes stored broadcaster avatars, inside the follow sync slot |
 
 The periodic jobs never share a minute, so an invocation runs the minutely jobs plus at most one other.
 
 ## Working Within One Invocation
 
-Jobs run sequentially in one invocation and share its budget, in particular the free plan's cap on outgoing requests. So every job is bounded per run: subscription creation takes a smaller batch on minutes where reconciliation also runs, token refresh does a couple of refreshes and a few validations a run, follow sync handles a few users. A backlog drains over later minutes rather than breaking one invocation.
+Jobs run sequentially in one invocation and share its budget, in particular the free plan's cap on outgoing requests. So every job is bounded per run: subscription creation takes a smaller batch on minutes where a periodic job also runs, token refresh does a couple of refreshes and a few validations a run, follow sync handles a few users. A backlog drains over later minutes rather than breaking one invocation.
 
 Each job catches and logs its own failure, so one failing job doesn't skip the next. A job that outgrows the shared budget should become its own queue consumer instead of reclaiming a trigger.
 

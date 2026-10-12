@@ -6,7 +6,7 @@ How a raw Twitch event becomes a change in a broadcaster's state, and how a stat
 
 The backend keeps what a broadcaster is doing _now_ separately from what _changed_ ([ADR 0006](../decisions/0006-store-current-channel-state-separately-from-history.md)):
 
-- **Channel state**: one row per monitored broadcaster, with live or offline, current category and title, and the current stream. It is the source of truth and is shared across users.
+- **Channel state**: one row per broadcaster the app tracks (monitored or followed by someone), with live or offline, current category and title, and the current stream. It is the source of truth and is shared across users.
 - **State changes**: an append-only record of the transitions that matter. It is audit and the input to matching, never the way current state is computed.
 
 Only meaningful transitions are recorded: a stream started, a stream ended, a category change while live. Refreshes, title-only edits and category changes while offline update the state but record nothing, so they can never lead to a notification.

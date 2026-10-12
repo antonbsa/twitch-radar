@@ -108,9 +108,13 @@ erDiagram
     users ||--o{ notification_deliveries : "receives"
     global_category_preferences ||--o{ global_category_preference_exclusions : "excludes"
     monitored_channels ||--o{ eventsub_subscriptions : "needs"
-    monitored_channels ||--|| channel_state : "current state"
+    monitored_channels ||--o| channel_state : "current state"
     monitored_channels ||--o{ channel_state_changes : "history"
+    followed_channels }o..o| channel_state : "seeds"
+    push_subscriptions |o--o{ notification_deliveries : "sent via"
 ```
+
+Relations between per-user and per-broadcaster tables go through the Twitch broadcaster id, not a database foreign key.
 
 The model separates three kinds of data:
 

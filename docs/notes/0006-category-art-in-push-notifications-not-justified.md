@@ -9,7 +9,7 @@ Explored, not adopted
 - [Issue #25](https://github.com/antonbsa/twitch-radar/issues/25) (broadcaster avatar as the notification `icon`; kept as is)
 - [Issue #77](https://github.com/antonbsa/twitch-radar/issues/77) (box art on Alerts page chips; owns any box art persistence)
 - [ADR 0026](../decisions/0026-manual-service-worker-without-vite-plugin-pwa.md), [ADR 0048](../decisions/0048-notification-snooze-reminders.md)
-- [apps/api/src/services/notifications/match.ts](../../apps/api/src/services/notifications/match.ts), [apps/web/public/service-worker.js](../../apps/web/public/service-worker.js)
+- notification matching and the web service worker
 
 ## Question
 
