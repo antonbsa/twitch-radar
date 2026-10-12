@@ -2,6 +2,7 @@ import { fileURLToPath, URL } from "node:url"
 import { defineConfig } from "vite"
 import react from "@vitejs/plugin-react"
 import tailwindcss from "@tailwindcss/vite"
+import { sentryVitePlugin } from "@sentry/vite-plugin"
 import { changelogPlugin } from "./vite-plugins/changelog-plugin"
 import { appIconPlugin } from "./vite-plugins/app-icon-plugin"
 import { loadDevEnv } from "../../infra/scripts/dev/load-env.mjs"
@@ -9,12 +10,29 @@ import { loadDevEnv } from "../../infra/scripts/dev/load-env.mjs"
 export default defineConfig(({ mode }) => {
   const envDir = fileURLToPath(new URL("../..", import.meta.url))
   const { apiPort, webPort } = loadDevEnv()
+  // Only CI has the upload token, so any other build skips the upload.
+  const uploadSourceMaps = Boolean(process.env.SENTRY_AUTH_TOKEN)
 
   return {
     envDir,
     // Build-time, so sandbox code is dropped from the production bundle (ADR 0045).
     define: { __NON_PRODUCTION_FEATURES__: mode !== "production" },
-    plugins: [react(), tailwindcss(), changelogPlugin(), appIconPlugin()],
+    // "hidden" emits maps without a sourceMappingURL comment; they are deleted after upload so dist never serves them.
+    build: { sourcemap: uploadSourceMaps ? "hidden" : false },
+    plugins: [
+      react(),
+      tailwindcss(),
+      changelogPlugin(),
+      appIconPlugin(),
+      sentryVitePlugin({
+        disable: !uploadSourceMaps,
+        org: process.env.SENTRY_ORG,
+        project: process.env.SENTRY_PROJECT_WEB,
+        authToken: process.env.SENTRY_AUTH_TOKEN,
+        telemetry: false,
+        sourcemaps: { filesToDeleteAfterUpload: ["dist/**/*.map"] },
+      }),
+    ],
     resolve: {
       alias: {
         "@": fileURLToPath(new URL("./src", import.meta.url)),

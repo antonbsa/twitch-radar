@@ -63,6 +63,16 @@ Both are optional ([ADR 0047](decisions/0047-error-alerting-via-sentry-and-slack
 
 `SENTRY_DSN` can go on `preview` too (events are tagged `environment:preview`); first check preview is quiet, since a noisy one burns the free plan's 5,000 events per month. In the Sentry project, enable spike protection and create the alert rule (email) filtered on `environment:production`.
 
+### Frontend error reporting (optional)
+
+`apps/web` reports browser errors to a **separate Sentry project** from the Worker's ([ADR 0047](decisions/0047-error-alerting-via-sentry-and-slack-webhook.md)). It is configured at build time in the deploy workflows, not with `wrangler secret`; a build without these variables works and reports nowhere:
+
+- `VITE_SENTRY_DSN` — GitHub repository **variable**, the web project's client key. Public by design: it ends up in the bundle. Events carry the Vite mode (`preview`/`production`) as `environment`; local dev never reports.
+- `SENTRY_AUTH_TOKEN` — GitHub repository **secret**, an organization auth token with source-map upload scope. It is used only by the build in CI.
+- `SENTRY_ORG` / `SENTRY_PROJECT_WEB` — GitHub repository **variables**, the organization and web project slugs.
+
+With the token set, the build uploads source maps and deletes them from `apps/web/dist`, so they are never served. Check with `SENTRY_AUTH_TOKEN=... npm run build` that `find apps/web/dist -name '*.map'` and `grep -r sourceMappingURL apps/web/dist` print nothing. In the web project, create the alert rule (email) on new issues filtered on `environment:production`, and enable spike protection. The service worker is not instrumented.
+
 ### Rotating `TWITCH_CLIENT_SECRET`
 
 `TWITCH_CLIENT_SECRET` is shared across every environment pointed at the same Twitch app (currently `production` and `preview` both use one app) — rotating it in the Twitch Developer Console immediately invalidates the old secret everywhere, not just in the environment you're thinking about. A rotation that only updates the secret and skips the remaining steps below is exactly what turned a routine rotation into a multi-day incident (issue #73): the missing step wasn't an oversight of a known checklist, there simply wasn't one. Do all of the following, for **every** environment sharing the app, before considering the rotation done:
