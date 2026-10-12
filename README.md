@@ -1,6 +1,10 @@
-# Twitch Radar
+<p align="center">
+  <img src="apps/web/icons/icon.svg" alt="Twitch Radar icon" width="96" height="96">
+</p>
 
-Get a push notification the moment someone you follow on Twitch switches into a category you care about.
+<h1 align="center">Twitch Radar</h1>
+
+<p align="center">Get a push notification the moment someone you follow on Twitch switches into a category you care about.</p>
 
 Mobile-first PWA for Twitch viewers who want push notifications when followed streamers start streaming selected categories. Log in with Twitch, pick the broadcasters and categories you care about, and let a Cloudflare Worker watch EventSub for you in the background — no polling, no app to keep open.
 
