@@ -80,4 +80,15 @@ export type HonoEnv = {
   }
 }
 
-export const parseEnv = (env: Env): AppConfig => EnvSchema.parse(env)
+// Bindings are fixed for an isolate's life, so parse once per `env` object
+// instead of on every cron tick, request and queue batch.
+const parsedEnvs = new WeakMap<Env, AppConfig>()
+
+export function parseEnv(env: Env): AppConfig {
+  let config = parsedEnvs.get(env)
+  if (!config) {
+    config = EnvSchema.parse(env)
+    parsedEnvs.set(env, config)
+  }
+  return config
+}

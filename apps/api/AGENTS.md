@@ -67,7 +67,7 @@ for (let i = 0; i < ids.length; i += BATCH_SIZE) {
 
 ## Error alerting
 
-- Symptom: a failure shows up only in Workers Logs, with no Sentry issue or Slack message, and the Cloudflare error count stays at zero. Why it slips past local checks: a `catch` that calls `logger.error` handles the error, so the invocation succeeds and `withSentry` never sees it (ADR 0047); tests pass and nothing else flags the gap.
+- Symptom: a failure shows up only in Workers Logs, with no Sentry issue or Slack message, and the Cloudflare error count stays at zero. Why it slips past local checks: a `catch` that calls `logger.error` handles the error, so the invocation succeeds and `withSentry` never sees it (ADR 0047); `scheduled` isn't wrapped by `withSentry` at all, to stay under the Free plan's 10ms cron CPU, so `recordFailure` is its only path to Sentry; tests pass and nothing else flags the gap.
 - Every `catch` that logs a failure with `logger.error` also calls `recordFailure(<same message>, error)` from `lib/alerting.ts`. It buffers per invocation and sends one aggregated report; `reportFailure` is the awaitable variant for `waitUntil`.
 - A promise handed to `c.executionCtx.waitUntil` catches, logs and `recordFailure`s its own error (see `persistFollowedChannelsSyncDeferred`), since a rejection there reaches no handler.
 - Verify for real: `npx wrangler tail --env preview` while forcing the failure (delete the `twitch:app_access_token` KV key, then set a bad `TWITCH_CLIENT_SECRET`) and confirm the Sentry issue and the Slack message. [docs/deployment.md](../../docs/deployment.md) "Error alerting" has the setup.

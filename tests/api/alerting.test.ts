@@ -84,6 +84,30 @@ describe("alerting", () => {
     ).resolves.toBe("work result")
   })
 
+  it("reports a cron invocation's failure to Sentry through the lazy wrapper", async () => {
+    configure("production")
+    const cron = {
+      controller: { cron: "* * * * *", scheduledTime: Date.now() },
+      env: {
+        ENVIRONMENT: "production",
+        SENTRY_DSN: "https://k@o1.ingest.sentry.io/1",
+      },
+      ctx: { waitUntil: (p: Promise<unknown>) => p.catch(() => {}) },
+    } as unknown as Parameters<typeof collectFailures>[1]
+
+    await collectFailures(
+      async () => recordFailure("job failed", new Error("boom")),
+      cron,
+    )
+    await vi.waitFor(() => {
+      const sentry = fetchMock.mock.calls.filter(([url]) =>
+        String(url).includes("ingest.sentry.io"),
+      )
+      expect(sentry).toHaveLength(1)
+      expect(String(sentry[0][1].body)).toContain("boom")
+    })
+  })
+
   it("keeps invocations' buffers separate when they overlap", async () => {
     configure("production", WEBHOOK)
 
