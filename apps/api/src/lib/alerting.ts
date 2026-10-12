@@ -41,6 +41,12 @@ export function sentryOptions(env: Env): Sentry.CloudflareOptions {
   }
 }
 
+interface ScheduledInvocation {
+  controller: ScheduledController
+  env: Env
+  ctx: ExecutionContext
+}
+
 /**
  * Reports a caught failure. Inside `collectFailures` it is buffered into that
  * invocation's single report; outside one (request path) it is sent at once.
@@ -62,28 +68,47 @@ export function reportFailure(source: string, error: unknown): Promise<void> {
 
 /**
  * Runs one scheduled or queue invocation and sends a single aggregated report
- * for every `recordFailure` made inside it, after the work is done.
+ * for every `recordFailure` made inside it, after the work is done. Pass
+ * `cron` for a `scheduled` invocation that is not wrapped by `withSentry`, so
+ * its Sentry client is only built when there is a failure to report.
+ * `fn` must catch its own errors, as `runScheduled` does: nothing here captures a throw.
  */
-export async function collectFailures<T>(fn: () => Promise<T>): Promise<T> {
+export async function collectFailures<T>(
+  fn: () => Promise<T>,
+  cron?: ScheduledInvocation,
+): Promise<T> {
   const failures: Failure[] = []
   try {
     return await failureBuffer.run(failures, fn)
   } finally {
-    if (failures.length > 0) await sendReport(failures)
+    if (failures.length > 0) await sendReport(failures, cron)
   }
 }
 
-async function sendReport(failures: Failure[]): Promise<void> {
+async function sendReport(
+  failures: Failure[],
+  cron?: ScheduledInvocation,
+): Promise<void> {
   try {
     const [first] = failures
     if (!first || alertConfig.environment === "local") return
 
-    Sentry.withScope((scope) => {
-      scope.setTag("source", first.source)
-      scope.setExtra("failureCount", failures.length)
-      scope.setExtra("failures", summarize(failures))
-      Sentry.captureException(first.error)
-    })
+    const capture = () =>
+      Sentry.withScope((scope) => {
+        scope.setTag("source", first.source)
+        scope.setExtra("failureCount", failures.length)
+        scope.setExtra("failures", summarize(failures))
+        Sentry.captureException(first.error)
+      })
+    if (cron) {
+      // `scheduled` skips the main `withSentry` (its per-invocation setup busts the
+      // Free plan's 10ms cron CPU), so a client is built here only on failure.
+      const handler: ExportedHandler<Env> = { scheduled: capture }
+      const reporter = Sentry.withSentry(sentryOptions, handler)
+      await reporter.scheduled?.(cron.controller, cron.env, cron.ctx)
+    } else {
+      capture()
+    }
 
     await sendSlackAlert(failures)
   } catch (error) {
