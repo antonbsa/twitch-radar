@@ -5,6 +5,7 @@ import { changelogs } from "virtual:changelog"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { DisablePushButton } from "@/routes/account/components/disable-push-button"
 import { LogOutButton } from "@/routes/account/components/log-out-button"
 import { LanguageSelector } from "@/routes/account/components/language-selector"
 import { WhatsNewSheet } from "@/routes/account/components/whats-new-sheet"
@@ -84,14 +85,10 @@ export function AccountPage() {
             </Button>
           )}
           {push.status === "enabled" && (
-            <Button
-              variant="outline"
-              size="sm"
+            <DisablePushButton
               disabled={push.isPending}
-              onClick={push.disable}
-            >
-              {t("account.disable_notifications")}
-            </Button>
+              onConfirm={push.disable}
+            />
           )}
           {push.status === "denied" && (
             <p className="text-xs text-muted-foreground">

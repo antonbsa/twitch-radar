@@ -7,7 +7,11 @@ import { LanguageProvider } from "@/context/language-context"
 import { App } from "@/App"
 import { ApiRequestError } from "@/lib/errors"
 import { registerServiceWorker } from "@/lib/push"
+import { initSentry, reactErrorHandlers } from "@/lib/sentry"
 import "@/index.css"
+
+// Before anything else runs, so the global error and rejection handlers are in place.
+initSentry()
 
 // Fire-and-forget: a failed registration only degrades push (surfaced on the
 // Account view), it must never block rendering.
@@ -32,7 +36,7 @@ const queryClient = new QueryClient({
   },
 })
 
-createRoot(document.getElementById("root")!).render(
+createRoot(document.getElementById("root")!, reactErrorHandlers).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
