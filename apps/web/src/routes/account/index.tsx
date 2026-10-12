@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/page-header"
 import { useState } from "react"
 import { Loader2Icon } from "lucide-react"
 import { changelogs } from "virtual:changelog"
@@ -42,114 +43,116 @@ export function AccountPage() {
   const latestVersion = changelogs.en[0]
 
   return (
-    <div className="p-4">
-      <h1 className="text-lg font-semibold">{t("account.title")}</h1>
+    <div>
+      <PageHeader title={t("account.title")} />
 
-      <div className="mt-4 flex items-center gap-3">
-        <Avatar size="lg">
-          <AvatarFallback>
-            {user?.twitch_display_name?.[0]?.toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
-        <div>
-          <p className="text-sm font-medium">{user?.twitch_display_name}</p>
-          <p className="text-xs text-muted-foreground">
-            {t("account.connected")}
-          </p>
+      <div className="px-4 pb-4">
+        <div className="flex items-center gap-3">
+          <Avatar size="lg">
+            <AvatarFallback>
+              {user?.twitch_display_name?.[0]?.toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <p className="text-sm font-medium">{user?.twitch_display_name}</p>
+            <p className="text-xs text-muted-foreground">
+              {t("account.connected")}
+            </p>
+          </div>
         </div>
-      </div>
 
-      <div className="mt-6 space-y-2">
-        <p className="text-sm font-medium">{t("account.language")}</p>
-        <LanguageSelector />
-      </div>
+        <div className="mt-6 space-y-2">
+          <p className="text-sm font-medium">{t("account.language")}</p>
+          <LanguageSelector />
+        </div>
 
-      <div className="mt-6 space-y-2">
-        <p className="text-sm font-medium">{t("account.notifications")}</p>
-        <p className="text-sm text-muted-foreground">
-          {t("account.status", {
-            status: t(notificationStatusKey(push.status)),
-          })}
-        </p>
-        {push.status === "not-enabled" && (
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={push.isPending}
-            onClick={push.enable}
-          >
-            {t("account.enable_notifications")}
-          </Button>
-        )}
-        {push.status === "enabled" && (
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={push.isPending}
-            onClick={push.disable}
-          >
-            {t("account.disable_notifications")}
-          </Button>
-        )}
-        {push.status === "denied" && (
-          <p className="text-xs text-muted-foreground">
-            {t("account.denied_hint")}
+        <div className="mt-6 space-y-2">
+          <p className="text-sm font-medium">{t("account.notifications")}</p>
+          <p className="text-sm text-muted-foreground">
+            {t("account.status", {
+              status: t(notificationStatusKey(push.status)),
+            })}
           </p>
-        )}
-        {push.error && (
-          <p className="text-xs text-destructive">{t(push.error)}</p>
-        )}
-      </div>
-
-      <Button
-        variant="outline"
-        className="mt-6 w-full"
-        disabled={syncFollows.isPending}
-        onClick={() => syncFollows.sync()}
-      >
-        {t("account.sync_channels")}
-      </Button>
-
-      {reconnectRequired && (
-        <Button
-          className="mt-3 w-full aria-disabled:pointer-events-none aria-disabled:opacity-70"
-          asChild
-        >
-          {/* Native link click, not window.location: see login.tsx. */}
-          <a
-            href="/api/auth/twitch/start"
-            aria-busy={isReconnecting}
-            aria-disabled={isReconnecting}
-            onClick={markReconnecting}
-          >
-            {isReconnecting && <Loader2Icon className="animate-spin" />}
-            {t(
-              isReconnecting
-                ? "account.reconnecting"
-                : "account.reconnect_twitch",
-            )}
-          </a>
-        </Button>
-      )}
-
-      <LogOutButton />
-
-      {latestVersion && (
-        <div className="mt-6 flex justify-center">
-          <Badge asChild variant="outline">
-            <button
-              type="button"
-              aria-label={t("whats_new.badge_aria", {
-                version: latestVersion.version,
-              })}
-              onClick={() => setWhatsNewOpen(true)}
+          {push.status === "not-enabled" && (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={push.isPending}
+              onClick={push.enable}
             >
-              {latestVersion.version}
-            </button>
-          </Badge>
+              {t("account.enable_notifications")}
+            </Button>
+          )}
+          {push.status === "enabled" && (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={push.isPending}
+              onClick={push.disable}
+            >
+              {t("account.disable_notifications")}
+            </Button>
+          )}
+          {push.status === "denied" && (
+            <p className="text-xs text-muted-foreground">
+              {t("account.denied_hint")}
+            </p>
+          )}
+          {push.error && (
+            <p className="text-xs text-destructive">{t(push.error)}</p>
+          )}
         </div>
-      )}
-      <WhatsNewSheet open={whatsNewOpen} onOpenChange={setWhatsNewOpen} />
+
+        <Button
+          variant="outline"
+          className="mt-6 w-full"
+          disabled={syncFollows.isPending}
+          onClick={() => syncFollows.sync()}
+        >
+          {t("account.sync_channels")}
+        </Button>
+
+        {reconnectRequired && (
+          <Button
+            className="mt-3 w-full aria-disabled:pointer-events-none aria-disabled:opacity-70"
+            asChild
+          >
+            {/* Native link click, not window.location: see login.tsx. */}
+            <a
+              href="/api/auth/twitch/start"
+              aria-busy={isReconnecting}
+              aria-disabled={isReconnecting}
+              onClick={markReconnecting}
+            >
+              {isReconnecting && <Loader2Icon className="animate-spin" />}
+              {t(
+                isReconnecting
+                  ? "account.reconnecting"
+                  : "account.reconnect_twitch",
+              )}
+            </a>
+          </Button>
+        )}
+
+        <LogOutButton />
+
+        {latestVersion && (
+          <div className="mt-6 flex justify-center">
+            <Badge asChild variant="outline">
+              <button
+                type="button"
+                aria-label={t("whats_new.badge_aria", {
+                  version: latestVersion.version,
+                })}
+                onClick={() => setWhatsNewOpen(true)}
+              >
+                {latestVersion.version}
+              </button>
+            </Badge>
+          </div>
+        )}
+        <WhatsNewSheet open={whatsNewOpen} onOpenChange={setWhatsNewOpen} />
+      </div>
     </div>
   )
 }

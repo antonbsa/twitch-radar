@@ -1,3 +1,4 @@
+import { AppIcon } from "@/components/app-icon"
 import { Link, useSearchParams } from "react-router"
 import { Loader2Icon } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -12,7 +13,8 @@ export function LoginPage() {
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-6 px-6 text-center">
-      <div className="space-y-2">
+      <div className="flex flex-col items-center space-y-2">
+        <AppIcon className="mb-2 size-16 rounded-2xl" />
         <h1 className="text-2xl font-semibold">{t("login.title")}</h1>
         <p className="text-sm text-muted-foreground">{t("login.tagline")}</p>
       </div>

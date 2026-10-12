@@ -2,6 +2,7 @@ import { useMemo, useState } from "react"
 import { Plus } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
+import { PageHeader } from "@/components/page-header"
 import { AsyncSection } from "@/components/async-section"
 import { AddChannelDialog } from "@/routes/alerts/components/add-channel-dialog"
 import { AddGlobalCategoryDialog } from "@/routes/alerts/components/add-global-category-dialog"
@@ -89,9 +90,7 @@ export function AlertsPage() {
 
   return (
     <div className="pb-4">
-      <div className="px-4 py-3">
-        <h1 className="text-lg font-semibold">{t("alerts.title")}</h1>
-      </div>
+      <PageHeader title={t("alerts.title")} />
 
       <PauseNotificationsControl />
 
