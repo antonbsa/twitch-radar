@@ -87,7 +87,11 @@ export default async function globalSetup() {
       "--var",
       "TWITCH_CLIENT_SECRET:test-client-secret",
     ],
-    { cwd: REPO_ROOT, detached: true },
+    {
+      cwd: REPO_ROOT,
+      detached: true,
+      logFile: resolve(REPO_ROOT, "test-results/api/logs/wrangler-dev.log"),
+    },
   )
 
   try {

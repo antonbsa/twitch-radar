@@ -14,6 +14,14 @@ export default defineConfig({
     // stays visible. Don't add it to the API or unit tiers, which are deterministic.
     retry: process.env.CI ? 1 : 0,
     hookTimeout: 30_000,
+    // Setting reporters replaces the defaults, so keep `default`; the html
+    // report is what CI publishes on failure (ADR 0060).
+    reporters: [
+      "default",
+      ...(process.env.CI ? ["github-actions"] : []),
+      "html",
+    ],
+    outputFile: { html: "test-results/e2e/report/index.html" },
     env: {
       ...loadDevVars(),
       // Match this tier's own vite port; test-seam-client.ts reads it.

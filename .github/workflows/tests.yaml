@@ -41,8 +41,16 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+      - name: Label job summary
+        run: echo "## API tests" >> "$GITHUB_STEP_SUMMARY"
       - name: Run tests
         run: npm run test:api
+      - name: Upload test report
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: test-report-api
+          path: test-results/
 
   e2e:
     name: E2E tests
@@ -58,5 +66,72 @@ jobs:
         run: npm ci
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
+      - name: Label job summary
+        run: echo "## E2E tests" >> "$GITHUB_STEP_SUMMARY"
       - name: Run tests
         run: npm run test:web
+      - name: Upload test report
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: test-report-e2e
+          path: test-results/
+
+  # Publishes failed same-repo PR runs to the reports Pages repo and links them in one PR comment (ADR 0060).
+  report:
+    name: Publish failure report
+    needs: [api, e2e]
+    if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    permissions:
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PR: ${{ github.event.pull_request.number }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      MARKER: "<!-- ci-test-reports -->"
+    steps:
+      - uses: actions/checkout@v5
+      - name: Download test reports
+        if: needs.api.result == 'failure' || needs.e2e.result == 'failure'
+        uses: actions/download-artifact@v5
+        with:
+          pattern: test-report-*
+          merge-multiple: true
+          path: reports
+        # A tier that failed before producing results (e.g. a broken install) has no artifact.
+        continue-on-error: true
+      - name: Publish reports
+        id: publish
+        if: needs.api.result == 'failure' || needs.e2e.result == 'failure'
+        env:
+          CI_REPORTS_DEPLOY_KEY: ${{ secrets.CI_REPORTS_DEPLOY_KEY }}
+        run: |
+          if [ -d reports ] && [ -n "$(ls -A reports)" ]; then
+            url=$(node infra/scripts/ci/ci-reports.mjs publish "$PR" "$GITHUB_RUN_ID" "$RUN_URL" reports)
+            echo "url=$url" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Update PR comment
+        env:
+          REPORT_URL: ${{ steps.publish.outputs.url }}
+          API_RESULT: ${{ needs.api.result }}
+          E2E_RESULT: ${{ needs.e2e.result }}
+        run: |
+          failed=false
+          if [ "$API_RESULT" = failure ] || [ "$E2E_RESULT" = failure ]; then failed=true; fi
+          # A cancelled run leaves the previous comment alone.
+          if ! $failed && ! { [ "$API_RESULT" = success ] && [ "$E2E_RESULT" = success ]; }; then exit 0; fi
+
+          # Drop the previous comment and post a fresh one, so the newest links sit at the bottom of the thread.
+          gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate \
+            --jq ".[] | select(.body | contains(\"$MARKER\")) | .id" |
+            while read -r id; do
+              gh api -X DELETE "repos/$GITHUB_REPOSITORY/issues/comments/$id"
+            done
+
+          if $failed; then
+            body="$MARKER"$'\n'"### :rotating_light: Automated tests failed"$'\n'
+            if [ -n "$REPORT_URL" ]; then body+=$'\n'"- [Test report]($REPORT_URL)"; fi
+            body+=$'\n'"- [Workflow run]($RUN_URL)"
+            gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" -f body="$body"
+          fi

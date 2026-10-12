@@ -45,11 +45,19 @@ export async function openBrowser(sessionId?: string): Promise<BrowserSession> {
     ])
   }
 
+  // Kept only for failed tests (see fixtures.ts), so passing runs write nothing.
+  await context.tracing.start({ screenshots: true, snapshots: true })
+
   const page = await context.newPage()
   return { browser, context, page }
 }
 
-export async function closeBrowser(session: BrowserSession): Promise<void> {
+/** `tracePath` saves the recorded trace (failed tests); otherwise it's discarded. */
+export async function closeBrowser(
+  session: BrowserSession,
+  tracePath?: string,
+): Promise<void> {
+  await session.context.tracing.stop(tracePath ? { path: tracePath } : {})
   await session.context.close()
   await session.browser.close()
 }

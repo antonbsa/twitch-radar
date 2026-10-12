@@ -1,4 +1,6 @@
 import { spawn, type ChildProcess } from "node:child_process"
+import { appendFileSync, mkdirSync } from "node:fs"
+import { dirname } from "node:path"
 
 const READY_TIMEOUT_MS = 60_000
 const READY_POLL_INTERVAL_MS = 300
@@ -11,16 +13,24 @@ export interface CapturedProcess {
 /**
  * Captures output instead of inheriting it, so a healthy run stays quiet
  * (only vitest's own output prints) while a failure can still be diagnosed.
+ * With `logFile`, output is also appended there as it arrives, so CI can
+ * publish it even when the process crashes and the run exits early (ADR 0060).
  */
 export function spawnCapturing(
   command: string,
   args: string[],
-  options: { cwd: string; detached?: boolean },
+  options: { cwd: string; detached?: boolean; logFile?: string },
 ): CapturedProcess {
-  const child = spawn(command, args, { ...options, stdio: "pipe" })
+  const { logFile, ...spawnOptions } = options
+  const child = spawn(command, args, { ...spawnOptions, stdio: "pipe" })
   const chunks: Buffer[] = []
-  child.stdout?.on("data", (chunk: Buffer) => chunks.push(chunk))
-  child.stderr?.on("data", (chunk: Buffer) => chunks.push(chunk))
+  if (logFile) mkdirSync(dirname(logFile), { recursive: true })
+  const capture = (chunk: Buffer) => {
+    chunks.push(chunk)
+    if (logFile) appendFileSync(logFile, chunk)
+  }
+  child.stdout?.on("data", capture)
+  child.stderr?.on("data", capture)
   return { child, readOutput: () => Buffer.concat(chunks).toString("utf-8") }
 }
 

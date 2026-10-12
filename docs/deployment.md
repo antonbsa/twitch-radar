@@ -121,6 +121,17 @@ gh secret set CLOUDFLARE_API_TOKEN
 
 Run from this repo so the secret is scoped to it, not shared account-wide across other repos. The same token is used for both `preview` and `production` deploys.
 
+## CI Test Reports Repo
+
+Failed PR test runs publish their reports to a separate Pages repo ([ADR 0060](decisions/0060-publish-failed-ci-test-reports-to-a-pages-repo.md)). One-time setup:
+
+1. Create the public repo `<owner>/<repo>-ci-reports` (this repo's name plus `-ci-reports`, same owner; the workflows derive it from `GITHUB_REPOSITORY`, so a clone sets up its own) and push an initial commit on `main`. In Settings → Pages, serve from branch `main`, folder `/`.
+2. Generate a key pair: `ssh-keygen -t ed25519 -N "" -C ci-reports -f ci-reports-key`.
+3. Add `ci-reports-key.pub` to the reports repo under Settings → Deploy keys, with "Allow write access" checked.
+4. From this repo, store the private key: `gh secret set CI_REPORTS_DEPLOY_KEY < ci-reports-key`. Then delete both key files.
+
+The reports repo is disposable: if it breaks, delete and recreate it, and the next failing run repopulates it.
+
 ## Deploying
 
 Two independent pipelines:

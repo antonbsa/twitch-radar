@@ -23,13 +23,19 @@ const API_HEALTH_URL = `${E2E_API_URL}/health`
 const WEB_URL = `${E2E_WEB_URL}/`
 
 export default async function globalSetup() {
-  // Failure screenshots (see setup/fixtures.ts) accumulate across runs
-  // otherwise - wipe last run's before this one writes its own, so the
-  // folder only ever reflects the most recent run.
-  await rm(resolve(REPO_ROOT, "test-results"), {
-    recursive: true,
-    force: true,
-  })
+  // Failure traces, server logs and PR screenshots accumulate
+  // across runs otherwise - wipe last run's before this one writes its own.
+  // Not test-results/ as a whole: vitest's html reporter creates
+  // test-results/e2e/report before globalSetup runs, and the api tier's
+  // output lives beside it.
+  await Promise.all(
+    ["e2e/traces", "e2e/logs", "pr-screenshots"].map((dir) =>
+      rm(resolve(REPO_ROOT, "test-results", dir), {
+        recursive: true,
+        force: true,
+      }),
+    ),
+  )
 
   await runToCompletion("npm", ["run", "db:setup"], REPO_ROOT)
 
@@ -71,14 +77,22 @@ export default async function globalSetup() {
       "--var",
       `PUBLIC_URL:${E2E_WEB_URL}`,
     ],
-    { cwd: resolve(REPO_ROOT, "apps/api"), detached: true },
+    {
+      cwd: resolve(REPO_ROOT, "apps/api"),
+      detached: true,
+      logFile: resolve(REPO_ROOT, "test-results/e2e/logs/wrangler-dev.log"),
+    },
   )
   // vite.config.ts's proxy reads API_DEV_PORT to target this wrangler.
   process.env.API_DEV_PORT = String(E2E_API_PORT)
   const { child: web, readOutput: readWebOutput } = spawnCapturing(
     "npx",
     ["vite", "--port", String(E2E_WEB_PORT), "--strictPort"],
-    { cwd: resolve(REPO_ROOT, "apps/web"), detached: true },
+    {
+      cwd: resolve(REPO_ROOT, "apps/web"),
+      detached: true,
+      logFile: resolve(REPO_ROOT, "test-results/e2e/logs/vite.log"),
+    },
   )
 
   try {
