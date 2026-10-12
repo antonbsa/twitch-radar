@@ -113,10 +113,10 @@ self.addEventListener("push", (event) => {
       await rememberNotificationUrl(url)
       await self.registration.showNotification(title, {
         ...(body ? { body } : {}),
-        // Broadcaster avatar when the API has one (issue #25). The badge stays
-        // the app icon: Android renders it as a monochrome mask (TN 0006).
+        // Broadcaster avatar when the API has one (issue #25). The badge is a
+        // monochrome silhouette: Android renders it as an alpha mask (TN 0006).
         icon: payload?.icon || "/icon-large.svg",
-        badge: "/icon-small.svg",
+        badge: "/badge.svg",
         ...(payload?.image ? { image: payload.image } : {}),
         // Collapses repeat notifications from the same broadcaster into one
         // (issue #38 item 3) instead of stacking a notification per event.

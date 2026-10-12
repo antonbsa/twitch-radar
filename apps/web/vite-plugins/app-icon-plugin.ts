@@ -5,7 +5,7 @@ import type { Plugin } from "vite"
 export type IconEnvironment = "development" | "preview" | "production"
 
 const SOURCE_PATH = fileURLToPath(new URL("../icons/icon.svg", import.meta.url))
-const PRODUCTION_DOT = "#22c55e"
+const PRODUCTION_DOT = "#9146ff"
 const ENVIRONMENT_COLORS = {
   development: "#f59e0b",
   preview: "#3b82f6",
@@ -23,9 +23,14 @@ const pill = (
   </g>
 `
 
+// Android masks the maskable icon to a circle of 80% of its width (radius 204): the pill shrinks and moves in so its corner stays inside.
+const maskablePill = (color: string) =>
+  `  <g transform="translate(386 386) scale(.75) translate(-460 -456)">\n${pill(color)}  </g>\n`
+
 export const ICON_FILES = {
   small: "icon-small.svg",
   large: "icon-large.svg",
+  maskable: "icon-maskable.svg",
   appleTouch: "apple-touch-icon.png",
 }
 
@@ -38,18 +43,25 @@ export function resolveIconEnvironment(
   return mode === "preview" ? "preview" : "production"
 }
 
-/** Small (favicon, notification badge): dot color only. Large (manifest, apple-touch-icon, notification icon): dot plus a `</>` pill outside production. */
+/** Small (favicon): dot color only. Large (manifest, apple-touch-icon, notification icon) and maskable (full-bleed, for Android launchers): dot plus a `</>` pill outside production. The notification badge is the static, monochrome `badge.svg`. */
 export function buildIconSvgs(environment: IconEnvironment): {
   small: string
   large: string
+  maskable: string
 } {
   const source = readFileSync(SOURCE_PATH, "utf-8")
-  if (environment === "production") return { small: source, large: source }
+  const maskableSource = source.replace(' rx="96"', "")
+  if (environment === "production") {
+    return { small: source, large: source, maskable: maskableSource }
+  }
 
   const color = ENVIRONMENT_COLORS[environment]
   const small = source.replace(PRODUCTION_DOT, color)
   const large = small.replace("</svg>", `${pill(color)}</svg>`)
-  return { small, large }
+  const maskable = maskableSource
+    .replace(PRODUCTION_DOT, color)
+    .replace("</svg>", `${maskablePill(color)}</svg>`)
+  return { small, large, maskable }
 }
 
 async function rasterizeAppleTouch(svg: string): Promise<Buffer> {
@@ -69,14 +81,16 @@ export function appIconPlugin(): Plugin {
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
         const path = req.url?.split("?")[0]
-        const { small, large } = buildIconSvgs(environment)
-        if (
-          path === `/${ICON_FILES.small}` ||
-          path === `/${ICON_FILES.large}`
-        ) {
+        const { small, large, maskable } = buildIconSvgs(environment)
+        const svgByPath: Record<string, string> = {
+          [`/${ICON_FILES.small}`]: small,
+          [`/${ICON_FILES.large}`]: large,
+          [`/${ICON_FILES.maskable}`]: maskable,
+        }
+        if (path && path in svgByPath) {
           res.setHeader("Content-Type", "image/svg+xml")
           res.setHeader("Cache-Control", "no-cache")
-          res.end(path === `/${ICON_FILES.small}` ? small : large)
+          res.end(svgByPath[path])
         } else if (path === `/${ICON_FILES.appleTouch}`) {
           res.setHeader("Content-Type", "image/png")
           res.setHeader("Cache-Control", "no-cache")
@@ -87,7 +101,7 @@ export function appIconPlugin(): Plugin {
       })
     },
     async generateBundle() {
-      const { small, large } = buildIconSvgs(environment)
+      const { small, large, maskable } = buildIconSvgs(environment)
       this.emitFile({
         type: "asset",
         fileName: ICON_FILES.small,
@@ -97,6 +111,11 @@ export function appIconPlugin(): Plugin {
         type: "asset",
         fileName: ICON_FILES.large,
         source: large,
+      })
+      this.emitFile({
+        type: "asset",
+        fileName: ICON_FILES.maskable,
+        source: maskable,
       })
       this.emitFile({
         type: "asset",

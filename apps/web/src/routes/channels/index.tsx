@@ -8,6 +8,7 @@ import { ChannelRowSkeleton } from "@/components/channel-row-skeleton"
 import { ChannelFiltersBar } from "@/routes/channels/components/channel-filters-bar"
 import { ChannelPreferencesDialog } from "@/components/channel-preferences-dialog"
 import { ChannelDetailModal } from "@/routes/channels/components/channel-detail-modal"
+import { PageHeader } from "@/components/page-header"
 import { AsyncSection } from "@/components/async-section"
 import { ReconnectRequired } from "@/components/reconnect-required"
 import { useAuth } from "@/context/auth-context"
@@ -130,9 +131,9 @@ export function ChannelsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between px-4 py-3">
-        <h1 className="text-lg font-semibold">{t("channels.title")}</h1>
-        <div className="flex items-center gap-2">
+      <PageHeader
+        title={t("channels.title")}
+        actions={
           <Button
             variant="outline"
             size="sm"
@@ -147,8 +148,8 @@ export function ChannelsPage() {
             />
             {t("channels.sync")}
           </Button>
-        </div>
-      </div>
+        }
+      />
 
       <AsyncSection
         isLoading={isLoading}

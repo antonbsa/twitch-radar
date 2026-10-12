@@ -1,3 +1,4 @@
+import { AppIcon } from "@/components/app-icon"
 import { useNavigate } from "react-router"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/context/auth-context"
@@ -15,7 +16,8 @@ export function SandboxPage() {
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-6 px-6 py-10">
-      <div className="space-y-2 text-center">
+      <div className="flex flex-col items-center space-y-2 text-center">
+        <AppIcon className="mb-2 size-16 rounded-2xl" />
         <h1 className="text-2xl font-semibold">{t("sandbox.title")}</h1>
         <p className="text-sm text-muted-foreground">{t("sandbox.tagline")}</p>
       </div>
