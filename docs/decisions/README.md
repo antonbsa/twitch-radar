@@ -43,7 +43,7 @@ Other project documents may state goals, requirements, task scope, validation st
 - [0035 - Web Push Sends Hand-Rolled On WebCrypto](0035-web-push-via-webcrypto.md)
 - [0036 - Scheduled Ops Jobs: Reconciliation, Token Refresh, Follow Sync](0036-scheduled-ops-jobs.md)
 - [0037 - Single PUBLIC_URL, Same-Origin API And Web In Every Environment](0037-single-public-url-same-origin-deployment.md)
-- [0038 - Adopt Role-Scoped Subagents, Reject The Rest Of The Agent-Context-Template Pattern](0038-adopt-role-scoped-subagents-reject-template.md) — superseded in part by 0052
+- [0038 - Adopt Role-Scoped Subagents, Reject The Rest Of The Agent-Context-Template Pattern](0038-adopt-role-scoped-subagents-reject-template.md) — superseded in part by 0052 and 0062
 - [0039 - Adopt Technical Notes For Non-Decision Research](0039-adopt-technical-notes-for-non-decision-research.md)
 - [0040 - Structured Leveled Logging Convention](0040-structured-leveled-logging-convention.md)
 - [0041 - Release-Gated Production Deploys, Automatic Preview Deploys](0041-release-gated-production-deploys.md)
@@ -64,6 +64,7 @@ Other project documents may state goals, requirements, task scope, validation st
 - [0059 - Timestamp-Prefixed D1 Migrations](0059-timestamp-prefixed-d1-migrations.md)
 - [0060 - Publish Failed CI Test Reports To A Separate Pages Repo](0060-publish-failed-ci-test-reports-to-a-pages-repo.md)
 - [0061 - Concurrency Rules For CI And Deploy Workflows](0061-concurrency-rules-for-ci-and-deploy-workflows.md)
+- [0062 - Human-Facing Architecture Documentation](0062-human-facing-architecture-docs.md)
 
 ## Proposed ADRs
 

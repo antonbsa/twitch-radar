@@ -8,8 +8,8 @@ Superseded by [TN 0002](0002-viewer-count-cron-sufficiency-for-twitch-like-fresh
 
 - [monitored-channels lifecycle (ADR 0030)](../decisions/0030-monitored-broadcaster-lifecycle-and-state-seeding.md)
 - [scheduled ops jobs (ADR 0036)](../decisions/0036-scheduled-ops-jobs.md)
-- [apps/api/src/services/twitch/client.ts](../../apps/api/src/services/twitch/client.ts) — `getStreamsByUserIds`
-- [apps/api/src/services/eventsub/process.ts](../../apps/api/src/services/eventsub/process.ts) — only current caller of `getStreamsByUserIds` outside seeding
+- `getStreamsByUserIds` in the Twitch client
+- `stream.online` event processing — only current caller of `getStreamsByUserIds` outside seeding
 
 ## Question
 
@@ -20,12 +20,12 @@ Two related questions came up while discussing how to keep `viewer_count` fresh 
 
 ## Findings
 
-**Batch endpoint already in use.** `GET /helix/streams` (Twitch "Get Streams") accepts up to 100 `user_id` params per request and returns `viewer_count`, `game_id`/`game_name`, `title`, `started_at` for whichever of those are currently live (absent = offline). The project already has this wrapped as [`getStreamsByUserIds`](../../apps/api/src/services/twitch/client.ts:345), batching at 100 per the same D1/Twitch-style constraint pattern used elsewhere in the codebase.
+**Batch endpoint already in use.** `GET /helix/streams` (Twitch "Get Streams") accepts up to 100 `user_id` params per request and returns `viewer_count`, `game_id`/`game_name`, `title`, `started_at` for whichever of those are currently live (absent = offline). The project already has this wrapped as `getStreamsByUserIds`, batching at 100 per the same D1/Twitch-style constraint pattern used elsewhere in the codebase.
 
 **Current call sites, verified by grep — no periodic refresh exists today.** `getStreamsByUserIds` is called in exactly two places:
 
-- [`services/monitoring.ts`](../../apps/api/src/services/monitoring.ts:84) — fill-only seeding when a broadcaster starts being monitored.
-- [`services/eventsub/process.ts`](../../apps/api/src/services/eventsub/process.ts:87), inside `processStreamOnline` — fetched once, at the moment a `stream.online` EventSub event arrives.
+- Monitoring — fill-only seeding when a broadcaster starts being monitored.
+- `services/eventsub/process.ts`, inside `processStreamOnline` — fetched once, at the moment a `stream.online` EventSub event arrives.
 
 There is no cron or route that refreshes `viewer_count` while a stream stays live; it is fetched once at go-live and stays stale (from the app's point of view) until the stream ends. The hypothetical "cron every 5 minutes" that triggered this discussion does not exist in the codebase — it was a forward-looking design question, not a description of current behavior.
 

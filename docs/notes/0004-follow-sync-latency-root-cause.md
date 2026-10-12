@@ -8,9 +8,9 @@ Informational
 
 - [Issue #54](https://github.com/antonbsa/twitch-radar/issues/54)
 - [ADR 0042 - Async Follow Sync Via Queue With KV-Backed Progress Polling](../decisions/0042-async-follow-sync-with-progress-polling.md) (Rejected as a result of this investigation)
-- [apps/api/src/services/twitch/sync.ts](../../apps/api/src/services/twitch/sync.ts)
-- [apps/api/src/services/monitoring.ts](../../apps/api/src/services/monitoring.ts)
-- [apps/api/src/db/repositories/followed-channels.ts](../../apps/api/src/db/repositories/followed-channels.ts)
+- follow sync (`syncFollowedChannels`)
+- monitoring (broadcaster state seeding)
+- the `followed_channels` repository
 
 ## Question
 
