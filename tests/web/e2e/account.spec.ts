@@ -6,7 +6,7 @@ import {
 } from "./orchestrator/test-seam-client"
 import { WEB_URL } from "./setup/browser"
 import { it } from "./setup/fixtures"
-import { expectVisible } from "./setup/assertions"
+import { expectHidden, expectVisible } from "./setup/assertions"
 import { preventLinkNavigation } from "./setup/navigation"
 import {
   mockNotificationPermission,
@@ -84,10 +84,33 @@ describe("Account view", () => {
     )
 
     await page.getByRole("button", { name: "Disable on this device" }).click()
+    await page
+      .getByRole("alertdialog")
+      .getByRole("button", { name: "Disable", exact: true })
+      .click()
     await expectVisible(page.getByText("Status: Not enabled"))
     await expectVisible(
       page.getByRole("button", { name: "Enable Notifications" }),
     )
+  })
+
+  it("should keep push enabled when the disable confirmation is cancelled", async ({
+    authenticatedSession,
+  }) => {
+    const { page } = authenticatedSession
+    await mockPushEnvironment(page)
+
+    await page.goto(`${WEB_URL}/account`)
+    await page.getByRole("button", { name: "Enable Notifications" }).click()
+    await expectVisible(page.getByText("Status: Enabled"))
+
+    await page.getByRole("button", { name: "Disable on this device" }).click()
+    await page
+      .getByRole("alertdialog")
+      .getByRole("button", { name: "Cancel" })
+      .click()
+    await expectHidden(page.getByRole("alertdialog"))
+    await expectVisible(page.getByText("Status: Enabled"))
   })
 
   it("should show an error toast when enabling push fails", async ({
