@@ -12,7 +12,7 @@ afterAll(async () => {
 describe("GET /api/health", () => {
   it("should return successful health response", async () => {
     const res = await fetch(`${orchestrator.baseUrl}/api/health`)
-    expect(res.status).toBe(201)
+    expect(res.status).toBe(200)
     await expect(res.json()).resolves.toMatchObject({
       ok: true,
       service: "twitch-radar-api",
