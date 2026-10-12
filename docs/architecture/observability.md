@@ -24,6 +24,14 @@ Volume is controlled by structure, not random sampling, which would drop the rar
 
 Only production pages anyone: the Sentry environment tag is taken from the app's environment and alert rules filter on production. Preview reports but is quiet, and local never reports. Both the Sentry DSN and the Slack webhook are optional secrets, so a fresh checkout or CI simply doesn't report, and an alert that fails to send never fails the request, message or job it was about.
 
+## Frontend Errors
+
+The PWA reports to a **separate Sentry project** in the same organization, so browser noise (extensions, flaky client networks) stays out of the backend project whose alerts are worth waking up for ([ADR 0047](../decisions/0047-error-alerting-via-sentry-and-slack-webhook.md)). Errors only: no tracing, no session replay, no personal data.
+
+- **Render errors and uncaught failures both count.** React's root error handlers catch render errors, and the SDK's global handlers catch uncaught errors and unhandled promise rejections.
+- **Same gating as the backend.** Reporting is off unless the build has a DSN and is a preview or production build, which doubles as the Sentry environment. The DSN is public and ships in the bundle. Alerting is an email for new production issues; there is no Slack for the frontend.
+- **Readable stacks without public source maps.** CI uploads source maps to Sentry during the build when it has an auth token, then deletes them from the output, so they are never served.
+
 ## What Isn't Covered
 
-The browser has no error reporting yet; its one log call is gated to development builds ([ADR 0040](../decisions/0040-structured-leveled-logging-convention.md)).
+The service worker is not instrumented. It is a classic script with no build step ([ADR 0026](../decisions/0026-manual-service-worker-without-vite-plugin-pwa.md)), so it cannot load the SDK and failures in its push or notification-click handlers go unreported. The browser's one log call is gated to development builds ([ADR 0040](../decisions/0040-structured-leveled-logging-convention.md)).
