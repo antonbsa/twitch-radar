@@ -1,0 +1,71 @@
+name: Test reports
+
+# Publishes failed PR test reports and keeps one PR comment with their links (ADR 0060). It's a separate
+# workflow so tests.yaml, which deploys call, needs no pull-requests: write. workflow_run always runs the
+# default branch's copy of this file with the repo's secrets, so PR code never runs next to the deploy key.
+on:
+  workflow_run:
+    workflows: ["Automated tests"]
+    types: [completed]
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: write
+
+jobs:
+  report:
+    name: Publish failure report
+    # Same-repo PRs only (fork PRs get no secrets). Cancelled runs leave the previous comment alone.
+    if: >-
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      (github.event.workflow_run.conclusion == 'failure' || github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-24.04
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PR: ${{ github.event.workflow_run.pull_requests[0].number }}
+      RUN_ID: ${{ github.event.workflow_run.id }}
+      RUN_URL: ${{ github.event.workflow_run.html_url }}
+      CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+      MARKER: "<!-- ci-test-reports -->"
+    steps:
+      - uses: actions/checkout@v5
+      - name: Download test reports
+        if: env.CONCLUSION == 'failure'
+        uses: actions/download-artifact@v5
+        with:
+          pattern: test-report-*
+          merge-multiple: true
+          path: reports
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+        # A tier that failed before producing results (e.g. a broken install) has no artifact.
+        continue-on-error: true
+      - name: Publish reports
+        id: publish
+        if: env.CONCLUSION == 'failure'
+        env:
+          CI_REPORTS_DEPLOY_KEY: ${{ secrets.CI_REPORTS_DEPLOY_KEY }}
+        run: |
+          if [ -d reports ] && [ -n "$(ls -A reports)" ]; then
+            url=$(node infra/scripts/ci/ci-reports.mjs publish "$PR" "$RUN_ID" "$RUN_URL" reports)
+            echo "url=$url" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Replace PR comment
+        env:
+          REPORT_URL: ${{ steps.publish.outputs.url }}
+        run: |
+          # Drop the previous comment and post a fresh one, so the newest links sit at the bottom of the thread.
+          gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate \
+            --jq ".[] | select(.body | contains(\"$MARKER\")) | .id" |
+            while read -r id; do
+              gh api -X DELETE "repos/$GITHUB_REPOSITORY/issues/comments/$id"
+            done
+
+          if [ "$CONCLUSION" = failure ]; then
+            body="$MARKER"$'\n'"### :rotating_light: Automated tests failed"$'\n'
+            if [ -n "$REPORT_URL" ]; then body+=$'\n'"- [Test report]($REPORT_URL)"; fi
+            body+=$'\n'"- [Workflow run]($RUN_URL)"
+            gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" -f body="$body"
+          fi
