@@ -37,11 +37,17 @@ describe("resolveIconEnvironment", () => {
 })
 
 describe("buildIconSvgs", () => {
-  it("should keep the green dot and no pill in production", () => {
+  it("should keep the purple dot and no pill in production", () => {
     const { small, large } = buildIconSvgs("production")
-    expect(small).toContain("#22c55e")
+    expect(small).toContain("#9146ff")
     expect(large).toBe(small)
     expect(large).not.toContain('<rect x="312"')
+  })
+
+  it("should drop the rounded corners for the full-bleed maskable icon", () => {
+    const { large, maskable } = buildIconSvgs("production")
+    expect(large).toContain('rx="96"')
+    expect(maskable).not.toContain('rx="96"')
   })
 
   it.each([
@@ -52,12 +58,15 @@ describe("buildIconSvgs", () => {
     (env, color) => {
       const { small, large } = buildIconSvgs(env)
       expect(small).toContain(color)
-      expect(small).not.toContain("#22c55e")
+      expect(small).not.toContain("#9146ff")
       expect(small).not.toContain('<rect x="312"')
       expect(large).toContain(
         `<rect x="312" y="372" width="148" height="84" rx="42" fill="${color}"/>`,
       )
       expect(large).not.toContain("<text")
+      const { maskable } = buildIconSvgs(env)
+      expect(maskable).toContain(color)
+      expect(maskable).toContain('transform="translate(386 386) scale(.75)')
     },
   )
 })
@@ -65,8 +74,8 @@ describe("buildIconSvgs", () => {
 describe("appIconPlugin bundle output", () => {
   it.each([
     ["build", "preview", "#3b82f6"],
-    ["build", "production", "#22c55e"],
-    ["build", "nonsense", "#22c55e"],
+    ["build", "production", "#9146ff"],
+    ["build", "nonsense", "#9146ff"],
   ] as const)(
     "should emit the icons for %s --mode %s",
     async (command, mode, color) => {
