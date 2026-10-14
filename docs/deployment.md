@@ -163,3 +163,30 @@ cd apps/api && npx wrangler d1 migrations apply twitch-radar-prod --remote --env
 # or, for preview:
 cd apps/api && npx wrangler d1 migrations apply twitch-radar-preview --remote --env preview
 ```
+
+## Backup And Recovery
+
+What is lost depends on what is restored. D1 holds everything that can't be rebuilt: users, encrypted Twitch tokens, push subscriptions, follows, preferences and delivery history. KV holds only disposable state (sessions, OAuth state, the app token), and Twitch-side EventSub subscriptions are repaired by reconciliation within 30 minutes ([architecture overview](architecture/overview.md#recovery)).
+
+**Restore to a point in time (bad migration, bad write).** D1 Time Travel keeps a point-in-time history of each database (30 days on the paid plan, 7 on the free plan). Run from `apps/api`:
+
+```sh
+npx wrangler d1 time-travel info twitch-radar-prod --env production
+npx wrangler d1 time-travel restore twitch-radar-prod --env production --timestamp=<ISO-8601 or unix>
+```
+
+The restore rewrites the database in place and prints the bookmark from just before it; restoring to that bookmark undoes the restore. Everything written after the chosen time is lost, including delivery rows for pushes that already went out, so the cooldown (ADR 0056) may let a repeat notification through in the window afterwards.
+
+**Keep a copy outside Cloudflare.** Time Travel doesn't survive deleting the database. Before a risky migration, or on a schedule you choose, export it:
+
+```sh
+npx wrangler d1 export twitch-radar-prod --remote --env production --output=twitch-radar-prod.sql
+```
+
+The export contains encrypted Twitch tokens and push endpoints; store it like a secret and don't commit it. To load it into a new database, create one as in "One-Time Cloudflare Setup", point the environment's `database_id` at it, and `wrangler d1 execute <db> --remote --env production --file=twitch-radar-prod.sql`.
+
+**After a restore or a rebuild:**
+
+1. Wait for (or watch) the 30-minute reconciliation: it recreates missing EventSub subscriptions and deletes ones the database no longer knows ([monitoring](architecture/monitoring.md)).
+2. If the database came back empty, users sign in again and re-create their alerts; nothing else restores them. Sessions for ids that no longer exist fail authorization and send the person to the login screen.
+3. If `TOKEN_ENCRYPTION_KEY` changed, restored tokens can't be decrypted: every user lands in the reconnect state and signs in again.
