@@ -136,6 +136,38 @@ A small cache table holds category artwork ([ADR 0058](../decisions/0058-cache-c
 - **Hand-mirrored wire types.** Two small DTO sets, edited together, are cheaper than a shared package that would blur the isolation between the Worker and the browser bundle ([ADR 0028](../decisions/0028-mirror-wire-shape-types-across-workspaces.md)).
 - **Same-origin everywhere.** API and web share one public URL in every environment, so cookies, OAuth redirects and webhook callbacks derive from a single value ([ADR 0037](../decisions/0037-single-public-url-same-origin-deployment.md)).
 
+## Scaling Limits
+
+The design is sized for a small user base on the free plan. These are the limits, in the order they bind as users and follows grow; the first two are already encoded in the code, the rest are headroom that hasn't been measured against real load.
+
+| Limit | What consumes it | What happens at the limit |
+| --- | --- | --- |
+| **Subrequests per invocation (50)** | Every Twitch call and every Queue send in a cron run or a queue batch; D1 queries are not counted | Each job is capped per run (below), so a backlog drains over later minutes instead of failing the invocation ([scheduled jobs](scheduled-jobs.md), [ADR 0057](../decisions/0057-single-minutely-cron-trigger.md)). |
+| **Subscription creation throughput** | One Twitch call per pending subscription, 3 per broadcaster: 30 creates a run, 10 on minutes that also run a periodic job | About 10 new broadcasters a minute, 3 on a periodic minute. Promoting a large follow graph at once (a user enabling a global alert) takes hours to reach full push coverage; channel state is seeded immediately, so only future transitions wait ([TN 0003](../notes/0003-eventsub-subscription-cost-of-broadening-monitoring-scope.md)). |
+| **EventSub `max_total_cost`** | 1 point per subscription for broadcasters who haven't authorized the app, which is nearly all of them | Twitch rejects new subscriptions. The ceiling grows with users who authorize the app, not with follows, and Twitch doesn't publish it, so it is the first limit that follow growth can break from outside the Worker ([TN 0003](../notes/0003-eventsub-subscription-cost-of-broadening-monitoring-scope.md)). |
+| **Reconciliation loads whole tables** | The local subscription and monitored-channel tables plus Twitch's full list, every 30 minutes, with at most 20 remote deletes a run | Fine at current size; it needs paging once the broadcaster count is large ([ADR 0036](../decisions/0036-scheduled-ops-jobs.md)). |
+| **Other per-run caps** | Token refresh (2 refreshes and 3 validations a run), snooze sweep (30 a run), follow re-sync (3 users an hour) | Each is a drain rate, not a failure point: the follow re-sync only serves users who have been away for a day, because anyone opening the app syncs on load ([follow sync](follow-sync.md)). |
+| **KV daily write quota** | Logins, the one-time OAuth state, session renewals (about one a week per active user) and the app token | Writes would start failing. Per-event KV writes were removed for this reason (webhook dedupe, a token-refresh lock), which leaves writes proportional to logins and active users, not to Twitch traffic ([auth](auth.md), [monitoring](monitoring.md)). |
+| **Helix rate limits** | The stream lookup when an event arrives, batched 100 per request on the shared app token | Scales with distinct live monitored broadcasters, not with users, and has orders of magnitude of headroom ([TN 0001](../notes/0001-viewer-count-freshness-and-rate-limit-scalability.md), [TN 0002](../notes/0002-viewer-count-cron-sufficiency-for-twitch-like-freshness.md)). |
+
+At 10x the users, the first thing to break is the Twitch-side subscription cost cap if the extra users bring many new broadcasters, and the first thing to hurt is the time a new global alert takes to reach full coverage. Neither is visible in the app until it bites: Twitch returns the current cost and cap on the list call reconciliation already makes, but nothing records them yet ([TN 0003](../notes/0003-eventsub-subscription-cost-of-broadening-monitoring-scope.md) proposes how). The growth of the append-only tables in D1 is a separate, slower concern with no pruning today.
+
+## Security
+
+The controls live in the subsystem pages; this is the map of them.
+
+- **Identity.** Twitch is the only login, with one read scope. The OAuth `state` is one-time and expires in ten minutes ([auth](auth.md), [ADR 0017](../decisions/0017-kv-oauth-state.md)).
+- **Sessions.** An opaque id in an `HttpOnly`, `Secure`, `SameSite=Lax` cookie backed by KV, with a hard 180-day ceiling; logout deletes the entry, so it is immediate ([ADR 0016](../decisions/0016-kv-session-management.md)).
+- **Stored credentials.** Twitch tokens are encrypted with AES-256-GCM in D1; a dead refresh token is flagged instead of retried forever ([ADR 0018](../decisions/0018-aes-gcm-token-encryption.md)).
+- **Webhook.** Authenticated by an HMAC over the raw body, compared in constant time, with a ten-minute replay window ([monitoring](monitoring.md), [ADR 0032](../decisions/0032-eventsub-webhook-verification-and-queueing.md)). Subscriptions are only touched when their callback URL is this deployment's own, since environments share one Twitch application.
+- **Push.** Payloads are end-to-end encrypted to the device and signed with per-environment VAPID keys ([notification delivery](notification-delivery.md), [ADR 0035](../decisions/0035-web-push-via-webcrypto.md)).
+- **Attack surface.** The test and sandbox routes are compiled out of the production bundle, and a check verifies it ([testing](testing.md), [ADR 0046](../decisions/0046-sandbox-personas-for-dev-and-preview.md)).
+- **Tokens never reach the browser.** The client calls only this API; every Twitch call is made server-side.
+
+## Recovery
+
+Reconciliation repairs what is derived from Twitch: after a database reset it recreates the EventSub subscriptions for the monitored set. What it can't recover is what only this system knew: users, their encrypted Twitch tokens, push subscriptions, preferences and delivery history. Those come back only from a D1 restore ([deployment: backup and recovery](../deployment.md#backup-and-recovery)). KV needs none: sessions, OAuth state and the app token are disposable, and losing them only logs people out.
+
 ## Where To Go Next
 
 | Page | Covers |
@@ -146,6 +178,7 @@ A small cache table holds category artwork ([ADR 0058](../decisions/0058-cache-c
 | [State transitions and matching](state-and-matching.md) | Turning events into channel state, and transitions into the users to notify |
 | [Notification delivery](notification-delivery.md) | Push, snooze, suppression, cooldown |
 | [Scheduled jobs](scheduled-jobs.md) | The minutely cron and what runs on it |
+| [Web client](web-client.md) | Routes, server-state cache, foreground sync, the service worker |
 | [Observability and alerting](observability.md) | Logs, error alerting |
 | [Testing strategy](testing.md) | The two test tiers, the test seam and the sandbox |
 | [Deploy and release](deploy-and-release.md) | Environments, CI, preview and production |

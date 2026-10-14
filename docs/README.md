@@ -5,7 +5,7 @@ Start with the [product overview](product.md) for what Twitch Radar does, then p
 | Doc | Read it when |
 | --- | --- |
 | [product.md](product.md) | You want to know what the app is for, how a notification is decided, and what it deliberately doesn't do. |
-| [architecture/](architecture/overview.md) | You want to understand how the system works end to end and why: start with the overview, then the subsystem pages (auth, follow sync, monitoring, matching, delivery, jobs, observability, testing, deploy, engineering process). |
+| [architecture/](architecture/overview.md) | You want to understand how the system works end to end and why: start with the overview, then the subsystem pages (auth, follow sync, monitoring, matching, delivery, jobs, web client, observability, testing, deploy, engineering process). |
 | [development.md](development.md) | You're setting up locally, testing push (including from a phone), or working with env vars, ports and worktrees. |
 | [deployment.md](deployment.md) | You're standing up or redeploying the Cloudflare environments, rotating secrets, or deploying manually. |
 | [api-contract.md](api-contract.md) | You need the HTTP surface: routes, shapes and errors. |
