@@ -65,6 +65,7 @@ Other project documents may state goals, requirements, task scope, validation st
 - [0060 - Publish Failed CI Test Reports To A Separate Pages Repo](0060-publish-failed-ci-test-reports-to-a-pages-repo.md)
 - [0061 - Concurrency Rules For CI And Deploy Workflows](0061-concurrency-rules-for-ci-and-deploy-workflows.md)
 - [0062 - Human-Facing Architecture Documentation](0062-human-facing-architecture-docs.md)
+- [0063 - Scheduled Encrypted D1 Exports To Backblaze B2](0063-scheduled-encrypted-d1-exports-to-backblaze-b2.md)
 
 ## Proposed ADRs
 
