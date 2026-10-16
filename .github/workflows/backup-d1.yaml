@@ -35,6 +35,12 @@ jobs:
       - name: Export production D1
         working-directory: apps/api
         run: npx wrangler d1 export twitch-radar-prod --remote --env production --output="$RUNNER_TEMP/dump.sql"
+      # wrangler writes tables alphabetically, so a child table gets rows before its parent (users) exists and
+      # the import fails with "no such table". Moving every INSERT after the schema makes the dump restorable as-is.
+      - name: Put the schema before the data
+        run: |
+          awk '/^INSERT INTO/ { data = data $0 "\n"; next } { print } END { printf "%s", data }' "$RUNNER_TEMP/dump.sql" > "$RUNNER_TEMP/dump-ordered.sql"
+          mv "$RUNNER_TEMP/dump-ordered.sql" "$RUNNER_TEMP/dump.sql"
       # A dump that doesn't import, or imports empty, is worse than none: fail before uploading it.
       - name: Verify the dump imports into a local D1
         working-directory: apps/api
@@ -48,13 +54,6 @@ jobs:
               exit 1
             fi
           done
-      # Structure only (statement heads, no row data) so a failed import can be diagnosed from the log.
-      - name: Show dump structure
-        if: failure()
-        run: |
-          grep -n -E '^(PRAGMA|DROP|CREATE TABLE)' "$RUNNER_TEMP/dump.sql" | cut -c1-90
-          grep -n -o -E '^INSERT INTO [^ (]+' "$RUNNER_TEMP/dump.sql" | awk -F: '!seen[$2]++'
-          grep -c '' "$RUNNER_TEMP/dump.sql"
       - name: Encrypt the dump
         run: age --encrypt --recipients-file infra/backups/age-recipient.txt --output "$RUNNER_TEMP/dump.sql.age" "$RUNNER_TEMP/dump.sql"
       # The key is scoped to the backup bucket; the 30-day lifecycle rule lives on the bucket (ADR 0063).
