@@ -48,6 +48,13 @@ jobs:
               exit 1
             fi
           done
+      # Structure only (statement heads, no row data) so a failed import can be diagnosed from the log.
+      - name: Show dump structure
+        if: failure()
+        run: |
+          grep -n -E '^(PRAGMA|DROP|CREATE TABLE)' "$RUNNER_TEMP/dump.sql" | cut -c1-90
+          grep -n -o -E '^INSERT INTO [^ (]+' "$RUNNER_TEMP/dump.sql" | awk -F: '!seen[$2]++'
+          grep -c '' "$RUNNER_TEMP/dump.sql"
       - name: Encrypt the dump
         run: age --encrypt --recipients-file infra/backups/age-recipient.txt --output "$RUNNER_TEMP/dump.sql.age" "$RUNNER_TEMP/dump.sql"
       # The key is scoped to the backup bucket; the 30-day lifecycle rule lives on the bucket (ADR 0063).
