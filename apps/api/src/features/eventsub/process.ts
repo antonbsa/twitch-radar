@@ -123,7 +123,7 @@ async function processStreamOnline(
     startedAt,
     // A new stream starts in its first category (issue #120).
     categoryStartedAt: startedAt,
-    // ADR 0050: notification matching suppresses anything but "live" so a
+    // ADR 0051: notification matching suppresses anything but "live" so a
     // rerun/playlist/watch_party doesn't page anyone.
     streamType: stream?.type ?? event.type,
   }

@@ -15,6 +15,7 @@ export interface UpsertChannelStateInput {
   // Exact start of the current category, or null for "unknown" (issue #120).
   // Ignored when `upsertAll` runs with `preserveCategoryStartedAt`.
   categoryStartedAt?: string | null
+  // Null keeps the stored value: only Events know the stream type (ADR 0033).
   streamType?: string | null
   // Explicit values win over the live→offline capture in `upsertAll`; seeds
   // set them directly, EventSub offline passes its own event timestamp.
@@ -23,7 +24,8 @@ export interface UpsertChannelStateInput {
   lastCategoryName?: string | null
   // Twitch's message timestamp when the write comes from an EventSub event;
   // the stale-event guard compares against it (ADR 0033). Seeding leaves it
-  // unset so the first event for a seeded channel always processes.
+  // unset so the first event for a seeded channel always processes; null on
+  // conflict keeps the stored value, so a Snapshot never clears the guard.
   updatedFromEventAt?: string | null
   now: string
 }
@@ -132,14 +134,14 @@ export class ChannelStateRepository {
               categoryStartedAt: options.preserveCategoryStartedAt
                 ? sql`CASE WHEN excluded.stream_id IS NOT NULL AND excluded.stream_id = ${channelState.streamId} AND excluded.category_id IS ${channelState.categoryId} THEN ${channelState.categoryStartedAt} ELSE NULL END`
                 : sql`excluded.category_started_at`,
-              streamType: sql`excluded.stream_type`,
+              streamType: sql`COALESCE(excluded.stream_type, ${channelState.streamType})`,
               // On a live→offline transition, capture when and what it last
               // streamed from the row being replaced, in the same upsert (no
               // extra read). Any other write keeps the stored values.
               lastLiveAt: sql`CASE WHEN ${channelState.isLive} = 1 AND excluded.is_live = 0 THEN COALESCE(excluded.last_live_at, excluded.updated_at) ELSE COALESCE(excluded.last_live_at, ${channelState.lastLiveAt}) END`,
               lastCategoryId: sql`CASE WHEN ${channelState.isLive} = 1 AND excluded.is_live = 0 THEN COALESCE(excluded.last_category_id, ${channelState.categoryId}) ELSE COALESCE(excluded.last_category_id, ${channelState.lastCategoryId}) END`,
               lastCategoryName: sql`CASE WHEN ${channelState.isLive} = 1 AND excluded.is_live = 0 THEN COALESCE(excluded.last_category_name, ${channelState.categoryName}) ELSE COALESCE(excluded.last_category_name, ${channelState.lastCategoryName}) END`,
-              updatedFromEventAt: sql`excluded.updated_from_event_at`,
+              updatedFromEventAt: sql`COALESCE(excluded.updated_from_event_at, ${channelState.updatedFromEventAt})`,
               updatedAt: sql`excluded.updated_at`,
             },
           }),

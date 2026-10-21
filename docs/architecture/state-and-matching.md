@@ -28,6 +28,8 @@ What each event does:
 
 A stream's type is stored too. Reruns, playlists and watch parties are not live broadcasts, and an unknown type is treated as live, because only an observed non-live type is strong enough evidence to stay silent ([ADR 0051](../decisions/0051-suppress-non-live-stream-type-notifications.md)).
 
+Polling Twitch (the follow sync and the seed for newly monitored channels) only takes a snapshot of who is live. A snapshot never erases what only events know: the stream type, the timestamp of the last applied event (so the stale guard keeps working), and an offline channel's category, title and thumbnail ([ADR 0033](../decisions/0033-eventsub-state-transition-rules.md)).
+
 ## Matching
 
 When processing yields a transition, the matcher decides who to notify ([ADR 0034](../decisions/0034-notification-matching-and-delivery-pipeline.md), [ADR 0008](../decisions/0008-send-category-notifications-only-for-future-matching-transitions.md)):

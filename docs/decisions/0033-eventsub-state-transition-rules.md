@@ -10,7 +10,7 @@ ADR 0006 splits current state (`channel_state`) from relevant history (`channel_
 
 ## Decision
 
-The queue consumer (`services/eventsub/process.ts`) applies each message as: idempotency check → load previous state → stale guard → write next `channel_state` → insert `channel_state_changes` row if the transition is relevant.
+The queue consumer (`features/eventsub/process.ts`) applies each message as: idempotency check → load previous state → stale guard → write next `channel_state` → insert `channel_state_changes` row if the transition is relevant.
 
 - **Idempotency:** a message whose id already exists in `channel_state_changes.eventsub_message_id` is skipped, and change inserts use on-conflict-do-nothing on that unique column. This is the hard guarantee behind the webhook's best-effort KV dedupe (ADR 0032).
 - **Stale guard:** `channel_state.updated_from_event_at` stores the Twitch message timestamp of the event that last wrote the row. A message strictly older than it is dropped entirely (state and history), so a late retry can't overwrite newer state or fabricate a transition. Seeded rows (ADR 0030) leave the column null, so the first real event always processes. Equal timestamps process — exact duplicates are already caught by message id.
@@ -26,3 +26,11 @@ The queue consumer (`services/eventsub/process.ts`) applies each message as: ide
 - Processing events for broadcasters with no state row works (treated as offline baseline), so a webhook arriving before seeding completes is safe.
 - One Get Streams call per `stream.online` message; acceptable at MVP scale and batchable later if needed.
 - The stale guard is per broadcaster, not per event type — a newer `channel.update` write drops an older retried `stream.online`, which is correct because the newer event already reflected the later reality.
+
+## Amendment: Snapshots never erase what only Events know
+
+A Snapshot (follow sync or the monitoring seed polling Twitch) never erases what only Events know: the stream type (ADR 0051), the last applied event timestamp (`updated_from_event_at`, the stale guard above) and an offline channel's category, title and thumbnail (kept current by `channel.update`).
+
+- **Stream type and event timestamp:** the `channel_state` upsert keeps the stored value when the write carries none (`COALESCE`). Without this, a sync during a rerun made the channel look live and disabled the stale guard.
+- **Offline category, title and thumbnail:** an offline Snapshot carries the stored values forward. A live Snapshot still writes what Twitch reports, because a live stream without a category is a legitimate null.
+- **Consequence:** no writer can null the stream type or event timestamp of an existing row through the upsert; the seed only creates rows that don't exist yet, so it is unaffected.
