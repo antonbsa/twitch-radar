@@ -10,7 +10,7 @@ ADR 0006 splits current state (`channel_state`) from relevant history (`channel_
 
 ## Decision
 
-The queue consumer (`features/eventsub/process.ts`) applies each message as: idempotency check → load previous state → stale guard → write next `channel_state` → insert `channel_state_changes` row if the transition is relevant.
+The queue consumer applies each message through the Channel State module (`features/channel-state/`, `applyEvent`) as: idempotency check → load previous state → stale guard → write next `channel_state` → insert `channel_state_changes` row if the transition is relevant.
 
 - **Idempotency:** a message whose id already exists in `channel_state_changes.eventsub_message_id` is skipped, and change inserts use on-conflict-do-nothing on that unique column. This is the hard guarantee behind the webhook's best-effort KV dedupe (ADR 0032).
 - **Stale guard:** `channel_state.updated_from_event_at` stores the Twitch message timestamp of the event that last wrote the row. A message strictly older than it is dropped entirely (state and history), so a late retry can't overwrite newer state or fabricate a transition. Seeded rows (ADR 0030) leave the column null, so the first real event always processes. Equal timestamps process — exact duplicates are already caught by message id.

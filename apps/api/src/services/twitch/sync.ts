@@ -13,15 +13,8 @@ import {
   getUsersByIds,
   type TwitchFollowedChannel,
 } from "./users"
-import {
-  getAllFollowedStreams,
-  resolveThumbnailUrl,
-  type TwitchFollowedStream,
-} from "./streams"
-import {
-  preserveCategoryStartedAt,
-  type ChannelStateRecord,
-} from "../../db/repositories/channel-state"
+import { getAllFollowedStreams } from "./streams"
+import { applySnapshot } from "../../features/channel-state/service"
 import { withUserAccessToken } from "./token-refresh"
 
 // Refresh every user's follow list daily even when they don't open the app:
@@ -35,23 +28,10 @@ const MAX_FOLLOW_SYNCS_PER_RUN = 3
 
 export interface FollowedChannelsSyncFetch {
   channels: TwitchFollowedChannel[]
-  streamByBroadcasterId: Map<string, TwitchFollowedStream>
   profileImageByBroadcasterId: Map<string, string>
-  storedStateById: Map<string, ChannelStateRecord>
+  /** Writes the Channel States the payload was built from. */
+  commitChannelStates: () => Promise<void>
   payload: FollowedChannelViewItem[]
-}
-
-/**
- * An offline snapshot has no channel info, so the stored values stay: channel.update
- * keeps them current while offline and a Snapshot must not erase them (ADR 0033).
- */
-function carriedOfflineInfo(stored: ChannelStateRecord | undefined) {
-  return {
-    category_id: stored?.category_id ?? null,
-    category_name: stored?.category_name ?? null,
-    title: stored?.title ?? null,
-    thumbnail_url: stored?.thumbnail_url ?? null,
-  }
 }
 
 /**
@@ -107,34 +87,21 @@ export async function fetchFollowedChannelsSync(
   twitchUserId: string,
   accessToken: string,
 ): Promise<FollowedChannelsSyncFetch> {
-  const [channels, streams, storedProfileImages, storedStates] =
-    await Promise.all([
-      getAllFollowedChannels(
-        config.twitchClientId,
-        accessToken,
-        twitchUserId,
-        config.twitchApiBaseUrl,
-      ),
-      getAllFollowedStreams(
-        config.twitchClientId,
-        accessToken,
-        twitchUserId,
-        config.twitchApiBaseUrl,
-      ),
-      db.followedChannels.findProfileImageUrlsByUserId(userId),
-      // Stored state feeds the category_started_at preserve rule so the
-      // response matches what the deferred upsert will persist (issue #120).
-      db.followedChannels
-        .findByUserId(userId)
-        .then((followed) =>
-          db.channelState.findByBroadcasterUserIds(
-            followed.map((ch) => ch.broadcaster_user_id),
-          ),
-        ),
-    ])
-  const storedStateById = new Map(
-    storedStates.map((state) => [state.broadcaster_user_id, state]),
-  )
+  const [channels, streams, storedProfileImages] = await Promise.all([
+    getAllFollowedChannels(
+      config.twitchClientId,
+      accessToken,
+      twitchUserId,
+      config.twitchApiBaseUrl,
+    ),
+    getAllFollowedStreams(
+      config.twitchClientId,
+      accessToken,
+      twitchUserId,
+      config.twitchApiBaseUrl,
+    ),
+    db.followedChannels.findProfileImageUrlsByUserId(userId),
+  ])
 
   const profileImageByBroadcasterId = await resolveProfileImages(
     config,
@@ -144,7 +111,17 @@ export async function fetchFollowedChannelsSync(
     userId,
   )
 
-  const streamByBroadcasterId = new Map(streams.map((s) => [s.user_id, s]))
+  // Reads stored state and computes the rows now; the write is `commit`, so
+  // the response can go out before D1 is written (issue #83).
+  const snapshot = await applySnapshot(
+    db,
+    channels.map((ch) => ch.broadcaster_id),
+    streams,
+    new Date().toISOString(),
+  )
+  const stateById = new Map(
+    snapshot.states.map((state) => [state.broadcaster_user_id, state]),
+  )
 
   const payload = buildFollowedChannelsView(
     channels.map((ch) => ({
@@ -155,53 +132,13 @@ export async function fetchFollowedChannelsSync(
         profileImageByBroadcasterId.get(ch.broadcaster_id) ?? null,
       followed_at: ch.followed_at,
     })),
-    new Map(
-      channels.map((ch) => {
-        const stream = streamByBroadcasterId.get(ch.broadcaster_id)
-        return [
-          ch.broadcaster_id,
-          stream
-            ? {
-                is_live: true,
-                stream_id: stream.id,
-                category_id: stream.game_id || null,
-                category_name: stream.game_name || null,
-                title: stream.title || null,
-                thumbnail_url: resolveThumbnailUrl(stream.thumbnail_url),
-                viewer_count: stream.viewer_count,
-                started_at: stream.started_at,
-                category_started_at: preserveCategoryStartedAt(
-                  storedStateById.get(ch.broadcaster_id),
-                  {
-                    streamId: stream.id,
-                    categoryId: stream.game_id || null,
-                  },
-                ),
-                last_live_at: null,
-                last_category_id: null,
-                last_category_name: null,
-              }
-            : {
-                is_live: false,
-                stream_id: null,
-                ...carriedOfflineInfo(storedStateById.get(ch.broadcaster_id)),
-                viewer_count: null,
-                started_at: null,
-                category_started_at: null,
-                last_live_at: null,
-                last_category_id: null,
-                last_category_name: null,
-              },
-        ]
-      }),
-    ),
+    stateById,
   )
 
   return {
     channels,
-    streamByBroadcasterId,
     profileImageByBroadcasterId,
-    storedStateById,
+    commitChannelStates: snapshot.commit,
     payload,
   }
 }
@@ -220,12 +157,7 @@ async function persistFollowedChannelsSync(
   fetched: Omit<FollowedChannelsSyncFetch, "payload">,
   now: string,
 ): Promise<void> {
-  const {
-    channels,
-    streamByBroadcasterId,
-    profileImageByBroadcasterId,
-    storedStateById,
-  } = fetched
+  const { channels, profileImageByBroadcasterId, commitChannelStates } = fetched
   // followedChannels and channelState write different tables with no
   // dependency on each other's result — run them concurrently instead of
   // stacking two sequential D1 round trips.
@@ -242,38 +174,7 @@ async function persistFollowedChannelsSync(
         now,
       })),
     ),
-    db.channelState.upsertAll(
-      channels.map((ch) => {
-        const stream = streamByBroadcasterId.get(ch.broadcaster_id)
-        const stored = storedStateById.get(ch.broadcaster_id)
-        return stream
-          ? {
-              broadcasterUserId: ch.broadcaster_id,
-              isLive: true,
-              streamId: stream.id,
-              categoryId: stream.game_id || null,
-              categoryName: stream.game_name || null,
-              title: stream.title || null,
-              thumbnailUrl: resolveThumbnailUrl(stream.thumbnail_url),
-              viewerCount: stream.viewer_count,
-              startedAt: stream.started_at,
-              now,
-            }
-          : {
-              broadcasterUserId: ch.broadcaster_id,
-              isLive: false,
-              streamId: null,
-              categoryId: stored?.category_id ?? null,
-              categoryName: stored?.category_name ?? null,
-              title: stored?.title ?? null,
-              thumbnailUrl: stored?.thumbnail_url ?? null,
-              viewerCount: null,
-              startedAt: null,
-              now,
-            }
-      }),
-      { preserveCategoryStartedAt: true },
-    ),
+    commitChannelStates(),
   ])
 
   // A user with an active global preference monitors all followed

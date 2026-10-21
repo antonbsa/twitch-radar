@@ -67,10 +67,13 @@ export class ChannelStateChangesRepository {
 
   /**
    * Inserts a transition record; a duplicate EventSub message id no-ops via
-   * the unique index, which is the hard idempotency guarantee (ADR 0033).
+   * the unique index, which is the hard idempotency guarantee (ADR 0033), and
+   * returns the row already stored.
    */
-  async insertIfNew(input: InsertChannelStateChangeInput): Promise<void> {
-    await this.db
+  async insertIfNew(
+    input: InsertChannelStateChangeInput,
+  ): Promise<ChannelStateChangeRecord | null> {
+    const row = await this.db
       .insert(channelStateChanges)
       .values({
         id: `csc_${nanoid()}`,
@@ -89,7 +92,11 @@ export class ChannelStateChangesRepository {
         createdAt: input.now,
       })
       .onConflictDoNothing({ target: channelStateChanges.eventsubMessageId })
-      .run()
+      .returning()
+      .get()
+    return row
+      ? toRecord(row)
+      : this.findByEventsubMessageId(input.eventsubMessageId)
   }
 
   async findByEventsubMessageId(

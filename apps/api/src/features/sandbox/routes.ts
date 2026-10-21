@@ -17,6 +17,7 @@ import { encryptToken } from "../../lib/crypto"
 import { parseBody } from "../../http/handlers"
 import { jsonResponse } from "../../http/response"
 import { createSession, sessionCookieHeader } from "../auth/session"
+import { applySnapshot } from "../channel-state/service"
 import {
   accessTokenFor,
   CATEGORIES,
@@ -221,25 +222,30 @@ async function seedPersona(
       now,
     })),
   )
-  await db.channelState.upsertAll(
-    seeded.map(({ broadcasterUserId, stream }) => {
-      const startedAt = stream
-        ? new Date(Date.now() - stream.startedMinutesAgo * 60_000).toISOString()
-        : null
-      return {
-        broadcasterUserId,
-        isLive: stream !== null,
-        streamId: stream?.id ?? null,
-        categoryId: stream?.categoryId ?? null,
-        categoryName: stream?.categoryName ?? null,
-        title: stream?.title ?? null,
-        viewerCount: stream?.viewerCount ?? null,
-        startedAt,
-        categoryStartedAt: startedAt,
-        now,
-      }
-    }),
+  const snapshot = await applySnapshot(
+    db,
+    seeded.map((follow) => follow.broadcasterUserId),
+    seeded.flatMap(({ broadcasterUserId, stream }) =>
+      stream
+        ? [
+            {
+              id: stream.id,
+              user_id: broadcasterUserId,
+              game_id: stream.categoryId,
+              game_name: stream.categoryName,
+              title: stream.title,
+              viewer_count: stream.viewerCount,
+              started_at: new Date(
+                Date.now() - stream.startedMinutesAgo * 60_000,
+              ).toISOString(),
+              thumbnail_url: "",
+            },
+          ]
+        : [],
+    ),
+    now,
   )
+  await snapshot.commit()
 
   for (const pref of fixture.preferences.channel) {
     await db.channelCategoryPreferences.create({ userId, ...pref, now })
