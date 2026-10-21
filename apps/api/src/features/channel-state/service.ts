@@ -43,8 +43,8 @@ function toUpsertInput(state: ChannelStateRecord): UpsertChannelStateInput {
 
 /**
  * Applies a poll of Twitch (follow sync, monitoring seed) to Channel State.
- * Ids absent from `streams` are offline. The read-then-write race with a
- * concurrent Event is accepted.
+ * Ids absent from `streams` are offline. `commit` skips a row an Event
+ * updated since the read, so the Event wins the read-then-write race.
  */
 export async function applySnapshot(
   db: Database,
@@ -71,7 +71,7 @@ export async function applySnapshot(
   )
   return {
     states,
-    commit: () => db.channelState.upsertAll(states.map(toUpsertInput)),
+    commit: () => db.channelState.upsertSnapshotRows(states.map(toUpsertInput)),
   }
 }
 

@@ -53,6 +53,23 @@ export class ChannelStateRepository {
 
   /** Replaces the whole row of each broadcaster; no field is merged with the stored one. */
   async upsertAll(inputs: UpsertChannelStateInput[]): Promise<void> {
+    await this.write(inputs, false)
+  }
+
+  /**
+   * Like `upsertAll`, but a row an Event wrote after the caller read it is
+   * skipped (compare-and-set on `updated_from_event_at`), so a deferred
+   * Snapshot never overwrites a newer Event. Relies on a Snapshot carrying
+   * `updated_from_event_at` over unchanged from the row it read (ADR 0033).
+   */
+  async upsertSnapshotRows(inputs: UpsertChannelStateInput[]): Promise<void> {
+    await this.write(inputs, true)
+  }
+
+  private async write(
+    inputs: UpsertChannelStateInput[],
+    skipIfEventSinceRead: boolean,
+  ): Promise<void> {
     if (inputs.length === 0) return
     // 16 bound params per row (broadcasterUserId, isLive, streamId,
     // categoryId, categoryName, title, thumbnailUrl, viewerCount, startedAt,
@@ -88,6 +105,10 @@ export class ChannelStateRepository {
           )
           .onConflictDoUpdate({
             target: channelState.broadcasterUserId,
+            // IS, not =: the stored value is NULL until the first Event.
+            setWhere: skipIfEventSinceRead
+              ? sql`${channelState.updatedFromEventAt} IS excluded.updated_from_event_at`
+              : undefined,
             set: {
               isLive: sql`excluded.is_live`,
               streamId: sql`excluded.stream_id`,

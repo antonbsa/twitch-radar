@@ -73,13 +73,23 @@ describe("POST /api/__sandbox__/login", () => {
     const cookie = sessionCookie(await loginAs("full"))
 
     const followed = await getJson<{
-      data: { broadcaster_user_id: string; is_live: boolean }[]
+      data: {
+        broadcaster_user_id: string
+        is_live: boolean
+        started_at: string | null
+        category_started_at: string | null
+      }[]
     }>("/api/channels/followed", cookie)
     const ids = followed.data.map((c) => c.broadcaster_user_id).sort()
     expect(ids).toEqual(SEEDED_FULL.map((f) => f.broadcasterUserId).sort())
     expect(followed.data.filter((c) => c.is_live)).toHaveLength(
       SEEDED_FULL.filter((f) => f.stream).length,
     )
+    // The time in category starts at the stream start, as for a stream that
+    // went live in its first category.
+    for (const channel of followed.data.filter((c) => c.is_live)) {
+      expect(channel.category_started_at).toBe(channel.started_at)
+    }
 
     const prefs = await getJson<{
       data: { channel: unknown[]; global: unknown[] }
