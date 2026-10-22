@@ -20,7 +20,7 @@ import { join } from "node:path"
 const [owner, name] = (process.env.GITHUB_REPOSITORY ?? "").split("/")
 const REPO = `${owner}/${name}-ci-reports`
 const PAGES_URL = `https://${owner.toLowerCase()}.github.io/${name}-ci-reports`
-const TIERS = { api: "API tests", e2e: "E2E tests" }
+const TIERS = { api: "API tests", unit: "Web unit tests", e2e: "E2E tests" }
 const INDEX_CSS = `
 :root{color-scheme:light dark}
 body{margin:0;font:16px/1.5 system-ui,sans-serif;background:Canvas;color:CanvasText}

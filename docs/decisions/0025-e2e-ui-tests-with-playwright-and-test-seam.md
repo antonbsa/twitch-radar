@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted. Amended by [ADR 0064](0064-web-unit-tests-as-their-own-tier.md): web unit tests (`tests/web/unit`) now run in their own tier, not in the e2e vitest run.
 
 ## Context
 

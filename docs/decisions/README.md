@@ -30,7 +30,7 @@ Other project documents may state goals, requirements, task scope, validation st
 - [0022 - Use shadcn/ui For Component Primitives](0022-use-shadcn-ui-for-component-primitives.md)
 - [0023 - Use TanStack Query For Server State](0023-use-tanstack-query-for-server-state.md)
 - [0024 - Use React Router v7 For Client Routing](0024-use-react-router-v7-for-client-routing.md)
-- [0025 - E2E UI Tests With Playwright And A Guarded Test-Seam Endpoint](0025-e2e-ui-tests-with-playwright-and-test-seam.md)
+- [0025 - E2E UI Tests With Playwright And A Guarded Test-Seam Endpoint](0025-e2e-ui-tests-with-playwright-and-test-seam.md) — amended by 0064
 - [0026 - Manual Service Worker And Manifest Without vite-plugin-pwa](0026-manual-service-worker-without-vite-plugin-pwa.md)
 - [0027 - Push Subscription Lifecycle And API Contract](0027-push-subscription-lifecycle-and-api-contract.md)
 - [0028 - Mirror Wire-Shape Types Across Workspaces Instead Of A Shared Package](0028-mirror-wire-shape-types-across-workspaces.md)
@@ -66,6 +66,7 @@ Other project documents may state goals, requirements, task scope, validation st
 - [0061 - Concurrency Rules For CI And Deploy Workflows](0061-concurrency-rules-for-ci-and-deploy-workflows.md)
 - [0062 - Human-Facing Architecture Documentation](0062-human-facing-architecture-docs.md)
 - [0063 - Scheduled Encrypted D1 Exports To Backblaze B2](0063-scheduled-encrypted-d1-exports-to-backblaze-b2.md)
+- [0064 - Web Unit Tests As Their Own Tier](0064-web-unit-tests-as-their-own-tier.md)
 
 ## Proposed ADRs
 
