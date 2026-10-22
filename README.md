@@ -40,9 +40,8 @@ Open `http://localhost:5173`. Signing in with a real Twitch account needs creden
 - [Development](docs/development.md): local setup, env vars, push and mobile testing, queues and crons
 - [Deployment](docs/deployment.md): Cloudflare setup, secrets, preview and production releases
 - [Architecture decisions](docs/decisions/README.md) and [technical notes](docs/notes/README.md)
-- [MVP architecture spec](specs/mvp/00.%20architecture.md) (the original plan, kept as history)
 - [Project guidance](AGENTS.md)
 
 ## Contributing
 
-This is a solo-maintained project. Issues and pull requests are welcome! For development conventions and contribution guidance, see `AGENTS.md`.
+This is a solo-maintained project. Issues and pull requests are welcome! How the project is run is described in [Engineering process](docs/architecture/engineering-process.md); conventions for coding agents live in `AGENTS.md`.
