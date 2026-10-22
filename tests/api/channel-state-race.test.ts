@@ -1,8 +1,9 @@
-import { mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs"
-import { join } from "node:path"
+import { mkdtempSync, rmSync } from "node:fs"
+import { join, resolve } from "node:path"
 import { tmpdir } from "node:os"
 import { getPlatformProxy, type PlatformProxy } from "wrangler"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
+import { applyLocalMigrations } from "../shared/setup/process-lifecycle"
 import { Database } from "../../apps/api/src/db"
 import {
   applyEvent,
@@ -10,9 +11,9 @@ import {
 } from "../../apps/api/src/features/channel-state/service"
 
 // The worker under test is a separate process, so this drives the module
-// in-process against a real (Miniflare) D1 with the repo's migrations applied.
+// in-process against a real local D1 migrated by the same helper as global-setup.
 
-const MIGRATIONS = join(__dirname, "../../infra/migrations")
+const REPO_ROOT = resolve(__dirname, "../..")
 const ID = "100"
 const EVENT_AT = "2024-06-01T14:00:00.000Z"
 
@@ -23,23 +24,18 @@ let db: Database
 
 beforeAll(async () => {
   persistDir = mkdtempSync(join(tmpdir(), "channel-state-race-"))
+  await applyLocalMigrations(REPO_ROOT, persistDir)
   proxy = await getPlatformProxy<{ DB: D1Database }>({
-    configPath: join(__dirname, "../../apps/api/wrangler.jsonc"),
-    persist: { path: persistDir },
+    configPath: join(REPO_ROOT, "apps/api/wrangler.jsonc"),
+    // `wrangler --persist-to <dir>` writes under <dir>/v3; the proxy wants that root.
+    persist: { path: join(persistDir, "v3") },
   })
   d1 = proxy.env.DB
-  const files = readdirSync(MIGRATIONS)
-    .filter((f) => f.endsWith(".sql"))
-    .sort()
-  for (const file of files) {
-    const statements = readFileSync(join(MIGRATIONS, file), "utf8")
-      .split("--> statement-breakpoint")
-      .map((s) => s.trim())
-      .filter(Boolean)
-    for (const statement of statements) {
-      await d1.prepare(statement).run()
-    }
-  }
+  // Fail loudly if the proxy's D1 isn't the one the migrations went to.
+  const { results } = await d1
+    .prepare("SELECT name FROM sqlite_master WHERE type = 'table'")
+    .all<{ name: string }>()
+  expect(results.map((r) => r.name)).toContain("channel_state")
   db = new Database(d1)
 })
 

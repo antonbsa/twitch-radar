@@ -12,3 +12,9 @@ Conventions for the API test tier. The tier boots a `wrangler dev` worker plus a
 - Symptom: the new field never shows up in the seeded row, or the test fails to compile in one file but not the other.
 - Why it slips past local checks: the seed input types (`Seed*Input`) are declared in `test-seam/seed.ts` and re-exported by `seam-client.ts`, while the DB writes in `test-seam/seed.ts`, the cleanup in `reset.ts` and the reads in `inspect.ts`, and the typed helpers (`seedPreferences`, ...) and `InspectResponse` record types are in `seam-client.ts`. The worker is a separate process, so a field missing from the handler is dropped silently.
 - Verify: change both files, then run a test that seeds the field and reads it back through `inspect` (or the API response).
+
+## In-process D1 tests
+
+- Default to HTTP against the worker through the test seam. Reach for an in-process D1 (`getPlatformProxy` from `wrangler`, migrated by `applyLocalMigrations` in `tests/shared/setup/process-lifecycle.ts`) only for timing between a module's own steps that HTTP can't trigger, such as an Event landing between `applySnapshot`'s read and `commit`. Example: `channel-state-race.test.ts`.
+- Symptom: the test passes while the deployed worker behaves differently. Why it slips: it imports `apps/api/src` directly, so the worker's env parsing and bindings wiring never run. Verify anything beyond the module's own logic through the HTTP tier.
+- Symptom: the proxy sees no tables. Why: `wrangler --persist-to <dir>` writes under `<dir>/v3`, while the proxy's `persist.path` is that `v3` root. Keep the table-list assertion in `beforeAll`.

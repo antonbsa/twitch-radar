@@ -2,10 +2,10 @@ import { rmSync } from "node:fs"
 import { resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import {
+  applyLocalMigrations,
   failOnUnexpectedExit,
   killProcessGroup,
   printCapturedOutput,
-  runToCompletion,
   spawnCapturing,
   waitForReadyOrExit,
 } from "../../shared/setup/process-lifecycle"
@@ -27,22 +27,7 @@ export default async function globalSetup() {
   // Throwaway D1/KV state, isolated from the dev DB the e2e tier and normal
   // `npm run dev` use — always wiped so each run starts from the migrations.
   rmSync(PERSIST_DIR, { recursive: true, force: true })
-  await runToCompletion(
-    "npx",
-    [
-      "wrangler",
-      "d1",
-      "migrations",
-      "apply",
-      "twitch-radar-dev",
-      "--local",
-      "--config",
-      "apps/api/wrangler.jsonc",
-      "--persist-to",
-      PERSIST_DIR,
-    ],
-    REPO_ROOT,
-  )
+  await applyLocalMigrations(REPO_ROOT, PERSIST_DIR)
 
   const mockTwitch = await startMockTwitchServer(MOCK_TWITCH_PORT)
   const vapidKeys = await generateTestVapidKeys()

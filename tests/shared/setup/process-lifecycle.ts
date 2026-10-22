@@ -130,3 +130,26 @@ export function waitForReadyOrExit(
 ): Promise<void> {
   return Promise.race([waitForReady(url), waitForExit(child, label)])
 }
+
+/** Applies `infra/migrations` to the local `twitch-radar-dev` D1 persisted under `persistDir`. */
+export function applyLocalMigrations(
+  repoRoot: string,
+  persistDir: string,
+): Promise<void> {
+  return runToCompletion(
+    "npx",
+    [
+      "wrangler",
+      "d1",
+      "migrations",
+      "apply",
+      "twitch-radar-dev",
+      "--local",
+      "--config",
+      "apps/api/wrangler.jsonc",
+      "--persist-to",
+      persistDir,
+    ],
+    repoRoot,
+  )
+}
