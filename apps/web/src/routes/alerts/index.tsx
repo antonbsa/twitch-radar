@@ -23,6 +23,7 @@ import {
   filterChannelAlertGroups,
 } from "@/routes/alerts/alert-groups"
 import {
+  useAlertMatcher,
   usePreferences,
   useRemoveChannelPreference,
   useRemoveGlobalPreference,
@@ -50,6 +51,7 @@ export function AlertsPage() {
     useState<FollowedChannel | null>(null)
   const { armedId: armedChipId, arm: armChip } = useArmedChip()
 
+  const matcher = useAlertMatcher()
   const globalPreferences = useMemo(
     () => preferences?.global ?? [],
     [preferences?.global],
@@ -64,9 +66,9 @@ export function AlertsPage() {
       buildChannelAlertGroups(
         channelPreferences,
         channels ?? [],
-        globalPreferences.map((pref) => pref.category_id),
+        matcher.coversGlobally,
       ),
-    [channelPreferences, channels, globalPreferences],
+    [channelPreferences, channels, matcher.coversGlobally],
   )
 
   const filteredGroups = useMemo(

@@ -11,6 +11,7 @@ import { useLanguage } from "@/context/language-context"
 import { useArmedChip } from "@/hooks/use-armed-chip"
 import {
   useAddChannelPreference,
+  useAlertMatcher,
   usePreferences,
   useRemoveChannelPreference,
 } from "@/hooks/use-preferences"
@@ -33,6 +34,7 @@ export function ChannelPreferencesDialog({
   const removePreference = useRemoveChannelPreference()
   const { armedId: armedChipId, arm: armChip } = useArmedChip()
   const push = usePushNotifications()
+  const matcher = useAlertMatcher()
 
   function handlePreferenceAdded() {
     showEnablePushToast({ status: push.status, enable: push.enable, t })
@@ -42,6 +44,14 @@ export function ChannelPreferencesDialog({
     ? (preferences?.channel ?? []).filter(
         (pref) => pref.broadcaster_user_id === channel.broadcaster_user_id,
       )
+    : []
+
+  const globalCategoryIds = channel
+    ? (preferences?.global ?? [])
+        .filter((pref) =>
+          matcher.coversGlobally(channel.broadcaster_user_id, pref.category_id),
+        )
+        .map((pref) => pref.category_id)
     : []
 
   return (
@@ -91,9 +101,7 @@ export function ChannelPreferencesDialog({
             disabledCategoryIds={savedForChannel.map(
               (pref) => pref.category_id,
             )}
-            globalCategoryIds={(preferences?.global ?? []).map(
-              (pref) => pref.category_id,
-            )}
+            globalCategoryIds={globalCategoryIds}
             autoFocus={false}
             onSelect={(category) => {
               if (!channel) return

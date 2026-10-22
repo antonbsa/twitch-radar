@@ -27,7 +27,7 @@ export interface ChannelAlertGroup {
 /**
  * Groups per-channel preferences into one entry per broadcaster, resolving
  * display metadata against the followed-channel list and flagging categories
- * that an active global preference already covers.
+ * that an active global preference already covers (exclusions applied).
  *
  * Ordering matches the Channels page (specs/mvp/02. ui-layout.md): live first
  * by viewer count descending, then offline by display name ascending, then any
@@ -36,12 +36,11 @@ export interface ChannelAlertGroup {
 export function buildChannelAlertGroups(
   channelPreferences: ChannelPreference[],
   channels: FollowedChannel[],
-  globalCategoryIds: string[],
+  coversGlobally: (broadcasterUserId: string, categoryId: string) => boolean,
 ): ChannelAlertGroup[] {
   const channelById = new Map(
     channels.map((channel) => [channel.broadcaster_user_id, channel]),
   )
-  const globalIds = new Set(globalCategoryIds)
   const groups = new Map<string, ChannelAlertGroup>()
 
   for (const preference of channelPreferences) {
@@ -67,7 +66,7 @@ export function buildChannelAlertGroups(
       categoryId: preference.category_id,
       categoryName: preference.category_name,
       boxArtUrl: preference.box_art_url,
-      alsoGlobal: globalIds.has(preference.category_id),
+      alsoGlobal: coversGlobally(id, preference.category_id),
     })
   }
 

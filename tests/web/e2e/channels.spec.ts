@@ -286,6 +286,73 @@ describe("Channels view", () => {
     expect(await match(plain).count()).toBe(0)
   })
 
+  it("should not highlight a live channel excluded from a global preference, nor list it under Alerts only", async ({
+    authenticatedSession,
+  }) => {
+    const excluded = broadcasterId("excl_excluded")
+    const covered = broadcasterId("excl_covered")
+
+    await seedFollowedChannels(
+      [
+        [excluded, "ExclExcluded"],
+        [covered, "ExclCovered"],
+      ].map(([id, name]) => ({
+        broadcasterUserId: id!,
+        broadcasterLogin: name!.toLowerCase(),
+        broadcasterDisplayName: name!,
+      })),
+    )
+    // Distinct categories: the "With alerts" filter narrows by category.
+    await seedChannelState([
+      {
+        broadcasterUserId: excluded,
+        isLive: true,
+        categoryId: "excl_cat",
+        categoryName: "Exclusion Filter Category",
+        viewerCount: 10,
+      },
+      {
+        broadcasterUserId: covered,
+        isLive: true,
+        categoryId: "excl_covered_cat",
+        categoryName: "Exclusion Covered Category",
+        viewerCount: 20,
+      },
+    ])
+    await seedPreferences({
+      global: [
+        {
+          categoryId: "excl_cat",
+          categoryName: "Exclusion Filter Category",
+          excludedBroadcasterUserIds: [excluded],
+        },
+        {
+          categoryId: "excl_covered_cat",
+          categoryName: "Exclusion Covered Category",
+        },
+      ],
+    })
+
+    const { page } = authenticatedSession
+    await page.goto(WEB_URL)
+
+    const row = (id: string) =>
+      page.locator(
+        `[data-testid="channel-row"][data-broadcaster-user-id="${id}"]`,
+      )
+    await expectVisible(row(covered).locator("[data-preference-match]"))
+    expect(await row(excluded).locator("[data-preference-match]").count()).toBe(
+      0,
+    )
+
+    await page.getByRole("button", { name: "Filter by category" }).click()
+    await page
+      .getByRole("menuitemcheckbox", { name: /^With alerts \(\d+\)$/ })
+      .click()
+    await expectVisible(row(covered))
+    await expectHidden(row(excluded))
+  })
+
   it("should show what an offline channel was last streaming, falling back to Offline without data", async ({
     authenticatedSession,
   }) => {
