@@ -3,8 +3,11 @@ import {
   useQueryClient,
   type QueryClient,
 } from "@tanstack/react-query"
+import { useMemo } from "react"
 import { useLanguage } from "@/context/language-context"
 import { api } from "@/lib/api"
+import { useBroadcasterMutes } from "@/hooks/use-notifications"
+import { createAlertMatcher } from "@/lib/alert-match"
 import { showMutationErrorToast } from "@/lib/error-toast"
 import { interpolateNodes } from "@/lib/i18n-react"
 import { showPreferenceToast } from "@/lib/push-toast"
@@ -23,6 +26,16 @@ export function usePreferences() {
     queryFn: () => api.get<{ data: PreferencesResponse }>("/preferences"),
     select: (res) => res.data,
   })
+}
+
+/** The ADR 0054 "would this channel alert?" rule over the cached preferences and mutes. */
+export function useAlertMatcher() {
+  const { data: preferences } = usePreferences()
+  const { data: mutes } = useBroadcasterMutes()
+  return useMemo(
+    () => createAlertMatcher(preferences, mutes),
+    [preferences, mutes],
+  )
 }
 
 /** What a preference toast names; a null channel means a global alert. */

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useSearchParams } from "react-router"
 import { RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -19,8 +19,7 @@ import {
   useFollowedChannels,
   useManualSyncFollows,
 } from "@/hooks/use-channels"
-import { useBroadcasterMutes } from "@/hooks/use-notifications"
-import { usePreferences } from "@/hooks/use-preferences"
+import { useAlertMatcher } from "@/hooks/use-preferences"
 import {
   applyChannelFilters,
   DEFAULT_CHANNEL_FILTERS,
@@ -36,12 +35,7 @@ export function ChannelsPage() {
     isLoading: isChannelsLoading,
     isError,
   } = useFollowedChannels()
-  const { data: preferences } = usePreferences()
-  const { data: mutes } = useBroadcasterMutes()
-  const mutedIds = useMemo(
-    () => new Set((mutes ?? []).map((mute) => mute.broadcaster_user_id)),
-    [mutes],
-  )
+  const matcher = useAlertMatcher()
   const { user, reconnectRequired } = useAuth()
   const autoSyncStatus = useAutoSyncFollowsStatus()
   // An auto-sync only runs when the last sync is stale (issue #88): hold the
@@ -64,32 +58,10 @@ export function ChannelsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const appliedDeepLinkRef = useRef(false)
 
-  const globalCategoryIds = useMemo(
-    () => new Set(preferences?.global.map((p) => p.category_id)),
-    [preferences],
-  )
-  const channelCategoryKeys = useMemo(
-    () =>
-      new Set(
-        preferences?.channel.map(
-          (p) => `${p.broadcaster_user_id}:${p.category_id}`,
-        ),
-      ),
-    [preferences],
-  )
-
-  function preferenceMatchFor(channel: FollowedChannel) {
-    if (!channel.is_live || !channel.category_id) return null
-    if (globalCategoryIds.has(channel.category_id)) return "global"
-    return channelCategoryKeys.has(
-      `${channel.broadcaster_user_id}:${channel.category_id}`,
-    )
-      ? "channel"
-      : null
+  const hasAlert = (channel: FollowedChannel) => {
+    const match = matcher.match(channel)
+    return match === "global" || match === "channel"
   }
-
-  const hasAlert = (channel: FollowedChannel) =>
-    preferenceMatchFor(channel) !== null
 
   const categories = deriveLiveCategories(channels ?? [], hasAlert)
   const { live, offline } = applyChannelFilters(
@@ -194,8 +166,8 @@ export function ChannelsPage() {
               <ChannelRow
                 key={channel.broadcaster_user_id}
                 channel={channel}
-                preferenceMatch={preferenceMatchFor(channel)}
-                muted={mutedIds.has(channel.broadcaster_user_id)}
+                preferenceMatch={matcher.match(channel)}
+                muted={matcher.isMuted(channel.broadcaster_user_id)}
                 onConfigure={setConfiguringChannel}
                 onOpenDetail={setDetailChannel}
               />
@@ -212,7 +184,7 @@ export function ChannelsPage() {
               <ChannelRow
                 key={channel.broadcaster_user_id}
                 channel={channel}
-                muted={mutedIds.has(channel.broadcaster_user_id)}
+                muted={matcher.isMuted(channel.broadcaster_user_id)}
                 onConfigure={setConfiguringChannel}
                 onOpenDetail={setDetailChannel}
               />

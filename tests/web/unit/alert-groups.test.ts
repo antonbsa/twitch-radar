@@ -61,7 +61,7 @@ describe("buildChannelAlertGroups", () => {
           broadcaster_display_name: "Alanzoka",
         }),
       ],
-      [],
+      () => false,
     )
 
     expect(groups).toHaveLength(1)
@@ -91,7 +91,7 @@ describe("buildChannelAlertGroups", () => {
           viewer_count: 4200,
         }),
       ],
-      [],
+      () => false,
     )
 
     expect(groups[0]).toMatchObject({
@@ -119,7 +119,7 @@ describe("buildChannelAlertGroups", () => {
         }),
       ],
       [channel({ broadcaster_user_id: "1" })],
-      ["c2"],
+      (_id, categoryId) => categoryId === "c2",
     )
 
     expect(
@@ -128,6 +128,24 @@ describe("buildChannelAlertGroups", () => {
       ["GTA V", false],
       ["Just Chatting", true],
     ])
+  })
+
+  it("should not flag a category whose global preference excludes the broadcaster", () => {
+    const groups = buildChannelAlertGroups(
+      [
+        pref({
+          id: "p1",
+          broadcaster_user_id: "1",
+          category_id: "c2",
+          category_name: "Just Chatting",
+        }),
+      ],
+      [channel({ broadcaster_user_id: "1" })],
+      (broadcasterId, categoryId) =>
+        categoryId === "c2" && broadcasterId !== "1",
+    )
+
+    expect(groups[0].categories[0].alsoGlobal).toBe(false)
   })
 
   it("should order live channels before offline ones", () => {
@@ -159,7 +177,7 @@ describe("buildChannelAlertGroups", () => {
           viewer_count: 1,
         }),
       ],
-      [],
+      () => false,
     )
 
     expect(groups.map((g) => g.displayName)).toEqual(["Zzz", "Aaa"])
@@ -207,7 +225,7 @@ describe("buildChannelAlertGroups", () => {
           viewer_count: 900,
         }),
       ],
-      [],
+      () => false,
     )
 
     expect(groups.map((g) => g.displayName)).toEqual(["High", "Low", "None"])
@@ -236,7 +254,7 @@ describe("buildChannelAlertGroups", () => {
           broadcaster_display_name: "Alpha",
         }),
       ],
-      [],
+      () => false,
     )
 
     expect(groups.map((g) => g.displayName)).toEqual(["Alpha", "zeta"])
@@ -264,7 +282,7 @@ describe("buildChannelAlertGroups", () => {
           broadcaster_display_name: "Known",
         }),
       ],
-      [],
+      () => false,
     )
 
     expect(groups.map((g) => [g.displayName, g.isUnsynced])).toEqual([
@@ -278,7 +296,7 @@ describe("buildChannelAlertGroups", () => {
       buildChannelAlertGroups(
         [],
         [channel({ broadcaster_user_id: "1" })],
-        ["c1"],
+        () => true,
       ),
     ).toEqual([])
   })

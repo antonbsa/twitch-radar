@@ -10,6 +10,7 @@ import { useLanguage } from "@/context/language-context"
 import { cn } from "@/lib/utils"
 import { formatTimeAgo, formatViewerCount } from "@/lib/format"
 import { LiveLabel } from "@/routes/channels/components/live-label"
+import type { AlertMatch } from "@/lib/alert-match"
 import type { FollowedChannel } from "@/types/channel"
 
 interface ChannelRowProps {
@@ -17,7 +18,7 @@ interface ChannelRowProps {
   onConfigure: (channel: FollowedChannel) => void
   onOpenDetail: (channel: FollowedChannel) => void
   /** Set when a live channel's category matches an active preference. */
-  preferenceMatch?: "channel" | "global" | null
+  preferenceMatch?: AlertMatch
   /** The user muted this broadcaster (ADR 0054). */
   muted?: boolean
 }
@@ -30,6 +31,11 @@ export function ChannelRow({
   muted = false,
 }: ChannelRowProps) {
   const { t, language } = useLanguage()
+  // A muted match keeps the BellOff indicator but no highlight.
+  const highlight =
+    preferenceMatch === "global" || preferenceMatch === "channel"
+      ? preferenceMatch
+      : null
 
   return (
     <div
@@ -75,13 +81,13 @@ export function ChannelRow({
         </div>
         {channel.is_live ? (
           <p
-            data-preference-match={preferenceMatch ?? undefined}
+            data-preference-match={highlight ?? undefined}
             className={cn(
               "flex items-center gap-1 text-xs text-muted-foreground",
-              preferenceMatch && "font-medium text-[#f09d22]",
+              highlight && "font-medium text-[#f09d22]",
             )}
           >
-            {preferenceMatch === "global" && (
+            {highlight === "global" && (
               <Globe aria-hidden="true" className="size-3 shrink-0" />
             )}
             <span className="truncate">
