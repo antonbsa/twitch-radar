@@ -104,12 +104,13 @@ Don't add code that only accepts old schema/data states. When a schema or format
 
 ## Tests
 
-- `tests/api`: real HTTP against a `wrangler dev` worker plus an in-process mock Twitch server, on throwaway D1/KV. `tests/web/e2e` (and `tests/web/unit`): Playwright against `wrangler dev` + `vite dev` on the shared dev D1/KV. Each tier is a plain `vitest run` whose `globalSetup` boots and tears everything down (ADR 0025).
+- `tests/api`: real HTTP against a `wrangler dev` worker plus an in-process mock Twitch server, on throwaway D1/KV. `tests/web/e2e`: Playwright against `wrangler dev` + `vite dev` on the shared dev D1/KV. `tests/web/unit`: pure-function tests with no `globalSetup`, so no servers or ports (ADR 0064). The API and e2e tiers are each a plain `vitest run` whose `globalSetup` boots and tears everything down (ADR 0025). `npm run test:web` runs unit then e2e.
 - New process-orchestration logic goes in `tests/shared/setup/process-lifecycle.ts`, not duplicated per tier. Setup failures print the captured server output and exit 1.
 - CI (`.github/workflows/tests.yaml`) runs both tiers on every push/PR, so don't run a full tier after every small edit; each run pays the full `globalSetup` cost. Iterate with a file/name filter:
   ```bash
   npx vitest run --config vitest.config.ts tests/api/notifications.test.ts -t "snooze"
   npx vitest run --config vitest.e2e.config.ts tests/web/e2e/alerts.spec.ts
+  npx vitest run --config vitest.unit.config.ts tests/web/unit/format.test.ts
   ```
 - Run each affected full tier once after a large chunk of work. Don't re-run before opening a PR just as a formality.
 - The e2e tier retries once on CI (`retry` in `vitest.e2e.config.ts`) to absorb browser-timing flakes; never add retries to the API or unit tiers, and treat a test that needs its retry repeatedly as a bug to fix.

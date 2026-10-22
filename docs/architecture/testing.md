@@ -2,13 +2,14 @@
 
 What is tested, at which level, and the seams that make a webhook-and-queue system testable. Part of the [architecture overview](overview.md).
 
-## Two Tiers
+## Tiers
 
-Both are plain `vitest` runs whose global setup boots everything the tests need, tears it down, and prints the captured server output if setup fails ([ADR 0025](../decisions/0025-e2e-ui-tests-with-playwright-and-test-seam.md)). Neither needs a manually started server.
+The API and web e2e tiers are plain `vitest` runs whose global setup boots everything the tests need, tears it down, and prints the captured server output if setup fails ([ADR 0025](../decisions/0025-e2e-ui-tests-with-playwright-and-test-seam.md)). Neither needs a manually started server. Web unit tests are a third, setup-free tier that runs before the e2e one ([ADR 0064](../decisions/0064-web-unit-tests-as-their-own-tier.md)).
 
 | Tier | Drives | Runs against |
 | --- | --- | --- |
 | API | Real HTTP requests to the Worker, plus a mock Twitch server in the test process | A real local Worker with throwaway D1 and KV ([ADR 0011](../decisions/0011-keep-api-tests-under-root-tests-api.md)) |
+| Web unit | Pure functions and parsers | Nothing, no servers |
 | Web e2e | A real browser (Playwright, driven from ordinary vitest tests) loading the app | The local Worker and the Vite dev server |
 
 The API tier is where the system's behavior is covered: webhook verification, event processing, matching, delivery, scheduled jobs and every route. Because the Worker is the real thing, so are the queues and the cron: queue consumers run for real, and a scheduled job is triggered by simulating its minute through the local runtime ([ADR 0057](../decisions/0057-single-minutely-cron-trigger.md)). Twitch and the push services are the only fakes, as an HTTP server the Worker is pointed at.
