@@ -1,6 +1,6 @@
 # Deployment
 
-A complete walkthrough for standing up a fresh Cloudflare deployment of this project (production or preview environment), and for redeploying afterwards. This is the full version of the README's short ["Deployment"](../README.md#deployment) section — read that first for the high-level picture (single Worker, automatic preview deploy on push to `main`, production deploy gated behind a GitHub release).
+A complete walkthrough for standing up a fresh Cloudflare deployment of this project (production or preview environment), and for redeploying afterwards. The project is a single Worker that serves the API and the web app; every push to `main` deploys the preview environment automatically, and production deploys only when a GitHub release is published ([release-gated production deploys](decisions/0041-release-gated-production-deploys.md), [deploy and release](architecture/deploy-and-release.md)).
 
 ## Prerequisites
 

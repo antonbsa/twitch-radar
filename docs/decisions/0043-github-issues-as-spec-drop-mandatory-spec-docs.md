@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted. Amended by [ADR 0065](0065-organize-human-docs-by-reader-moment.md): milestone overviews no longer live under `specs/`; a milestone that needs shared context puts it in the GitHub milestone description.
 
 ## Context
 

@@ -47,7 +47,7 @@ Other project documents may state goals, requirements, task scope, validation st
 - [0039 - Adopt Technical Notes For Non-Decision Research](0039-adopt-technical-notes-for-non-decision-research.md)
 - [0040 - Structured Leveled Logging Convention](0040-structured-leveled-logging-convention.md)
 - [0041 - Release-Gated Production Deploys, Automatic Preview Deploys](0041-release-gated-production-deploys.md)
-- [0043 - GitHub Issues As Spec; Drop The Mandatory Per-Feature Spec Document](0043-github-issues-as-spec-drop-mandatory-spec-docs.md)
+- [0043 - GitHub Issues As Spec; Drop The Mandatory Per-Feature Spec Document](0043-github-issues-as-spec-drop-mandatory-spec-docs.md) — amended by 0065
 - [0044 - I18n Key-Based Catalog And Language Preference](0044-i18n-key-based-catalog-and-language-preference.md)
 - [0045 - Build-Time Exclusion Of Non-Production Test/Dev Code](0045-build-time-exclusion-of-non-production-test-code.md)
 - [0046 - Sandbox Personas For Twitch-Free Dev And Preview Access](0046-sandbox-personas-for-dev-and-preview.md)
@@ -58,21 +58,19 @@ Other project documents may state goals, requirements, task scope, validation st
 - [0051 - Suppress Notifications For Non-Live Stream Types](0051-suppress-non-live-stream-type-notifications.md)
 - [0052 - Agent Instructions: Nested AGENTS.md For Conventions, Subagents For Persona And Boundaries](0052-nested-agents-md-and-slim-subagents.md)
 - [0053 - Self-Describing Scheduled Job Logs](0053-self-describing-scheduled-job-logs.md)
+- [0054 - User-Controlled Notification Suppression: Pause, Broadcaster Mute, Global Category Exclusions](0054-user-controlled-notification-suppression.md)
 - [0056 - Send-Side Notification Cooldown Per User And Broadcaster](0056-send-side-notification-cooldown.md)
 - [0057 - Single Minutely Cron Trigger With Time-Based Job Dispatch](0057-single-minutely-cron-trigger.md)
 - [0058 - Cache Category Box Art In D1 And Attach It To API Responses](0058-cache-category-box-art-in-d1.md)
 - [0059 - Timestamp-Prefixed D1 Migrations](0059-timestamp-prefixed-d1-migrations.md)
 - [0060 - Publish Failed CI Test Reports To A Separate Pages Repo](0060-publish-failed-ci-test-reports-to-a-pages-repo.md)
 - [0061 - Concurrency Rules For CI And Deploy Workflows](0061-concurrency-rules-for-ci-and-deploy-workflows.md)
-- [0062 - Human-Facing Architecture Documentation](0062-human-facing-architecture-docs.md)
+- [0062 - Human-Facing Architecture Documentation](0062-human-facing-architecture-docs.md) — amended by 0065
 - [0063 - Scheduled Encrypted D1 Exports To Backblaze B2](0063-scheduled-encrypted-d1-exports-to-backblaze-b2.md)
 - [0064 - Web Unit Tests As Their Own Tier](0064-web-unit-tests-as-their-own-tier.md)
-
-## Proposed ADRs
-
-- [0042 - Async Follow Sync Via Queue With KV-Backed Progress Polling](0042-async-follow-sync-with-progress-polling.md)
-- [0054 - User-Controlled Notification Suppression: Pause, Broadcaster Mute, Global Category Exclusions](0054-user-controlled-notification-suppression.md)
+- [0065 - Organize Human Docs By Reader Moment, With Generated Indexes](0065-organize-human-docs-by-reader-moment.md)
 
 ## Rejected ADRs
 
+- [0042 - Async Follow Sync Via Queue With KV-Backed Progress Polling](0042-async-follow-sync-with-progress-polling.md) — the latency it targeted was fixed by batching, see [TN 0004](../notes/0004-follow-sync-latency-root-cause.md)
 - [0055 - Client-Side Notification Digest](0055-client-side-notification-digest.md) — not viable on the iOS PWA, see [TN 0007](../notes/0007-client-side-notification-digest-not-viable-on-ios.md)

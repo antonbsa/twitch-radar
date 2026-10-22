@@ -10,6 +10,7 @@ Start with the [product overview](product.md) for what Twitch Radar does, then p
 | [deployment.md](deployment.md) | You're standing up or redeploying the Cloudflare environments, rotating secrets, or deploying manually. |
 | [api-contract.md](api-contract.md) | You need the HTTP surface: routes, shapes and errors. |
 | [decisions/](decisions/README.md) | You want the reasoning behind a specific decision. One ADR per decision; some are superseded by later ones. |
+| [GLOSSARY.md](../GLOSSARY.md) | You need the meaning of a domain term: Channel State, Snapshot, Event, Stale Event, State Change. |
 | [notes/](notes/README.md) | You want a research conclusion that isn't a decision, including options considered and not taken. |
 
 Agent and contributor conventions live in the [`AGENTS.md`](../AGENTS.md) files, not here.
