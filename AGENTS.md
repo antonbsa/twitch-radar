@@ -118,7 +118,7 @@ Don't add code that only accepts old schema/data states. When a schema or format
 ## Tooling
 
 - When the pre-commit hook (`husky` + `lint-staged`) fails, fix the reported cause and commit again.
-- `eslint.config.mjs` `ignores` must keep `**/dist/**`: an unignored minified bundle makes `npm run lint` hang for 10+ minutes with no error.
+- `eslint.config.mjs` `ignores` must keep `**/dist/**` and `**/test-results/**` (the Vitest HTML report a test run writes): an unignored minified bundle makes `npm run lint` hang for 10+ minutes with no error, and `test-results/` only exists after a test run, so lint passes on a clean checkout. After adding a build or test output folder, find generated folders eslint still scans with `git status --ignored` or `git check-ignore <dir>`, and add each to `ignores`.
 
 ## Worktrees and `.agents/`
 

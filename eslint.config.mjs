@@ -19,6 +19,7 @@ export default [
       "**/.wrangler/**",
       "**/node_modules/**",
       "**/dist/**",
+      "**/test-results/**",
       ".agents/**",
       "tests/web/e2e/scratch/**",
     ],
