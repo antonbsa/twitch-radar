@@ -1,3 +1,4 @@
+import { nanoid } from "nanoid"
 import { eq, inArray } from "drizzle-orm"
 import { z } from "zod"
 import type { Context } from "hono"
@@ -17,6 +18,7 @@ import { encryptToken } from "../../lib/crypto"
 import { parseBody } from "../../http/handlers"
 import { jsonResponse } from "../../http/response"
 import { createSession, sessionCookieHeader } from "../auth/session"
+import { applyEvent, applySnapshot } from "../channel-state/service"
 import {
   accessTokenFor,
   CATEGORIES,
@@ -221,25 +223,54 @@ async function seedPersona(
       now,
     })),
   )
-  await db.channelState.upsertAll(
-    seeded.map(({ broadcasterUserId, stream }) => {
-      const startedAt = stream
-        ? new Date(Date.now() - stream.startedMinutesAgo * 60_000).toISOString()
-        : null
-      return {
-        broadcasterUserId,
-        isLive: stream !== null,
-        streamId: stream?.id ?? null,
-        categoryId: stream?.categoryId ?? null,
-        categoryName: stream?.categoryName ?? null,
-        title: stream?.title ?? null,
-        viewerCount: stream?.viewerCount ?? null,
-        startedAt,
-        categoryStartedAt: startedAt,
-        now,
-      }
-    }),
+  const liveStreams = seeded.flatMap(({ broadcasterUserId, stream }) =>
+    stream
+      ? [
+          {
+            id: stream.id,
+            user_id: broadcasterUserId,
+            game_id: stream.categoryId,
+            game_name: stream.categoryName,
+            title: stream.title,
+            viewer_count: stream.viewerCount,
+            started_at: new Date(
+              Date.now() - stream.startedMinutesAgo * 60_000,
+            ).toISOString(),
+            thumbnail_url: "",
+          },
+        ]
+      : [],
   )
+  const snapshot = await applySnapshot(
+    db,
+    seeded.map((follow) => follow.broadcasterUserId),
+    liveStreams,
+    now,
+  )
+  await snapshot.commit()
+  // A Snapshot can't know when the category began; a stream.online Event for
+  // the already-live stream sets it to the stream start and records no State
+  // Change (ADR 0008), so the app shows "in X for 40m".
+  for (const stream of liveStreams) {
+    await applyEvent(
+      db,
+      {
+        messageId: `sbx_seed_${nanoid()}`,
+        messageTimestamp: now,
+        receivedAt: now,
+        eventType: "stream.online",
+        event: {
+          id: stream.id,
+          broadcaster_user_id: stream.user_id,
+          broadcaster_user_login: "",
+          broadcaster_user_name: "",
+          type: "live",
+          started_at: stream.started_at,
+        },
+      },
+      stream,
+    )
+  }
 
   for (const pref of fixture.preferences.channel) {
     await db.channelCategoryPreferences.create({ userId, ...pref, now })

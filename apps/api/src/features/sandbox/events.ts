@@ -5,6 +5,7 @@ import type { HonoEnv } from "../../env"
 import { ApiError } from "../../http/errors"
 import { parseBody } from "../../http/handlers"
 import { jsonResponse } from "../../http/response"
+import { applyEvent, applySnapshot } from "../channel-state/service"
 import { applyTwitchEvent } from "../../queues/twitch-events"
 import type { TwitchEventQueueMessage } from "../eventsub/types"
 import { CATEGORIES, getPersonaFixture, PERSONAS } from "./personas"
@@ -67,20 +68,24 @@ export async function handleSandboxEvent(
   if (input.type === "go_live") {
     // stream.online carries no category and the real handler reads it from
     // Get Streams, which has nothing for a channel that is offline. Park the
-    // channel offline in the target category first so the handler's fallback
-    // to the last known category yields it.
-    await db.channelState.upsertAll([
-      {
-        broadcasterUserId: followed.broadcaster_user_id,
-        isLive: false,
-        streamId: null,
-        categoryId: category.id,
-        categoryName: category.name,
-        title: previous?.title ?? null,
-        thumbnailUrl: previous?.thumbnail_url ?? null,
-        now,
+    // channel offline in the target category first (a Snapshot with no stream,
+    // then a channel.update) so the handler's fallback yields it.
+    await (
+      await applySnapshot(db, [followed.broadcaster_user_id], [], now)
+    ).commit()
+    await applyEvent(db, {
+      ...envelope,
+      messageId: `sbx_msg_${nanoid()}`,
+      eventType: "channel.update",
+      event: {
+        ...broadcaster,
+        title: previous?.title ?? "",
+        language: "en",
+        category_id: category.id,
+        category_name: category.name,
+        content_classification_labels: [],
       },
-    ])
+    })
     message = {
       ...envelope,
       eventType: "stream.online",

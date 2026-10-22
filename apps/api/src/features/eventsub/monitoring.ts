@@ -1,6 +1,7 @@
 import type { AppConfig } from "../../env"
 import type { Database } from "../../db"
 import type { MonitorReason } from "../../db/repositories/monitored-channels"
+import { applySnapshot } from "../channel-state/service"
 import { getStreamsByUserIds } from "../../services/twitch/streams"
 import { withUserAccessToken } from "../../services/twitch/token-refresh"
 
@@ -110,38 +111,13 @@ async function seedMissingChannelState(
       config.twitchApiBaseUrl,
     ),
   )
-  const streamByBroadcasterId = new Map(streams.map((s) => [s.user_id, s]))
-
-  const now = new Date().toISOString()
-  await db.channelState.upsertAll(
-    missing.map((broadcasterUserId) => {
-      const stream = streamByBroadcasterId.get(broadcasterUserId)
-      return stream
-        ? {
-            broadcasterUserId,
-            isLive: true,
-            streamId: stream.id,
-            categoryId: stream.game_id || null,
-            categoryName: stream.game_name || null,
-            title: stream.title || null,
-            viewerCount: stream.viewer_count,
-            startedAt: stream.started_at,
-            now,
-          }
-        : {
-            broadcasterUserId,
-            isLive: false,
-            streamId: null,
-            categoryId: null,
-            categoryName: null,
-            title: null,
-            viewerCount: null,
-            startedAt: null,
-            now,
-          }
-    }),
-    { preserveCategoryStartedAt: true },
+  const snapshot = await applySnapshot(
+    db,
+    missing,
+    streams,
+    new Date().toISOString(),
   )
+  await snapshot.commit()
 }
 
 /**

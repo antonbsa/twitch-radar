@@ -12,20 +12,11 @@ export interface UpsertChannelStateInput {
   thumbnailUrl?: string | null
   viewerCount?: number | null
   startedAt?: string | null
-  // Exact start of the current category, or null for "unknown" (issue #120).
-  // Ignored when `upsertAll` runs with `preserveCategoryStartedAt`.
   categoryStartedAt?: string | null
-  // Null keeps the stored value: only Events know the stream type (ADR 0033).
   streamType?: string | null
-  // Explicit values win over the live→offline capture in `upsertAll`; seeds
-  // set them directly, EventSub offline passes its own event timestamp.
   lastLiveAt?: string | null
   lastCategoryId?: string | null
   lastCategoryName?: string | null
-  // Twitch's message timestamp when the write comes from an EventSub event;
-  // the stale-event guard compares against it (ADR 0033). Seeding leaves it
-  // unset so the first event for a seeded channel always processes; null on
-  // conflict keeps the stored value, so a Snapshot never clears the guard.
   updatedFromEventAt?: string | null
   now: string
 }
@@ -50,32 +41,9 @@ export interface ChannelStateRecord {
 }
 
 /**
- * Follow-sync rule for `category_started_at` (issue #120): a Twitch snapshot
- * can't tell when the category began, so the stored value survives only when
- * the snapshot is the same stream in the same category; otherwise it is
- * unknown (null). Mirrors the SQL `CASE` in `upsertAll`.
+ * Raw row access. Only the Channel State module and the test seam write
+ * through `upsertAll`; every field rule lives in the module's `transition`.
  */
-export function preserveCategoryStartedAt(
-  stored:
-    | Pick<
-        ChannelStateRecord,
-        "stream_id" | "category_id" | "category_started_at"
-      >
-    | undefined,
-  next: { streamId: string | null; categoryId: string | null },
-): string | null {
-  if (!stored || next.streamId === null) return null
-  if (stored.stream_id !== next.streamId) return null
-  if (stored.category_id !== next.categoryId) return null
-  return stored.category_started_at
-}
-
-export interface UpsertAllOptions {
-  // Follow sync / monitoring seed: derive `category_started_at` from the
-  // stored row (see `preserveCategoryStartedAt`) instead of the input value.
-  preserveCategoryStartedAt?: boolean
-}
-
 export class ChannelStateRepository {
   private readonly db: AppDatabase
 
@@ -83,9 +51,24 @@ export class ChannelStateRepository {
     this.db = db
   }
 
-  async upsertAll(
+  /** Replaces the whole row of each broadcaster; no field is merged with the stored one. */
+  async upsertAll(inputs: UpsertChannelStateInput[]): Promise<void> {
+    await this.write(inputs, false)
+  }
+
+  /**
+   * Like `upsertAll`, but a row an Event wrote after the caller read it is
+   * skipped (compare-and-set on `updated_from_event_at`), so a deferred
+   * Snapshot never overwrites a newer Event. Relies on a Snapshot carrying
+   * `updated_from_event_at` over unchanged from the row it read (ADR 0033).
+   */
+  async upsertSnapshotRows(inputs: UpsertChannelStateInput[]): Promise<void> {
+    await this.write(inputs, true)
+  }
+
+  private async write(
     inputs: UpsertChannelStateInput[],
-    options: UpsertAllOptions = {},
+    skipIfEventSinceRead: boolean,
   ): Promise<void> {
     if (inputs.length === 0) return
     // 16 bound params per row (broadcasterUserId, isLive, streamId,
@@ -122,6 +105,10 @@ export class ChannelStateRepository {
           )
           .onConflictDoUpdate({
             target: channelState.broadcasterUserId,
+            // IS, not =: the stored value is NULL until the first Event.
+            setWhere: skipIfEventSinceRead
+              ? sql`${channelState.updatedFromEventAt} IS excluded.updated_from_event_at`
+              : undefined,
             set: {
               isLive: sql`excluded.is_live`,
               streamId: sql`excluded.stream_id`,
@@ -131,17 +118,12 @@ export class ChannelStateRepository {
               thumbnailUrl: sql`excluded.thumbnail_url`,
               viewerCount: sql`excluded.viewer_count`,
               startedAt: sql`excluded.started_at`,
-              categoryStartedAt: options.preserveCategoryStartedAt
-                ? sql`CASE WHEN excluded.stream_id IS NOT NULL AND excluded.stream_id = ${channelState.streamId} AND excluded.category_id IS ${channelState.categoryId} THEN ${channelState.categoryStartedAt} ELSE NULL END`
-                : sql`excluded.category_started_at`,
-              streamType: sql`COALESCE(excluded.stream_type, ${channelState.streamType})`,
-              // On a live→offline transition, capture when and what it last
-              // streamed from the row being replaced, in the same upsert (no
-              // extra read). Any other write keeps the stored values.
-              lastLiveAt: sql`CASE WHEN ${channelState.isLive} = 1 AND excluded.is_live = 0 THEN COALESCE(excluded.last_live_at, excluded.updated_at) ELSE COALESCE(excluded.last_live_at, ${channelState.lastLiveAt}) END`,
-              lastCategoryId: sql`CASE WHEN ${channelState.isLive} = 1 AND excluded.is_live = 0 THEN COALESCE(excluded.last_category_id, ${channelState.categoryId}) ELSE COALESCE(excluded.last_category_id, ${channelState.lastCategoryId}) END`,
-              lastCategoryName: sql`CASE WHEN ${channelState.isLive} = 1 AND excluded.is_live = 0 THEN COALESCE(excluded.last_category_name, ${channelState.categoryName}) ELSE COALESCE(excluded.last_category_name, ${channelState.lastCategoryName}) END`,
-              updatedFromEventAt: sql`COALESCE(excluded.updated_from_event_at, ${channelState.updatedFromEventAt})`,
+              categoryStartedAt: sql`excluded.category_started_at`,
+              streamType: sql`excluded.stream_type`,
+              lastLiveAt: sql`excluded.last_live_at`,
+              lastCategoryId: sql`excluded.last_category_id`,
+              lastCategoryName: sql`excluded.last_category_name`,
+              updatedFromEventAt: sql`excluded.updated_from_event_at`,
               updatedAt: sql`excluded.updated_at`,
             },
           }),

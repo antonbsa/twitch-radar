@@ -17,12 +17,12 @@ describe("persistFollowedChannelsSyncDeferred", () => {
     const writeError = new Error("D1 write failed")
     const db = {
       followedChannels: { upsertAll: vi.fn().mockRejectedValue(writeError) },
-      channelState: { upsertAll: vi.fn().mockResolvedValue(undefined) },
       globalCategoryPreferences: {
         listActiveByUserId: vi.fn().mockResolvedValue([]),
       },
       users: { updateLastFollowSyncAt: vi.fn().mockResolvedValue(undefined) },
     } as unknown as Database
+    const commitChannelStates = vi.fn().mockResolvedValue(undefined)
     const config = {} as AppConfig
     const errorSpy = vi.spyOn(logger, "error").mockImplementation(() => {})
 
@@ -40,15 +40,15 @@ describe("persistFollowedChannelsSyncDeferred", () => {
               followed_at: "2024-01-01T00:00:00Z",
             },
           ],
-          streamByBroadcasterId: new Map(),
           profileImageByBroadcasterId: new Map(),
-          storedStateById: new Map(),
+          commitChannelStates,
           payload: [],
         },
         "2024-01-01T00:00:00Z",
       ),
     ).resolves.toBeUndefined()
 
+    expect(commitChannelStates).toHaveBeenCalledTimes(1)
     expect(errorSpy).toHaveBeenCalledTimes(1)
     const [message, fields] = errorSpy.mock.calls[0]!
     expect(message).toBe("Deferred follow sync write failed")
