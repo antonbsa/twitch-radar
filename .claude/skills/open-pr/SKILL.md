@@ -26,7 +26,7 @@ The canonical PR structure lives in [.github/PULL_REQUEST_TEMPLATE.md](../../../
 
 ## Review check
 
-If the branch shows no sign of `feature`'s isolated review (no `.agents/handoff-<slug>.md` usually means ad hoc work outside `feature`), suggest running the `mattpocock-skills:code-review` review first, per [feature](../feature/SKILL.md) step 6. It is a nudge, not a gate.
+If the branch shows no sign of `feature`'s isolated review (no `.agents/handoff-<slug>.md` usually means ad hoc work outside `feature`), suggest running the [review](../review/SKILL.md) skill first. It is a nudge, not a gate.
 
 ## Common mistakes
 

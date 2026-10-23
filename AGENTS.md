@@ -18,7 +18,7 @@ Issue → ADR/TN if a decision changes → implementation → review → PR → 
 1. **Issue.** Spec-shaped GitHub issues are the source of truth for milestone 1+ work (ADR 0043): problem/motivation, a resolved proposed solution, acceptance criteria. Every issue needs a milestone: use the one the prompt names, else pick the best fit from `gh api repos/{owner}/{repo}/milestones`, or say none fits and suggest a new one. Without a GitHub issue, a spec-shaped file under `.agents/issues/` works. Shared context for several issues goes in the GitHub milestone description.
 2. **Decision.** If the work needs an accepted decision, add or update an ADR before broad coding. Research that changes nothing goes in a TN (see below).
 3. **Implement** via [feature](.claude/skills/feature), committed together with the spec/task updates it completes.
-4. **Review** in isolation, as step 6 of [feature](.claude/skills/feature/SKILL.md) ([ADR 0066](docs/decisions/0066-isolated-pre-pr-review-by-fresh-subagents.md)): fresh subagents get the diff, the spec and the `AGENTS.md` files, never the handoff.
+4. **Review** via [review](.claude/skills/review), run by step 6 of [feature](.claude/skills/feature) ([ADR 0066](docs/decisions/0066-isolated-pre-pr-review-by-fresh-subagents.md)): fresh subagents get the diff, the spec and the `AGENTS.md` files, never the handoff.
 5. **PR** via [open-pr](.claude/skills/open-pr): tests, migrations/config and ADRs/docs are part of the review. The skill owns the labels rule.
 6. **Release** via [release](.claude/skills/release). Merging to `main` only deploys preview; production ships when a release is published ([ADR 0041](docs/decisions/0041-release-gated-production-deploys.md)).
 
