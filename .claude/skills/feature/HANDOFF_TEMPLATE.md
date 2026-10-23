@@ -29,7 +29,7 @@
      one place that context survives once the PR ships (a PR description only carries the final
      state, not the road not taken). If a resolution is itself an accepted decision the code must
      keep following, it should also have its own ADR (per AGENTS.md "Development Workflow") -
-     link it here rather than duplicating its content. -->
+     link it here rather than duplicating its content. Also list each review finding you rejected (feature's review step) with a one-line reason, so the human sees what was dismissed. -->
 
 ## Trade-offs & Known Follow-ups
 

@@ -28,7 +28,7 @@ This architecture documentation has a different audience, people reading the rep
 
 ## Changes Flow Through Pull Requests
 
-Work happens on a branch in its own worktree, never on `main`, and arrives as a pull request whose description follows a template (summary, impact, references) and carries labels that drive release notes. Tests, migrations and config changes, and any ADR or spec updates are reviewed together with the code. A pre-commit hook formats and lints staged files, CI runs the same checks plus the test tiers ([deploy and release](deploy-and-release.md)), and a failing run links its published report.
+Work happens on a branch in its own worktree, never on `main`. Before the pull request, fresh subagents that see only the diff, the issue and the `AGENTS.md` files review it, never the implementer's handoff, and the implementer records any finding it rejects ([ADR 0066](../decisions/0066-isolated-pre-pr-review-by-fresh-subagents.md)). The change then arrives as a pull request whose description follows a template (summary, impact, references) and carries labels that drive release notes. Tests, migrations and config changes, and any ADR or spec updates are reviewed together with the code. A pre-commit hook formats and lints staged files, CI runs the same checks plus the test tiers ([deploy and release](deploy-and-release.md)), and a failing run links its published report.
 
 Commits follow Conventional Commits, and the project has no backward-compatibility code before launch: when a schema changes, the migration backfills existing rows so every environment converges on the one new state.
 

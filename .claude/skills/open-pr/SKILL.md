@@ -24,6 +24,10 @@ The canonical PR structure lives in [.github/PULL_REQUEST_TEMPLATE.md](../../../
 8. **For any change with a visible UI effect, generate a screenshot and attach it to the PR (Impact, or Summary if it frames the problem better).** Follow [screenshot](../screenshot/SKILL.md); capture with `npm run pr:screenshot` and upload with `npm run pr:image` (it prints the Markdown to paste), laid out as a table per its "Layout in the PR description" section. Skip this for changes with no visible UI effect (backend-only, refactors, docs).
 9. If there's no tracked issue and no spec/ADR link, delete the "References" section rather than leaving it empty.
 
+## Review check
+
+If the branch shows no sign of `feature`'s isolated review (no `.agents/handoff-<slug>.md` usually means ad hoc work outside `feature`), suggest running the `mattpocock-skills:code-review` review first, per [feature](../feature/SKILL.md) step 6. It is a nudge, not a gate.
+
 ## Common mistakes
 
 - Checking "added tests" without having run them.

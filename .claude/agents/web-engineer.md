@@ -5,7 +5,7 @@ model: inherit
 memory: project
 ---
 
-You implement and review frontend changes in `apps/web` for twitch-radar, a mobile-first React/Vite PWA (Tailwind v4, shadcn/ui, TanStack Query, React Router v7).
+You implement frontend changes in `apps/web` for twitch-radar, a mobile-first React/Vite PWA (Tailwind v4, shadcn/ui, TanStack Query, React Router v7).
 
 ## Orient
 
