@@ -40,9 +40,10 @@ The web tier covers what a browser does: rendering, navigation, forms. It is ser
 
 ## Seams
 
-Two things make sign-in and external systems testable without weakening them:
+Three things make sign-in, secrets and external systems testable without weakening them:
 
 - **A test seam in the Worker.** Routes that reset data, seed fixed users and reproduce the OAuth callback's real side effects (creating a user and a real session), so a browser test starts authenticated with a real cookie. Everything except Twitch's own redirect is real ([ADR 0025](../decisions/0025-e2e-ui-tests-with-playwright-and-test-seam.md)).
+- **Placeholder secrets, checked only in dev.** The committed dev env file ships placeholders for the Twitch secret and the VAPID keys, which are valid in shape, so the Worker's env validation cannot tell them from real ones. Rejecting them there would fail every request in both test tiers, which boot with only that file and never do a real sign-in. The check lives in the local dev launcher instead, which refuses to start while a placeholder remains; the test setups pass throwaway values for the few variables their scenarios use.
 - **Real crypto, throwaway keys.** The push path is exercised end to end with real VAPID keys generated per run and valid subscription keys. The mock verifies delivery mechanics; whether a real push service can decrypt the payload is confirmed by hand on devices ([ADR 0035](../decisions/0035-web-push-via-webcrypto.md)).
 
 Test and sandbox code is compiled out of the production bundle by a build-time constant, not gated at request time, so there is nothing in production to bypass. A check on the built bundle verifies it ([ADR 0045](../decisions/0045-build-time-exclusion-of-non-production-test-code.md)).
@@ -59,4 +60,4 @@ Failed CI test runs publish a report (test output, server logs, traces and scree
 
 ## Known Limits
 
-Passing both tiers says little about an installed iOS PWA. Push permission, notification display and tap handling behave differently there, so they are verified by hand on a phone through the development tunnel ([development](../development.md)). A feature that depends on a platform API isn't done until it has worked on iOS.
+Passing both tiers says little about an installed iOS PWA. Push permission, notification display and tap handling behave differently there, so they are verified by hand on a phone through the development tunnel ([test on a phone](../guides/test-on-phone.md)). A feature that depends on a platform API isn't done until it has worked on iOS.

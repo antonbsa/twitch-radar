@@ -1,6 +1,6 @@
 # Product
 
-What Twitch Radar is for, who uses it, how it behaves, and what it deliberately doesn't do. For how it's built see the [architecture decisions](decisions/README.md); for running it locally see [development.md](development.md).
+What Twitch Radar is for, who uses it, how it behaves, and what it deliberately doesn't do. For how it's built see the [architecture decisions](decisions/README.md); for running it locally see [run locally](guides/run-locally.md).
 
 ## The Problem
 
