@@ -24,9 +24,10 @@ const checks = [
     run() {
       const want = readFileSync(resolve(REPO_ROOT, ".nvmrc"), "utf-8").trim()
       const have = process.versions.node
-      return have.split(".")[0] === want
+      // .nvmrc is the minimum major; newer majors are fine
+      return Number(have.split(".")[0]) >= Number(want)
         ? null
-        : `Node ${have} is running, .nvmrc pins ${want}`
+        : `Node ${have} is running, .nvmrc requires ${want} or newer`
     },
   },
   {

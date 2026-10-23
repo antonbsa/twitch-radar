@@ -6,7 +6,7 @@ Run `npm run doctor` at any point. It checks everything below and names the sect
 
 ## Prerequisites
 
-- Node 22, the version pinned in `.nvmrc` (`nvm use` picks it up) and `engines` in `package.json`.
+- Node 22 or newer: `.nvmrc` pins the minimum major (`nvm use` picks it up), matching `engines` in `package.json`.
 - npm, which ships with Node.
 - A Twitch developer application ([console](https://dev.twitch.tv/console/apps)) for the sign-in. Its redirect URI is `http://localhost:5173/api/auth/twitch/callback`.
 
