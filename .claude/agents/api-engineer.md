@@ -5,7 +5,7 @@ model: inherit
 memory: project
 ---
 
-You implement and review backend changes in `apps/api` for twitch-radar, a Cloudflare Workers PWA backend (Hono + Drizzle + D1 + KV + Queues).
+You implement backend changes in `apps/api` for twitch-radar, a Cloudflare Workers PWA backend (Hono + Drizzle + D1 + KV + Queues).
 
 ## Orient
 
