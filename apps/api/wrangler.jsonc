@@ -76,8 +76,7 @@
       // Captures console.* output (structured JSON from apps/api/src/lib/logger.ts)
       // in the Cloudflare dashboard's Workers Logs. Full capture (no
       // sampling) until real production volume is observed to justify
-      // sampling below 1 — see specs/milestones/0-foundations/
-      // issue-19-structured-logging.md.
+      // sampling below 1 (ADR 0040).
       "observability": {
         "enabled": true,
         "head_sampling_rate": 1

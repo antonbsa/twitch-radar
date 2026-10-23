@@ -24,4 +24,4 @@ Both guards read `isLoading`/`isAuthenticated` from `AuthContext` and render a f
 
 - No server-side rendering or route loaders/actions are used; all data fetching happens in components/hooks.
 - Adding a new protected tab means adding a `<Route>` under the existing `ProtectedRoute`/`AppShell` pair, not a new guard.
-- Pinned to the v7 line specifically (not v8, the current latest major) to match the accepted task scope in `specs/mvp/tasks/t-003-frontend-scaffold.md`; revisit only via a new ADR.
+- Pinned to the v7 line specifically (not v8, the current latest major) to match the accepted task scope in [`specs/mvp/tasks/t-003-frontend-scaffold.md`](https://github.com/antonbsa/twitch-radar/blob/v0.4.0/specs/mvp/tasks/t-003-frontend-scaffold.md); revisit only via a new ADR.

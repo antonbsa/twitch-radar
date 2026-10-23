@@ -3,7 +3,7 @@
  * Fails if a relative Markdown link points to a missing file or to a heading
  * anchor that doesn't exist. External URLs are not checked (ADR 0065).
  *
- * Scope: README.md, GLOSSARY.md, docs/**, specs/**, every AGENTS.md,
+ * Scope: README.md, GLOSSARY.md, docs/**, every AGENTS.md,
  * .claude/agents/*.md and .claude/skills/**\/*.md.
  *
  * Usage: node infra/scripts/check-docs.mjs
@@ -19,7 +19,6 @@ const REPO_ROOT = resolve(fileURLToPath(import.meta.url), "../../..")
 const IN_SCOPE = [
   /^(README|GLOSSARY)\.md$/,
   /^docs\/.*\.md$/,
-  /^specs\/.*\.md$/,
   /(^|\/)AGENTS\.md$/,
   /^\.claude\/agents\/[^/]+\.md$/,
   /^\.claude\/skills\/.*\.md$/,

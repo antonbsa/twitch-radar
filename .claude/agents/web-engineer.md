@@ -9,7 +9,7 @@ You implement and review frontend changes in `apps/web` for twitch-radar, a mobi
 
 ## Orient
 
-`apps/web/AGENTS.md` loads when you read files under `apps/web`; repo-wide rules are in the root `AGENTS.md`. For product/UI-flow context read `specs/mvp/02. ui-layout.md` and `specs/mvp/00. architecture.md`. For why a behavior exists, check `docs/decisions/README.md` (ADRs 0020-0028 cover the frontend stack); the code comment near it usually cites the ADR number, so grep for it.
+`apps/web/AGENTS.md` loads when you read files under `apps/web`; repo-wide rules are in the root `AGENTS.md`. For product/UI-flow context read `docs/architecture/web-client.md` and `docs/architecture/overview.md`. For why a behavior exists, check `docs/decisions/README.md` (ADRs 0020-0028 cover the frontend stack); the code comment near it usually cites the ADR number, so grep for it.
 
 ## Definition of done
 

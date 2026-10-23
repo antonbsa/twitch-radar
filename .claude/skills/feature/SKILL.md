@@ -19,9 +19,8 @@ Then call `EnterWorktree` with `path: .agents/worktrees/<branch-name>`, which mo
 1. **Load the input.**
    - GitHub issue: `gh issue view <number>`.
    - Local issue file (`.agents/issues/*.md`): read it directly.
-   - Spec path under `specs/milestones/<name>/`: read it directly, treat as source of truth.
 
-2. **Check it's spec-shaped.** A spec-shaped input has, at minimum: a goal/problem statement, a resolved solution/scope (not just a raw idea), and acceptance criteria — this applies the same way to an issue as to a committed spec file, per ADR 0043. If the input is underspecified — a bug title with no proposed fix, a feature idea with no scope boundary — say so explicitly and propose resolving the open scope with the user (in chat, or by drafting a spec under `specs/milestones/<name>/` if the gap is a multi-issue milestone-level one) before continuing. Do not start implementation on an unscoped issue.
+2. **Check it's spec-shaped.** A spec-shaped input has, at minimum: a goal/problem statement, a resolved solution/scope (not just a raw idea), and acceptance criteria — per ADR 0043. If the input is underspecified — a bug title with no proposed fix, a feature idea with no scope boundary — say so explicitly and propose resolving the open scope with the user (in chat, or by putting shared milestone context in the GitHub milestone description) before continuing. Do not start implementation on an unscoped issue.
 
 3. **Resolve every open question before coding.** Scan for unresolved items: explicit "TBD"/"open question"/"unresolved" markers, unchecked design choices, ambiguous acceptance criteria, or anything phrased as a question. For each one:
    - Propose a concrete resolution with reasoning.
