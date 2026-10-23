@@ -45,7 +45,7 @@ All events arrive at one webhook route, authenticated by its signature rather th
 
 The handler does nothing else. All state changes happen in the queue consumer ([state and matching](state-and-matching.md)), which keeps the response well inside Twitch's timeout and lets the queue absorb bursts. There is no deduplication at the edge: an earlier KV-based one was removed because it wasn't reliable across edges and was the largest consumer of the daily KV write quota, while the consumer's database check already gives the hard guarantee. A duplicate delivery now costs one extra queue message.
 
-The events queue flushes after one second rather than waiting for a fuller batch, since a category alert is time-sensitive.
+Both queues (events, and the notification jobs described in [notification delivery](notification-delivery.md)) deliver batches of at most ten messages and flush after one second rather than waiting for a fuller batch, since a category alert is time-sensitive.
 
 ## Staying Correct Over Time
 
