@@ -1,16 +1,16 @@
 ---
 name: feature-round
-description: Implement a batch of specs/issues in parallel, one isolated git worktree per group of related items.
+description: Implement a batch of issues in parallel, one isolated git worktree per group of related items.
 disable-model-invocation: true
 ---
 
 # Implementation Round
 
-Runs [feature](../feature) for a batch of specs/issues, one isolated git worktree per group under `.agents/worktrees/`, groups in parallel. Every item is validated before any worktree is created, so the batch either proceeds whole or pauses on one consolidated set of questions (open decisions and proposed grouping).
+Runs [feature](../feature) for a batch of issues, one isolated git worktree per group under `.agents/worktrees/`, groups in parallel. Every item is validated before any worktree is created, so the batch either proceeds whole or pauses on one consolidated set of questions (open decisions and proposed grouping).
 
 ## When to use
 
-Given a list of inputs to implement together - any mix of spec paths (`specs/milestones/<name>/*.md`), GitHub issue numbers/URLs, or local issue files (`.agents/issues/*.md`). You don't need to pre-group them yourself - the skill determines which items are independent (one worktree each) and which are coupled enough to need a single shared implementation (one worktree, multiple items; see superpowers:dispatching-parallel-agents for the independence test). Items touching the same file is not disqualifying by itself - each worktree is an isolated copy, so plain file overlap only surfaces as a later merge conflict, which is expected and not blocking; what actually forces grouping is a sequential dependency or two items changing the same flow. For a single item, use `feature` directly instead.
+Given a list of inputs to implement together - any mix of GitHub issue numbers/URLs or local issue files (`.agents/issues/*.md`). You don't need to pre-group them yourself - the skill determines which items are independent (one worktree each) and which are coupled enough to need a single shared implementation (one worktree, multiple items; see superpowers:dispatching-parallel-agents for the independence test). Items touching the same file is not disqualifying by itself - each worktree is an isolated copy, so plain file overlap only surfaces as a later merge conflict, which is expected and not blocking; what actually forces grouping is a sequential dependency or two items changing the same flow. For a single item, use `feature` directly instead.
 
 ## What to do
 

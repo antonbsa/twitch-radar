@@ -10,16 +10,15 @@
 - Agent instructions follow the code: a change that moves, renames or removes a package, directory, script, workflow, skill or convention, or that amends an ADR an instruction cites, updates the instruction in the same change. Symptom: an `AGENTS.md`, subagent or skill sends the agent to a path, command or procedure that no longer exists, so it explores the wrong place or follows a dead step. Why it slips: tests and lint don't read prose, and nested `AGENTS.md` files load only when someone works in that directory. Verify with `grep -rn --include=AGENTS.md --include='*.md' "<old name or ADR number>" AGENTS.md apps infra tests .claude/agents .claude/skills` for everything the change touches, and re-read the Project Map above when a package or doc root changes.
 - Where guidance goes: needed on most edits → this file; scoped to a directory → that directory's `AGENTS.md` (plus a `CLAUDE.md` containing `@AGENTS.md`); a procedure for one task only → inline in the nearest `AGENTS.md` when it fits in ~15 lines, else a skill at `.claude/skills/<name>/SKILL.md` whose `description` leads with its trigger, plus a one-line "Before X, use the Y skill" in the nearest `AGENTS.md` when work in that directory should always reach it; a decision → ADR. `docs/` is application documentation (HTTP surface, deployment runbook, ADRs, TNs), never an agent procedure. Re-check placement when a section grows or its trigger changes.
 - Domain vocabulary (Channel State, Snapshot, Event, Stale Event, State Change): [GLOSSARY.md](GLOSSARY.md). Use these terms in names and comments.
-- `specs/mvp/00. architecture.md` is background reference for the product/system; the MVP spec is closed to new work.
 
 ## Workflow
 
 Issue → ADR/TN if a decision changes → implementation → PR → release.
 
-1. **Issue.** Spec-shaped GitHub issues are the source of truth for milestone 1+ work (ADR 0043): problem/motivation, a resolved proposed solution, acceptance criteria. Every issue needs a milestone: use the one the prompt names, else pick the best fit from `gh api repos/{owner}/{repo}/milestones`, or say none fits and suggest a new one. Without a GitHub issue, a spec-shaped file under `.agents/issues/` works. A milestone overview under `specs/milestones/<name>` is optional, only when several issues need shared goals/scope.
+1. **Issue.** Spec-shaped GitHub issues are the source of truth for milestone 1+ work (ADR 0043): problem/motivation, a resolved proposed solution, acceptance criteria. Every issue needs a milestone: use the one the prompt names, else pick the best fit from `gh api repos/{owner}/{repo}/milestones`, or say none fits and suggest a new one. Without a GitHub issue, a spec-shaped file under `.agents/issues/` works. Shared context for several issues goes in the GitHub milestone description.
 2. **Decision.** If the work needs an accepted decision, add or update an ADR before broad coding. Research that changes nothing goes in a TN (see below).
 3. **Implement** via [feature](.claude/skills/feature), committed together with the spec/task updates it completes.
-4. **PR** via [open-pr](.claude/skills/open-pr): tests, migrations/config and specs/ADRs are part of the review. The skill owns the labels rule.
+4. **PR** via [open-pr](.claude/skills/open-pr): tests, migrations/config and ADRs/docs are part of the review. The skill owns the labels rule.
 5. **Release** via [release](.claude/skills/release). Merging to `main` only deploys preview; production ships when a release is published ([ADR 0041](docs/decisions/0041-release-gated-production-deploys.md)).
 
 ## ADRs vs Technical Notes
@@ -58,7 +57,7 @@ Keep them short: inline is 1-2 lines above the relevant line. JSDoc only when th
 
 ## Commits
 
-- Conventional Commits: `feat:` runtime behavior, `fix:` bug fixes, `docs:` docs/specs/task checklists/agent instructions, `test:` test-only, `chore:` tooling/deps/formatting/maintenance, `refactor:` restructuring without behavior change. If a change touches both docs and tooling or scripts, use `chore:`.
+- Conventional Commits: `feat:` runtime behavior, `fix:` bug fixes, `docs:` docs/agent instructions, `test:` test-only, `chore:` tooling/deps/formatting/maintenance, `refactor:` restructuring without behavior change. If a change touches both docs and tooling or scripts, use `chore:`.
 - Subject: imperative, ≤72 chars, no trailing period; it must stand alone in `git log --oneline`.
 - Body is optional; skip it when the subject says everything. When present: 1–4 `- ` bullets, one line each, no hard wrap. Each says why or what's non-obvious (constraint, rejected alternative, side effect), never a file-by-file how.
 - Context that has a home elsewhere (incident history, design rationale) stays in its issue/ADR/PR; the commit points to it in a footer (`Refs: #73, ADR 0049`) instead of retelling it. Only the first commit of a branch carries the footer; follow-up commits on the same branch skip it, since they ship in the same PR.
@@ -130,4 +129,4 @@ Don't add code that only accepts old schema/data states. When a schema or format
 - A fresh worktree needs `npm install` at its root before anything runs.
 - To check a UI change yourself, run `npm run dev:sandbox` from the worktree as a background task with its own `WEB_DEV_PORT`/`API_DEV_PORT`/`API_INSPECTOR_PORT`, then drive `http://localhost:<WEB_DEV_PORT>` with the Playwright MCP (`.mcp.json`) and log in through `/sandbox` ([sandbox](.claude/skills/sandbox/SKILL.md) skill). Use `localhost`, never `127.0.0.1`: the session cookie is host-bound. Screenshots for a PR go through the [screenshot](.claude/skills/screenshot/SKILL.md) skill instead.
 - Symptom: the page loads fine but your change is missing, or another worktree's data shows up. Why it slips: the port belongs to the main checkout's dev server, or to another worktree's. Verify the port in the URL is the one you started, and confirm the change renders before trusting a check. Data seeded through `/api/__test__/seed` lands in the shared dev D1, so clear it with `POST /api/__test__/reset` before stopping.
-- `.agents/` is gitignored scratch space (drafts, worktrees), not project state. Don't read or factor in its contents unless a task points at a specific file; real decisions live in `docs/decisions`, `docs/notes` and `specs/`.
+- `.agents/` is gitignored scratch space (drafts, worktrees), not project state. Don't read or factor in its contents unless a task points at a specific file; real decisions live in `docs/decisions` and `docs/notes`.

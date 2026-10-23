@@ -29,7 +29,7 @@ export interface ChannelAlertGroup {
  * display metadata against the followed-channel list and flagging categories
  * that an active global preference already covers (exclusions applied).
  *
- * Ordering matches the Channels page (specs/mvp/02. ui-layout.md): live first
+ * Ordering matches the Channels page (docs/architecture/web-client.md): live first
  * by viewer count descending, then offline by display name ascending, then any
  * channel missing from the followed list.
  */

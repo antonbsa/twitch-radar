@@ -4,7 +4,7 @@ How the list of channels a user follows, and which of them are live, gets from T
 
 ## What It Produces
 
-A sync reads two things from Twitch with the user's token: the full list of followed channels, and the live streams among them ([ADR 0005](../decisions/0005-sync-followed-channels-with-twitch-apis.md)). It merges them into the shape the Channels tab renders, ordered like Twitch's sidebar: live channels first by viewer count, then offline ones by name. The browser never calls Twitch; it reads what the sync wrote.
+A sync reads two things from Twitch with the user's token: the full list of followed channels (every page of it, since users can follow thousands), and the live streams among them ([ADR 0005](../decisions/0005-sync-followed-channels-with-twitch-apis.md)). It merges them into the shape the Channels tab renders, ordered like Twitch's sidebar: live channels first by viewer count, then offline ones by name. The browser never calls Twitch; it reads what the sync wrote.
 
 A sync writes to two places:
 
