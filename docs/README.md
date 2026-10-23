@@ -23,7 +23,9 @@ Start with the [product overview](product.md) for what Twitch Radar does, then p
 
 | Doc | Read it when |
 | --- | --- |
-| [development.md](development.md) | You're setting up locally, testing push (including from a phone), or working with env vars, ports and worktrees. |
+| [guides/run-locally.md](guides/run-locally.md) | You're setting up a machine, adding credentials, or running several worktrees. Starts with `npm run doctor`. |
+| [guides/test-push.md](guides/test-push.md) | You want a real push notification from your local setup without waiting for a broadcaster. |
+| [guides/test-on-phone.md](guides/test-on-phone.md) | You're testing the installed app on a phone through a tunnel, or login or push fails there. |
 
 ## Look Up
 

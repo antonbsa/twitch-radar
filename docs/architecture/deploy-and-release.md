@@ -8,7 +8,7 @@ There are three: local development, a **preview** environment and **production**
 
 The app is a single Worker per environment on the default `workers.dev` domain. The web build is served as static assets by the same Worker, so the PWA and the API share one origin ([ADR 0037](../decisions/0037-single-public-url-same-origin-deployment.md)). One public URL per environment is the source for OAuth redirects, the post-login redirect and the webhook callback.
 
-Development, preview and production all use the same Twitch application, so they are told apart only by their callback URL. That is why subscription reconciliation only touches subscriptions whose callback is its own ([monitoring](monitoring.md)), and why running a local server against a shared remote environment is a documented hazard: it would write local-dev values into shared data ([local development](../development.md)).
+Development, preview and production all use the same Twitch application, so they are told apart only by their callback URL. That is why subscription reconciliation only touches subscriptions whose callback is its own ([monitoring](monitoring.md)), and why running a local server against a shared remote environment is a documented hazard: it would write local-dev values into shared data ([run locally](../guides/run-locally.md#warning-wrangler-dev---remote)).
 
 ## CI
 
