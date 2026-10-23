@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: notifications
+---
+
 # 0029 - Category Preference API Contract And Lifecycle
 
 ## Status

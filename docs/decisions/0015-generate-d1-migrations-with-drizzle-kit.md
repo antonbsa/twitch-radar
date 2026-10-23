@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: platform
+---
+
 # 0015 - Generate D1 Migrations With Drizzle Kit
 
 ## Status

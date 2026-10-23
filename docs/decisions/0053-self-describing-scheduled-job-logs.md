@@ -1,3 +1,9 @@
+---
+status: Accepted
+area: operations
+amended-by: ["0057"]
+---
+
 # 0053 - Self-Describing Scheduled Job Logs
 
 ## Status

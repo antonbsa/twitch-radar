@@ -1,3 +1,7 @@
+---
+status: Explored, not adopted
+---
+
 # 0006 - Category Art In Push Notifications Not Justified
 
 ## Status

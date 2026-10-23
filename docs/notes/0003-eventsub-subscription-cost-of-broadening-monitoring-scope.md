@@ -1,3 +1,7 @@
+---
+status: Deferred
+---
+
 # 0003 - EventSub Subscription Cost of Broadening Monitoring Scope
 
 ## Status

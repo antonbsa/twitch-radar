@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: process
+---
+
 # 0039 - Adopt Technical Notes For Non-Decision Research
 
 ## Status

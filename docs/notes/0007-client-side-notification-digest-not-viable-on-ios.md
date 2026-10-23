@@ -1,3 +1,8 @@
+---
+status: Explored, not adopted
+related: ["ADR 0055"]
+---
+
 # 0007 - Client-Side Notification Digest Not Viable On iOS
 
 ## Status

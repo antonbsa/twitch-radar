@@ -1,3 +1,9 @@
+---
+status: Accepted
+area: testing
+amends: ["0025"]
+---
+
 # 0064 - Web Unit Tests As Their Own Tier
 
 ## Status

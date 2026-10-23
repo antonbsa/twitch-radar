@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: web
+---
+
 # 0022 - Use shadcn/ui For Component Primitives
 
 ## Status

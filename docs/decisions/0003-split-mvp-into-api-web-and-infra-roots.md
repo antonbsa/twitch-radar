@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: platform
+---
+
 # 0003 - Split The MVP Into API, Web, And Infrastructure Roots
 
 ## Status

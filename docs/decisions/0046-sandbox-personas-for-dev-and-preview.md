@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: testing
+---
+
 # 0046 - Sandbox Personas For Twitch-Free Dev And Preview Access
 
 ## Status

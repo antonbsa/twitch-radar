@@ -1,3 +1,8 @@
+---
+status: Informational # Informational | Explored, not adopted | Deferred | Superseded
+# supersedes: ["NNNN"] and related: ["ADR NNNN"] are optional; record each on both files
+---
+
 # NNNN - Title
 
 ## Status

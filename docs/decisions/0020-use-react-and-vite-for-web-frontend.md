@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: web
+---
+
 # 0020 - Use React And Vite For The Web Frontend
 
 ## Status

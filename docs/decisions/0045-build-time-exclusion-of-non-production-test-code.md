@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: testing
+---
+
 # 0045 - Build-Time Exclusion Of Non-Production Test/Dev Code
 
 ## Status

@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: platform
+---
+
 # 0014 - Use Hono For Worker API Routing
 
 ## Status

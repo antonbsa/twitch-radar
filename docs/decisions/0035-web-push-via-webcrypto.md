@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: notifications
+---
+
 # 0035 - Web Push Sends Hand-Rolled On WebCrypto
 
 ## Status
