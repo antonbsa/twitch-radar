@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: auth
+---
+
 # 0017 - KV Storage for OAuth State Parameter
 
 ## Status

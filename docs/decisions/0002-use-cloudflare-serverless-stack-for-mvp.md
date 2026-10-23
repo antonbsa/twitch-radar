@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: platform
+---
+
 # 0002 - Use Cloudflare Serverless Stack For The MVP
 
 ## Status

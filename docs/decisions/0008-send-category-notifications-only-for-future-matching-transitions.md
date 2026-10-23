@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: notifications
+---
+
 # 0008 - Send Category Notifications Only For Future Matching Transitions
 
 ## Status

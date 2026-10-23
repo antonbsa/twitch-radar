@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: web
+---
+
 # 0021 - Use Tailwind CSS For Styling
 
 ## Status

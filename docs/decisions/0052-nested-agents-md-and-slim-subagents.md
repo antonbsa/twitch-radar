@@ -1,3 +1,9 @@
+---
+status: Accepted
+area: process
+amends: ["0038"]
+---
+
 # 0052 - Agent Instructions: Nested AGENTS.md For Conventions, Subagents For Persona And Boundaries
 
 ## Status

@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: testing
+---
+
 # 0011 - Keep API Tests Under Root Tests Api
 
 ## Status

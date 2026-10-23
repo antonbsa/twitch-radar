@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: notifications
+---
+
 # 0027 - Push Subscription Lifecycle And API Contract
 
 ## Status

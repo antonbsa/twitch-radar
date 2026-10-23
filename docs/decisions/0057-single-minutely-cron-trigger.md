@@ -1,3 +1,9 @@
+---
+status: Accepted
+area: operations
+amends: ["0036", "0053"]
+---
+
 # 0057 - Single Minutely Cron Trigger With Time-Based Job Dispatch
 
 ## Status

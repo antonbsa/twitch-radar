@@ -26,6 +26,7 @@ Issue → ADR/TN if a decision changes → implementation → PR → release.
 - ADR: an accepted decision the code is expected to reflect. Use it when a change is being made or has been made.
 - TN: a researched conclusion that is not an action (including "we considered this and are not doing it"). Suggest one when a thread converges and nothing else captures it. Never write a TN to justify a change that is happening now.
 - TN procedure: [docs/notes/README.md](docs/notes/README.md).
+- Both start with YAML frontmatter (status, relations, ADRs also `area`) and are listed in READMEs generated from it. Symptom: `npm run check-docs` fails with a stale index or a missing inverse relation. Why it slips: the index is a generated block, so a hand edit or a status change in the prose alone is never reviewed against it. After adding an ADR or TN or changing its frontmatter, run `npm run docs:index` and record each relation on both files ([ADR README](docs/decisions/README.md)).
 
 ## Follow-up Changes
 

@@ -1,3 +1,9 @@
+---
+status: Accepted
+area: process
+amends: ["0043", "0062"]
+---
+
 # 0065 - Organize Human Docs By Reader Moment, With Generated Indexes
 
 ## Status

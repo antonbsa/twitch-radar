@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: monitoring
+---
+
 # 0006 - Store Current Channel State Separately From State History
 
 ## Status

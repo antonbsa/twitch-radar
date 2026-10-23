@@ -1,3 +1,9 @@
+---
+status: Rejected
+area: monitoring
+related: ["TN 0004"]
+---
+
 # 0042 - Async Follow Sync Via Queue With KV-Backed Progress Polling
 
 ## Status

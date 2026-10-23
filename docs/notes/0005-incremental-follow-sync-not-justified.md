@@ -1,3 +1,7 @@
+---
+status: Explored, not adopted
+---
+
 # 0005 - Incremental Follow Sync Not Justified
 
 ## Status

@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: operations
+---
+
 # 0047 - Error Alerting Via The Sentry SDK And A Direct Slack Webhook
 
 ## Status

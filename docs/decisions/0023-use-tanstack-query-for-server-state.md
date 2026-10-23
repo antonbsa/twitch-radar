@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: web
+---
+
 # 0023 - Use TanStack Query For Server State
 
 ## Status

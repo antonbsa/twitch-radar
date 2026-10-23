@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: notifications
+---
+
 # 0034 - Notification Matching And Delivery Pipeline
 
 ## Status

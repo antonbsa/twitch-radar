@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: monitoring
+---
+
 # 0004 - Use Twitch EventSub Webhooks
 
 ## Status

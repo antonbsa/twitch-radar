@@ -1,3 +1,9 @@
+---
+status: Accepted
+area: testing
+amended-by: ["0064"]
+---
+
 # 0025 - E2E UI Tests With Playwright And A Guarded Test-Seam Endpoint
 
 ## Status

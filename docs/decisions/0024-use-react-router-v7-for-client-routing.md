@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: web
+---
+
 # 0024 - Use React Router v7 For Client Routing
 
 ## Status

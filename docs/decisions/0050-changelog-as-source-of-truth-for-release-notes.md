@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: delivery
+---
+
 # 0050 - CHANGELOG.md As The Source Of Truth For Release Notes
 
 ## Status

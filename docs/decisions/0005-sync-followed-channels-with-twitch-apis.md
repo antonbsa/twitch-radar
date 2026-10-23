@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: monitoring
+---
+
 # 0005 - Sync Followed Channels With Twitch Follow And Stream APIs
 
 ## Status

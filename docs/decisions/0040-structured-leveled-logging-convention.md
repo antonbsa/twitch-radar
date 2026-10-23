@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: operations
+---
+
 # 0040 - Structured Leveled Logging Convention
 
 ## Status

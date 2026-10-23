@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: monitoring
+---
+
 # 0031 - EventSub Subscription Creation And Status Lifecycle
 
 ## Status

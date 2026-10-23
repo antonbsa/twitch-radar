@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: platform
+---
+
 # 0013 - Use Drizzle ORM For D1 Access
 
 ## Status

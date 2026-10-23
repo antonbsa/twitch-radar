@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: notifications
+---
+
 # 0051 - Suppress Notifications For Non-Live Stream Types
 
 ## Status

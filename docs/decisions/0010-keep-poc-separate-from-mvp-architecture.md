@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: process
+---
+
 # 0010 - Keep The POC Separate From The MVP Architecture
 
 ## Status

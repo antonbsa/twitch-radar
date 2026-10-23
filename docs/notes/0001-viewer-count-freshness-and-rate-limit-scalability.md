@@ -1,3 +1,8 @@
+---
+status: Superseded
+superseded-by: ["0002"]
+---
+
 # 0001 - Viewer Count Freshness and Rate-Limit Scalability
 
 ## Status

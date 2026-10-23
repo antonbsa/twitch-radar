@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: platform
+---
+
 # 0058 - Cache Category Box Art In D1 And Attach It To API Responses
 
 ## Status

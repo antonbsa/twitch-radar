@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: platform
+---
+
 # 0059 - Timestamp-Prefixed D1 Migrations
 
 ## Status

@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: monitoring
+---
+
 # 0032 - EventSub Webhook Verification And Queueing
 
 ## Status

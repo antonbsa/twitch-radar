@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: platform
+---
+
 # 0028 - Mirror Wire-Shape Types Across Workspaces Instead Of A Shared Package
 
 ## Status

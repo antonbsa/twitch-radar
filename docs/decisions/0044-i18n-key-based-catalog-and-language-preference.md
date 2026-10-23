@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: web
+---
+
 # 0044 - I18n Key-Based Catalog And Language Preference
 
 ## Status

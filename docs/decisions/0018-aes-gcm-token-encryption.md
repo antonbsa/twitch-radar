@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: auth
+---
+
 # 0018 - AES-256-GCM Encryption for Twitch Tokens
 
 ## Status

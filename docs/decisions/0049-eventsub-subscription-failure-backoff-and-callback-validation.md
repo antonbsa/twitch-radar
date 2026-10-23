@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: monitoring
+---
+
 # 0049 - EventSub Subscription Failure Backoff, Terminal Status, And Callback Validation
 
 ## Status

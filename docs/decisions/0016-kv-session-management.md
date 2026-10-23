@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: auth
+---
+
 # 0016 - KV-Backed Session Management
 
 ## Status

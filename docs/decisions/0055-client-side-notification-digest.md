@@ -1,3 +1,9 @@
+---
+status: Rejected
+area: notifications
+related: ["TN 0007"]
+---
+
 # 0055 - Client-Side Notification Digest
 
 ## Status

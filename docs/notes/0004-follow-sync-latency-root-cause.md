@@ -1,3 +1,8 @@
+---
+status: Informational
+related: ["ADR 0042"]
+---
+
 # 0004 - Follow Sync Latency Root Cause
 
 ## Status
