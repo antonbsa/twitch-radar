@@ -51,12 +51,12 @@ Test and sandbox code is compiled out of the production bundle by a build-time c
 
 For manual and agent testing, dev and preview also expose a sandbox: fixed fictional personas anyone can sign in as without a Twitch account, a fake Twitch API inside the Worker, and an endpoint to inject a go-live or category-switch event into the real processing path ([ADR 0046](../decisions/0046-sandbox-personas-for-dev-and-preview.md)). It is safe to expose without a credential because a persona login can only produce one of a few predetermined identities. It is for exploring the app, not a third test tier: one smoke test keeps it from breaking silently.
 
-## What Tests Can't See
-
-Passing both tiers says little about an installed iOS PWA. Push permission, notification display and tap handling behave differently there, so they are verified by hand on a phone through the development tunnel ([development](../development.md)). A feature that depends on a platform API isn't done until it has worked on iOS.
-
 ## Static Checks
 
 CI also runs checks that tests wouldn't catch: lint and formatting, typecheck, a check that all language catalogs have the same keys, migration consistency, and the production-bundle check ([deploy and release](deploy-and-release.md)).
 
 Failed CI test runs publish a report (test output, server logs, traces and screenshots) to a separate reports repository and link it from the pull request, so a CI failure can be read without reproducing it ([ADR 0060](../decisions/0060-publish-failed-ci-test-reports-to-a-pages-repo.md)).
+
+## Known Limits
+
+Passing both tiers says little about an installed iOS PWA. Push permission, notification display and tap handling behave differently there, so they are verified by hand on a phone through the development tunnel ([development](../development.md)). A feature that depends on a platform API isn't done until it has worked on iOS.

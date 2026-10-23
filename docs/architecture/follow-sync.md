@@ -10,7 +10,7 @@ sequenceDiagram
     participant T as Twitch
     participant D as D1
 
-    alt App load or foreground (last sync missing or older than 30 min), or the Sync button
+    alt App load or foreground (last sync missing, as after a first login, or older than 30 min), or the Sync button
         A->>W: sync
         W->>T: followed channels (every page) and live streams
         T->>W: follows and live state
