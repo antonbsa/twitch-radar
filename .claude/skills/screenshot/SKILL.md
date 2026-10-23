@@ -29,6 +29,6 @@ Images go in a Markdown table with two columns, `Before | After`, and one row ho
 
 ## Where images live
 
-`npm run pr:image` commits to `assets/<branch>/` on `main` of the `<repo>-ci-reports` repo (set up in [docs/deployment.md](../../../docs/deployment.md#ci-test-reports-repo); [ADR 0060](../../../docs/decisions/0060-publish-failed-ci-test-reports-to-a-pages-repo.md)) and needs push access to it through `gh`. The links point at `main`, not a commit, so re-uploading a name replaces it in earlier PR descriptions; use a new name to keep both.
+`npm run pr:image` commits to `assets/<branch>/` on `main` of the `<repo>-ci-reports` repo (set up in [docs/operations/environment-setup.md](../../../docs/operations/environment-setup.md#ci-test-reports-repo); [ADR 0060](../../../docs/decisions/0060-publish-failed-ci-test-reports-to-a-pages-repo.md)) and needs push access to it through `gh`. The links point at `main`, not a commit, so re-uploading a name replaces it in earlier PR descriptions; use a new name to keep both.
 
 Don't upload screenshots containing real tokens, emails or non-test user data: the repo is public.

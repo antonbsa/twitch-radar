@@ -1,6 +1,6 @@
 # Development
 
-How to run Twitch Radar locally, test push notifications (including from a phone), and what the Cloudflare Queues and Cron Triggers do while you do. For the product itself see [product.md](product.md); for deploying see [deployment.md](deployment.md); for coding conventions see the [`AGENTS.md`](../AGENTS.md) files.
+How to run Twitch Radar locally, test push notifications (including from a phone), and what the Cloudflare Queues and Cron Triggers do while you do. For the product itself see [product.md](product.md); for deploying and operating see [operations](operations/incident.md); for coding conventions see the [`AGENTS.md`](../AGENTS.md) files.
 
 ## Getting Started
 
@@ -92,6 +92,16 @@ http://localhost:5173/api/auth/twitch/start
 (via Vite's proxy, not `:8787` directly — API and web are same-origin in every environment, including local dev, so there's one `PUBLIC_URL` for both; see `apps/api/src/env.ts`.)
 
 At this point you can log in, browse channels, and set preferences on the dev machine. The two sections below cover the two things that setup alone doesn't give you: real Web Push notifications, and access from a phone.
+
+### Hazard: `wrangler dev --remote` Against A Shared Environment
+
+> **Warning:** Any `wrangler dev --env <preview|production> --remote` writes directly into that environment's shared D1/KV, along with any local-dev values still in effect (`.env.local`, an `--env-file` flag, a stray `--var`). Issue #73's preview incident started this way: `pending` `eventsub_subscriptions` rows with a `localhost` `callback_url` that Twitch permanently rejects sat undetected for over two weeks.
+
+`npm run dev:remote` (`infra/scripts/dev/remote-preview.mjs`) runs `wrangler dev --env preview --remote`, bound to preview's real D1/KV rather than the isolated local-dev database. Before running `wrangler dev` with `--remote` against `preview` or `production`:
+
+- Prefer the existing `npm run dev:remote` script for preview rather than a hand-rolled invocation — it already handles the `PUBLIC_URL` override and the queues-binding incompatibility (see its comments).
+- If you must invoke `wrangler dev --remote` by hand, double-check every env var/`--var` override actually reflects that remote environment's real values before the server starts accepting requests — not after.
+- When in doubt, don't run `--remote` at all: plain `wrangler dev` (no `--remote`) against the local D1/KV bindings is safe by construction and covers the overwhelming majority of local development needs.
 
 ## Testing Web Push Notifications
 

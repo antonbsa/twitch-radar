@@ -122,7 +122,7 @@ The model separates three kinds of data:
 - **Per broadcaster, shared by everyone:** which broadcasters are monitored, their EventSub subscriptions, their current state and the history of relevant transitions ([ADR 0006](../decisions/0006-store-current-channel-state-separately-from-history.md), [ADR 0007](../decisions/0007-monitor-broadcasters-globally-across-users.md)). Twitch is asked once per broadcaster, not once per follower.
 - **Audit:** one delivery row per notification decision, with a terminal status, so "did the push go out" is a single query.
 
-A small cache table holds category artwork ([ADR 0058](../decisions/0058-cache-category-box-art-in-d1.md)). Everything the API exposes to the web client is documented in [api-contract.md](../api-contract.md); the two sides mirror their wire types by hand instead of sharing a package ([ADR 0028](../decisions/0028-mirror-wire-shape-types-across-workspaces.md)).
+A small cache table holds category artwork ([ADR 0058](../decisions/0058-cache-category-box-art-in-d1.md)). Everything the API exposes to the web client is documented in [api-contract.md](../reference/api-contract.md); the two sides mirror their wire types by hand instead of sharing a package ([ADR 0028](../decisions/0028-mirror-wire-shape-types-across-workspaces.md)).
 
 ## Defining Trade-offs
 
@@ -166,7 +166,7 @@ The controls live in the subsystem pages; this is the map of them.
 
 ## Recovery
 
-Reconciliation repairs what is derived from Twitch: after a database reset it recreates the EventSub subscriptions for the monitored set. What it can't recover is what only this system knew: users, their encrypted Twitch tokens, push subscriptions, preferences and delivery history. Those come back only from a D1 restore: Time Travel for a recent logical error, or the daily encrypted off-site export if the database itself is gone, at most a day old ([ADR 0063](../decisions/0063-scheduled-encrypted-d1-exports-to-backblaze-b2.md), [deployment: backup and recovery](../deployment.md#backup-and-recovery)). A restore is only usable with the original token-encryption key and push keypair, which live outside Cloudflare. KV needs none: sessions, OAuth state and the app token are disposable, and losing them only logs people out.
+Reconciliation repairs what is derived from Twitch: after a database reset it recreates the EventSub subscriptions for the monitored set. What it can't recover is what only this system knew: users, their encrypted Twitch tokens, push subscriptions, preferences and delivery history. Those come back only from a D1 restore: Time Travel for a recent logical error, or the daily encrypted off-site export if the database itself is gone, at most a day old ([ADR 0063](../decisions/0063-scheduled-encrypted-d1-exports-to-backblaze-b2.md), [backup and restore](../operations/backup-and-restore.md)). A restore is only usable with the original token-encryption key and push keypair, which live outside Cloudflare. KV needs none: sessions, OAuth state and the app token are disposable, and losing them only logs people out.
 
 ## Where To Go Next
 

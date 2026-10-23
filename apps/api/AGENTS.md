@@ -54,7 +54,7 @@ for (let i = 0; i < ids.length; i += BATCH_SIZE) {
 
 ## API contract doc
 
-[docs/api-contract.md](../../docs/api-contract.md) maps the HTTP surface: auth convention, error envelope, the idempotent-create/soft-disable-delete pattern, and an endpoint index. It stays at convention level; request/response shapes live in the route file.
+[docs/reference/api-contract.md](../../docs/reference/api-contract.md) maps the HTTP surface: auth convention, error envelope, the idempotent-create/soft-disable-delete pattern, and an endpoint index. It stays at convention level; request/response shapes live in the route file.
 
 - Update it in the same change when adding, removing, or renaming a route, or changing the auth/error/idempotency convention it describes.
 - A change confined to a route's internal logic (no shape or convention change) doesn't need it.
@@ -70,7 +70,7 @@ for (let i = 0; i < ids.length; i += BATCH_SIZE) {
 - Symptom: a failure shows up only in Workers Logs, with no Sentry issue or Slack message, and the Cloudflare error count stays at zero. Why it slips past local checks: a `catch` that calls `logger.error` handles the error, so the invocation succeeds and `withSentry` never sees it (ADR 0047); `scheduled` isn't wrapped by `withSentry` at all, to stay under the Free plan's 10ms cron CPU, so `recordFailure` is its only path to Sentry; tests pass and nothing else flags the gap.
 - Every `catch` that logs a failure with `logger.error` also calls `recordFailure(<same message>, error)` from `lib/alerting.ts`. It buffers per invocation and sends one aggregated report; `reportFailure` is the awaitable variant for `waitUntil`.
 - A promise handed to `c.executionCtx.waitUntil` catches, logs and `recordFailure`s its own error (see `persistFollowedChannelsSyncDeferred`), since a rejection there reaches no handler.
-- Verify for real: `npx wrangler tail --env preview` while forcing the failure (delete the `twitch:app_access_token` KV key, then set a bad `TWITCH_CLIENT_SECRET`) and confirm the Sentry issue and the Slack message. [docs/deployment.md](../../docs/deployment.md) "Error alerting" has the setup.
+- Verify for real: `npx wrangler tail --env preview` while forcing the failure (delete the `twitch:app_access_token` KV key, then set a bad `TWITCH_CLIENT_SECRET`) and confirm the Sentry issue and the Slack message. [docs/operations/secrets.md](../../docs/operations/secrets.md) "Error Alerting" has the setup.
 
 ## Change together
 
