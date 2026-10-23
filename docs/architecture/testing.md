@@ -2,6 +2,28 @@
 
 What is tested, at which level, and the seams that make a webhook-and-queue system testable. Part of the [architecture overview](overview.md).
 
+```mermaid
+flowchart LR
+    subgraph unit["Web unit (runs first, no setup)"]
+        u["Pure functions and parsers"]
+    end
+    subgraph api["API tier"]
+        direction TB
+        apiv["vitest"] -->|"global setup boots"| apiw["Local Worker, throwaway D1 and KV"]
+        apiv -->|"global setup boots"| mock["Mock Twitch server, in the test process"]
+        apiv -->|"real HTTP"| apiw
+        apiw -->|"Twitch and push calls"| mock
+    end
+    subgraph e2e["Web e2e (serial)"]
+        direction TB
+        e2ev["vitest + Playwright"] -->|"global setup boots"| e2ew["Local Worker"]
+        e2ev -->|"global setup boots"| vite["Vite dev server"]
+        e2ev -->|"real browser"| vite
+        vite -->|"proxies the API"| e2ew
+    end
+    unit --> e2e
+```
+
 ## Tiers
 
 The API and web e2e tiers are plain `vitest` runs whose global setup boots everything the tests need, tears it down, and prints the captured server output if setup fails ([ADR 0025](../decisions/0025-e2e-ui-tests-with-playwright-and-test-seam.md)). Neither needs a manually started server. Web unit tests are a third, setup-free tier that runs before the e2e one ([ADR 0064](../decisions/0064-web-unit-tests-as-their-own-tier.md)).

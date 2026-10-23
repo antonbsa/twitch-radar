@@ -2,6 +2,23 @@
 
 What runs on a timer and why it shares one trigger. Part of the [architecture overview](overview.md).
 
+```mermaid
+flowchart TD
+    cron["Cron Trigger fires every minute"] --> minute["Take the scheduled minute, in UTC"]
+    minute --> sub["Subscription creation (smaller batch if a periodic job is due)"]
+    sub --> snooze["Snooze sweep"]
+    snooze --> token["Token refresh"]
+    token --> due{"Minute of the hour"}
+    due -->|"0 or 30"| recon["Reconciliation"]
+    due -->|"10"| follow["Follow sync"]
+    due -->|"any other"| done["Done"]
+    recon --> done
+    follow --> month{"First of the month, 04:10 UTC"}
+    month -->|"yes"| avatar["Avatar refresh"]
+    month -->|"no"| done
+    avatar --> done
+```
+
 ## One Trigger
 
 The Worker has a single Cron Trigger per environment, firing every minute. Cloudflare caps triggers per account, not per Worker, so a trigger per job left preview with one slot and made every new schedule cost a slot in each environment. Instead the handler runs the jobs that are due at the _scheduled_ minute, in UTC, and never at the wall-clock time of a late invocation ([ADR 0057](../decisions/0057-single-minutely-cron-trigger.md)).

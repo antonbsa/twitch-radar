@@ -2,6 +2,22 @@
 
 How a change gets from a pull request to users: the environments, what CI checks, and why production only moves when a release is published. Part of the [architecture overview](overview.md). The step-by-step runbooks are in [operations](../operations/environment-setup.md) (start with the [incident page](../operations/incident.md) when something is on fire); this page is the reasoning.
 
+```mermaid
+flowchart LR
+    pr["Pull request"] --> prchecks["Code quality + Automated tests"]
+    prchecks --> merge["Merge to main"]
+    merge --> viapr{"Merge of a PR that already passed?"}
+    viapr -->|"no"| rerun["Re-run the checks"]
+    viapr -->|"yes"| pmig
+    rerun --> pmig["Apply D1 migrations (preview)"]
+    pmig --> preview["Deploy preview"]
+
+    release["Publish a GitHub release (manual)"] --> tag["Check out the release tag"]
+    tag --> rchecks["Re-run Code quality + Automated tests"]
+    rchecks --> mig["Apply D1 migrations (production)"]
+    mig --> prod["Deploy production"]
+```
+
 ## Environments
 
 There are three: local development, a **preview** environment and **production**. Preview and production are separate Cloudflare resources (their own D1 database, KV namespace and queues, since queue names are account-global) and their own secrets, so preview exercises the real deploy path, EventSub webhooks included, without touching production data or users.

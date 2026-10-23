@@ -4,6 +4,10 @@ How Twitch Radar works end to end and why it is built this way. This page is the
 
 The pages describe the system as it is now, by concept (the Worker, the queues, scheduled jobs), not by file. Coding conventions live in the [`AGENTS.md`](../../AGENTS.md) files, and the history of each decision in the [ADRs](../decisions/README.md).
 
+## In 30 seconds
+
+Twitch Radar tells a person when a streamer they follow goes live or switches to a category they care about, as a push on their phone. Twitch pushes events to one Cloudflare Worker over EventSub webhooks; the Worker turns them into state changes, matches them against each user's alerts through two queues, and sends a Web Push to the installed PWA. The pages below follow that path.
+
 ## Constraints That Shape The Design
 
 - **Cloudflare's free plan.** The whole backend runs on it, so the design is bounded by its limits: a small per-invocation subrequest budget (50), cron triggers capped per account (5), and daily write quotas on KV. Several choices below exist only to stay inside those numbers (a single cron trigger, no per-event KV writes, capped job batches).
