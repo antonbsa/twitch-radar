@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: platform
+---
+
 # 0009 - Use A Consistent JSON API Error Shape
 
 ## Status

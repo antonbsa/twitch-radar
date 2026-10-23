@@ -31,6 +31,7 @@ Start with the [product overview](product.md) for what Twitch Radar does, then p
 | --- | --- |
 | [reference/api-contract.md](reference/api-contract.md) | You need the HTTP surface: routes, shapes and errors. |
 | [GLOSSARY.md](../GLOSSARY.md) | You need the meaning of a domain term: Channel State, Snapshot, Event, Stale Event, State Change. |
+| [history.md](history.md) | You want to know how the project got here: what the proof of concept, the MVP and milestone 0 set out to do and delivered. |
 
 ## Record
 

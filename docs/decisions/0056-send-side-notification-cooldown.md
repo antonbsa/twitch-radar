@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: notifications
+---
+
 # 0056 - Send-Side Notification Cooldown Per User And Broadcaster
 
 ## Status

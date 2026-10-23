@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: delivery
+---
+
 # 0041 - Release-Gated Production Deploys, Automatic Preview Deploys
 
 ## Status

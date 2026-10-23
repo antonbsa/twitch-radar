@@ -1,8 +1,15 @@
+---
+status: Accepted
+area: process
+amends: ["0038"]
+amended-by: ["0065"]
+---
+
 # 0062 - Human-Facing Architecture Documentation
 
 ## Status
 
-Accepted. Amended by [ADR 0065](0065-organize-human-docs-by-reader-moment.md): the docs layout and the generated indexes. Supersedes in part [ADR 0038](0038-adopt-role-scoped-subagents-reject-template.md): its rejection of a standalone architecture document no longer holds for a document written for people. [ADR 0052](0052-nested-agents-md-and-slim-subagents.md) stands: agents still get no codemap.
+Accepted. Amended by [ADR 0065](0065-organize-human-docs-by-reader-moment.md): the docs layout and the generated indexes. Amends [ADR 0038](0038-adopt-role-scoped-subagents-reject-template.md): its rejection of a standalone architecture document no longer holds for a document written for people. [ADR 0052](0052-nested-agents-md-and-slim-subagents.md) stands: agents still get no codemap.
 
 ## Context
 

@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: platform
+---
+
 # 0012 - Use NPM Workspaces For App Packages
 
 ## Status

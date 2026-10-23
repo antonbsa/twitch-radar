@@ -20,4 +20,4 @@ React + Vite frontend for the MVP PWA, deployed as a Cloudflare Pages project.
 - [ADR 0023](../../docs/decisions/0023-use-tanstack-query-for-server-state.md) — TanStack Query
 - [ADR 0024](../../docs/decisions/0024-use-react-router-v7-for-client-routing.md) — React Router v7
 
-UI reference: [`specs/mvp/02. ui-layout.md`](../../specs/mvp/02.%20ui-layout.md)
+UI reference: [Web client](../../docs/architecture/web-client.md)

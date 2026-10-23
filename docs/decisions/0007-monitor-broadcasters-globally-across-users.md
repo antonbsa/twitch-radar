@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: monitoring
+---
+
 # 0007 - Monitor Broadcasters Globally Across Users
 
 ## Status

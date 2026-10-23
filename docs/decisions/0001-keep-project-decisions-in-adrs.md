@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: process
+---
+
 # 0001 - Keep Project Decisions In ADRs
 
 ## Status

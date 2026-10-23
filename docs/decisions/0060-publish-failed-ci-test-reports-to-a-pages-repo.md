@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: delivery
+---
+
 # 0060 - Publish Failed CI Test Reports To A Separate Pages Repo
 
 ## Status

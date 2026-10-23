@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: monitoring
+---
+
 # 0033 - EventSub State Transition Rules
 
 ## Status

@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: delivery
+---
+
 # 0061 - Concurrency Rules For CI And Deploy Workflows
 
 ## Status

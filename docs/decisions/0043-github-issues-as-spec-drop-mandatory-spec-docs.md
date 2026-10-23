@@ -1,3 +1,9 @@
+---
+status: Accepted
+area: process
+amended-by: ["0065"]
+---
+
 # 0043 - GitHub Issues As Spec; Drop The Mandatory Per-Feature Spec Document
 
 ## Status

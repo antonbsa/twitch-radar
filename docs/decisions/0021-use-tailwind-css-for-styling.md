@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: web
+---
+
 # 0021 - Use Tailwind CSS For Styling
 
 ## Status
@@ -6,7 +11,7 @@ Accepted
 
 ## Context
 
-The UI layout reference (`specs/mvp/02. ui-layout.md`) specifies a mobile-first, compact, Twitch-sidebar-style visual language across three tabs plus bottom-sheet panels. Hand-written CSS (the POC's `styles.css` approach) does not scale to this many small, densely styled components.
+The UI layout reference ([`specs/mvp/02. ui-layout.md`](https://github.com/antonbsa/twitch-radar/blob/v0.4.0/specs/mvp/02.%20ui-layout.md)) specifies a mobile-first, compact, Twitch-sidebar-style visual language across three tabs plus bottom-sheet panels. Hand-written CSS (the POC's `styles.css` approach) does not scale to this many small, densely styled components.
 
 ## Decision
 

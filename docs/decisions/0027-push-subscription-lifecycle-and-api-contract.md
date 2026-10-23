@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: notifications
+---
+
 # 0027 - Push Subscription Lifecycle And API Contract
 
 ## Status
@@ -25,4 +30,4 @@ T-005 stores browser Push API subscriptions per authenticated user (`push_subscr
 - Enabling notifications is safe to retry from any state and self-heals divergence between browser and server — the worst case is an extra upsert write.
 - Revoked rows accumulate instead of disappearing; T-008 delivery queries and any future subscription listing must exclude `revoked_at IS NOT NULL` rows, and a cleanup job can prune old revoked rows later if volume ever matters.
 - Reassigning an endpoint's `user_id` on upsert means a shared browser profile ultimately notifies whichever account most recently enabled notifications there — correct for a device that changed hands, and unavoidable anyway since the browser holds one push subscription per origin.
-- The API surface in [00. architecture.md](../../specs/mvp/00.%20architecture.md) gains `GET /api/push/vapid-public-key` alongside the two endpoints it already listed.
+- The API surface in [00. architecture.md](https://github.com/antonbsa/twitch-radar/blob/v0.4.0/specs/mvp/00.%20architecture.md) gains `GET /api/push/vapid-public-key` alongside the two endpoints it already listed.

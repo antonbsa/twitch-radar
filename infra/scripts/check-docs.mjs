@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 /**
  * Fails if a relative Markdown link points to a missing file or to a heading
- * anchor that doesn't exist. External URLs are not checked (ADR 0065).
+ * anchor that doesn't exist, if an ADR or TN has invalid frontmatter, or if
+ * its README index differs from the generated one (ADR 0065). External URLs
+ * are not checked.
  *
- * Scope: README.md, GLOSSARY.md, docs/**, specs/**, every AGENTS.md,
+ * Scope: README.md, GLOSSARY.md, docs/**, every AGENTS.md,
  * .claude/agents/*.md and .claude/skills/**\/*.md.
  *
  * Usage: node infra/scripts/check-docs.mjs
@@ -13,13 +15,13 @@ import { execFileSync } from "node:child_process"
 import { existsSync, readFileSync, statSync } from "node:fs"
 import { dirname, resolve, relative } from "node:path"
 import { fileURLToPath } from "node:url"
+import { checkDocsIndexes } from "./docs-indexes.mjs"
 
 const REPO_ROOT = resolve(fileURLToPath(import.meta.url), "../../..")
 
 const IN_SCOPE = [
   /^(README|GLOSSARY)\.md$/,
   /^docs\/.*\.md$/,
-  /^specs\/.*\.md$/,
   /(^|\/)AGENTS\.md$/,
   /^\.claude\/agents\/[^/]+\.md$/,
   /^\.claude\/skills\/.*\.md$/,
@@ -117,7 +119,7 @@ function targetsOf(text) {
   return found
 }
 
-const errors = []
+const errors = checkDocsIndexes()
 
 for (const file of docFiles()) {
   const abs = resolve(REPO_ROOT, file)
@@ -161,4 +163,6 @@ if (errors.length > 0) {
   for (const e of errors) console.error(`  ${e}`)
   process.exit(1)
 }
-console.log("check-docs: all relative links and anchors resolve")
+console.log(
+  "check-docs: all relative links and anchors resolve, ADR and TN indexes are current",
+)

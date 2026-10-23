@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: operations
+---
+
 # 0040 - Structured Leveled Logging Convention
 
 ## Status
@@ -10,7 +15,7 @@ Accepted
 
 A [follow-up comment on the same issue](https://github.com/antonbsa/twitch-radar/issues/19#issuecomment-5111598831) found a related, deeper problem: even where an error was logged, the detail was already lost before the log call. `TwitchApiError` (`apps/api/src/services/twitch/client.ts`) discarded the failing response's body at all 11 throw sites — the response body is where Twitch explains _why_ a request failed (e.g. `{"error":"Bad Request","message":"..."}`) — and `sendWebPush` discarded the push service's rejection body the same way. Separately, every catch site that logged an error did `error instanceof Error ? error.message : String(error)`, dropping `error.stack`, `error.cause`, and any extra fields the error carried (e.g. `TwitchApiError.status`). A structured/leveled logger alone would not have fixed diagnosability here, since the detail was gone one layer earlier.
 
-The implementation spec (`specs/milestones/0-foundations/issue-19-structured-logging.md`) resolved the open design questions the issue left for it: whether to add a dependency or write a thin wrapper, how log level varies by environment, and the Workers Logs sampling rate. This ADR records those as accepted decisions, per [ADR 0001](0001-keep-project-decisions-in-adrs.md).
+The implementation spec ([`specs/milestones/0-foundations/issue-19-structured-logging.md`](https://github.com/antonbsa/twitch-radar/blob/v0.4.0/specs/milestones/0-foundations/issue-19-structured-logging.md)) resolved the open design questions the issue left for it: whether to add a dependency or write a thin wrapper, how log level varies by environment, and the Workers Logs sampling rate. This ADR records those as accepted decisions, per [ADR 0001](0001-keep-project-decisions-in-adrs.md).
 
 ## Decision
 

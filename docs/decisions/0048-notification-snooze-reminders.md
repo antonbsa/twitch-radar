@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: notifications
+---
+
 # 0048 - Notification Snooze Reminders
 
 ## Status

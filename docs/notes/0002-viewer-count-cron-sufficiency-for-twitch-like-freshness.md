@@ -1,3 +1,8 @@
+---
+status: Deferred
+supersedes: ["0001"]
+---
+
 # 0002 - Viewer Count Cron Sufficiency for Twitch-Like Freshness
 
 ## Status

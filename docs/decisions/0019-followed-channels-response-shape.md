@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: platform
+---
+
 # 0019 - Followed Channels API Response Shape
 
 ## Status

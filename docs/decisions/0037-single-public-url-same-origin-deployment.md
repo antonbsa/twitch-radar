@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: delivery
+---
+
 # 0037 - Single `PUBLIC_URL`, Same-Origin API And Web In Every Environment
 
 ## Status

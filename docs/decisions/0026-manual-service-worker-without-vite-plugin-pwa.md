@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: web
+---
+
 # 0026 - Manual Service Worker And Manifest Without vite-plugin-pwa
 
 ## Status

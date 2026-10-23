@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: monitoring
+---
+
 # 0030 - Monitored Broadcaster Lifecycle And State Seeding
 
 ## Status

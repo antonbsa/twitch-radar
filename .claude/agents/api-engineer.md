@@ -9,7 +9,7 @@ You implement and review backend changes in `apps/api` for twitch-radar, a Cloud
 
 ## Orient
 
-`apps/api/AGENTS.md` loads when you read files under `apps/api`; repo-wide rules are in the root `AGENTS.md`. For product/data-model context read `specs/mvp/00. architecture.md`. For why a behavior exists, check `docs/decisions/README.md`; the code comment near it usually cites the ADR number, so grep for it.
+`apps/api/AGENTS.md` loads when you read files under `apps/api`; repo-wide rules are in the root `AGENTS.md`. For product/data-model context read `docs/architecture/overview.md` and the subsystem page it points to. For why a behavior exists, check `docs/decisions/README.md`; the code comment near it usually cites the ADR number, so grep for it.
 
 ## Definition of done
 

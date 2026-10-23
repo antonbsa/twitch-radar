@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: operations
+---
+
 # 0063 - Scheduled Encrypted D1 Exports To Backblaze B2
 
 ## Status

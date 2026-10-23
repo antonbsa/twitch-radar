@@ -8,6 +8,15 @@ A React single-page app, served by the same Worker as the API from one origin ([
 
 Three tabs sit behind a login gate: channels (follows and who is live), alerts (preferences) and account (push, language, pause, sign-out). Signed-out visitors see only the login page, and a signed-in visitor on the login page is sent to the channels tab. The sandbox page exists only in non-production builds.
 
+## Screens And Layout
+
+The visual reference is Twitch's own channel sidebar: compact rows, live channels first, minimal chrome. A persistent bottom tab bar appears on every signed-in route, in the order Channels, Alerts, Account, and opens on Channels. It is not rendered for a signed-out visitor, who sees only the login screen with its single "Connect with Twitch" action.
+
+- **Channels.** Two sections, live above offline. Live channels are ordered by viewer count descending (ties by name) and offline channels by display name ascending. A live row shows a circular avatar with a live indicator, the current category, an abbreviated viewer count (`42K`, `1.2M`) and how long the channel has been in that category, computed from its start time when the row renders; an offline row has no indicator and is dimmer. Each row opens that channel's detail sheet, where its alerts are managed. A Sync button sits in the header.
+- **Channel alerts.** Category search is debounced, tapping a result adds a per-channel alert, and the channel's saved alerts show below as removable chips. The sheet closes by swiping down or tapping outside.
+- **Alerts.** The global category alerts, one row per category with a remove button, and an add action that opens the same category search in a sheet. With none set, an empty state says so. Alerts for specific channels are grouped by broadcaster in the same order as the Channels tab, with any channel missing from the synced follows last.
+- **Account.** The connected Twitch identity, the notification permission state (enabled, not enabled or denied, with a hint to use browser settings when denied), a manual sync, and sign-out, which ends the session and returns to the login page. A reconnect prompt appears only when the session is invalid or the API answers 401 mid-session.
+
 ## Server State
 
 The server owns all data; the client keeps a cache of it ([ADR 0023](../decisions/0023-use-tanstack-query-for-server-state.md)). Reads are queries, writes are mutations that update or invalidate the cached query they affect. Retries cover network errors and 5xx only: a 4xx won't succeed on a second try, so it surfaces at once.

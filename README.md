@@ -40,6 +40,7 @@ Open `http://localhost:5173`. Signing in with a real Twitch account needs creden
 - [Development](docs/development.md): local setup, env vars, push and mobile testing, queues and crons
 - [Operations](docs/operations/incident.md): incident levers, environment setup, secrets, deploying, backup and restore
 - [Architecture decisions](docs/decisions/README.md) and [technical notes](docs/notes/README.md)
+- [Project history](docs/history.md): the proof of concept, the MVP and milestone 0
 - [Project guidance](AGENTS.md)
 
 ## Contributing

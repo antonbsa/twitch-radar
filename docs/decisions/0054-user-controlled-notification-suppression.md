@@ -1,3 +1,8 @@
+---
+status: Accepted
+area: notifications
+---
+
 # 0054 - User-Controlled Notification Suppression: Pause, Broadcaster Mute, Global Category Exclusions
 
 ## Status
