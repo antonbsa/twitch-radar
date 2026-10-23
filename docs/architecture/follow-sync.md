@@ -2,6 +2,30 @@
 
 How the list of channels a user follows, and which of them are live, gets from Twitch into the app. Part of the [architecture overview](overview.md).
 
+```mermaid
+sequenceDiagram
+    participant A as App
+    participant C as Cron (minute 10)
+    participant W as Worker
+    participant T as Twitch
+    participant D as D1
+
+    alt App load or foreground (last sync missing, as after a first login, or older than 30 min), or the Sync button
+        A->>W: sync
+        W->>T: followed channels (every page) and live streams
+        T->>W: follows and live state
+        W->>A: merged list
+        W-->>D: follows and channel state (after the response)
+        W-->>D: monitored set, for users with a global alert
+    else Hourly job (last sync older than a day, a few users, oldest first)
+        C->>W: scheduled run
+        W->>T: followed channels (every page) and live streams
+        T->>W: follows and live state
+        W->>D: follows and channel state (inline)
+        W->>D: monitored set, for users with a global alert
+    end
+```
+
 ## What It Produces
 
 A sync reads two things from Twitch with the user's token: the full list of followed channels (every page of it, since users can follow thousands), and the live streams among them ([ADR 0005](../decisions/0005-sync-followed-channels-with-twitch-apis.md)). It merges them into the shape the Channels tab renders, ordered like Twitch's sidebar: live channels first by viewer count, then offline ones by name. The browser never calls Twitch; it reads what the sync wrote.

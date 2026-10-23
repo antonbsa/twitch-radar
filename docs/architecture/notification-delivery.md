@@ -61,6 +61,6 @@ Pause and mute also suppress snooze reminders, so the most recent user action wi
 
 A fixed 15-minute window per user and broadcaster, deliberately not scoped to category, trigger or stream, handles three different floods with one rule: a stream that reconnects (new stream id), a broadcaster cycling through categories, and a started-then-switched pair that reads as one event ([ADR 0056](../decisions/0056-send-side-notification-cooldown.md)). It is complementary to the display-side collapsing the service worker does with a notification tag; the two share no logic.
 
-## What Isn't Here
+## Known Limits
 
 No digest or batching. Merging a burst of notifications into one was implemented in the service worker and rejected after testing on an installed iOS PWA, where the list of visible notifications is empty, notifications can't be replaced by tag or closed, and an offline device loses pushes at the push service anyway ([ADR 0055](../decisions/0055-client-side-notification-digest.md), [TN 0007](../notes/0007-client-side-notification-digest-not-viable-on-ios.md)). Category artwork in pushes was also judged not worth its cost ([TN 0006](../notes/0006-category-art-in-push-notifications-not-justified.md)).

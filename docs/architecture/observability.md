@@ -32,6 +32,6 @@ The PWA reports to a **separate Sentry project** in the same organization, so br
 - **Same gating as the backend.** Reporting is off unless the build has a DSN and is a preview or production build, which doubles as the Sentry environment. The DSN is public and ships in the bundle. Alerting is an email for new production issues; there is no Slack for the frontend.
 - **Readable stacks without public source maps.** CI uploads source maps to Sentry during the build when it has an auth token, then deletes them from the output, so they are never served.
 
-## What Isn't Covered
+## Known Limits
 
 The service worker is not instrumented. It is a classic script with no build step ([ADR 0026](../decisions/0026-manual-service-worker-without-vite-plugin-pwa.md)), so it cannot load the SDK and failures in its push or notification-click handlers go unreported. The browser's one log call is gated to development builds ([ADR 0040](../decisions/0040-structured-leveled-logging-convention.md)).
