@@ -38,7 +38,7 @@ Open `http://localhost:5173`. Signing in with a real Twitch account needs creden
 - [Product](docs/product.md): what it is for, when a notification is and isn't sent, non-goals
 - [Architecture](docs/architecture/overview.md): how it works end to end and why, one page per subsystem, plus how the project is run
 - [Development](docs/development.md): local setup, env vars, push and mobile testing, queues and crons
-- [Deployment](docs/deployment.md): Cloudflare setup, secrets, preview and production releases
+- [Operations](docs/operations/incident.md): incident levers, environment setup, secrets, deploying, backup and restore
 - [Architecture decisions](docs/decisions/README.md) and [technical notes](docs/notes/README.md)
 - [Project guidance](AGENTS.md)
 

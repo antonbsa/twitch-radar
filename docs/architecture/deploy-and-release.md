@@ -1,6 +1,6 @@
 # Deploy And Release
 
-How a change gets from a pull request to users: the environments, what CI checks, and why production only moves when a release is published. Part of the [architecture overview](overview.md). The step-by-step runbook for standing up an environment is [deployment.md](../deployment.md); this page is the reasoning.
+How a change gets from a pull request to users: the environments, what CI checks, and why production only moves when a release is published. Part of the [architecture overview](overview.md). The step-by-step runbooks are in [operations](../operations/environment-setup.md) (start with the [incident page](../operations/incident.md) when something is on fire); this page is the reasoning.
 
 ## Environments
 
@@ -8,7 +8,7 @@ There are three: local development, a **preview** environment and **production**
 
 The app is a single Worker per environment on the default `workers.dev` domain. The web build is served as static assets by the same Worker, so the PWA and the API share one origin ([ADR 0037](../decisions/0037-single-public-url-same-origin-deployment.md)). One public URL per environment is the source for OAuth redirects, the post-login redirect and the webhook callback.
 
-Development, preview and production all use the same Twitch application, so they are told apart only by their callback URL. That is why subscription reconciliation only touches subscriptions whose callback is its own ([monitoring](monitoring.md)), and why running a local server against a shared remote environment is a documented hazard: it would write local-dev values into shared data ([deployment.md](../deployment.md)).
+Development, preview and production all use the same Twitch application, so they are told apart only by their callback URL. That is why subscription reconciliation only touches subscriptions whose callback is its own ([monitoring](monitoring.md)), and why running a local server against a shared remote environment is a documented hazard: it would write local-dev values into shared data ([local development](../development.md)).
 
 ## CI
 

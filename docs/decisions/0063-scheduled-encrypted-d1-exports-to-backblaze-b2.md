@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-D1 holds everything that can't be rebuilt: users, encrypted Twitch tokens, push subscriptions, follows, preferences and delivery history. Backups were manual commands in `docs/deployment.md`: nothing ran on a schedule, no copy lived outside Cloudflare, and no restore had been rehearsed. D1 Time Travel doesn't survive deleting the database or losing the Cloudflare account. A restored dump is also only usable with the original `TOKEN_ENCRYPTION_KEY` and VAPID keypair, and Cloudflare never returns secrets once set.
+D1 holds everything that can't be rebuilt: users, encrypted Twitch tokens, push subscriptions, follows, preferences and delivery history. Backups were manual commands in `docs/operations/backup-and-restore.md`: nothing ran on a schedule, no copy lived outside Cloudflare, and no restore had been rehearsed. D1 Time Travel doesn't survive deleting the database or losing the Cloudflare account. A restored dump is also only usable with the original `TOKEN_ENCRYPTION_KEY` and VAPID keypair, and Cloudflare never returns secrets once set.
 
 ## Decision
 

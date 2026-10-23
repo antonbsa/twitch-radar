@@ -67,7 +67,7 @@ const repo = `${run("gh", [
 
 if (ghApi([`repos/${repo}/branches/${BRANCH}`]) === null) {
   fail(
-    `Repo "${repo}" has no "${BRANCH}" branch. Set it up with "CI Test Reports Repo" in docs/deployment.md.`,
+    `Repo "${repo}" has no "${BRANCH}" branch. Set it up with "CI Test Reports Repo" in docs/operations/environment-setup.md.`,
   )
 }
 

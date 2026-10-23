@@ -6,7 +6,7 @@ Accepted. Amended by [ADR 0065](0065-organize-human-docs-by-reader-moment.md): t
 
 ## Context
 
-The project's reasoning is spread over dozens of ADRs, a handful of technical notes, `docs/api-contract.md`, `docs/deployment.md`, a README that mixed the pitch with developer setup, and `specs/mvp/00. architecture.md`, a plan that is closed to new work and so drifts from the code as milestones land. ADRs record one decision each, several are superseded or refined by later ones, and none describes the system as a whole. Nothing explains how the pieces fit, or why, to someone reading the repository, which is also meant to serve as a portfolio.
+The project's reasoning is spread over dozens of ADRs, a handful of technical notes, `docs/reference/api-contract.md`, `docs/operations/`, a README that mixed the pitch with developer setup, and `specs/mvp/00. architecture.md`, a plan that is closed to new work and so drifts from the code as milestones land. ADRs record one decision each, several are superseded or refined by later ones, and none describes the system as a whole. Nothing explains how the pieces fit, or why, to someone reading the repository, which is also meant to serve as a portfolio.
 
 ADR 0038 rejected a separate `ARCHITECTURE.md`, and ADR 0052 keeps "no static codemap". Both were about agent context: a file map that drifts and duplicates `AGENTS.md`. A conceptual document for human readers is a different audience that neither considered.
 
@@ -25,4 +25,4 @@ Add `docs/architecture/`: an overview and one page per subsystem (auth and sessi
 - ADR 0038's Status notes the partial supersession; its decision to add role-scoped subagents is unchanged.
 - A new decision costs one more place to keep current, bounded by the rule above and the abstraction level.
 - Where an ADR and a page disagree, the page is stale: ADRs remain the source of truth for decisions, and the code for behavior.
-- Out of scope: rewriting or consolidating ADRs and technical notes, a generated API reference beyond `docs/api-contract.md`, a docs website, and any codemap or file-level layout document for agents.
+- Out of scope: rewriting or consolidating ADRs and technical notes, a generated API reference beyond `docs/reference/api-contract.md`, a docs website, and any codemap or file-level layout document for agents.

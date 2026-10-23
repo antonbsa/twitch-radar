@@ -33,6 +33,6 @@ Both workflows keep using the single `CLOUDFLARE_API_TOKEN` repository secret al
 ## Consequences
 
 - Every merge to `main` gets exercised end-to-end in a real Cloudflare environment (deploy, migrations, EventSub webhook flow) before it can reach production — closes the gap where migrations previously ran in production first.
-- Shipping to production requires one extra manual step (create a tag, publish a release) that didn't exist before. For a solo-maintained project this is intended friction, not accidental overhead — see the deploy sequence in `docs/deployment.md`.
+- Shipping to production requires one extra manual step (create a tag, publish a release) that didn't exist before. For a solo-maintained project this is intended friction, not accidental overhead — see the deploy sequence in `docs/operations/deploying.md`.
 - Preview runs the same scheduled jobs as production: ADR 0057's single minutely trigger fits under Cloudflare's account-wide cron cap in both environments (this replaced an earlier gap where preview ran only the minutely job).
-- `README.md`'s "Deployment" section and `docs/deployment.md` are updated to describe both pipelines and the release step; anything referencing the old single `deploy.yaml` no longer applies.
+- `README.md`'s "Deployment" section and `docs/operations/deploying.md` are updated to describe both pipelines and the release step; anything referencing the old single `deploy.yaml` no longer applies.

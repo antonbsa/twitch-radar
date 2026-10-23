@@ -21,4 +21,4 @@ When `Automated tests` fails on a PR, the job log and summary show counts, not w
 - Passing runs upload nothing and keep no trace files.
 - The reports are public: the published server logs must not contain secrets. CI only has `.env.development` placeholders; keep it that way.
 - `main` of the reports repo is rewritten on every publish, so nothing there is permanent. PR screenshots (`npm run pr:image`) live in the same repo under `assets/<branch>/`, which publishes and the PR-close cleanup leave alone, so their links outlive the PR. They are linked by `main` path, not commit SHA, since orphan rewrites make old SHAs unreachable. They replaced the former `pr-assets` branch in this repo, which had the fetch cost rejected above.
-- One-time setup is in [docs/deployment.md](../deployment.md#ci-test-reports-repo).
+- One-time setup is in [docs/operations/environment-setup.md](../operations/environment-setup.md#ci-test-reports-repo).
