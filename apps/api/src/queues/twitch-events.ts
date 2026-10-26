@@ -5,6 +5,7 @@ import { logger, serializeError } from "../lib/logger"
 import { processTwitchEventMessage } from "../features/eventsub/process"
 import { matchAndCreateDeliveries } from "../features/notifications/match"
 import type { TwitchEventQueueMessage } from "../features/eventsub/types"
+import { retryDelaySeconds } from "./retry"
 
 /**
  * Applies one event to channel state and stages notification deliveries for
@@ -57,7 +58,7 @@ export async function consumeTwitchEvents(
         ...serializeError(error),
       })
       recordFailure("Twitch event processing failed", error)
-      message.retry()
+      message.retry({ delaySeconds: retryDelaySeconds(message.attempts) })
     }
   }
 }

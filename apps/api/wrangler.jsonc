@@ -49,14 +49,19 @@
         "max_batch_size": 10,
         // Notifications are time-sensitive: don't hold events waiting
         // for a fuller batch.
-        "max_batch_timeout": 1
+        "max_batch_timeout": 1,
+        // Retries back off 15s..300s (queues/retry.ts), so 6 cover ~13 min:
+        // a transient D1 outage used to burn the default 3 immediate retries
+        // in seconds and drop an event.
+        "max_retries": 6
       },
       {
         "queue": "twitch-radar-notification-jobs-dev",
         "max_batch_size": 10,
         // Same reasoning as above — a staged notification should reach
         // the device promptly, not wait out a batch window.
-        "max_batch_timeout": 1
+        "max_batch_timeout": 1,
+        "max_retries": 6
       }
     ]
   },
@@ -153,12 +158,14 @@
           {
             "queue": "twitch-radar-twitch-events",
             "max_batch_size": 10,
-            "max_batch_timeout": 1
+            "max_batch_timeout": 1,
+            "max_retries": 6
           },
           {
             "queue": "twitch-radar-notification-jobs",
             "max_batch_size": 10,
-            "max_batch_timeout": 1
+            "max_batch_timeout": 1,
+            "max_retries": 6
           }
         ]
       }
@@ -226,12 +233,14 @@
           {
             "queue": "twitch-radar-twitch-events-preview",
             "max_batch_size": 10,
-            "max_batch_timeout": 1
+            "max_batch_timeout": 1,
+            "max_retries": 6
           },
           {
             "queue": "twitch-radar-notification-jobs-preview",
             "max_batch_size": 10,
-            "max_batch_timeout": 1
+            "max_batch_timeout": 1,
+            "max_retries": 6
           }
         ]
       }
