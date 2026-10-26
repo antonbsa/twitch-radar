@@ -4,6 +4,7 @@ import { recordFailure } from "../lib/alerting"
 import { logger, serializeError } from "../lib/logger"
 import { deliverNotification } from "../features/notifications/deliver"
 import type { NotificationJobMessage } from "../features/notifications/types"
+import { retryDelaySeconds } from "./retry"
 
 export async function consumeNotificationJobs(
   batch: MessageBatch,
@@ -27,7 +28,7 @@ export async function consumeNotificationJobs(
         ...serializeError(error),
       })
       recordFailure("Notification job failed", error)
-      message.retry()
+      message.retry({ delaySeconds: retryDelaySeconds(message.attempts) })
     }
   }
 }

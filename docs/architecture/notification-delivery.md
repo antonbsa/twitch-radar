@@ -31,7 +31,7 @@ A push that the push service reports as gone (404 or 410) revokes that subscript
 The Worker implements Web Push directly on WebCrypto: VAPID authorization and payload encryption, with no dependency ([ADR 0035](../decisions/0035-web-push-via-webcrypto.md)). Two properties are deliberate:
 
 - **Expiry.** Each push asks the push service to hold it for an hour at most. An hour-old category alert is stale, and delivering it later would only confuse.
-- **No automatic retries.** A late alert is worse than a missed one, and retrying after a partial multi-device success would double-notify the devices that already got it. Queue-level retries exist only for infrastructure errors, before any send outcome is recorded.
+- **No automatic retries.** A late alert is worse than a missed one, and retrying after a partial multi-device success would double-notify the devices that already got it. Queue-level retries exist only for infrastructure errors, before any send outcome is recorded; they back off from 15 seconds to a 5 minute cap over six retries, so a short D1 outage is ridden out instead of dropping the message.
 
 A topic is set so a repeat push for the same broadcaster replaces an undelivered earlier one at the push service. Apple's push service rejects it, so it is omitted there. Snooze reminders use their own topic so they don't replace an alert.
 
