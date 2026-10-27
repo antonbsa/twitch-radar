@@ -206,7 +206,7 @@ function errorMessage(error: unknown): string {
 
 async function sendSlackAlert(failures: Failure[]): Promise<void> {
   // Who gets paged is decided by which environments hold the webhook secret
-  // (production only, ADR 0047); preview records to Sentry without it.
+  // (production and preview, ADR 0047).
   const url = alertConfig.slackAlertWebhookUrl
   if (!url) return
   const [first] = failures

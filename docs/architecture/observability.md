@@ -24,7 +24,7 @@ Volume is controlled by structure, not random sampling, which would drop the rar
 
 Known Cloudflare platform blips (D1 overloaded or dropped connections, Queues back-pressure) are not bugs, so they reach Sentry as a single warning issue per kind and never page Slack; a Sentry alert rule on their frequency says when a blip becomes an incident. Real failures are titled by their underlying cause rather than the SQL that surfaced it.
 
-Only production pages anyone: the Sentry environment tag is taken from the app's environment and alert rules filter on production. Preview reports but is quiet, and local never reports. Both the Sentry DSN and the Slack webhook are optional secrets, so a fresh checkout or CI simply doesn't report, and an alert that fails to send never fails the request, message or job it was about.
+Production and preview both page on real failures, since preview is where merged code runs before a release; the Sentry environment tag is taken from the app's environment and each Slack message names it. Transient blips only notify by frequency, and only in production. Local never reports. Both the Sentry DSN and the Slack webhook are optional secrets, so a fresh checkout or CI simply doesn't report, and an alert that fails to send never fails the request, message or job it was about.
 
 ## Frontend Errors
 
