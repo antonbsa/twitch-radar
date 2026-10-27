@@ -22,9 +22,12 @@ Push each of these via `wrangler secret put <NAME> --env <production|preview>` (
 Both are optional ([ADR 0047](../decisions/0047-error-alerting-via-sentry-and-slack-webhook.md)): an environment without them boots and reports nowhere, and `local` never reports. Push them per environment, from `apps/api`:
 
 - `SENTRY_DSN` — the Sentry project's client key (Project Settings → Client Keys). Events carry the Worker's `ENVIRONMENT` as Sentry's `environment` tag.
-- `SLACK_ALERT_WEBHOOK_URL` — a Slack incoming webhook. Any environment that has it posts to Slack, so keep it on `production` only; for a preview smoke test, point it at a test channel and remove it afterwards.
+- `SLACK_ALERT_WEBHOOK_URL` — a Slack incoming webhook. Set it on `production` and `preview`; each message is prefixed with its environment, and transient platform errors never post.
 
-`SENTRY_DSN` can go on `preview` too (events are tagged `environment:preview`); first check preview is quiet, since a noisy one burns the free plan's 5,000 events per month. In the Sentry project, enable spike protection and create the alert rule (email) filtered on `environment:production`.
+Both secrets go on `production` and `preview` (preview events are tagged `environment:preview`); a noisy preview burns the free plan's 5,000 events per month, so check it is quiet first. In the backend Sentry project, enable spike protection and create two alert rules (email):
+
+- New or regressed bugs: all environments; triggers "A new issue is created" and "A resolved issue regresses"; filter **none** of "Tagged event `transient` equals `true`"; notify on every trigger.
+- Transient platform errors: `production` only; trigger "An event or issue activity is captured"; filters **all** of "Tagged event `transient` equals `true`", "Event level equals warning" and "Number of events more than 5 in 10 minutes"; throttle to 1 hour. Leave these issues unresolved, or every blip mails a regression.
 
 ## Frontend Error Reporting (Optional)
 

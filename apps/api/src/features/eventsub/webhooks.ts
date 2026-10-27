@@ -5,12 +5,17 @@ import {
   MONITORED_EVENT_TYPES,
   type MonitoredEventType,
 } from "../../db/repositories/eventsub-subscriptions"
-import { logger } from "../../lib/logger"
+import { reportFailure, transientKind } from "../../lib/alerting"
+import { logger, serializeError } from "../../lib/logger"
 import { verifyEventsubSignature } from "./verify"
 import { ApiError } from "../../http/errors"
 
 // Twitch guidance: treat messages older than 10 minutes as replays.
 const MAX_MESSAGE_AGE_MS = 10 * 60 * 1000
+
+// One short retry for a transient queue blip; a longer wait would eat the
+// response budget Twitch gives a webhook, and Twitch redelivers a non-2xx anyway.
+const QUEUE_RETRY_DELAY_MS = 300
 
 interface EventsubWebhookBody {
   challenge?: string
@@ -20,6 +25,19 @@ interface EventsubWebhookBody {
 
 function isMonitoredEventType(type: unknown): type is MonitoredEventType {
   return MONITORED_EVENT_TYPES.includes(type as MonitoredEventType)
+}
+
+async function sendWithTransientRetry(
+  queue: Queue<TwitchEventQueueMessage>,
+  message: TwitchEventQueueMessage,
+): Promise<void> {
+  try {
+    await queue.send(message)
+  } catch (error) {
+    if (!transientKind(error)) throw error
+    await new Promise((resolve) => setTimeout(resolve, QUEUE_RETRY_DELAY_MS))
+    await queue.send(message)
+  }
 }
 
 /**
@@ -112,13 +130,26 @@ export async function handleEventsubWebhook(
 
     // Dedup is solely the consumer's D1 check on eventsub_message_id (ADR
     // 0032/0033) - every verified notification is enqueued unconditionally.
-    await c.env.TWITCH_EVENTS_QUEUE.send({
+    const message = {
       messageId,
       eventType,
       messageTimestamp: timestamp,
       receivedAt: now,
       event: body.event,
-    } as TwitchEventQueueMessage)
+    } as TwitchEventQueueMessage
+    try {
+      await sendWithTransientRetry(c.env.TWITCH_EVENTS_QUEUE, message)
+    } catch (error) {
+      if (!transientKind(error)) throw error
+      // 5xx so Twitch redelivers; reported here because onError skips ApiError.
+      logger.error("EventSub enqueue failed", {
+        messageId,
+        eventType,
+        ...serializeError(error),
+      })
+      c.executionCtx.waitUntil(reportFailure("EventSub enqueue failed", error))
+      throw new ApiError(503, "queue_unavailable", "Event queue unavailable")
+    }
     return new Response(null, { status: 204 })
   }
 
