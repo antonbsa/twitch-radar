@@ -5,6 +5,7 @@ import {
   configureAlerting,
   recordFailure,
   sentryOptions,
+  transientKind,
 } from "../../apps/api/src/lib/alerting"
 
 // Direct-import tests: the Slack POST is observed through a stubbed global
@@ -144,5 +145,89 @@ describe("sentryOptions", () => {
 
   it("has no DSN when none is configured", () => {
     expect(sentryOptions(env({ ENVIRONMENT: "preview" })).dsn).toBeUndefined()
+  })
+})
+
+describe("transient platform errors", () => {
+  const d1 = (message: string) =>
+    new Error(`Failed query: select 1\nparams: `, {
+      cause: new Error(message),
+    })
+
+  it.each([
+    [
+      "D1_ERROR: D1 DB is overloaded. Requests queued for too long.",
+      "d1-overloaded",
+    ],
+    ["D1_ERROR: Network connection lost.", "network-connection-lost"],
+    ["D1_ERROR: internal error; reference = abc123", "d1-internal-error"],
+    ["Queue is overloaded. Please back off. (10250)", "queue-overloaded"],
+  ])("recognises %s through a Drizzle wrapper", (message, kind) => {
+    expect(transientKind(d1(message))).toBe(kind)
+  })
+
+  it("does not treat a constraint error as transient", () => {
+    expect(
+      transientKind(d1("D1_ERROR: UNIQUE constraint failed: users.id")),
+    ).toBeUndefined()
+  })
+
+  describe("reporting", () => {
+    const fetchMock = vi.fn()
+    const cron = {
+      controller: { cron: "* * * * *", scheduledTime: Date.now() },
+      env: {
+        ENVIRONMENT: "production",
+        SENTRY_DSN: "https://k@o1.ingest.sentry.io/1",
+      },
+      ctx: { waitUntil: (p: Promise<unknown>) => p.catch(() => {}) },
+    } as unknown as Parameters<typeof collectFailures>[1]
+
+    beforeEach(() => {
+      fetchMock.mockReset().mockResolvedValue(new Response("ok"))
+      vi.stubGlobal("fetch", fetchMock)
+      vi.spyOn(console, "warn").mockImplementation(() => {})
+      configure("production", WEBHOOK)
+    })
+    afterEach(() => {
+      vi.unstubAllGlobals()
+      vi.restoreAllMocks()
+    })
+
+    const sentryBody = () =>
+      fetchMock.mock.calls.find(([url]) =>
+        String(url).includes("ingest.sentry.io"),
+      )?.[1].body as string
+
+    it("sends a transient failure to Sentry as a warning and skips Slack", async () => {
+      await collectFailures(
+        async () =>
+          recordFailure("job failed", d1("D1_ERROR: Network connection lost.")),
+        cron,
+      )
+      await vi.waitFor(() => expect(sentryBody()).toBeDefined())
+      const body = sentryBody()
+      expect(body).toContain('"level":"warning"')
+      expect(body).toContain("transient-platform-error")
+      expect(body).toContain("D1_ERROR: Network connection lost.")
+      expect(fetchMock.mock.calls.some(([u]) => u === WEBHOOK)).toBe(false)
+    })
+
+    it("keeps a real failure an error, titled by the cause, with Slack", async () => {
+      await collectFailures(
+        async () =>
+          recordFailure(
+            "job failed",
+            d1("D1_ERROR: UNIQUE constraint failed: users.id"),
+          ),
+        cron,
+      )
+      await vi.waitFor(() => expect(sentryBody()).toBeDefined())
+      const body = sentryBody()
+      expect(body).not.toContain('"level":"warning"')
+      expect(body).toContain("UNIQUE constraint failed: users.id")
+      expect(body).toContain("d1-query-failed")
+      expect(fetchMock.mock.calls.some(([u]) => u === WEBHOOK)).toBe(true)
+    })
   })
 })
