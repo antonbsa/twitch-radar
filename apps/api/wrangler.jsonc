@@ -46,7 +46,9 @@
     "consumers": [
       {
         "queue": "twitch-radar-twitch-events-dev",
-        "max_batch_size": 10,
+        // One event per invocation: the Free plan caps D1 at 50 queries per
+        // invocation and a single event can cost 15 or more.
+        "max_batch_size": 1,
         // Notifications are time-sensitive: don't hold events waiting
         // for a fuller batch.
         "max_batch_timeout": 1,
@@ -157,7 +159,7 @@
         "consumers": [
           {
             "queue": "twitch-radar-twitch-events",
-            "max_batch_size": 10,
+            "max_batch_size": 1,
             "max_batch_timeout": 1,
             "max_retries": 6
           },
@@ -232,7 +234,7 @@
         "consumers": [
           {
             "queue": "twitch-radar-twitch-events-preview",
-            "max_batch_size": 10,
+            "max_batch_size": 1,
             "max_batch_timeout": 1,
             "max_retries": 6
           },

@@ -66,11 +66,27 @@ export class ChannelStateRepository {
     await this.write(inputs, true)
   }
 
+  /** The `upsertAll` statements unexecuted, to commit atomically with other writes in `Database.batch`. */
+  upsertStatements(inputs: UpsertChannelStateInput[]) {
+    return this.buildStatements(inputs, false)
+  }
+
   private async write(
     inputs: UpsertChannelStateInput[],
     skipIfEventSinceRead: boolean,
   ): Promise<void> {
     if (inputs.length === 0) return
+    // Single D1 round trip for every chunk instead of one await per chunk —
+    // see the batch()-limits note in followed-channels.ts's upsertAll.
+    await this.db.batch(
+      asBatch(this.buildStatements(inputs, skipIfEventSinceRead)),
+    )
+  }
+
+  private buildStatements(
+    inputs: UpsertChannelStateInput[],
+    skipIfEventSinceRead: boolean,
+  ) {
     // 16 bound params per row (broadcasterUserId, isLive, streamId,
     // categoryId, categoryName, title, thumbnailUrl, viewerCount, startedAt,
     // categoryStartedAt, streamType, lastLiveAt, lastCategoryId,
@@ -129,9 +145,7 @@ export class ChannelStateRepository {
           }),
       )
     }
-    // Single D1 round trip for every chunk instead of one await per chunk —
-    // see the batch()-limits note in followed-channels.ts's upsertAll.
-    await this.db.batch(asBatch(statements))
+    return statements
   }
 
   async findByBroadcasterUserIds(ids: string[]): Promise<ChannelStateRecord[]> {

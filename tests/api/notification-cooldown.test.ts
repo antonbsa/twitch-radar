@@ -12,11 +12,14 @@ const MINUTE = 60_000
 const minutesAgo = (m: number) =>
   new Date(Date.now() - m * MINUTE).toISOString()
 
-function fakeDb(lastSentAt: string | null) {
+function fakeDb(lastSentAt: string | null, userIds = ["usr_1"]) {
   const findLastSent = vi
     .fn()
-    .mockResolvedValue(
-      lastSentAt ? { status: "sent", sent_at: lastSentAt } : null,
+    .mockResolvedValue(new Map(lastSentAt ? [[userIds[0]!, lastSentAt]] : []))
+  const insertPendingForUsers = vi
+    .fn()
+    .mockImplementation(async (ids: string[]) =>
+      ids.map((id) => ({ id: `dlv_${id}`, user_id: id, status: "pending" })),
     )
   const insertPendingIfNew = vi
     .fn()
@@ -35,7 +38,7 @@ function fakeDb(lastSentAt: string | null) {
     channelCategoryPreferences: {
       findActiveByBroadcasterAndCategory: vi
         .fn()
-        .mockResolvedValue([{ user_id: "usr_1" }]),
+        .mockResolvedValue(userIds.map((id) => ({ user_id: id }))),
     },
     globalCategoryPreferences: {
       findActiveByCategoryId: vi.fn().mockResolvedValue([]),
@@ -56,7 +59,8 @@ function fakeDb(lastSentAt: string | null) {
       findMutedUserIds: vi.fn().mockResolvedValue(new Set()),
     },
     notificationDeliveries: {
-      findLastSentByUserAndBroadcaster: findLastSent,
+      findLastSentAtByUsers: findLastSent,
+      insertPendingForUsers,
       insertPendingIfNew,
     },
     notificationSnoozes: {
@@ -75,12 +79,17 @@ function fakeDb(lastSentAt: string | null) {
       markExpired: vi.fn().mockResolvedValue(undefined),
     },
   } as unknown as Database
-  return { db, findLastSent, insertPendingIfNew }
+  return { db, findLastSent, insertPendingForUsers, insertPendingIfNew }
 }
 
 function fakeQueue() {
   const send = vi.fn().mockResolvedValue(undefined)
-  return { queue: { send } as unknown as Queue<NotificationJobMessage>, send }
+  const sendBatch = vi.fn().mockResolvedValue(undefined)
+  return {
+    queue: { send, sendBatch } as unknown as Queue<NotificationJobMessage>,
+    send,
+    sendBatch,
+  }
 }
 
 function change(
@@ -107,36 +116,65 @@ function change(
 describe("notification cooldown", () => {
   it("should stage a delivery when nothing was sent before", async () => {
     const { db } = fakeDb(null)
-    const { queue, send } = fakeQueue()
+    const { queue, sendBatch } = fakeQueue()
     await matchAndCreateDeliveries(db, queue, change())
-    expect(send).toHaveBeenCalledTimes(1)
+    expect(sendBatch).toHaveBeenCalledTimes(1)
   })
 
   it("should skip the user when the last send is inside the window", async () => {
-    const { db, insertPendingIfNew } = fakeDb(minutesAgo(14))
-    const { queue, send } = fakeQueue()
+    const { db, insertPendingForUsers } = fakeDb(minutesAgo(14))
+    const { queue, sendBatch } = fakeQueue()
     await matchAndCreateDeliveries(db, queue, change())
-    expect(insertPendingIfNew).not.toHaveBeenCalled()
-    expect(send).not.toHaveBeenCalled()
+    expect(insertPendingForUsers).toHaveBeenCalledWith([], expect.anything())
+    expect(sendBatch).not.toHaveBeenCalled()
   })
 
   it("should notify again once the last send is older than 15 minutes", async () => {
     const { db } = fakeDb(minutesAgo(16))
-    const { queue, send } = fakeQueue()
+    const { queue, sendBatch } = fakeQueue()
     await matchAndCreateDeliveries(db, queue, change())
-    expect(send).toHaveBeenCalledTimes(1)
+    expect(sendBatch).toHaveBeenCalledTimes(1)
   })
 
   it("should apply to a category switch regardless of the earlier trigger or category", async () => {
-    const { db, findLastSent, insertPendingIfNew } = fakeDb(minutesAgo(1))
+    const { db, findLastSent, insertPendingForUsers } = fakeDb(minutesAgo(1))
     const { queue } = fakeQueue()
     await matchAndCreateDeliveries(
       db,
       queue,
       change({ change_type: "category_changed", previous_category_id: "1" }),
     )
-    expect(findLastSent).toHaveBeenCalledWith("usr_1", "200")
-    expect(insertPendingIfNew).not.toHaveBeenCalled()
+    expect(findLastSent).toHaveBeenCalledWith("200", ["usr_1"])
+    expect(insertPendingForUsers).toHaveBeenCalledWith([], expect.anything())
+  })
+
+  it("should stage and enqueue only the users outside the cooldown in one batch", async () => {
+    const { db, findLastSent, insertPendingForUsers } = fakeDb(minutesAgo(1), [
+      "usr_1",
+      "usr_2",
+      "usr_3",
+    ])
+    const { queue, send, sendBatch } = fakeQueue()
+    await matchAndCreateDeliveries(db, queue, change())
+    expect(findLastSent).toHaveBeenCalledTimes(1)
+    expect(insertPendingForUsers).toHaveBeenCalledTimes(1)
+    expect(insertPendingForUsers).toHaveBeenCalledWith(["usr_2", "usr_3"], {
+      broadcasterUserId: "200",
+      categoryId: "27471",
+      triggerType: "stream_started_in_category",
+      eventsubMessageId: "msg_1",
+      streamId: "stream_2",
+      now: expect.any(String),
+    })
+    expect(send).not.toHaveBeenCalled()
+    expect(sendBatch).toHaveBeenCalledTimes(1)
+    const jobs = sendBatch.mock.calls[0]![0] as {
+      body: NotificationJobMessage
+    }[]
+    expect(jobs.map((j) => [j.body.deliveryId, j.body.userId])).toEqual([
+      ["dlv_usr_2", "usr_2"],
+      ["dlv_usr_3", "usr_3"],
+    ])
   })
 
   it("should not hold back a snooze reminder", async () => {

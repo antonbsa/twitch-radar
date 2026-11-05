@@ -1,4 +1,5 @@
 import type { Database } from "../../db"
+import { asBatch } from "../../db/client"
 import type {
   ChannelStateRecord,
   UpsertChannelStateInput,
@@ -78,9 +79,10 @@ export async function applySnapshot(
 /**
  * Applies one EventSub Event (ADRs 0006, 0033). Idempotent per message id: a
  * redelivery writes nothing and returns the State Change it already produced,
- * so notification matching can recover from a crash (ADR 0034). The state is
- * written before the State Change, so a lost insert never leaves Channel State
- * behind. Makes no Twitch call: the caller passes the live `stream` for
+ * so notification matching can recover from a crash (ADR 0034). The state and
+ * the State Change are written in one D1 batch (transactional), so a failed
+ * write never leaves Channel State advanced without its State Change, which a
+ * retry could not rebuild. Makes no Twitch call: the caller passes the live `stream` for
  * `stream.online`.
  *
  * @returns `null` for a Stale Event or one that produced no State Change.
@@ -108,8 +110,15 @@ export async function applyEvent(
 
   const now = new Date().toISOString()
   const next = transition(previous, { kind: "event", message, stream }, now)
-  await db.channelState.upsertAll([toUpsertInput(next)])
+  const upserts = db.channelState.upsertStatements([toUpsertInput(next)])
 
   const change = describeChange(previous, next, message, now)
-  return change ? db.channelStateChanges.insertIfNew(change) : null
+  if (!change) {
+    await db.batch(asBatch(upserts))
+    return null
+  }
+  await db.batch(
+    asBatch([...upserts, db.channelStateChanges.insertStatement(change)]),
+  )
+  return db.channelStateChanges.findByEventsubMessageId(message.messageId)
 }

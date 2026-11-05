@@ -1,6 +1,6 @@
-import { and, desc, eq, inArray } from "drizzle-orm"
+import { and, eq, inArray, max } from "drizzle-orm"
 import { nanoid } from "nanoid"
-import type { AppDatabase } from "../client"
+import { asBatch, type AppDatabase } from "../client"
 import { notificationDeliveries } from "../schema"
 
 // ADR 0008 trigger types for category notifications; snooze_reminder is a
@@ -86,7 +86,30 @@ export class NotificationDeliveriesRepository {
       )
     }
 
-    await this.db
+    await this.pendingInsert(input).run()
+
+    const row = await this.db
+      .select()
+      .from(notificationDeliveries)
+      .where(
+        and(
+          eq(notificationDeliveries.userId, input.userId),
+          eq(notificationDeliveries.broadcasterUserId, input.broadcasterUserId),
+          eq(notificationDeliveries.categoryId, input.categoryId),
+          eq(notificationDeliveries.triggerType, input.triggerType),
+          eq(notificationDeliveries.streamId, input.streamId),
+        ),
+      )
+      .get()
+    if (!row) {
+      throw new Error("insertPendingIfNew: delivery row missing after insert")
+    }
+    return toRecord(row)
+  }
+
+  /** The `onConflictDoNothing` insert behind both pending-staging methods. */
+  private pendingInsert(input: InsertNotificationDeliveryInput) {
+    return this.db
       .insert(notificationDeliveries)
       .values({
         id: `ndel_${nanoid()}`,
@@ -108,25 +131,61 @@ export class NotificationDeliveriesRepository {
           notificationDeliveries.streamId,
         ],
       })
-      .run()
+  }
 
-    const row = await this.db
-      .select()
-      .from(notificationDeliveries)
-      .where(
-        and(
-          eq(notificationDeliveries.userId, input.userId),
-          eq(notificationDeliveries.broadcasterUserId, input.broadcasterUserId),
-          eq(notificationDeliveries.categoryId, input.categoryId),
-          eq(notificationDeliveries.triggerType, input.triggerType),
-          eq(notificationDeliveries.streamId, input.streamId),
-        ),
+  /**
+   * `insertPendingIfNew` for many users of one event in a constant number of
+   * D1 queries (one `batch()` of inserts, then chunked selects), so a large
+   * audience stays under the Free plan's 50 queries per invocation. Returns
+   * the row owning each user's dedupe key.
+   */
+  async insertPendingForUsers(
+    userIds: string[],
+    input: Omit<InsertNotificationDeliveryInput, "userId">,
+  ): Promise<NotificationDeliveryRecord[]> {
+    if (userIds.length === 0) return []
+    const { streamId } = input
+    // Same guard as insertPendingIfNew: a null stream_id would bypass dedupe.
+    if (streamId === null) {
+      throw new Error(
+        `insertPendingForUsers: streamId is required to guarantee dedupe (would ` +
+          `use key broadcasterUserId=${input.broadcasterUserId}, ` +
+          `categoryId=${input.categoryId}, triggerType=${input.triggerType})`,
       )
-      .get()
-    if (!row) {
-      throw new Error("insertPendingIfNew: delivery row missing after insert")
     }
-    return toRecord(row)
+
+    await this.db.batch(
+      asBatch(
+        userIds.map((userId) => this.pendingInsert({ ...input, userId })),
+      ),
+    )
+
+    // D1 limits bound parameters to 100 per query; 4 more are bound below.
+    const BATCH_SIZE = 90
+    const rows: NotificationDeliveryRecord[] = []
+    for (let i = 0; i < userIds.length; i += BATCH_SIZE) {
+      const found = await this.db
+        .select()
+        .from(notificationDeliveries)
+        .where(
+          and(
+            inArray(
+              notificationDeliveries.userId,
+              userIds.slice(i, i + BATCH_SIZE),
+            ),
+            eq(
+              notificationDeliveries.broadcasterUserId,
+              input.broadcasterUserId,
+            ),
+            eq(notificationDeliveries.categoryId, input.categoryId),
+            eq(notificationDeliveries.triggerType, input.triggerType),
+            eq(notificationDeliveries.streamId, streamId),
+          ),
+        )
+        .all()
+      rows.push(...found.map(toRecord))
+    }
+    return rows
   }
 
   async findById(id: string): Promise<NotificationDeliveryRecord | null> {
@@ -139,27 +198,41 @@ export class NotificationDeliveriesRepository {
   }
 
   /**
-   * Most recent `sent` delivery for the pair, whatever its category, trigger
-   * or stream: the send-side cooldown deliberately ignores them (ADR 0056).
+   * Latest `sent_at` per user for the broadcaster, whatever the category,
+   * trigger or stream: the send-side cooldown deliberately ignores them
+   * (ADR 0056). Users never sent to are absent from the map.
    */
-  async findLastSentByUserAndBroadcaster(
-    userId: string,
+  async findLastSentAtByUsers(
     broadcasterUserId: string,
-  ): Promise<NotificationDeliveryRecord | null> {
-    const row = await this.db
-      .select()
-      .from(notificationDeliveries)
-      .where(
-        and(
-          eq(notificationDeliveries.userId, userId),
-          eq(notificationDeliveries.broadcasterUserId, broadcasterUserId),
-          eq(notificationDeliveries.status, "sent"),
-        ),
-      )
-      .orderBy(desc(notificationDeliveries.sentAt))
-      .limit(1)
-      .get()
-    return row ? toRecord(row) : null
+    userIds: string[],
+  ): Promise<Map<string, string>> {
+    const lastSentAt = new Map<string, string>()
+    // D1 limits bound parameters to 100 per query; 2 more are bound below.
+    const BATCH_SIZE = 90
+    for (let i = 0; i < userIds.length; i += BATCH_SIZE) {
+      const rows = await this.db
+        .select({
+          userId: notificationDeliveries.userId,
+          sentAt: max(notificationDeliveries.sentAt),
+        })
+        .from(notificationDeliveries)
+        .where(
+          and(
+            eq(notificationDeliveries.broadcasterUserId, broadcasterUserId),
+            eq(notificationDeliveries.status, "sent"),
+            inArray(
+              notificationDeliveries.userId,
+              userIds.slice(i, i + BATCH_SIZE),
+            ),
+          ),
+        )
+        .groupBy(notificationDeliveries.userId)
+        .all()
+      for (const row of rows) {
+        if (row.sentAt) lastSentAt.set(row.userId, row.sentAt)
+      }
+    }
+    return lastSentAt
   }
 
   async markSent(

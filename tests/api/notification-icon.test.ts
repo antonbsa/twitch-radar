@@ -62,7 +62,12 @@ function fakeDb(avatarUrl: string | null) {
       findMutedUserIds: vi.fn().mockResolvedValue(new Set()),
     },
     notificationDeliveries: {
-      findLastSentByUserAndBroadcaster: vi.fn().mockResolvedValue(null),
+      findLastSentAtByUsers: vi.fn().mockResolvedValue(new Map()),
+      insertPendingForUsers: vi
+        .fn()
+        .mockResolvedValue([
+          { id: "dlv_1", user_id: "usr_1", status: "pending" },
+        ]),
       insertPendingIfNew: vi
         .fn()
         .mockResolvedValue({ id: "dlv_1", status: "pending" }),
@@ -87,10 +92,15 @@ function fakeDb(avatarUrl: string | null) {
 
 function fakeQueue() {
   const send = vi.fn().mockResolvedValue(undefined)
+  const sendBatch = vi.fn().mockResolvedValue(undefined)
   return {
-    queue: { send } as unknown as Queue<NotificationJobMessage>,
+    queue: { send, sendBatch } as unknown as Queue<NotificationJobMessage>,
     sentPayload: () =>
-      (send.mock.calls[0]![0] as NotificationJobMessage).payload,
+      send.mock.calls.length > 0
+        ? (send.mock.calls[0]![0] as NotificationJobMessage).payload
+        : (
+            sendBatch.mock.calls[0]![0] as { body: NotificationJobMessage }[]
+          )[0]!.body.payload,
   }
 }
 
