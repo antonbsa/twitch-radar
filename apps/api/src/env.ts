@@ -29,6 +29,8 @@ export interface Env {
   // Error alerting (ADR 0047): both optional, so an environment without them
   // (local dev, a fresh worktree, CI) reports nowhere instead of failing to boot.
   SENTRY_DSN?: string
+  // Plain var: only builds the Slack alert's Sentry link.
+  SENTRY_ORG?: string
   SLACK_ALERT_WEBHOOK_URL?: string
 }
 
@@ -50,6 +52,7 @@ const EnvSchema = z
     TWITCH_AUTH_BASE_URL: z.string().optional().default("https://id.twitch.tv"),
     TWITCH_API_BASE_URL: z.string().optional().default("https://api.twitch.tv"),
     SENTRY_DSN: z.string().optional(),
+    SENTRY_ORG: z.string().optional(),
     SLACK_ALERT_WEBHOOK_URL: z.string().optional(),
   })
   .transform((d) => ({
@@ -66,6 +69,7 @@ const EnvSchema = z
     twitchAuthBaseUrl: d.TWITCH_AUTH_BASE_URL,
     twitchApiBaseUrl: d.TWITCH_API_BASE_URL,
     slackAlertWebhookUrl: d.SLACK_ALERT_WEBHOOK_URL,
+    sentryOrg: d.SENTRY_ORG,
   }))
 
 export type AppConfig = z.infer<typeof EnvSchema>

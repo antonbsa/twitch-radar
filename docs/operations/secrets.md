@@ -35,7 +35,7 @@ Both secrets go on `production` and `preview` (preview events are tagged `enviro
 
 - `VITE_SENTRY_DSN` — GitHub repository **variable**, the web project's client key. Public by design: it ends up in the bundle. Events carry the Vite mode (`preview`/`production`) as `environment`; local dev never reports.
 - `SENTRY_AUTH_TOKEN` — GitHub repository **secret**, an organization auth token with source-map upload scope. It is used only by the build in CI.
-- `SENTRY_ORG` / `SENTRY_PROJECT_WEB` — GitHub repository **variables**, the organization and web project slugs.
+- `SENTRY_ORG` / `SENTRY_PROJECT_WEB` — GitHub repository **variables**, the organization and web project slugs. The Worker reads the same org slug from the `SENTRY_ORG` var in `apps/api/wrangler.jsonc` (it builds the Sentry link in the Slack alert), so the two must stay in sync.
 
 With the token set, the build uploads source maps and deletes them from `apps/web/dist`, so they are never served. Check with `SENTRY_AUTH_TOKEN=... npm run build` that `find apps/web/dist -name '*.map'` and `grep -r sourceMappingURL apps/web/dist` print nothing. In the web project, create the alert rule (email) on new issues filtered on `environment:production`, and enable spike protection. The service worker is not instrumented.
 

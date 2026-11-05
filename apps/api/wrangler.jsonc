@@ -114,6 +114,8 @@
       },
       "vars": {
         "ENVIRONMENT": "production",
+        // Must match the GitHub `SENTRY_ORG` repo variable; builds the Slack alert's Sentry link.
+        "SENTRY_ORG": "antonbsa",
         "PUBLIC_URL": "https://twitch-radar.antonbsa.workers.dev",
         // Twitch app's client ID — same app as dev works fine (Twitch
         // allows multiple redirect URIs per client), confirm this
@@ -191,6 +193,8 @@
       },
       "vars": {
         "ENVIRONMENT": "preview",
+        // Must match the GitHub `SENTRY_ORG` repo variable; builds the Slack alert's Sentry link.
+        "SENTRY_ORG": "antonbsa",
         // Fill in after the first `wrangler deploy --env preview` -
         // Wrangler prints the resulting workers.dev URL.
         "PUBLIC_URL": "https://twitch-radar-preview.antonbsa.workers.dev",
