@@ -181,11 +181,12 @@ async function persistFollowedChannelsSync(
   ])
 
   // Drop follows Twitch no longer reports, so they leave the list and stop
-  // matching global preferences. Explicit ids, not a last_synced_at cutoff:
-  // overlapping syncs for one user carry different `now` values.
+  // matching global preferences. Only rows older than this sync's `now`: an
+  // overlapping sync that fetched later may have just written a follow this
+  // sync's stale list lacks, and that row must survive.
   const fetchedIds = new Set(channels.map((ch) => ch.broadcaster_id))
   const removedIds = (
-    await db.followedChannels.findBroadcasterUserIdsByUserId(userId)
+    await db.followedChannels.findBroadcasterUserIdsSyncedBefore(userId, now)
   ).filter((id) => !fetchedIds.has(id))
   if (removedIds.length > 0) {
     await db.followedChannels.deleteByBroadcasterUserIds(userId, removedIds)

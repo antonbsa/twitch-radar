@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNotNull, sql } from "drizzle-orm"
+import { and, eq, inArray, isNotNull, lt, sql } from "drizzle-orm"
 import { asBatch, type AppDatabase } from "../client"
 import { followedChannels } from "../schema"
 
@@ -114,11 +114,20 @@ export class FollowedChannelsRepository {
     await this.db.batch(asBatch(statements))
   }
 
-  async findBroadcasterUserIdsByUserId(userId: string): Promise<string[]> {
+  /** The user's follows last written by a sync stamped before `cutoff`. */
+  async findBroadcasterUserIdsSyncedBefore(
+    userId: string,
+    cutoff: string,
+  ): Promise<string[]> {
     const rows = await this.db
       .select({ broadcasterUserId: followedChannels.broadcasterUserId })
       .from(followedChannels)
-      .where(eq(followedChannels.userId, userId))
+      .where(
+        and(
+          eq(followedChannels.userId, userId),
+          lt(followedChannels.lastSyncedAt, cutoff),
+        ),
+      )
       .all()
     return rows.map((row) => row.broadcasterUserId)
   }

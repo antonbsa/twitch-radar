@@ -559,4 +559,35 @@ describe("POST /api/sync/follows unfollowed channels", () => {
         ?.disabled_at,
     ).toBeNull()
   })
+  it("should keep a follow an overlapping sync wrote after this one started", async () => {
+    const { cookie, userId } = await orchestrator.createAuthenticatedSession()
+    await orchestrator.seedFollowedChannels(userId, [
+      // Written by a sync newer than the one below, whose Twitch list
+      // predates this follow.
+      {
+        broadcasterUserId: "300",
+        broadcasterLogin: "channelc",
+        broadcasterDisplayName: "ChannelC",
+        lastSyncedAt: new Date(Date.now() + 60_000).toISOString(),
+      },
+      // Synced earlier and since unfollowed: still removed.
+      {
+        broadcasterUserId: "200",
+        broadcasterLogin: "channelb",
+        broadcasterDisplayName: "ChannelB",
+      },
+    ])
+    await orchestrator.mockTwitch.onFollowedChannels([CHANNEL_A])
+    await orchestrator.mockTwitch.onFollowedStreams([])
+    await sync(cookie)
+
+    const remaining = await orchestrator.waitForFollowedChannels(
+      cookie,
+      (items) => !items.some((item) => item.broadcaster_user_id === "200"),
+    )
+    expect(remaining.map((item) => item.broadcaster_user_id).sort()).toEqual([
+      "100",
+      "300",
+    ])
+  })
 })
