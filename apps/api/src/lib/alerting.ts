@@ -7,6 +7,8 @@ import { logger } from "./logger"
 // how long a dead endpoint can hold a scheduled or queue invocation open.
 const SLACK_TIMEOUT_MS = 3000
 const MAX_LISTED_FAILURES = 10
+const MAX_SLACK_QUERY_CHARS = 500
+const MAX_SLACK_OTHER_SOURCES = 3
 
 interface Failure {
   source: string
@@ -81,9 +83,13 @@ function stableMessage(error: unknown): string {
 // turn into one Sentry event per row per minute.
 const failureBuffer = new AsyncLocalStorage<Failure[]>()
 
-let alertConfig: Pick<AppConfig, "environment" | "slackAlertWebhookUrl"> = {
+let alertConfig: Pick<
+  AppConfig,
+  "environment" | "slackAlertWebhookUrl" | "sentryOrg"
+> = {
   environment: "local",
   slackAlertWebhookUrl: undefined,
+  sentryOrg: undefined,
 }
 
 /** Call next to `logger.configure` at each entry point. */
@@ -161,6 +167,8 @@ async function sendReport(
     const kinds = failures.map((f) => transientKind(f.error))
     const transient = kinds.every((kind) => kind !== undefined)
 
+    // Set by `capture`; stays unset when the SDK has no DSN, so Slack gets no dead link.
+    let eventId: string | undefined
     const capture = () =>
       Sentry.withScope((scope) => {
         const { error, query } = unwrapDrizzle(first.error)
@@ -175,7 +183,8 @@ async function sendReport(
         } else if (query) {
           scope.setFingerprint(["d1-query-failed", stableMessage(error)])
         }
-        Sentry.captureException(error)
+        const id = Sentry.captureException(error)
+        if (Sentry.getClient()?.getDsn()) eventId = id
       })
     if (cron) {
       // `scheduled` skips the main `withSentry` (its per-invocation setup busts the
@@ -187,7 +196,7 @@ async function sendReport(
       capture()
     }
 
-    if (!transient) await sendSlackAlert(failures)
+    if (!transient) await sendSlackAlert(failures, eventId)
   } catch (error) {
     // A broken alert path must never fail the work it reports on.
     logger.warn("Failure report could not be sent", {
@@ -206,22 +215,63 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
 
-async function sendSlackAlert(failures: Failure[]): Promise<void> {
+/** Escapes Slack mrkdwn control characters; `<` and `>` would otherwise open a link or mention. */
+function escapeSlack(text: string): string {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+}
+
+/** Escapes for a code span; backticks would end the inline code or code block early. */
+function slackCode(text: string): string {
+  return escapeSlack(text.replace(/`/g, "'"))
+}
+
+function slackMessage(failures: Failure[], eventId?: string): string {
+  const [first] = failures
+  if (!first) return ""
+  const { error, query } = unwrapDrizzle(first.error)
+  const lines = [
+    `:rotating_light: *[${alertConfig.environment}] ${escapeSlack(first.source)}*`,
+    `\`${slackCode(errorMessage(error))}\``,
+  ]
+  if (query) {
+    // Drizzle appends `\nparams: <values>` (user ids, tokens); never post those.
+    const sql = query.split("\nparams:")[0]!
+    const clipped =
+      sql.length > MAX_SLACK_QUERY_CHARS
+        ? `${sql.slice(0, MAX_SLACK_QUERY_CHARS)}…`
+        : sql
+    lines.push(`\`\`\`${slackCode(clipped)}\`\`\``)
+  }
+  if (failures.length > 1) {
+    const others = [...new Set(failures.slice(1).map((f) => f.source))]
+      .slice(0, MAX_SLACK_OTHER_SOURCES)
+      .map((source) => `\`${slackCode(source)}\``)
+    const n = failures.length - 1
+    lines.push(
+      `+${n} more failure${n > 1 ? "s" : ""} this invocation: ${others.join(", ")}`,
+    )
+  }
+  if (eventId && alertConfig.sentryOrg) {
+    lines.push(
+      `<https://${alertConfig.sentryOrg}.sentry.io/issues/?query=event.id%3A${eventId}|View in Sentry>`,
+    )
+  }
+  return lines.join("\n")
+}
+
+async function sendSlackAlert(
+  failures: Failure[],
+  eventId?: string,
+): Promise<void> {
   // Who gets paged is decided by which environments hold the webhook secret
   // (production and preview, ADR 0047).
   const url = alertConfig.slackAlertWebhookUrl
-  if (!url) return
-  const [first] = failures
-  if (!first) return
+  if (!url || failures.length === 0) return
 
-  const more =
-    failures.length > 1 ? ` (+${failures.length - 1} more this invocation)` : ""
   await fetch(url, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      text: `:rotating_light: [${alertConfig.environment}] ${first.source}: ${errorMessage(first.error)}${more}`,
-    }),
+    body: JSON.stringify({ text: slackMessage(failures, eventId) }),
     signal: AbortSignal.timeout(SLACK_TIMEOUT_MS),
   })
 }
