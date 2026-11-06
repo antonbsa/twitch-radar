@@ -91,7 +91,7 @@ function fakeDb(avatarUrl: string | null) {
           created_at: "2024-06-01T11:45:00Z",
         },
       ]),
-      markFired: vi.fn().mockResolvedValue(undefined),
+      claimForFiring: vi.fn().mockResolvedValue(true),
       markExpired: vi.fn().mockResolvedValue(undefined),
     },
   } as unknown as Database

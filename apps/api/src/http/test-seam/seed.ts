@@ -353,7 +353,7 @@ export async function handleTestSeed(c: Context<HonoEnv>): Promise<Response> {
         now,
       })
       if (snooze.status === "fired") {
-        await c.var.db.notificationSnoozes.markFired(record.id)
+        await c.var.db.notificationSnoozes.claimForFiring(record.id)
       } else if (snooze.status === "expired") {
         await c.var.db.notificationSnoozes.markExpired(record.id)
       }

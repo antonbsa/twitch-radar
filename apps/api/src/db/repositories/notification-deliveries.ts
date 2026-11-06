@@ -67,7 +67,8 @@ export class NotificationDeliveriesRepository {
   /**
    * Stages a `snooze_reminder` delivery with no dedupe: the dedupe index
    * excludes reminders so a stream can be snoozed and reminded repeatedly
-   * (ADR 0048); the snooze's `pending → fired` status guards replays.
+   * (ADR 0048). The caller claims the snooze (`claimForFiring`) first; that
+   * claim is the only replay guard.
    */
   async insertSnoozeReminder(
     input: Omit<InsertNotificationDeliveryInput, "triggerType">,

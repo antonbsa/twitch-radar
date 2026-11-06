@@ -75,7 +75,7 @@ function fakeDb(lastSentAt: string | null, userIds = ["usr_1"]) {
           created_at: minutesAgo(15),
         },
       ]),
-      markFired: vi.fn().mockResolvedValue(undefined),
+      claimForFiring: vi.fn().mockResolvedValue(true),
       markExpired: vi.fn().mockResolvedValue(undefined),
     },
   } as unknown as Database
