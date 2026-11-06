@@ -30,3 +30,7 @@ On callback, `consumeOAuthState` reads and immediately deletes the entry; if abs
 - State cannot be replayed after the first callback attempt.
 - If the user takes more than 10 minutes to complete the Twitch login, the callback returns 400 and they must restart.
 - No extra cookie header is needed on the start redirect.
+
+## Amendment
+
+The KV entry alone did not bind the state to the browser that started the login, so a forged callback URL could log a victim into the attacker's account (login CSRF). The start redirect now also sets a short-lived `HttpOnly` `oauth_state` cookie (`Path=/api/auth`, 10 minutes), and the callback rejects with 400 `invalid_state` when it is missing or differs from the `state` parameter. The KV check stays for single use and expiry.

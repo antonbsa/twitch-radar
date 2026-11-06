@@ -26,7 +26,7 @@ sequenceDiagram
     W->>B: set session cookie, redirect into the app
 ```
 
-The OAuth `state` is a one-time value in KV that is deleted when read, so a callback can't be replayed, and a login left open for more than ten minutes simply has to be restarted ([ADR 0017](../decisions/0017-kv-oauth-state.md)). Both the redirect URI and the post-login redirect come from the single public URL, which is why API and web must share an origin in every environment, including local development through a dev proxy and a tunnel ([ADR 0037](../decisions/0037-single-public-url-same-origin-deployment.md)). A wrong redirect URI registered at Twitch looks exactly like a broken session: the login completes and the app shows the login screen again.
+The OAuth `state` is a one-time value in KV that is deleted when read, so a callback can't be replayed, and it is also bound to the browser that started the login by a short-lived cookie, so a callback link forged for someone else is rejected, and a login left open for more than ten minutes simply has to be restarted ([ADR 0017](../decisions/0017-kv-oauth-state.md)). Both the redirect URI and the post-login redirect come from the single public URL, which is why API and web must share an origin in every environment, including local development through a dev proxy and a tunnel ([ADR 0037](../decisions/0037-single-public-url-same-origin-deployment.md)). A wrong redirect URI registered at Twitch looks exactly like a broken session: the login completes and the app shows the login screen again.
 
 ## Sessions
 

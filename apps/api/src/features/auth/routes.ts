@@ -1,12 +1,16 @@
 import type { Context } from "hono"
+import { getCookie } from "hono/cookie"
 import type { HonoEnv } from "../../env"
 import { encryptToken } from "../../lib/crypto"
 import {
+  OAUTH_STATE_COOKIE_NAME,
+  clearOAuthStateCookieHeader,
   clearSessionCookieHeader,
   consumeOAuthState,
   createOAuthState,
   createSession,
   deleteSession,
+  oauthStateCookieHeader,
   sessionCookieHeader,
 } from "./session"
 import { exchangeCode } from "../../services/twitch/oauth"
@@ -26,7 +30,10 @@ export async function handleAuthStart(c: Context<HonoEnv>): Promise<Response> {
 
   return new Response(null, {
     status: 302,
-    headers: { Location: url.toString() },
+    headers: {
+      Location: url.toString(),
+      "Set-Cookie": oauthStateCookieHeader(state),
+    },
   })
 }
 
@@ -47,7 +54,10 @@ export async function handleAuthCallback(
     // to the login screen instead, same as the successful-login case below.
     return new Response(null, {
       status: 302,
-      headers: { Location: `${config.publicUrl}/login?error=twitch_declined` },
+      headers: {
+        Location: `${config.publicUrl}/login?error=twitch_declined`,
+        "Set-Cookie": clearOAuthStateCookieHeader(),
+      },
     })
   }
 
@@ -57,6 +67,12 @@ export async function handleAuthCallback(
       "invalid_request",
       "Missing code or state parameter",
     )
+  }
+
+  // The cookie ties the state to the browser that started the login, so a
+  // callback URL forged for a victim (login CSRF) is rejected (ADR 0017).
+  if (getCookie(c, OAUTH_STATE_COOKIE_NAME) !== state) {
+    throw new ApiError(400, "invalid_state", "OAuth state mismatch or expired")
   }
 
   const stateValid = await consumeOAuthState(c.env.KV_APP_CACHE, state)
@@ -110,7 +126,8 @@ export async function handleAuthCallback(
   // Twitch login. Landing on a real 200 response first, then redirecting
   // client-side, gives the cookie a response of its own to commit on.
   const headers = new Headers()
-  headers.set("Set-Cookie", sessionCookieHeader(sessionId))
+  headers.append("Set-Cookie", sessionCookieHeader(sessionId))
+  headers.append("Set-Cookie", clearOAuthStateCookieHeader())
   headers.set("Content-Type", "text/html; charset=utf-8")
   const target = config.publicUrl
   const body = `<!doctype html><html><head><meta http-equiv="refresh" content="0;url=${target}"></head><body><script>location.replace(${JSON.stringify(target)})</script></body></html>`

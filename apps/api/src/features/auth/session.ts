@@ -10,6 +10,7 @@ const KV_MIN_TTL_S = 60
 const OAUTH_STATE_TTL_S = 60 * 10 // 10 minutes
 
 export const SESSION_COOKIE_NAME = "session"
+export const OAUTH_STATE_COOKIE_NAME = "oauth_state"
 
 interface SessionData {
   userId: string
@@ -135,4 +136,13 @@ export function sessionCookieHeader(
 
 export function clearSessionCookieHeader(): string {
   return `${SESSION_COOKIE_NAME}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`
+}
+
+/** Binds the OAuth state to the browser that started the login (ADR 0017). Path-scoped to the auth routes. */
+export function oauthStateCookieHeader(state: string): string {
+  return `${OAUTH_STATE_COOKIE_NAME}=${state}; HttpOnly; Secure; SameSite=Lax; Path=/api/auth; Max-Age=${OAUTH_STATE_TTL_S}`
+}
+
+export function clearOAuthStateCookieHeader(): string {
+  return `${OAUTH_STATE_COOKIE_NAME}=; HttpOnly; Secure; SameSite=Lax; Path=/api/auth; Max-Age=0`
 }
