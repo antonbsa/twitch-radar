@@ -4,8 +4,8 @@ import { asBatch, type AppDatabase } from "../client"
 import { notificationDeliveries } from "../schema"
 
 // ADR 0008 trigger types for category notifications; snooze_reminder is a
-// user-requested re-send of a snoozed delivery (ADR 0048) — a distinct
-// trigger keeps it out of the original delivery's dedupe key.
+// user-requested re-send of a snoozed delivery (ADR 0048), excluded from the
+// dedupe index so it can repeat within a stream.
 export type NotificationTriggerType =
   "stream_started_in_category" | "switched_into_category" | "snooze_reminder"
 
@@ -65,79 +65,61 @@ export class NotificationDeliveriesRepository {
   }
 
   /**
-   * Inserts a `pending` delivery; the unique dedupe index on
-   * (user, broadcaster, category, trigger, stream) makes a repeat of the
-   * same user/event combination a no-op (ADR 0008). Returns the row that
-   * owns the dedupe key — the fresh insert or the pre-existing one — so the
-   * caller can decide whether a send job is still owed.
+   * Stages a `snooze_reminder` delivery with no dedupe: the dedupe index
+   * excludes reminders so a stream can be snoozed and reminded repeatedly
+   * (ADR 0048); the snooze's `pending → fired` status guards replays.
    */
-  async insertPendingIfNew(
-    input: InsertNotificationDeliveryInput,
+  async insertSnoozeReminder(
+    input: Omit<InsertNotificationDeliveryInput, "triggerType">,
   ): Promise<NotificationDeliveryRecord> {
-    // SQLite treats NULLs in a unique index as distinct, so a null stream_id
-    // would bypass the dedupe check. Current callers always pass a real
-    // stream_id, so this guard fails loudly instead of silently allowing a
-    // duplicate pending delivery.
-    if (input.streamId === null) {
-      throw new Error(
-        `insertPendingIfNew: streamId is required to guarantee dedupe (would ` +
-          `use key userId=${input.userId}, broadcasterUserId=${input.broadcasterUserId}, ` +
-          `categoryId=${input.categoryId}, triggerType=${input.triggerType})`,
-      )
-    }
-
-    await this.pendingInsert(input).run()
-
     const row = await this.db
-      .select()
-      .from(notificationDeliveries)
-      .where(
-        and(
-          eq(notificationDeliveries.userId, input.userId),
-          eq(notificationDeliveries.broadcasterUserId, input.broadcasterUserId),
-          eq(notificationDeliveries.categoryId, input.categoryId),
-          eq(notificationDeliveries.triggerType, input.triggerType),
-          eq(notificationDeliveries.streamId, input.streamId),
-        ),
-      )
-      .get()
-    if (!row) {
-      throw new Error("insertPendingIfNew: delivery row missing after insert")
-    }
-    return toRecord(row)
-  }
-
-  /** The `onConflictDoNothing` insert behind both pending-staging methods. */
-  private pendingInsert(input: InsertNotificationDeliveryInput) {
-    return this.db
       .insert(notificationDeliveries)
       .values({
         id: `ndel_${nanoid()}`,
         userId: input.userId,
         broadcasterUserId: input.broadcasterUserId,
         categoryId: input.categoryId,
-        triggerType: input.triggerType,
+        triggerType: "snooze_reminder",
         eventsubMessageId: input.eventsubMessageId,
         streamId: input.streamId,
         status: "pending",
         createdAt: input.now,
       })
-      .onConflictDoNothing({
-        target: [
-          notificationDeliveries.userId,
-          notificationDeliveries.broadcasterUserId,
-          notificationDeliveries.categoryId,
-          notificationDeliveries.triggerType,
-          notificationDeliveries.streamId,
-        ],
-      })
+      .returning()
+      .get()
+    return toRecord(row)
+  }
+
+  /** One user's `onConflictDoNothing` insert; `insertPendingForUsers` batches them. */
+  private pendingInsert(input: InsertNotificationDeliveryInput) {
+    return (
+      this.db
+        .insert(notificationDeliveries)
+        .values({
+          id: `ndel_${nanoid()}`,
+          userId: input.userId,
+          broadcasterUserId: input.broadcasterUserId,
+          categoryId: input.categoryId,
+          triggerType: input.triggerType,
+          eventsubMessageId: input.eventsubMessageId,
+          streamId: input.streamId,
+          status: "pending",
+          createdAt: input.now,
+        })
+        // No target: SQLite requires a partial index's WHERE in the conflict
+        // target and drizzle's DoNothing can't emit one. The dedupe index is
+        // the only unique constraint besides the nanoid primary key.
+        .onConflictDoNothing()
+    )
   }
 
   /**
-   * `insertPendingIfNew` for many users of one event in a constant number of
-   * D1 queries (one `batch()` of inserts, then chunked selects), so a large
-   * audience stays under the Free plan's 50 queries per invocation. Returns
-   * the row owning each user's dedupe key.
+   * Inserts a `pending` delivery per user of one event; the unique dedupe
+   * index on (user, broadcaster, category, trigger, stream) makes a repeat a
+   * no-op (ADR 0008). Constant D1 queries (one `batch()` of inserts, then
+   * chunked selects) keep a large audience under the Free plan's 50 queries
+   * per invocation. Returns the row owning each user's dedupe key, fresh or
+   * pre-existing, so the caller can tell whether a send job is still owed.
    */
   async insertPendingForUsers(
     userIds: string[],
@@ -145,7 +127,8 @@ export class NotificationDeliveriesRepository {
   ): Promise<NotificationDeliveryRecord[]> {
     if (userIds.length === 0) return []
     const { streamId } = input
-    // Same guard as insertPendingIfNew: a null stream_id would bypass dedupe.
+    // SQLite treats NULLs in a unique index as distinct, so a null stream_id
+    // would bypass dedupe; fail loudly instead.
     if (streamId === null) {
       throw new Error(
         `insertPendingForUsers: streamId is required to guarantee dedupe (would ` +

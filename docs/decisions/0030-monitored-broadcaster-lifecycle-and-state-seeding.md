@@ -27,5 +27,5 @@ All logic lives in `apps/api/src/services/monitoring.ts` and runs synchronously 
 
 - `monitored_channels.disabled_at` is the single flag downstream consumers (T-007 event processing, T-008 matching) must respect; disabled broadcasters may still have rows everywhere else.
 - Preference mutations do O(affected broadcasters) work inline, including a Twitch API call when unseeded broadcasters are involved; global preference create/delete for heavy followers is the worst case.
-- Cleanup after unfollowing alone doesn't run (nothing triggers it), so a broadcaster can stay monitored until the next preference delete or T-007 reconciliation recomputes need — harmless surplus monitoring, and reconciliation is the designated janitor (ADR 0007).
+- Follow sync deletes the user's follows that Twitch no longer reports and runs the same cleanup for those broadcasters, so unfollowing stops monitoring once no preference needs them. Channel-specific preferences on an unfollowed broadcaster are left alone and keep notifying.
 - The test seam gained `POST /api/__test__/inspect` to read `monitored_channels` / `eventsub_subscriptions` / `channel_state` by broadcaster id, since the public API deliberately never exposes them.

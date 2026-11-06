@@ -83,6 +83,46 @@ export class FollowedChannelsRepository {
     await this.db.batch(asBatch(statements))
   }
 
+  /**
+   * Deletes the user's follows of the given broadcasters in one D1 round
+   * trip. Targets explicit ids, never `last_synced_at`, so overlapping syncs
+   * with different timestamps can't remove each other's rows.
+   */
+  async deleteByBroadcasterUserIds(
+    userId: string,
+    broadcasterUserIds: string[],
+  ): Promise<void> {
+    if (broadcasterUserIds.length === 0) return
+    // 1 bound param for user_id; D1 caps bound params at 100 per query.
+    const BATCH_SIZE = 99
+    const statements = []
+    for (let i = 0; i < broadcasterUserIds.length; i += BATCH_SIZE) {
+      statements.push(
+        this.db
+          .delete(followedChannels)
+          .where(
+            and(
+              eq(followedChannels.userId, userId),
+              inArray(
+                followedChannels.broadcasterUserId,
+                broadcasterUserIds.slice(i, i + BATCH_SIZE),
+              ),
+            ),
+          ),
+      )
+    }
+    await this.db.batch(asBatch(statements))
+  }
+
+  async findBroadcasterUserIdsByUserId(userId: string): Promise<string[]> {
+    const rows = await this.db
+      .select({ broadcasterUserId: followedChannels.broadcasterUserId })
+      .from(followedChannels)
+      .where(eq(followedChannels.userId, userId))
+      .all()
+    return rows.map((row) => row.broadcasterUserId)
+  }
+
   async findOne(
     userId: string,
     broadcasterUserId: string,

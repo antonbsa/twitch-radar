@@ -755,6 +755,58 @@ describe("notification snooze sweep", () => {
     ).toBe(`snooze-${BROADCASTER_ID}`)
   })
 
+  it("should re-send a second reminder when snoozed again in the same stream", async () => {
+    await orchestrator.createAuthenticatedSession()
+    await orchestrator.seed({
+      pushSubscriptions: [
+        { endpoint: orchestrator.pushEndpoint("/push/snooze-sweep2") },
+      ],
+    })
+    await orchestrator.mockTwitch.onPush("/push/snooze-sweep2")
+    await orchestrator.seedChannelState([
+      {
+        broadcasterUserId: BROADCASTER_ID,
+        isLive: true,
+        streamId: STREAM.id,
+        categoryId: MINECRAFT.id,
+        categoryName: MINECRAFT.name,
+      },
+    ])
+    const dueSnooze = {
+      broadcasterUserId: BROADCASTER_ID,
+      categoryId: MINECRAFT.id,
+      fireAt: new Date(Date.now() - 1000).toISOString(),
+    }
+
+    await orchestrator.seedNotificationSnoozes([dueSnooze])
+    await orchestrator.runScheduled()
+    await orchestrator.waitForInspect(
+      [BROADCASTER_ID],
+      (s) =>
+        s.notificationDeliveries.filter(
+          (d) => d.trigger_type === "snooze_reminder" && d.status === "sent",
+        ).length === 1,
+    )
+
+    // ADR 0048: snoozing again after a reminder is allowed. The seam may
+    // replace the fired row, so only the delivery count matters.
+    await orchestrator.mockTwitch.onPush("/push/snooze-sweep2")
+    await orchestrator.seedNotificationSnoozes([dueSnooze])
+    await orchestrator.runScheduled()
+    const state = await orchestrator.waitForInspect(
+      [BROADCASTER_ID],
+      (s) =>
+        s.notificationDeliveries.filter(
+          (d) => d.trigger_type === "snooze_reminder" && d.status === "sent",
+        ).length === 2,
+    )
+    expect(
+      state.notificationDeliveries.filter(
+        (d) => d.trigger_type === "snooze_reminder",
+      ),
+    ).toHaveLength(2)
+  })
+
   it("should expire the snooze when the channel left the category", async () => {
     await orchestrator.createAuthenticatedSession()
     await orchestrator.seedNotificationSnoozes([

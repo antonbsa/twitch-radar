@@ -21,7 +21,7 @@ function fakeDb(lastSentAt: string | null, userIds = ["usr_1"]) {
     .mockImplementation(async (ids: string[]) =>
       ids.map((id) => ({ id: `dlv_${id}`, user_id: id, status: "pending" })),
     )
-  const insertPendingIfNew = vi
+  const insertSnoozeReminder = vi
     .fn()
     .mockResolvedValue({ id: "dlv_1", status: "pending" })
   const db = {
@@ -61,7 +61,7 @@ function fakeDb(lastSentAt: string | null, userIds = ["usr_1"]) {
     notificationDeliveries: {
       findLastSentAtByUsers: findLastSent,
       insertPendingForUsers,
-      insertPendingIfNew,
+      insertSnoozeReminder,
     },
     notificationSnoozes: {
       findDue: vi.fn().mockResolvedValue([
@@ -79,7 +79,7 @@ function fakeDb(lastSentAt: string | null, userIds = ["usr_1"]) {
       markExpired: vi.fn().mockResolvedValue(undefined),
     },
   } as unknown as Database
-  return { db, findLastSent, insertPendingForUsers, insertPendingIfNew }
+  return { db, findLastSent, insertPendingForUsers, insertSnoozeReminder }
 }
 
 function fakeQueue() {

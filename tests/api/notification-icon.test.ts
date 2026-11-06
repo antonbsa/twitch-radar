@@ -68,7 +68,7 @@ function fakeDb(avatarUrl: string | null) {
         .mockResolvedValue([
           { id: "dlv_1", user_id: "usr_1", status: "pending" },
         ]),
-      insertPendingIfNew: vi
+      insertSnoozeReminder: vi
         .fn()
         .mockResolvedValue({ id: "dlv_1", status: "pending" }),
     },
