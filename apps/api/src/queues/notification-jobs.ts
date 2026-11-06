@@ -20,9 +20,10 @@ export async function consumeNotificationJobs(
       )
       message.ack()
     } catch (error) {
-      // Send outcomes never throw (deliverNotification resolves them to
-      // delivery statuses) — a throw here is infrastructure (D1/KV), so
-      // a retry against the still-pending delivery is safe.
+      // Send outcomes and post-send D1 writes never throw
+      // (deliverNotification resolves or logs them) — a throw here happened
+      // before any send, so a retry against the still-pending delivery is
+      // safe (ADR 0034).
       logger.error("Notification job failed", {
         deliveryId: (message.body as NotificationJobMessage).deliveryId,
         ...serializeError(error),

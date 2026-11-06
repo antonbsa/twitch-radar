@@ -148,38 +148,42 @@ describe("GET /api/auth/twitch/callback", () => {
     expect(location.searchParams.get("error")).toBe("twitch_declined")
   })
 
-  it("should return 400 for a valid state without the binding cookie", async () => {
+  async function expectInvalidStateRedirect(res: Response) {
+    expect(res.status).toBe(302)
+    const location = new URL(res.headers.get("location")!)
+    expect(location.pathname).toBe("/login")
+    expect(location.searchParams.get("error")).toBe("invalid_state")
+    expect(res.headers.get("set-cookie")).toMatch(/oauth_state=;.*Max-Age=0/)
+  }
+
+  it("should redirect to login for a valid state without the binding cookie", async () => {
     const { state } = await startLogin()
     const res = await fetch(
       `${orchestrator.baseUrl}/api/auth/twitch/callback?code=abc&state=${state}`,
+      { redirect: "manual" },
     )
-    expect(res.status).toBe(400)
-    await expect(res.json()).resolves.toMatchObject({
-      error: { code: "invalid_state" },
-    })
+    await expectInvalidStateRedirect(res)
   })
 
-  it("should return 400 when the binding cookie differs from the state", async () => {
+  it("should redirect to login when the binding cookie differs from the state", async () => {
     const { state } = await startLogin()
     const { stateCookie: otherCookie } = await startLogin()
     const res = await fetch(
       `${orchestrator.baseUrl}/api/auth/twitch/callback?code=abc&state=${state}`,
-      { headers: { Cookie: otherCookie } },
+      { headers: { Cookie: otherCookie }, redirect: "manual" },
     )
-    expect(res.status).toBe(400)
-    await expect(res.json()).resolves.toMatchObject({
-      error: { code: "invalid_state" },
-    })
+    await expectInvalidStateRedirect(res)
   })
 
-  it("should return 400 for invalid state", async () => {
+  it("should redirect to login for an unknown or expired state", async () => {
     const res = await fetch(
       `${orchestrator.baseUrl}/api/auth/twitch/callback?code=abc&state=not-a-real-state`,
+      {
+        headers: { Cookie: "oauth_state=not-a-real-state" },
+        redirect: "manual",
+      },
     )
-    expect(res.status).toBe(400)
-    await expect(res.json()).resolves.toMatchObject({
-      error: { code: "invalid_state" },
-    })
+    await expectInvalidStateRedirect(res)
   })
 })
 

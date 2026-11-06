@@ -28,9 +28,9 @@ On callback, `consumeOAuthState` reads and immediately deletes the entry; if abs
 
 - Consistent with the session management approach (ADR 0016) — `APP_CACHE` is the single source of short-lived auth state.
 - State cannot be replayed after the first callback attempt.
-- If the user takes more than 10 minutes to complete the Twitch login, the callback returns 400 and they must restart.
+- If the user takes more than 10 minutes to complete the Twitch login, the callback redirects to the login screen with `invalid_state` and they must restart.
 - No extra cookie header is needed on the start redirect.
 
 ## Amendment
 
-The KV entry alone did not bind the state to the browser that started the login, so a forged callback URL could log a victim into the attacker's account (login CSRF). The start redirect now also sets a short-lived `HttpOnly` `oauth_state` cookie (`Path=/api/auth`, 10 minutes), and the callback rejects with 400 `invalid_state` when it is missing or differs from the `state` parameter. The KV check stays for single use and expiry.
+The KV entry alone did not bind the state to the browser that started the login, so a forged callback URL could log a victim into the attacker's account (login CSRF). The start redirect now also sets a short-lived `HttpOnly` `oauth_state` cookie (`Path=/api/auth`, 10 minutes), and the callback rejects with a 302 to `/login?error=invalid_state` (the callback is a top-level navigation, so a JSON error would render as a raw page) when it is missing or differs from the `state` parameter. The KV check stays for single use and expiry.

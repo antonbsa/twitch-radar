@@ -9,7 +9,7 @@ import { jsonResponse } from "../../http/response"
 
 // Standard `PushSubscription.toJSON()` shape (see ADR 0027).
 const CreatePushSubscriptionSchema = z.object({
-  endpoint: z.url(),
+  endpoint: z.url({ protocol: /^https$/ }),
   keys: z.object({
     p256dh: z.string().min(1),
     auth: z.string().min(1),

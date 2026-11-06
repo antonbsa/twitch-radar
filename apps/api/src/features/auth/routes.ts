@@ -71,13 +71,20 @@ export async function handleAuthCallback(
 
   // The cookie ties the state to the browser that started the login, so a
   // callback URL forged for a victim (login CSRF) is rejected (ADR 0017).
-  if (getCookie(c, OAUTH_STATE_COOKIE_NAME) !== state) {
-    throw new ApiError(400, "invalid_state", "OAuth state mismatch or expired")
-  }
-
-  const stateValid = await consumeOAuthState(c.env.KV_APP_CACHE, state)
+  // A mismatch is also what a login finished in another browser than it
+  // started in looks like, so redirect to the login screen like the
+  // ?error= branch instead of rendering a JSON page.
+  const stateValid =
+    getCookie(c, OAUTH_STATE_COOKIE_NAME) === state &&
+    (await consumeOAuthState(c.env.KV_APP_CACHE, state))
   if (!stateValid) {
-    throw new ApiError(400, "invalid_state", "OAuth state mismatch or expired")
+    return new Response(null, {
+      status: 302,
+      headers: {
+        Location: `${config.publicUrl}/login?error=invalid_state`,
+        "Set-Cookie": clearOAuthStateCookieHeader(),
+      },
+    })
   }
 
   const tokens = await exchangeCode(

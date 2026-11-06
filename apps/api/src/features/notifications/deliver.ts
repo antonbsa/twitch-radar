@@ -1,6 +1,7 @@
 import type { AppConfig } from "../../env"
 import type { Database } from "../../db"
-import { logger } from "../../lib/logger"
+import { recordFailure } from "../../lib/alerting"
+import { logger, serializeError } from "../../lib/logger"
 import type { NotificationJobMessage } from "./types"
 import { sendWebPush } from "../push/web-push"
 
@@ -17,6 +18,9 @@ import { sendWebPush } from "../push/web-push"
  * - no active subscriptions at all → `skipped`.
  * There is no automatic retry: a category alert delivered late is worse
  * than one missed, and retrying after a partial success would double-notify.
+ * For the same reason a D1 write that fails after the first send is logged
+ * and swallowed, never thrown: the queue would retry the still-`pending`
+ * delivery and push every device again.
  */
 export async function deliverNotification(
   db: Database,
@@ -56,33 +60,56 @@ export async function deliverNotification(
     }
     errors.push(`${subscription.id}: ${result.error}`)
     if (result.endpointGone) {
-      await db.pushSubscriptions.revoke(subscription.id, now)
-      logger.warn("Revoked invalid push subscription", {
-        pushSubscriptionId: subscription.id,
-        userId: message.userId,
-        status: result.status,
-      })
+      try {
+        await db.pushSubscriptions.revoke(subscription.id, now)
+        logger.warn("Revoked invalid push subscription", {
+          pushSubscriptionId: subscription.id,
+          userId: message.userId,
+          status: result.status,
+        })
+      } catch (error) {
+        reportPostSendFailure("Push subscription revoke failed", error, {
+          deliveryId: delivery.id,
+          pushSubscriptionId: subscription.id,
+        })
+      }
     }
   }
 
-  if (sentSubscriptionId) {
-    await db.notificationDeliveries.markSent(
-      delivery.id,
-      sentSubscriptionId,
-      now,
-    )
-    logger.info("Notification delivered", {
+  try {
+    if (sentSubscriptionId) {
+      await db.notificationDeliveries.markSent(
+        delivery.id,
+        sentSubscriptionId,
+        now,
+      )
+      logger.info("Notification delivered", {
+        deliveryId: delivery.id,
+        userId: message.userId,
+        sentSubscriptionId,
+      })
+      return
+    }
+
+    await db.notificationDeliveries.markFailed(delivery.id, errors.join("; "))
+    logger.error("Notification delivery failed", {
       deliveryId: delivery.id,
       userId: message.userId,
-      sentSubscriptionId,
+      errors,
     })
-    return
+  } catch (error) {
+    reportPostSendFailure("Notification delivery status write failed", error, {
+      deliveryId: delivery.id,
+      userId: message.userId,
+    })
   }
+}
 
-  await db.notificationDeliveries.markFailed(delivery.id, errors.join("; "))
-  logger.error("Notification delivery failed", {
-    deliveryId: delivery.id,
-    userId: message.userId,
-    errors,
-  })
+function reportPostSendFailure(
+  message: string,
+  error: unknown,
+  fields: Record<string, unknown>,
+): void {
+  logger.error(message, { ...fields, ...serializeError(error) })
+  recordFailure(message, error)
 }

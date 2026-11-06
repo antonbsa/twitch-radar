@@ -10,6 +10,7 @@
   "login.title": "Twitch Radar",
   "login.tagline": "Recibe notificaciones cuando los canales que sigues transmitan en vivo en las categorías que te interesan.",
   "login.declined": "El inicio de sesión fue cancelado - inténtalo de nuevo.",
+  "login.invalidState": "Tu sesión de inicio expiró o se inició en otro navegador. Inténtalo de nuevo.",
   "login.connect": "Conectar con Twitch",
   "login.connecting": "Conectando…",
   "login.sandbox": "Sandbox (sin cuenta de Twitch)",

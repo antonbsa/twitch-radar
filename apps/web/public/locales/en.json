@@ -10,6 +10,7 @@
   "login.title": "Twitch Radar",
   "login.tagline": "Get notified when channels you follow go live in the categories you care about.",
   "login.declined": "Login was cancelled - try again.",
+  "login.invalidState": "Your login session expired or was started in another browser. Please try again.",
   "login.connect": "Connect with Twitch",
   "login.connecting": "Connecting…",
   "login.sandbox": "Sandbox (no Twitch account)",
