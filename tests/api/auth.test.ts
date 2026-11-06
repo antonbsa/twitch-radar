@@ -128,14 +128,6 @@ describe("GET /api/auth/twitch/callback", () => {
     expect(body1.data.id).toBe(body2.data.id)
   })
 
-  it("should return 400 for missing code or state", async () => {
-    const res = await fetch(`${orchestrator.baseUrl}/api/auth/twitch/callback`)
-    expect(res.status).toBe(400)
-    await expect(res.json()).resolves.toMatchObject({
-      error: { code: "invalid_request" },
-    })
-  })
-
   it("should redirect to login with an error param when Twitch reports the user declined", async () => {
     const res = await fetch(
       `${orchestrator.baseUrl}/api/auth/twitch/callback?error=access_denied&error_description=The+user+denied+you+access`,
@@ -171,6 +163,23 @@ describe("GET /api/auth/twitch/callback", () => {
     const res = await fetch(
       `${orchestrator.baseUrl}/api/auth/twitch/callback?code=abc&state=${state}`,
       { headers: { Cookie: otherCookie }, redirect: "manual" },
+    )
+    await expectInvalidStateRedirect(res)
+  })
+
+  it("should redirect to login when the callback has no code or state", async () => {
+    await expectInvalidStateRedirect(
+      await fetch(`${orchestrator.baseUrl}/api/auth/twitch/callback`, {
+        redirect: "manual",
+      }),
+    )
+  })
+
+  it("should redirect to login for a valid state and cookie but no code", async () => {
+    const { state, stateCookie } = await startLogin()
+    const res = await fetch(
+      `${orchestrator.baseUrl}/api/auth/twitch/callback?state=${state}`,
+      { headers: { Cookie: stateCookie }, redirect: "manual" },
     )
     await expectInvalidStateRedirect(res)
   })

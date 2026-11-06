@@ -15,7 +15,6 @@ import {
 } from "./session"
 import { exchangeCode } from "../../services/twitch/oauth"
 import { getAuthenticatedUser } from "../../services/twitch/users"
-import { ApiError } from "../../http/errors"
 
 export async function handleAuthStart(c: Context<HonoEnv>): Promise<Response> {
   const config = c.var.config
@@ -37,6 +36,20 @@ export async function handleAuthStart(c: Context<HonoEnv>): Promise<Response> {
   })
 }
 
+/** Sends an OAuth callback back to the login screen with an `?error=` code, dropping the state cookie. */
+function redirectToLogin(
+  publicUrl: string,
+  error: "twitch_declined" | "invalid_state",
+): Response {
+  return new Response(null, {
+    status: 302,
+    headers: {
+      Location: `${publicUrl}/login?error=${error}`,
+      "Set-Cookie": clearOAuthStateCookieHeader(),
+    },
+  })
+}
+
 export async function handleAuthCallback(
   c: Context<HonoEnv>,
 ): Promise<Response> {
@@ -52,39 +65,22 @@ export async function handleAuthCallback(
     // a top-level browser navigation, not a fetch() the SPA can intercept, so
     // we can't throw ApiError (it would render a raw JSON page); redirect back
     // to the login screen instead, same as the successful-login case below.
-    return new Response(null, {
-      status: 302,
-      headers: {
-        Location: `${config.publicUrl}/login?error=twitch_declined`,
-        "Set-Cookie": clearOAuthStateCookieHeader(),
-      },
-    })
-  }
-
-  if (!code || !state) {
-    throw new ApiError(
-      400,
-      "invalid_request",
-      "Missing code or state parameter",
-    )
+    return redirectToLogin(config.publicUrl, "twitch_declined")
   }
 
   // The cookie ties the state to the browser that started the login, so a
   // callback URL forged for a victim (login CSRF) is rejected (ADR 0017).
   // A mismatch is also what a login finished in another browser than it
   // started in looks like, so redirect to the login screen like the
-  // ?error= branch instead of rendering a JSON page.
+  // ?error= branch instead of rendering a JSON page. A missing code or state
+  // lands here too: it's the same top-level navigation.
   const stateValid =
+    !!code &&
+    !!state &&
     getCookie(c, OAUTH_STATE_COOKIE_NAME) === state &&
     (await consumeOAuthState(c.env.KV_APP_CACHE, state))
   if (!stateValid) {
-    return new Response(null, {
-      status: 302,
-      headers: {
-        Location: `${config.publicUrl}/login?error=invalid_state`,
-        "Set-Cookie": clearOAuthStateCookieHeader(),
-      },
-    })
+    return redirectToLogin(config.publicUrl, "invalid_state")
   }
 
   const tokens = await exchangeCode(
