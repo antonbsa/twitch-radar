@@ -162,6 +162,7 @@ describe("transient platform errors", () => {
     ["D1_ERROR: Network connection lost.", "network-connection-lost"],
     ["D1_ERROR: internal error; reference = abc123", "d1-internal-error"],
     ["Queue is overloaded. Please back off. (10250)", "queue-overloaded"],
+    ["D1_ERROR: Currently processing a long-running export.", "d1-export-lock"],
   ])("recognises %s through a Drizzle wrapper", (message, kind) => {
     expect(transientKind(d1(message))).toBe(kind)
   })

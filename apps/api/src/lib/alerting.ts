@@ -28,6 +28,8 @@ const TRANSIENT_PATTERNS: Array<[kind: string, needles: string[]]> = [
       "reset because its code was updated",
     ],
   ],
+  // `wrangler d1 export` locks the DB during the backup (ADR 0063); the next cron retries.
+  ["d1-export-lock", ["currently processing a long-running export"]],
 ]
 
 const MAX_CAUSE_DEPTH = 5
