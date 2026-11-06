@@ -213,12 +213,12 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
 
-// Slack mrkdwn control characters; `<` and `>` would otherwise open a link or mention.
+/** Escapes Slack mrkdwn control characters; `<` and `>` would otherwise open a link or mention. */
 function escapeSlack(text: string): string {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
 }
 
-// Backticks would end the inline code or code block early.
+/** Escapes for a code span; backticks would end the inline code or code block early. */
 function slackCode(text: string): string {
   return escapeSlack(text.replace(/`/g, "'"))
 }
@@ -232,10 +232,12 @@ function slackMessage(failures: Failure[], eventId?: string): string {
     `\`${slackCode(errorMessage(error))}\``,
   ]
   if (query) {
+    // Drizzle appends `\nparams: <values>` (user ids, tokens); never post those.
+    const sql = query.split("\nparams:")[0]!
     const clipped =
-      query.length > MAX_SLACK_QUERY_CHARS
-        ? `${query.slice(0, MAX_SLACK_QUERY_CHARS)}…`
-        : query
+      sql.length > MAX_SLACK_QUERY_CHARS
+        ? `${sql.slice(0, MAX_SLACK_QUERY_CHARS)}…`
+        : sql
     lines.push(`\`\`\`${slackCode(clipped)}\`\`\``)
   }
   if (failures.length > 1) {
@@ -249,7 +251,7 @@ function slackMessage(failures: Failure[], eventId?: string): string {
   }
   if (eventId && alertConfig.sentryOrg) {
     lines.push(
-      `<https://${alertConfig.sentryOrg}.sentry.io/issues/?query=${eventId}|View in Sentry>`,
+      `<https://${alertConfig.sentryOrg}.sentry.io/issues/?query=event.id%3A${eventId}|View in Sentry>`,
     )
   }
   return lines.join("\n")

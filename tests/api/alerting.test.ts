@@ -75,6 +75,19 @@ describe("alerting", () => {
     expect(text).not.toContain("params: 1")
   })
 
+  it("never posts a short query's bound params", async () => {
+    configure("production", WEBHOOK)
+    const wrapped = new Error("Failed query: select 1\nparams: tok_secret", {
+      cause: new Error("D1_ERROR: boom"),
+    })
+
+    await collectFailures(async () => recordFailure("job failed", wrapped))
+
+    const { text } = JSON.parse(fetchMock.mock.calls[0][1].body)
+    expect(text).toContain("Failed query: select 1")
+    expect(text).not.toContain("tok_secret")
+  })
+
   it("escapes Slack control characters and backticks", async () => {
     configure("production", WEBHOOK)
     await collectFailures(async () =>
@@ -271,7 +284,7 @@ describe("transient platform errors", () => {
       const slack = fetchMock.mock.calls.find(([u]) => u === WEBHOOK)
       const { text } = JSON.parse(slack![1].body)
       expect(text).toMatch(
-        /<https:\/\/myorg\.sentry\.io\/issues\/\?query=[0-9a-f]{32}\|View in Sentry>$/,
+        /<https:\/\/myorg\.sentry\.io\/issues\/\?query=event\.id%3A[0-9a-f]{32}\|View in Sentry>$/,
       )
     })
 
