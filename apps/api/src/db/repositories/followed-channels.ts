@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNotNull, sql } from "drizzle-orm"
+import { and, eq, inArray, isNotNull, lt, sql } from "drizzle-orm"
 import { asBatch, type AppDatabase } from "../client"
 import { followedChannels } from "../schema"
 
@@ -81,6 +81,55 @@ export class FollowedChannelsRepository {
     // chunking of the batch call itself is needed at realistic follow-list
     // sizes (hundreds of broadcasters -> tens of chunk statements).
     await this.db.batch(asBatch(statements))
+  }
+
+  /**
+   * Deletes the user's follows of the given broadcasters in one D1 round
+   * trip. Targets explicit ids, never `last_synced_at`, so overlapping syncs
+   * with different timestamps can't remove each other's rows.
+   */
+  async deleteByBroadcasterUserIds(
+    userId: string,
+    broadcasterUserIds: string[],
+  ): Promise<void> {
+    if (broadcasterUserIds.length === 0) return
+    // 1 bound param for user_id; D1 caps bound params at 100 per query.
+    const BATCH_SIZE = 99
+    const statements = []
+    for (let i = 0; i < broadcasterUserIds.length; i += BATCH_SIZE) {
+      statements.push(
+        this.db
+          .delete(followedChannels)
+          .where(
+            and(
+              eq(followedChannels.userId, userId),
+              inArray(
+                followedChannels.broadcasterUserId,
+                broadcasterUserIds.slice(i, i + BATCH_SIZE),
+              ),
+            ),
+          ),
+      )
+    }
+    await this.db.batch(asBatch(statements))
+  }
+
+  /** The user's follows last written by a sync stamped before `cutoff`. */
+  async findBroadcasterUserIdsSyncedBefore(
+    userId: string,
+    cutoff: string,
+  ): Promise<string[]> {
+    const rows = await this.db
+      .select({ broadcasterUserId: followedChannels.broadcasterUserId })
+      .from(followedChannels)
+      .where(
+        and(
+          eq(followedChannels.userId, userId),
+          lt(followedChannels.lastSyncedAt, cutoff),
+        ),
+      )
+      .all()
+    return rows.map((row) => row.broadcasterUserId)
   }
 
   async findOne(

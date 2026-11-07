@@ -1,4 +1,4 @@
-import { createDatabaseClient } from "./client"
+import { createDatabaseClient, type AppDatabase } from "./client"
 import { BroadcasterMutesRepository } from "./repositories/broadcaster-mutes"
 import { CategoryBoxArtRepository } from "./repositories/category-box-art"
 import { ChannelCategoryPreferencesRepository } from "./repositories/channel-category-preferences"
@@ -34,8 +34,11 @@ export class Database {
   readonly broadcasterMutes: BroadcasterMutesRepository
   readonly globalCategoryPreferenceExclusions: GlobalCategoryPreferenceExclusionsRepository
 
+  private readonly client: AppDatabase
+
   constructor(d1: D1Database) {
     const db = createDatabaseClient(d1)
+    this.client = db
     this.users = new UsersRepository(db)
     this.pushSubscriptions = new PushSubscriptionsRepository(db)
     this.twitchTokens = new TwitchTokensRepository(db)
@@ -54,5 +57,13 @@ export class Database {
     this.broadcasterMutes = new BroadcasterMutesRepository(db)
     this.globalCategoryPreferenceExclusions =
       new GlobalCategoryPreferenceExclusionsRepository(db)
+  }
+
+  /**
+   * Runs statements built by repositories in one D1 batch: transactional, and
+   * counted as a single query against the Free plan's 50 per invocation.
+   */
+  batch(statements: Parameters<AppDatabase["batch"]>[0]) {
+    return this.client.batch(statements)
   }
 }

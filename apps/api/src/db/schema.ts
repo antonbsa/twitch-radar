@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm"
 import {
   index,
   integer,
@@ -271,13 +272,16 @@ export const notificationDeliveries = sqliteTable(
   (table) => [
     uniqueIndex(
       "notification_deliveries_user_id_broadcaster_user_id_category_id_trigger_type_stream_id_unique",
-    ).on(
-      table.userId,
-      table.broadcasterUserId,
-      table.categoryId,
-      table.triggerType,
-      table.streamId,
-    ),
+    )
+      .on(
+        table.userId,
+        table.broadcasterUserId,
+        table.categoryId,
+        table.triggerType,
+        table.streamId,
+      )
+      // Reminders repeat within a stream (ADR 0048), so they stay out of the key.
+      .where(sql`${table.triggerType} <> 'snooze_reminder'`),
     index("idx_notification_deliveries_user_status").on(
       table.userId,
       table.status,

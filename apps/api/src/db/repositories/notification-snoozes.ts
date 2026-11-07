@@ -124,12 +124,23 @@ export class NotificationSnoozesRepository {
     return rows.map(toRecord)
   }
 
-  async markFired(id: string): Promise<void> {
-    await this.db
+  /**
+   * Moves a `pending` snooze to `fired`; false when another sweep (or a
+   * replayed one) already claimed it, so the caller must not send.
+   */
+  async claimForFiring(id: string): Promise<boolean> {
+    const claimed = await this.db
       .update(notificationSnoozes)
       .set({ status: "fired" })
-      .where(eq(notificationSnoozes.id, id))
-      .run()
+      .where(
+        and(
+          eq(notificationSnoozes.id, id),
+          eq(notificationSnoozes.status, "pending"),
+        ),
+      )
+      .returning({ id: notificationSnoozes.id })
+      .all()
+    return claimed.length > 0
   }
 
   async markExpired(id: string): Promise<void> {

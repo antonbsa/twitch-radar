@@ -77,3 +77,36 @@ describe("Snapshot commit racing an Event (#176, ADR 0033)", () => {
     expect(row?.is_live).toBe(true)
   })
 })
+
+describe("Event write atomicity (ADR 0034)", () => {
+  it("should leave Channel State untouched when the State Change insert fails, so a retry still produces the change", async () => {
+    const id = "300"
+    const message = {
+      messageId: "atomic_m1",
+      messageTimestamp: EVENT_AT,
+      receivedAt: EVENT_AT,
+      eventType: "stream.online" as const,
+      event: {
+        id: "s3",
+        broadcaster_user_id: id,
+        broadcaster_user_login: "c",
+        broadcaster_user_name: "C",
+        type: "live",
+        started_at: EVENT_AT,
+      },
+    }
+    // Stands in for a D1 failure on the second write of the old two-call flow.
+    await d1.exec(
+      "CREATE TRIGGER fail_change BEFORE INSERT ON channel_state_changes BEGIN SELECT RAISE(ABORT, 'injected'); END",
+    )
+    await expect(applyEvent(db, message, undefined)).rejects.toThrow()
+    expect(await db.channelState.findByBroadcasterUserId(id)).toBeNull()
+
+    await d1.exec("DROP TRIGGER fail_change")
+    const change = await applyEvent(db, message, undefined)
+    expect(change?.change_type).toBe("stream_started")
+    expect((await db.channelState.findByBroadcasterUserId(id))?.is_live).toBe(
+      true,
+    )
+  })
+})

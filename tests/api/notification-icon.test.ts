@@ -1,10 +1,17 @@
 import { describe, expect, it, vi } from "vitest"
+import type { AppConfig } from "../../apps/api/src/env"
+import { deliverNotification } from "../../apps/api/src/features/notifications/deliver"
+import { sendWebPush } from "../../apps/api/src/features/push/web-push"
 import type { Database } from "../../apps/api/src/db"
 import type { ChannelStateChangeRecord } from "../../apps/api/src/db/repositories/channel-state-changes"
 import type { ChannelStateRecord } from "../../apps/api/src/db/repositories/channel-state"
 import { matchAndCreateDeliveries } from "../../apps/api/src/features/notifications/match"
 import { sweepNotificationSnoozes } from "../../apps/api/src/features/notifications/snooze-sweep"
 import type { NotificationJobMessage } from "../../apps/api/src/features/notifications/types"
+
+vi.mock("../../apps/api/src/features/push/web-push", () => ({
+  sendWebPush: vi.fn(),
+}))
 
 // The push payload is encrypted end-to-end (ADR 0035), so the avatar-as-icon
 // field (issue #25) is asserted on the queued job message with a fake db.
@@ -62,8 +69,13 @@ function fakeDb(avatarUrl: string | null) {
       findMutedUserIds: vi.fn().mockResolvedValue(new Set()),
     },
     notificationDeliveries: {
-      findLastSentByUserAndBroadcaster: vi.fn().mockResolvedValue(null),
-      insertPendingIfNew: vi
+      findLastSentAtByUsers: vi.fn().mockResolvedValue(new Map()),
+      insertPendingForUsers: vi
+        .fn()
+        .mockResolvedValue([
+          { id: "dlv_1", user_id: "usr_1", status: "pending" },
+        ]),
+      insertSnoozeReminder: vi
         .fn()
         .mockResolvedValue({ id: "dlv_1", status: "pending" }),
     },
@@ -79,7 +91,7 @@ function fakeDb(avatarUrl: string | null) {
           created_at: "2024-06-01T11:45:00Z",
         },
       ]),
-      markFired: vi.fn().mockResolvedValue(undefined),
+      claimForFiring: vi.fn().mockResolvedValue(true),
       markExpired: vi.fn().mockResolvedValue(undefined),
     },
   } as unknown as Database
@@ -87,10 +99,15 @@ function fakeDb(avatarUrl: string | null) {
 
 function fakeQueue() {
   const send = vi.fn().mockResolvedValue(undefined)
+  const sendBatch = vi.fn().mockResolvedValue(undefined)
   return {
-    queue: { send } as unknown as Queue<NotificationJobMessage>,
+    queue: { send, sendBatch } as unknown as Queue<NotificationJobMessage>,
     sentPayload: () =>
-      (send.mock.calls[0]![0] as NotificationJobMessage).payload,
+      send.mock.calls.length > 0
+        ? (send.mock.calls[0]![0] as NotificationJobMessage).payload
+        : (
+            sendBatch.mock.calls[0]![0] as { body: NotificationJobMessage }[]
+          )[0]!.body.payload,
   }
 }
 
@@ -127,5 +144,30 @@ describe("notification payload icon", () => {
     const { queue, sentPayload } = fakeQueue()
     await sweepNotificationSnoozes(fakeDb(AVATAR), queue)
     expect(sentPayload().icon).toBe(AVATAR)
+  })
+})
+
+describe("deliverNotification post-send write failure", () => {
+  it("resolves instead of throwing so the queue does not re-push", async () => {
+    vi.mocked(sendWebPush).mockResolvedValue({ ok: true, status: 201 })
+    const db = {
+      notificationDeliveries: {
+        findById: vi.fn().mockResolvedValue({ id: "dlv_1", status: "pending" }),
+        markSent: vi.fn().mockRejectedValue(new Error("D1 down")),
+      },
+      pushSubscriptions: {
+        listActiveByUserId: vi.fn().mockResolvedValue([{ id: "psub_1" }]),
+      },
+    } as unknown as Database
+    const message = {
+      deliveryId: "dlv_1",
+      userId: "usr_1",
+      payload: { broadcasterUserId: "200" },
+    } as unknown as NotificationJobMessage
+
+    await expect(
+      deliverNotification(db, {} as AppConfig, message),
+    ).resolves.toBeUndefined()
+    expect(sendWebPush).toHaveBeenCalledTimes(1)
   })
 })

@@ -37,8 +37,8 @@ Every error response has the same shape:
 | Method | Path | Auth | Purpose |
 | --- | --- | --- | --- |
 | GET | `/health` | no | liveness check |
-| GET | `/auth/twitch/start` | no | begins the Twitch OAuth flow |
-| GET | `/auth/twitch/callback` | no | OAuth redirect target; creates the session, redirects to `PUBLIC_URL` |
+| GET | `/auth/twitch/start` | no | begins the Twitch OAuth flow; sets the short-lived `HttpOnly` `oauth_state` cookie that binds the state to this browser (ADR 0017) |
+| GET | `/auth/twitch/callback` | no | OAuth redirect target; creates the session, redirects to `PUBLIC_URL`. A Twitch decline redirects to `/login?error=twitch_declined`; a missing `code` or `state`, or a state that is unknown, expired or doesn't match the `oauth_state` cookie, redirects to `/login?error=invalid_state`. Both clear the cookie |
 | POST | `/auth/logout` | yes | deletes the current session |
 | GET | `/me` | yes | current user, including `twitch_reconnect_required` (ADR 0036) |
 | PATCH | `/me/language` | yes | sets the user's language preference (ADR 0044) |
@@ -60,5 +60,5 @@ Every error response has the same shape:
 | DELETE | `/notifications/mutes/:id` | yes | soft-disables a broadcaster mute |
 | POST | `/webhooks/twitch/eventsub` | HMAC | Twitch EventSub notification/challenge/revocation (ADR 0032) |
 | GET | `/push/vapid-public-key` | yes | the VAPID public key for Web Push subscription |
-| POST | `/push-subscriptions` | yes | creates/upserts a push subscription by endpoint (ADR 0027) |
+| POST | `/push-subscriptions` | yes | creates/upserts a push subscription by endpoint, which must be an `https` URL (ADR 0027) |
 | DELETE | `/push-subscriptions/:id` | yes | soft-revokes a push subscription |

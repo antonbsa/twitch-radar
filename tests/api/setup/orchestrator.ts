@@ -3,7 +3,10 @@ import {
   type PeriodicJobName,
 } from "../../../apps/api/src/crons"
 import { createSeamClient } from "../../shared/seam-client"
-import type { SeedUserInput } from "../../shared/seam-client"
+import type {
+  SeedFollowedChannelInput,
+  SeedUserInput,
+} from "../../shared/seam-client"
 import { API_TEST_URL, MOCK_TWITCH_URL } from "./ports"
 
 const seam = createSeamClient({ baseUrl: () => API_TEST_URL })
@@ -15,11 +18,7 @@ async function clearDatabase() {
 
 async function seedFollowedChannels(
   userId: string,
-  channels: Array<{
-    broadcasterUserId: string
-    broadcasterLogin: string
-    broadcasterDisplayName: string
-  }>,
+  channels: SeedFollowedChannelInput[],
 ) {
   // The seam attaches followedChannels to the user in the same request, and
   // seeding a user upserts it — derive twitchUserId from the id so re-seeds

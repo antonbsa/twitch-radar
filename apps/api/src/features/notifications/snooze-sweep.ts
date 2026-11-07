@@ -104,38 +104,40 @@ export async function sweepNotificationSnoozes(
         monitored?.broadcaster_login ?? followed?.broadcaster_login ?? null
       const categoryName = channelState.category_name ?? snooze.category_id
 
-      const delivery = await db.notificationDeliveries.insertPendingIfNew({
+      // Claim before staging and sending: a throw after the send (a D1 blip,
+      // or D1's 50-query cap) would otherwise leave the snooze pending and the
+      // next sweep would push again. The trade-off is that a failure after
+      // the claim loses this reminder, which beats a duplicate push.
+      if (!(await db.notificationSnoozes.claimForFiring(snooze.id))) continue
+
+      const delivery = await db.notificationDeliveries.insertSnoozeReminder({
         userId: snooze.user_id,
         broadcasterUserId: snooze.broadcaster_user_id,
         categoryId: snooze.category_id,
-        triggerType: "snooze_reminder",
         eventsubMessageId: null,
         streamId: channelState.stream_id,
         now,
       })
 
-      if (delivery.status === "pending") {
-        await queue.send({
-          deliveryId: delivery.id,
-          userId: snooze.user_id,
-          payload: {
-            titleKey: "notification.snooze_reminder.title",
-            bodyKey: "notification.snooze_reminder.body",
-            params: { broadcasterName, categoryName },
-            lang: languageByUserId.get(snooze.user_id) ?? "en",
-            url: `/channels?broadcaster=${snooze.broadcaster_user_id}`,
-            broadcasterUserId: snooze.broadcaster_user_id,
-            categoryId: snooze.category_id,
-            ...(broadcasterLogin ? { broadcasterLogin } : {}),
-            ...(channelState.thumbnail_url
-              ? { image: channelState.thumbnail_url }
-              : {}),
-            ...(broadcasterAvatarUrl ? { icon: broadcasterAvatarUrl } : {}),
-          },
-        })
-      }
+      await queue.send({
+        deliveryId: delivery.id,
+        userId: snooze.user_id,
+        payload: {
+          titleKey: "notification.snooze_reminder.title",
+          bodyKey: "notification.snooze_reminder.body",
+          params: { broadcasterName, categoryName },
+          lang: languageByUserId.get(snooze.user_id) ?? "en",
+          url: `/channels?broadcaster=${snooze.broadcaster_user_id}`,
+          broadcasterUserId: snooze.broadcaster_user_id,
+          categoryId: snooze.category_id,
+          ...(broadcasterLogin ? { broadcasterLogin } : {}),
+          ...(channelState.thumbnail_url
+            ? { image: channelState.thumbnail_url }
+            : {}),
+          ...(broadcasterAvatarUrl ? { icon: broadcasterAvatarUrl } : {}),
+        },
+      })
 
-      await db.notificationSnoozes.markFired(snooze.id)
       fired += 1
     }
 

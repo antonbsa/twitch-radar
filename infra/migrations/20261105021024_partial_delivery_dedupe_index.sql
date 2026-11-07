@@ -1,0 +1,2 @@
+DROP INDEX `notification_deliveries_user_id_broadcaster_user_id_category_id_trigger_type_stream_id_unique`;--> statement-breakpoint
+CREATE UNIQUE INDEX `notification_deliveries_user_id_broadcaster_user_id_category_id_trigger_type_stream_id_unique` ON `notification_deliveries` (`user_id`,`broadcaster_user_id`,`category_id`,`trigger_type`,`stream_id`) WHERE "notification_deliveries"."trigger_type" <> 'snooze_reminder';

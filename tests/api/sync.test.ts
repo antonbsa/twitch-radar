@@ -499,3 +499,95 @@ describe("POST /api/sync/follows category_started_at (issue #120)", () => {
     expect(persisted).toBeNull()
   })
 })
+
+describe("POST /api/sync/follows unfollowed channels", () => {
+  async function sync(cookie: string) {
+    const res = await fetch(`${orchestrator.baseUrl}/api/sync/follows`, {
+      method: "POST",
+      headers: { Cookie: cookie },
+    })
+    expect(res.status).toBe(200)
+  }
+
+  it("should remove a channel no longer followed on Twitch and stop monitoring it", async () => {
+    const { cookie } = await orchestrator.createAuthenticatedSession()
+    const prefRes = await fetch(
+      `${orchestrator.baseUrl}/api/preferences/global`,
+      {
+        method: "POST",
+        headers: { Cookie: cookie, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          category_id: "game_1",
+          category_name: "Minecraft",
+        }),
+      },
+    )
+    expect(prefRes.ok).toBe(true)
+
+    await orchestrator.mockTwitch.onFollowedChannels([CHANNEL_A, CHANNEL_B])
+    await orchestrator.mockTwitch.onFollowedStreams([])
+    await sync(cookie)
+    await orchestrator.waitForFollowedChannels(
+      cookie,
+      (items) => items.length === 2,
+    )
+    const monitored = await orchestrator.waitForInspect(["100", "200"], (s) =>
+      s.monitoredChannels.some((m) => m.broadcaster_user_id === "200"),
+    )
+    expect(
+      monitored.monitoredChannels.every((m) => m.disabled_at === null),
+    ).toBe(true)
+
+    await orchestrator.mockTwitch.reset()
+    await orchestrator.mockTwitch.onFollowedChannels([CHANNEL_A])
+    await orchestrator.mockTwitch.onFollowedStreams([])
+    await sync(cookie)
+
+    const remaining = await orchestrator.waitForFollowedChannels(
+      cookie,
+      (items) => items.length === 1,
+    )
+    expect(remaining[0]!.broadcaster_user_id).toBe("100")
+
+    const state = await orchestrator.waitForInspect(["100", "200"], (s) =>
+      s.monitoredChannels.some(
+        (m) => m.broadcaster_user_id === "200" && m.disabled_at !== null,
+      ),
+    )
+    expect(
+      state.monitoredChannels.find((m) => m.broadcaster_user_id === "100")
+        ?.disabled_at,
+    ).toBeNull()
+  })
+  it("should keep a follow an overlapping sync wrote after this one started", async () => {
+    const { cookie, userId } = await orchestrator.createAuthenticatedSession()
+    await orchestrator.seedFollowedChannels(userId, [
+      // Written by a sync newer than the one below, whose Twitch list
+      // predates this follow.
+      {
+        broadcasterUserId: "300",
+        broadcasterLogin: "channelc",
+        broadcasterDisplayName: "ChannelC",
+        lastSyncedAt: new Date(Date.now() + 60_000).toISOString(),
+      },
+      // Synced earlier and since unfollowed: still removed.
+      {
+        broadcasterUserId: "200",
+        broadcasterLogin: "channelb",
+        broadcasterDisplayName: "ChannelB",
+      },
+    ])
+    await orchestrator.mockTwitch.onFollowedChannels([CHANNEL_A])
+    await orchestrator.mockTwitch.onFollowedStreams([])
+    await sync(cookie)
+
+    const remaining = await orchestrator.waitForFollowedChannels(
+      cookie,
+      (items) => !items.some((item) => item.broadcaster_user_id === "200"),
+    )
+    expect(remaining.map((item) => item.broadcaster_user_id).sort()).toEqual([
+      "100",
+      "300",
+    ])
+  })
+})

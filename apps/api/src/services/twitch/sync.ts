@@ -3,7 +3,10 @@ import type { AppConfig } from "../../env"
 import type { Database } from "../../db"
 import { recordFailure } from "../../lib/alerting"
 import { logger, serializeError } from "../../lib/logger"
-import { ensureMonitoredBroadcasters } from "../../features/eventsub/monitoring"
+import {
+  cleanupMonitoringForBroadcasters,
+  ensureMonitoredBroadcasters,
+} from "../../features/eventsub/monitoring"
 import {
   buildFollowedChannelsView,
   type FollowedChannelViewItem,
@@ -176,6 +179,19 @@ async function persistFollowedChannelsSync(
     ),
     commitChannelStates(),
   ])
+
+  // Drop follows Twitch no longer reports, so they leave the list and stop
+  // matching global preferences. Only rows older than this sync's `now`: an
+  // overlapping sync that fetched later may have just written a follow this
+  // sync's stale list lacks, and that row must survive.
+  const fetchedIds = new Set(channels.map((ch) => ch.broadcaster_id))
+  const removedIds = (
+    await db.followedChannels.findBroadcasterUserIdsSyncedBefore(userId, now)
+  ).filter((id) => !fetchedIds.has(id))
+  if (removedIds.length > 0) {
+    await db.followedChannels.deleteByBroadcasterUserIds(userId, removedIds)
+    await cleanupMonitoringForBroadcasters(db, removedIds)
+  }
 
   // A user with an active global preference monitors all followed
   // broadcasters (ADR 0007) — keep the monitored set current as follows

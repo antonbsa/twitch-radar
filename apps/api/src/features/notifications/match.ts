@@ -230,38 +230,49 @@ export async function matchAndCreateDeliveries(
   const cooldownCutoff = new Date(
     nowDate.getTime() - NOTIFICATION_COOLDOWN_MS,
   ).toISOString()
-  for (const userId of matchedUserIds) {
-    // Runs last, after every other per-user filter (ADR 0054 order, ADR 0056).
-    const lastSent =
-      await db.notificationDeliveries.findLastSentByUserAndBroadcaster(
-        userId,
-        broadcasterUserId,
-      )
-    if (lastSent?.sent_at && lastSent.sent_at > cooldownCutoff) continue
+  // Runs last, after every other per-user filter (ADR 0054 order, ADR 0056).
+  const lastSentAtByUserId =
+    await db.notificationDeliveries.findLastSentAtByUsers(
+      broadcasterUserId,
+      Array.from(matchedUserIds),
+    )
+  const recipientIds = Array.from(matchedUserIds).filter((userId) => {
+    const lastSentAt = lastSentAtByUserId.get(userId)
+    return !(lastSentAt && lastSentAt > cooldownCutoff)
+  })
 
-    const delivery = await db.notificationDeliveries.insertPendingIfNew({
-      userId,
+  // Constant query count per event: D1 caps a Free-plan invocation at 50.
+  const deliveries = await db.notificationDeliveries.insertPendingForUsers(
+    recipientIds,
+    {
       broadcasterUserId,
       categoryId,
       triggerType: trigger,
       eventsubMessageId: change.eventsub_message_id,
       streamId: change.stream_id,
       now,
-    })
-    if (delivery.status === "pending") {
-      const payload = buildPayload(
+    },
+  )
+  const jobs = deliveries
+    .filter((delivery) => delivery.status === "pending")
+    .map((delivery) => ({
+      deliveryId: delivery.id,
+      userId: delivery.user_id,
+      payload: buildPayload(
         trigger,
         broadcasterName,
         categoryName,
-        languageByUserId.get(userId) ?? "en",
+        languageByUserId.get(delivery.user_id) ?? "en",
         broadcasterUserId,
         categoryId,
         change.previous_category_name,
         channelState,
         monitored?.broadcaster_login ?? null,
         broadcasterAvatarUrl,
-      )
-      await queue.send({ deliveryId: delivery.id, userId, payload })
-    }
+      ),
+    }))
+  // sendBatch takes at most 100 messages per call.
+  for (let i = 0; i < jobs.length; i += 100) {
+    await queue.sendBatch(jobs.slice(i, i + 100).map((body) => ({ body })))
   }
 }

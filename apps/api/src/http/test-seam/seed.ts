@@ -40,6 +40,8 @@ export interface SeedFollowedChannelInput {
   broadcasterDisplayName: string
   broadcasterProfileImageUrl?: string | null
   followedAt?: string | null
+  /** Defaults to the seed request's time; set it to mimic another sync's write. */
+  lastSyncedAt?: string
 }
 
 export interface SeedChannelStateInput {
@@ -224,7 +226,7 @@ export async function handleTestSeed(c: Context<HonoEnv>): Promise<Response> {
         broadcasterDisplayName: channel.broadcasterDisplayName,
         broadcasterProfileImageUrl: channel.broadcasterProfileImageUrl ?? null,
         followedAt: channel.followedAt ?? null,
-        now,
+        now: channel.lastSyncedAt ?? now,
       })),
     )
   }
@@ -353,7 +355,7 @@ export async function handleTestSeed(c: Context<HonoEnv>): Promise<Response> {
         now,
       })
       if (snooze.status === "fired") {
-        await c.var.db.notificationSnoozes.markFired(record.id)
+        await c.var.db.notificationSnoozes.claimForFiring(record.id)
       } else if (snooze.status === "expired") {
         await c.var.db.notificationSnoozes.markExpired(record.id)
       }

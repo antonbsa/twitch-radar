@@ -18,7 +18,7 @@ The events queue consumer handles each message in a fixed order ([ADR 0033](../d
 1. **Idempotency.** A message id already recorded is skipped. This unique key is the hard guarantee behind everything downstream, because Twitch retries and queues redeliver.
 2. **Previous state.** Load the broadcaster's current state; with none, treat them as offline.
 3. **Stale guard.** A message older than the one that last wrote the state is dropped entirely, so a late retry can neither overwrite newer state nor invent a transition. EventSub doesn't order deliveries and retries can arrive minutes later.
-4. **Write the new state, then the change record.** In that order on purpose: if a crash loses the change record, the state is still right and a redelivery is a no-op, so a transition can be lost in that rare window but never duplicated.
+4. **Write the new state and the change record together.** Both land in one transaction or neither does, so a failed write leaves nothing behind and the redelivery records the transition; once committed, the message id makes any further redelivery a no-op. A transition is neither lost nor duplicated.
 
 What each event does:
 

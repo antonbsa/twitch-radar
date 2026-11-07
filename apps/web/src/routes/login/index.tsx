@@ -7,7 +7,13 @@ import { useNavigationPending } from "@/hooks/use-navigation-pending"
 
 export function LoginPage() {
   const [searchParams] = useSearchParams()
-  const wasDeclined = searchParams.get("error") === "twitch_declined"
+  const error = searchParams.get("error")
+  const errorKey =
+    error === "twitch_declined"
+      ? "login.declined"
+      : error === "invalid_state"
+        ? "login.invalidState"
+        : null
   const { t } = useLanguage()
   const [isConnecting, markConnecting] = useNavigationPending()
 
@@ -18,9 +24,7 @@ export function LoginPage() {
         <h1 className="text-2xl font-semibold">{t("login.title")}</h1>
         <p className="text-sm text-muted-foreground">{t("login.tagline")}</p>
       </div>
-      {wasDeclined && (
-        <p className="text-sm text-destructive">{t("login.declined")}</p>
-      )}
+      {errorKey && <p className="text-sm text-destructive">{t(errorKey)}</p>}
       {/* A real <a> click, not a JS-driven window.location assignment: iOS
       standalone PWAs only carry the trusted-navigation flag through a
       redirect chain when it originates from a native link click, and losing

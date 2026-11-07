@@ -41,26 +41,38 @@ describe("GET /api/auth/twitch/start", () => {
     expect(location.searchParams.get("response_type")).toBe("code")
     expect(location.searchParams.get("scope")).toBe("user:read:follows")
     expect(location.searchParams.get("state")).toBeTruthy()
+
+    const cookie = res.headers.get("set-cookie")!
+    expect(cookie).toContain(
+      `oauth_state=${location.searchParams.get("state")}`,
+    )
+    expect(cookie).toContain("HttpOnly")
+    expect(cookie).toContain("SameSite=Lax")
+    expect(cookie).toContain("Path=/api/auth")
+    expect(cookie).toContain("Max-Age=600")
   })
 })
 
 describe("GET /api/auth/twitch/callback", () => {
-  async function getOAuthState(): Promise<string> {
+  async function startLogin(): Promise<{ state: string; stateCookie: string }> {
     const res = await fetch(`${orchestrator.baseUrl}/api/auth/twitch/start`, {
       redirect: "manual",
     })
     const location = new URL(res.headers.get("location")!)
-    return location.searchParams.get("state")!
+    return {
+      state: location.searchParams.get("state")!,
+      stateCookie: res.headers.get("set-cookie")!.split(";")[0],
+    }
   }
 
   it("should exchange code, create user, store tokens, and return session cookie", async () => {
-    const state = await getOAuthState()
+    const { state, stateCookie } = await startLogin()
     await orchestrator.mockTwitch.onTokenExchange(TWITCH_TOKEN_RESPONSE)
     await orchestrator.mockTwitch.onUserInfo(TWITCH_USER_RESPONSE)
 
     const res = await fetch(
       `${orchestrator.baseUrl}/api/auth/twitch/callback?code=auth-code&state=${state}`,
-      { redirect: "manual" },
+      { redirect: "manual", headers: { Cookie: stateCookie } },
     )
 
     // Not a 302 redirect: Safari drops a Set-Cookie that arrives on the same
@@ -68,32 +80,41 @@ describe("GET /api/auth/twitch/callback", () => {
     // callback lands on a real 200 page that redirects client-side instead.
     expect(res.status).toBe(200)
 
-    const cookie = res.headers.get("set-cookie")!
-    expect(cookie).toMatch(/^session=/)
-    expect(cookie).toContain("HttpOnly")
-    expect(cookie).toContain("SameSite=Lax")
+    const cookies = res.headers.getSetCookie()
+    const session = cookies.find((c) => c.startsWith("session="))!
+    expect(session).toContain("HttpOnly")
+    expect(session).toContain("SameSite=Lax")
+    const cleared = cookies.find((c) => c.startsWith("oauth_state="))!
+    expect(cleared).toContain("Max-Age=0")
+    expect(cleared).toContain("Path=/api/auth")
   })
 
   it("should reconnect an existing user without creating a duplicate", async () => {
-    const state1 = await getOAuthState()
+    const { state: state1, stateCookie: stateCookie1 } = await startLogin()
     await orchestrator.mockTwitch.onTokenExchange(TWITCH_TOKEN_RESPONSE)
     await orchestrator.mockTwitch.onUserInfo(TWITCH_USER_RESPONSE)
 
     const res1 = await fetch(
       `${orchestrator.baseUrl}/api/auth/twitch/callback?code=code1&state=${state1}`,
-      { redirect: "manual" },
+      { redirect: "manual", headers: { Cookie: stateCookie1 } },
     )
-    const cookie1 = res1.headers.get("set-cookie")!.split(";")[0]
+    const cookie1 = res1.headers
+      .getSetCookie()
+      .find((c) => c.startsWith("session="))!
+      .split(";")[0]
 
-    const state2 = await getOAuthState()
+    const { state: state2, stateCookie: stateCookie2 } = await startLogin()
     await orchestrator.mockTwitch.onTokenExchange(TWITCH_TOKEN_RESPONSE)
     await orchestrator.mockTwitch.onUserInfo(TWITCH_USER_RESPONSE)
 
     const res2 = await fetch(
       `${orchestrator.baseUrl}/api/auth/twitch/callback?code=code2&state=${state2}`,
-      { redirect: "manual" },
+      { redirect: "manual", headers: { Cookie: stateCookie2 } },
     )
-    const cookie2 = res2.headers.get("set-cookie")!.split(";")[0]
+    const cookie2 = res2.headers
+      .getSetCookie()
+      .find((c) => c.startsWith("session="))!
+      .split(";")[0]
 
     const me1 = await fetch(`${orchestrator.baseUrl}/api/me`, {
       headers: { Cookie: cookie1 },
@@ -105,14 +126,6 @@ describe("GET /api/auth/twitch/callback", () => {
     const body1 = (await me1.json()) as { data: { id: string } }
     const body2 = (await me2.json()) as { data: { id: string } }
     expect(body1.data.id).toBe(body2.data.id)
-  })
-
-  it("should return 400 for missing code or state", async () => {
-    const res = await fetch(`${orchestrator.baseUrl}/api/auth/twitch/callback`)
-    expect(res.status).toBe(400)
-    await expect(res.json()).resolves.toMatchObject({
-      error: { code: "invalid_request" },
-    })
   })
 
   it("should redirect to login with an error param when Twitch reports the user declined", async () => {
@@ -127,14 +140,59 @@ describe("GET /api/auth/twitch/callback", () => {
     expect(location.searchParams.get("error")).toBe("twitch_declined")
   })
 
-  it("should return 400 for invalid state", async () => {
+  async function expectInvalidStateRedirect(res: Response) {
+    expect(res.status).toBe(302)
+    const location = new URL(res.headers.get("location")!)
+    expect(location.pathname).toBe("/login")
+    expect(location.searchParams.get("error")).toBe("invalid_state")
+    expect(res.headers.get("set-cookie")).toMatch(/oauth_state=;.*Max-Age=0/)
+  }
+
+  it("should redirect to login for a valid state without the binding cookie", async () => {
+    const { state } = await startLogin()
+    const res = await fetch(
+      `${orchestrator.baseUrl}/api/auth/twitch/callback?code=abc&state=${state}`,
+      { redirect: "manual" },
+    )
+    await expectInvalidStateRedirect(res)
+  })
+
+  it("should redirect to login when the binding cookie differs from the state", async () => {
+    const { state } = await startLogin()
+    const { stateCookie: otherCookie } = await startLogin()
+    const res = await fetch(
+      `${orchestrator.baseUrl}/api/auth/twitch/callback?code=abc&state=${state}`,
+      { headers: { Cookie: otherCookie }, redirect: "manual" },
+    )
+    await expectInvalidStateRedirect(res)
+  })
+
+  it("should redirect to login when the callback has no code or state", async () => {
+    await expectInvalidStateRedirect(
+      await fetch(`${orchestrator.baseUrl}/api/auth/twitch/callback`, {
+        redirect: "manual",
+      }),
+    )
+  })
+
+  it("should redirect to login for a valid state and cookie but no code", async () => {
+    const { state, stateCookie } = await startLogin()
+    const res = await fetch(
+      `${orchestrator.baseUrl}/api/auth/twitch/callback?state=${state}`,
+      { headers: { Cookie: stateCookie }, redirect: "manual" },
+    )
+    await expectInvalidStateRedirect(res)
+  })
+
+  it("should redirect to login for an unknown or expired state", async () => {
     const res = await fetch(
       `${orchestrator.baseUrl}/api/auth/twitch/callback?code=abc&state=not-a-real-state`,
+      {
+        headers: { Cookie: "oauth_state=not-a-real-state" },
+        redirect: "manual",
+      },
     )
-    expect(res.status).toBe(400)
-    await expect(res.json()).resolves.toMatchObject({
-      error: { code: "invalid_state" },
-    })
+    await expectInvalidStateRedirect(res)
   })
 })
 

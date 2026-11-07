@@ -72,6 +72,18 @@ describe("POST /api/push-subscriptions", () => {
     expect(body.data.id).toMatch(/^psub_/)
   })
 
+  it("should reject a non-https endpoint", async () => {
+    const { cookie } = await orchestrator.createAuthenticatedSession()
+    const res = await createSubscription(cookie, {
+      ...SUBSCRIPTION_BODY,
+      endpoint: "http://push.example.com/send/abc123",
+    })
+    expect(res.status).toBe(400)
+    await expect(res.json()).resolves.toMatchObject({
+      error: { code: "invalid_request" },
+    })
+  })
+
   it("should upsert idempotently when the same endpoint is posted again", async () => {
     const { cookie } = await orchestrator.createAuthenticatedSession()
 

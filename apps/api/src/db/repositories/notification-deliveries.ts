@@ -1,11 +1,11 @@
-import { and, desc, eq, inArray } from "drizzle-orm"
+import { and, eq, inArray, max } from "drizzle-orm"
 import { nanoid } from "nanoid"
-import type { AppDatabase } from "../client"
+import { asBatch, type AppDatabase } from "../client"
 import { notificationDeliveries } from "../schema"
 
 // ADR 0008 trigger types for category notifications; snooze_reminder is a
-// user-requested re-send of a snoozed delivery (ADR 0048) — a distinct
-// trigger keeps it out of the original delivery's dedupe key.
+// user-requested re-send of a snoozed delivery (ADR 0048), excluded from the
+// dedupe index so it can repeat within a stream.
 export type NotificationTriggerType =
   "stream_started_in_category" | "switched_into_category" | "snooze_reminder"
 
@@ -65,68 +65,111 @@ export class NotificationDeliveriesRepository {
   }
 
   /**
-   * Inserts a `pending` delivery; the unique dedupe index on
-   * (user, broadcaster, category, trigger, stream) makes a repeat of the
-   * same user/event combination a no-op (ADR 0008). Returns the row that
-   * owns the dedupe key — the fresh insert or the pre-existing one — so the
-   * caller can decide whether a send job is still owed.
+   * Stages a `snooze_reminder` delivery with no dedupe: the dedupe index
+   * excludes reminders so a stream can be snoozed and reminded repeatedly
+   * (ADR 0048). The caller claims the snooze (`claimForFiring`) first; that
+   * claim is the only replay guard.
    */
-  async insertPendingIfNew(
-    input: InsertNotificationDeliveryInput,
+  async insertSnoozeReminder(
+    input: Omit<InsertNotificationDeliveryInput, "triggerType">,
   ): Promise<NotificationDeliveryRecord> {
-    // SQLite treats NULLs in a unique index as distinct, so a null stream_id
-    // would bypass the dedupe check. Current callers always pass a real
-    // stream_id, so this guard fails loudly instead of silently allowing a
-    // duplicate pending delivery.
-    if (input.streamId === null) {
-      throw new Error(
-        `insertPendingIfNew: streamId is required to guarantee dedupe (would ` +
-          `use key userId=${input.userId}, broadcasterUserId=${input.broadcasterUserId}, ` +
-          `categoryId=${input.categoryId}, triggerType=${input.triggerType})`,
-      )
-    }
-
-    await this.db
+    const row = await this.db
       .insert(notificationDeliveries)
       .values({
         id: `ndel_${nanoid()}`,
         userId: input.userId,
         broadcasterUserId: input.broadcasterUserId,
         categoryId: input.categoryId,
-        triggerType: input.triggerType,
+        triggerType: "snooze_reminder",
         eventsubMessageId: input.eventsubMessageId,
         streamId: input.streamId,
         status: "pending",
         createdAt: input.now,
       })
-      .onConflictDoNothing({
-        target: [
-          notificationDeliveries.userId,
-          notificationDeliveries.broadcasterUserId,
-          notificationDeliveries.categoryId,
-          notificationDeliveries.triggerType,
-          notificationDeliveries.streamId,
-        ],
-      })
-      .run()
-
-    const row = await this.db
-      .select()
-      .from(notificationDeliveries)
-      .where(
-        and(
-          eq(notificationDeliveries.userId, input.userId),
-          eq(notificationDeliveries.broadcasterUserId, input.broadcasterUserId),
-          eq(notificationDeliveries.categoryId, input.categoryId),
-          eq(notificationDeliveries.triggerType, input.triggerType),
-          eq(notificationDeliveries.streamId, input.streamId),
-        ),
-      )
+      .returning()
       .get()
-    if (!row) {
-      throw new Error("insertPendingIfNew: delivery row missing after insert")
-    }
     return toRecord(row)
+  }
+
+  /** One user's `onConflictDoNothing` insert; `insertPendingForUsers` batches them. */
+  private pendingInsert(input: InsertNotificationDeliveryInput) {
+    return (
+      this.db
+        .insert(notificationDeliveries)
+        .values({
+          id: `ndel_${nanoid()}`,
+          userId: input.userId,
+          broadcasterUserId: input.broadcasterUserId,
+          categoryId: input.categoryId,
+          triggerType: input.triggerType,
+          eventsubMessageId: input.eventsubMessageId,
+          streamId: input.streamId,
+          status: "pending",
+          createdAt: input.now,
+        })
+        // No target: SQLite requires a partial index's WHERE in the conflict
+        // target and drizzle's DoNothing can't emit one. The dedupe index is
+        // the only unique constraint besides the nanoid primary key.
+        .onConflictDoNothing()
+    )
+  }
+
+  /**
+   * Inserts a `pending` delivery per user of one event; the unique dedupe
+   * index on (user, broadcaster, category, trigger, stream) makes a repeat a
+   * no-op (ADR 0008). Constant D1 queries (one `batch()` of inserts, then
+   * chunked selects) keep a large audience under the Free plan's 50 queries
+   * per invocation. Returns the row owning each user's dedupe key, fresh or
+   * pre-existing, so the caller can tell whether a send job is still owed.
+   */
+  async insertPendingForUsers(
+    userIds: string[],
+    input: Omit<InsertNotificationDeliveryInput, "userId">,
+  ): Promise<NotificationDeliveryRecord[]> {
+    if (userIds.length === 0) return []
+    const { streamId } = input
+    // SQLite treats NULLs in a unique index as distinct, so a null stream_id
+    // would bypass dedupe; fail loudly instead.
+    if (streamId === null) {
+      throw new Error(
+        `insertPendingForUsers: streamId is required to guarantee dedupe (would ` +
+          `use key broadcasterUserId=${input.broadcasterUserId}, ` +
+          `categoryId=${input.categoryId}, triggerType=${input.triggerType})`,
+      )
+    }
+
+    await this.db.batch(
+      asBatch(
+        userIds.map((userId) => this.pendingInsert({ ...input, userId })),
+      ),
+    )
+
+    // D1 limits bound parameters to 100 per query; 4 more are bound below.
+    const BATCH_SIZE = 90
+    const rows: NotificationDeliveryRecord[] = []
+    for (let i = 0; i < userIds.length; i += BATCH_SIZE) {
+      const found = await this.db
+        .select()
+        .from(notificationDeliveries)
+        .where(
+          and(
+            inArray(
+              notificationDeliveries.userId,
+              userIds.slice(i, i + BATCH_SIZE),
+            ),
+            eq(
+              notificationDeliveries.broadcasterUserId,
+              input.broadcasterUserId,
+            ),
+            eq(notificationDeliveries.categoryId, input.categoryId),
+            eq(notificationDeliveries.triggerType, input.triggerType),
+            eq(notificationDeliveries.streamId, streamId),
+          ),
+        )
+        .all()
+      rows.push(...found.map(toRecord))
+    }
+    return rows
   }
 
   async findById(id: string): Promise<NotificationDeliveryRecord | null> {
@@ -139,27 +182,41 @@ export class NotificationDeliveriesRepository {
   }
 
   /**
-   * Most recent `sent` delivery for the pair, whatever its category, trigger
-   * or stream: the send-side cooldown deliberately ignores them (ADR 0056).
+   * Latest `sent_at` per user for the broadcaster, whatever the category,
+   * trigger or stream: the send-side cooldown deliberately ignores them
+   * (ADR 0056). Users never sent to are absent from the map.
    */
-  async findLastSentByUserAndBroadcaster(
-    userId: string,
+  async findLastSentAtByUsers(
     broadcasterUserId: string,
-  ): Promise<NotificationDeliveryRecord | null> {
-    const row = await this.db
-      .select()
-      .from(notificationDeliveries)
-      .where(
-        and(
-          eq(notificationDeliveries.userId, userId),
-          eq(notificationDeliveries.broadcasterUserId, broadcasterUserId),
-          eq(notificationDeliveries.status, "sent"),
-        ),
-      )
-      .orderBy(desc(notificationDeliveries.sentAt))
-      .limit(1)
-      .get()
-    return row ? toRecord(row) : null
+    userIds: string[],
+  ): Promise<Map<string, string>> {
+    const lastSentAt = new Map<string, string>()
+    // D1 limits bound parameters to 100 per query; 2 more are bound below.
+    const BATCH_SIZE = 90
+    for (let i = 0; i < userIds.length; i += BATCH_SIZE) {
+      const rows = await this.db
+        .select({
+          userId: notificationDeliveries.userId,
+          sentAt: max(notificationDeliveries.sentAt),
+        })
+        .from(notificationDeliveries)
+        .where(
+          and(
+            eq(notificationDeliveries.broadcasterUserId, broadcasterUserId),
+            eq(notificationDeliveries.status, "sent"),
+            inArray(
+              notificationDeliveries.userId,
+              userIds.slice(i, i + BATCH_SIZE),
+            ),
+          ),
+        )
+        .groupBy(notificationDeliveries.userId)
+        .all()
+      for (const row of rows) {
+        if (row.sentAt) lastSentAt.set(row.userId, row.sentAt)
+      }
+    }
+    return lastSentAt
   }
 
   async markSent(
