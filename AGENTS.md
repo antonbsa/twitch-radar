@@ -22,6 +22,14 @@ Issue → ADR/TN if a decision changes → implementation → review → PR → 
 5. **PR** via [open-pr](.claude/skills/open-pr): tests, migrations/config and ADRs/docs are part of the review. The skill owns the labels rule.
 6. **Release** via [release](.claude/skills/release). Merging to `main` only deploys preview; production ships when a release is published ([ADR 0041](docs/decisions/0041-release-gated-production-deploys.md)).
 
+## One Concern Per PR
+
+A PR is one concern that can be reverted on its own. Test: could it be reverted without taking another fix with it? If yes, they are separate PRs. Tests, docs and ADR updates for the concern ship in the same PR; sequential dependencies and shared-flow coupling (as `feature-round` defines them) are one concern. When implementation uncovers a second, independent problem, it becomes a new issue (with a milestone, per Workflow step 1) or a new branch, never an addition to the current one.
+
+- Symptom: a PR bundles several independent fixes from one audit or session (PR #202: five fixes, eight commits, no issue), so the review is the bottleneck. Line count isn't the signal: generated migration snapshots and `package-lock.json` inflate it, while a small PR can still mix concerns.
+- Why it slips: each commit is clean and CI is green, so nothing fails locally; the problem only shows when a reviewer must hold unrelated changes in their head, or revert one fix and can't.
+- Verify before opening the PR: map each commit in `git log --oneline origin/main..HEAD` to a concern; more than one concern means proposing a split (see [open-pr](.claude/skills/open-pr/SKILL.md)).
+
 ## ADRs vs Technical Notes
 
 - ADR: an accepted decision the code is expected to reflect. Use it when a change is being made or has been made.
