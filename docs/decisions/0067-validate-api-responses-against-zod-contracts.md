@@ -20,6 +20,7 @@ Requests are validated with zod, but responses are built ad hoc in each handler,
 - **Handlers enforce the contract at compile time** with `satisfies <Contract>`; production code never parses its own responses.
 - **The API test tier enforces what the Worker actually sends** through `expectConforms` / `expectApiError` (`tests/api/setup/contract.ts`), which check status, content type and the full body. Tests no longer cast bodies with `as { ... }`.
 - **Web mirrors are checked, not generated.** A type-level test under `tests/contracts/` asserts each mirrored web type equals its inferred contract; `tests/` is bundled into neither app, so ADR 0028's isolation holds. `npm run typecheck` also runs `tsc -p tests`.
+- **A registry maps every route to its contracts, and a coverage test compares it with the routes the app registers**, so a route without a contract, or a contract for a removed route, fails the API tier. `/__test__/*` and `/__sandbox__/*` are exempt. The test imports the app under Node, so it needs no extra server or CI job.
 - **`PATCH /me/*` return the full user**, the same `UserDto` as `GET /me`, so a caller can feed `res.data` into the user cache.
 
 ## Alternatives considered
@@ -31,4 +32,4 @@ Requests are validated with zod, but responses are built ad hoc in each handler,
 ## Consequences
 
 - A new route response needs a contract, and a handler change that drops or adds a field fails typecheck or the API tier.
-- Rollout is incremental: foundation and `/me` first, then the remaining routes, then a coverage guard that compares contracts with the routes.
+- A new route must also be added to the registry, whether or not it returns a JSON body (an empty entry records that it has none); the coverage test fails until it is.

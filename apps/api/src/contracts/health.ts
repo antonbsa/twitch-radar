@@ -9,3 +9,9 @@ export const HealthResponse = z
   })
   .strict()
 export type HealthResponse = z.infer<typeof HealthResponse>
+
+/** `GET /`, the bare service banner. */
+export const RootResponse = z
+  .object({ service: z.literal("twitch-radar-api") })
+  .strict()
+export type RootResponse = z.infer<typeof RootResponse>

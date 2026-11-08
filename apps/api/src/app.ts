@@ -9,6 +9,7 @@ import { requireAuth } from "./features/auth/middleware"
 import { handleSearchCategories } from "./features/categories/routes"
 import { handleGetFollowedChannels } from "./features/channels/routes"
 import { handleHealth } from "./http/health"
+import type { RootResponse } from "./contracts/health"
 import {
   handleGetMe,
   handleUpdateLanguage,
@@ -63,7 +64,9 @@ export function buildApp(): Hono<HonoEnv> {
   })
 
   app.options("/*", () => new Response(null, { status: 204 }))
-  app.get("/", (c) => c.json({ service: "twitch-radar-api" }))
+  app.get("/", (c) =>
+    c.json({ service: "twitch-radar-api" } satisfies RootResponse),
+  )
   app.get("/health", handleHealth)
 
   const api = new Hono<HonoEnv>()
