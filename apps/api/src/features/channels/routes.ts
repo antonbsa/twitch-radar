@@ -1,5 +1,6 @@
 import type { Context } from "hono"
 import type { HonoEnv } from "../../env"
+import type { FollowedChannelsResponse } from "../../contracts/channels"
 import { buildFollowedChannelsView } from "./followed-channels-view"
 import { jsonResponse } from "../../http/response"
 
@@ -9,7 +10,8 @@ export async function handleGetFollowedChannels(
   const userId = c.var.userId
   const channels = await c.var.db.followedChannels.findByUserId(userId)
 
-  if (channels.length === 0) return jsonResponse({ data: [] })
+  if (channels.length === 0)
+    return jsonResponse({ data: [] } satisfies FollowedChannelsResponse)
 
   const states = await c.var.db.channelState.findByBroadcasterUserIds(
     channels.map((ch) => ch.broadcaster_user_id),
@@ -20,5 +22,5 @@ export async function handleGetFollowedChannels(
 
   const items = buildFollowedChannelsView(channels, stateByBroadcasterId)
 
-  return jsonResponse({ data: items })
+  return jsonResponse({ data: items } satisfies FollowedChannelsResponse)
 }

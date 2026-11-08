@@ -1,5 +1,7 @@
-import { afterAll, beforeEach, describe, expect, it } from "vitest"
+import { afterAll, beforeEach, describe, it } from "vitest"
 import { orchestrator } from "./setup/orchestrator"
+import { HealthResponse } from "../../apps/api/src/contracts/health"
+import { expectApiError, expectConforms } from "./setup/contract"
 
 beforeEach(async () => {
   await orchestrator.clearDatabase()
@@ -12,29 +14,18 @@ afterAll(async () => {
 describe("GET /api/health", () => {
   it("should return successful health response", async () => {
     const res = await fetch(`${orchestrator.baseUrl}/api/health`)
-    expect(res.status).toBe(200)
-    await expect(res.json()).resolves.toMatchObject({
-      ok: true,
-      service: "twitch-radar-api",
-      checks: { d1: "ok" },
-    })
+    await expectConforms(res, 200, HealthResponse)
   })
 })
 
 describe("Worker routing", () => {
   it("should return 404 for unknown routes", async () => {
     const res = await fetch(`${orchestrator.baseUrl}/api/missing`)
-    expect(res.status).toBe(404)
-    await expect(res.json()).resolves.toMatchObject({
-      error: { code: "not_found" },
-    })
+    await expectApiError(res, 404, "not_found")
   })
 
   it("should return 405 for wrong method on a known route", async () => {
     const res = await fetch(`${orchestrator.baseUrl}/api/sync/follows`)
-    expect(res.status).toBe(405)
-    await expect(res.json()).resolves.toMatchObject({
-      error: { code: "method_not_allowed" },
-    })
+    await expectApiError(res, 405, "method_not_allowed")
   })
 })

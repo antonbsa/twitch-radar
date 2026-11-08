@@ -8,6 +8,8 @@ import type {
   SeedUserInput,
 } from "../../shared/seam-client"
 import { API_TEST_URL, MOCK_TWITCH_URL } from "./ports"
+import { FollowedChannelsResponse } from "../../../apps/api/src/contracts/channels"
+import { expectConforms } from "./contract"
 
 const seam = createSeamClient({ baseUrl: () => API_TEST_URL })
 
@@ -300,12 +302,7 @@ async function waitForInspect(
   }
 }
 
-interface FollowedChannelListItem {
-  broadcaster_user_id: string
-  is_live: boolean
-  viewer_count: number | null
-  [key: string]: unknown
-}
+type FollowedChannelListItem = FollowedChannelsResponse["data"][number]
 
 /**
  * Polls `GET /channels/followed` until `predicate` passes — `POST
@@ -324,7 +321,7 @@ async function waitForFollowedChannels(
     const res = await fetch(`${API_TEST_URL}/api/channels/followed`, {
       headers: { Cookie: cookie },
     })
-    const { data } = (await res.json()) as { data: FollowedChannelListItem[] }
+    const { data } = await expectConforms(res, 200, FollowedChannelsResponse)
     if (predicate(data)) return data
     if (Date.now() > deadline) {
       throw new Error(

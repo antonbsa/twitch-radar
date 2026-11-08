@@ -1,6 +1,10 @@
 import { z } from "zod"
 import type { Context } from "hono"
 import type { HonoEnv } from "../../env"
+import type {
+  PushSubscriptionResponse,
+  VapidPublicKeyResponse,
+} from "../../contracts/push"
 import { logger, serializeError } from "../../lib/logger"
 import { importVapidSigningKey } from "./web-push"
 import { ApiError } from "../../http/errors"
@@ -39,7 +43,7 @@ export async function handleGetVapidPublicKey(
 
   return jsonResponse({
     data: { vapid_public_key: c.var.config.vapidPublicKey },
-  })
+  } satisfies VapidPublicKeyResponse)
 }
 
 export async function handleCreatePushSubscription(
@@ -67,7 +71,8 @@ export async function handleCreatePushSubscription(
       now,
     })
     const record = await c.var.db.pushSubscriptions.findById(existing.id)
-    return jsonResponse({ data: record })
+    if (!record) throw new Error("Push subscription vanished after refresh")
+    return jsonResponse({ data: record } satisfies PushSubscriptionResponse)
   }
 
   const record = await c.var.db.pushSubscriptions.create({
@@ -78,7 +83,9 @@ export async function handleCreatePushSubscription(
     userAgent,
     now,
   })
-  return jsonResponse({ data: record }, { status: 201 })
+  return jsonResponse({ data: record } satisfies PushSubscriptionResponse, {
+    status: 201,
+  })
 }
 
 export async function handleDeletePushSubscription(

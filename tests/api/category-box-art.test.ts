@@ -1,7 +1,11 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest"
 import { orchestrator } from "./setup/orchestrator"
-import { expectConforms } from "./setup/contract"
 import { MeResponse } from "../../apps/api/src/contracts/me"
+import {
+  GlobalPreferenceResponse,
+  PreferencesResponse,
+} from "../../apps/api/src/contracts/preferences"
+import { expectConforms } from "./setup/contract"
 
 const MINECRAFT_ART =
   "https://static-cdn.jtvnw.net/ttv-boxart/27471_IGDB-{width}x{height}.jpg"
@@ -31,13 +35,7 @@ async function getPreferences(cookie: string) {
   const res = await fetch(`${orchestrator.baseUrl}/api/preferences`, {
     headers: { Cookie: cookie },
   })
-  expect(res.status).toBe(200)
-  const { data } = (await res.json()) as {
-    data: {
-      channel: Array<{ box_art_url: string | null }>
-      global: Array<{ box_art_url: string | null }>
-    }
-  }
+  const { data } = await expectConforms(res, 200, PreferencesResponse)
   return data
 }
 
@@ -77,9 +75,10 @@ describe("category box art (ADR 0058)", () => {
 
     const res = await postGlobalPref(cookie)
 
-    expect(res.status).toBe(201)
-    await expect(res.json()).resolves.toMatchObject({
-      data: { category_id: MINECRAFT.id, box_art_url: MINECRAFT_ART },
+    const body = await expectConforms(res, 201, GlobalPreferenceResponse)
+    expect(body.data).toMatchObject({
+      category_id: MINECRAFT.id,
+      box_art_url: MINECRAFT_ART,
     })
     expect(await gamesRequests()).toHaveLength(0)
   })

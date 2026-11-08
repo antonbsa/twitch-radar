@@ -1,11 +1,11 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest"
 import { orchestrator } from "./setup/orchestrator"
-import { expectConforms } from "./setup/contract"
 import { MeResponse } from "../../apps/api/src/contracts/me"
 import {
   getPersonaFixture,
   PERSONAS,
 } from "../../apps/api/src/features/sandbox/personas"
+import { expectConforms } from "./setup/contract"
 
 const SEEDED_FULL = getPersonaFixture("full").follows.filter((f) => f.seeded)
 

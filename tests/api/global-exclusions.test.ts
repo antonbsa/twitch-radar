@@ -2,6 +2,11 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest"
 import { E2E_USER_ID } from "../shared/seam-client"
 import { orchestrator } from "./setup/orchestrator"
 import { sendEventsubWebhook } from "./setup/eventsub-webhook"
+import {
+  GlobalPreferenceExclusionResponse,
+  PreferencesResponse,
+} from "../../apps/api/src/contracts/preferences"
+import { expectConforms } from "./setup/contract"
 
 const BROADCASTER_ID = "200"
 const MINECRAFT = { id: "27471", name: "Minecraft" }
@@ -36,15 +41,6 @@ const GLOBAL = (excluded: string[] = []) => ({
   ],
 })
 
-interface PreferencesBody {
-  data: {
-    global: {
-      id: string
-      exclusions: { id: string; broadcaster_user_id: string }[]
-    }[]
-  }
-}
-
 function api(path: string, cookie: string, method = "GET", body?: unknown) {
   return fetch(`${orchestrator.baseUrl}/api${path}`, {
     method,
@@ -55,7 +51,7 @@ function api(path: string, cookie: string, method = "GET", body?: unknown) {
 
 async function getGlobalPreference(cookie: string) {
   const res = await api("/preferences", cookie)
-  return ((await res.json()) as PreferencesBody).data.global[0]
+  return (await expectConforms(res, 200, PreferencesResponse)).data.global[0]!
 }
 
 async function fireStreamOnline() {
@@ -115,8 +111,11 @@ describe("global preference exclusions API", () => {
     const body = { broadcaster_user_id: BROADCASTER_ID }
 
     const created = await api(path, cookie, "POST", body)
-    expect(created.status).toBe(201)
-    const { data } = (await created.json()) as { data: { id: string } }
+    const { data } = await expectConforms(
+      created,
+      201,
+      GlobalPreferenceExclusionResponse,
+    )
     expect((await getGlobalPreference(cookie)).exclusions).toEqual([
       expect.objectContaining({
         id: data.id,
@@ -125,10 +124,10 @@ describe("global preference exclusions API", () => {
     ])
 
     const again = await api(path, cookie, "POST", body)
-    expect(again.status).toBe(200)
-    expect(((await again.json()) as { data: { id: string } }).data.id).toBe(
-      data.id,
-    )
+    expect(
+      (await expectConforms(again, 200, GlobalPreferenceExclusionResponse)).data
+        .id,
+    ).toBe(data.id)
 
     const del = await api(`${path}/${data.id}`, cookie, "DELETE")
     expect(del.status).toBe(204)

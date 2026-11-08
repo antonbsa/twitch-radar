@@ -1,4 +1,4 @@
-import type { BroadcasterMute } from "@/hooks/use-notifications"
+import type { BroadcasterMute } from "@/types/notification"
 import type { FollowedChannel } from "@/types/channel"
 import type { PreferencesResponse } from "@/types/preference"
 

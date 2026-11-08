@@ -4,17 +4,8 @@ import { useAuth } from "@/context/auth-context"
 import { useLanguage } from "@/context/language-context"
 import { api } from "@/lib/api"
 import { showMutationErrorToast } from "@/lib/error-toast"
+import type { BroadcasterMute, NotificationSnooze } from "@/types/notification"
 import type { User } from "@/types/user"
-
-export interface NotificationSnooze {
-  id: string
-  user_id: string
-  broadcaster_user_id: string
-  category_id: string
-  fire_at: string
-  status: string
-  created_at: string
-}
 
 const NOTIFICATION_SNOOZES_QUERY_KEY = ["notification-snoozes"]
 
@@ -62,12 +53,6 @@ export function useSetNotificationsPaused() {
       markNotificationsPaused(res.data.notifications_paused_at),
     onError: (error) => showMutationErrorToast(error, t("alerts.pause_error")),
   })
-}
-
-export interface BroadcasterMute {
-  id: string
-  broadcaster_user_id: string
-  created_at: string
 }
 
 const BROADCASTER_MUTES_QUERY_KEY = ["broadcaster-mutes"]

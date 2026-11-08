@@ -1,5 +1,6 @@
 import type { Context } from "hono"
 import type { HonoEnv } from "../../env"
+import type { CategorySearchResponse } from "../../contracts/categories"
 import { ApiError } from "../../http/errors"
 import { jsonResponse } from "../../http/response"
 import { searchCategories } from "../../services/twitch/categories"
@@ -41,5 +42,5 @@ export async function handleSearchCategories(
       name: category.name,
       box_art_url: category.box_art_url ?? null,
     })),
-  })
+  } satisfies CategorySearchResponse)
 }

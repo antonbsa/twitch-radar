@@ -1,7 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest"
 import { orchestrator } from "./setup/orchestrator"
-import { expectConforms } from "./setup/contract"
 import { MeResponse } from "../../apps/api/src/contracts/me"
+import { expectApiError, expectConforms } from "./setup/contract"
 
 const BROADCASTER_ID = "300"
 
@@ -346,10 +346,7 @@ describe("Twitch token refresh", () => {
       method: "POST",
       headers: { Cookie: cookie },
     })
-    expect(sync.status).toBe(401)
-    await expect(sync.json()).resolves.toMatchObject({
-      error: { code: "reconnect_required" },
-    })
+    await expectApiError(sync, 401, "reconnect_required")
 
     const me = await fetch(`${orchestrator.baseUrl}/api/me`, {
       headers: { Cookie: cookie },
