@@ -13,7 +13,7 @@ import { interpolateNodes } from "@/lib/i18n-react"
 import { showPreferenceToast } from "@/lib/push-toast"
 import { useSessionAwareMutation } from "@/hooks/use-session-aware-mutation"
 import type {
-  Category,
+  CategoryRef,
   GlobalPreferenceExclusion,
   PreferencesResponse,
 } from "@/types/preference"
@@ -147,7 +147,7 @@ export function useAddChannelPreference() {
     }: {
       broadcasterUserId: string
       channelName: string
-      category: Category
+      category: CategoryRef
     }) =>
       api.post("/preferences/channel", {
         broadcaster_user_id: broadcasterUserId,
@@ -161,7 +161,7 @@ export function useAddChannelPreference() {
         category,
       }: {
         channelName: string
-        category: Category
+        category: CategoryRef
       }) => ({
         channelName,
         categoryName: category.name,
@@ -183,12 +183,12 @@ export function useRemoveChannelPreference() {
 
 export function useAddGlobalPreference() {
   return useSessionAwareMutation({
-    mutationFn: (category: Category) =>
+    mutationFn: (category: CategoryRef) =>
       api.post("/preferences/global", {
         category_id: category.id,
         category_name: category.name,
       }),
-    ...usePreferenceMutationFeedback("add", (category: Category) => ({
+    ...usePreferenceMutationFeedback("add", (category: CategoryRef) => ({
       channelName: null,
       categoryName: category.name,
     })),

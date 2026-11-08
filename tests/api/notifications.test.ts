@@ -2,6 +2,11 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest"
 import { E2E_USER_ID } from "../shared/seam-client"
 import { orchestrator } from "./setup/orchestrator"
 import { sendEventsubWebhook } from "./setup/eventsub-webhook"
+import {
+  NotificationSnoozeResponse,
+  NotificationSnoozesResponse,
+} from "../../apps/api/src/contracts/notifications"
+import { expectConforms } from "./setup/contract"
 
 const BROADCASTER_ID = "200"
 const MINECRAFT = { id: "27471", name: "Minecraft" }
@@ -617,15 +622,7 @@ describe("notification snoozing", () => {
 
     const before = Date.now()
     const res = await postSnooze(cookie)
-    expect(res.status).toBe(201)
-    const body = (await res.json()) as {
-      data: {
-        broadcaster_user_id: string
-        category_id: string
-        status: string
-        fire_at: string
-      }
-    }
+    const body = await expectConforms(res, 201, NotificationSnoozeResponse)
     expect(body.data).toMatchObject({
       broadcaster_user_id: BROADCASTER_ID,
       category_id: MINECRAFT.id,
@@ -640,12 +637,18 @@ describe("notification snoozing", () => {
     const { cookie } = await orchestrator.createAuthenticatedSession()
 
     const first = await postSnooze(cookie)
-    expect(first.status).toBe(201)
-    const firstBody = (await first.json()) as { data: { id: string } }
+    const firstBody = await expectConforms(
+      first,
+      201,
+      NotificationSnoozeResponse,
+    )
 
     const second = await postSnooze(cookie)
-    expect(second.status).toBe(200)
-    const secondBody = (await second.json()) as { data: { id: string } }
+    const secondBody = await expectConforms(
+      second,
+      200,
+      NotificationSnoozeResponse,
+    )
     expect(secondBody.data.id).toBe(firstBody.data.id)
 
     const state = await orchestrator.inspect([BROADCASTER_ID])
@@ -690,10 +693,7 @@ describe("notification snoozing", () => {
     await postSnooze(cookieB, { broadcasterUserId: "201" })
 
     const res = await getSnoozes(cookieA)
-    expect(res.status).toBe(200)
-    const body = (await res.json()) as {
-      data: Array<{ broadcaster_user_id: string; status: string }>
-    }
+    const body = await expectConforms(res, 200, NotificationSnoozesResponse)
     expect(body.data).toHaveLength(1)
     expect(body.data[0]).toMatchObject({
       broadcaster_user_id: BROADCASTER_ID,

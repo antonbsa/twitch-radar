@@ -1,9 +1,13 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest"
 import { E2E_USER_ID } from "../shared/seam-client"
 import { orchestrator } from "./setup/orchestrator"
-import { expectApiError, expectConforms } from "./setup/contract"
 import { MeResponse } from "../../apps/api/src/contracts/me"
 import { sendEventsubWebhook } from "./setup/eventsub-webhook"
+import {
+  BroadcasterMuteResponse,
+  BroadcasterMutesResponse,
+} from "../../apps/api/src/contracts/notifications"
+import { expectApiError, expectConforms } from "./setup/contract"
 
 const BROADCASTER_ID = "200"
 const OTHER_BROADCASTER_ID = "300"
@@ -165,29 +169,29 @@ describe("broadcaster mutes API", () => {
     const body = { broadcaster_user_id: BROADCASTER_ID }
 
     const created = await api("/notifications/mutes", cookie, "POST", body)
-    expect(created.status).toBe(201)
-    const { data } = (await created.json()) as { data: { id: string } }
+    const { data } = await expectConforms(created, 201, BroadcasterMuteResponse)
 
     const again = await api("/notifications/mutes", cookie, "POST", body)
-    expect(again.status).toBe(200)
-    expect(((await again.json()) as { data: { id: string } }).data.id).toBe(
-      data.id,
-    )
+    expect(
+      (await expectConforms(again, 200, BroadcasterMuteResponse)).data.id,
+    ).toBe(data.id)
 
     const del = await api(`/notifications/mutes/${data.id}`, cookie, "DELETE")
     expect(del.status).toBe(204)
-    const empty = (await (
-      await api("/notifications/mutes", cookie)
-    ).json()) as {
-      data: unknown[]
-    }
+    const empty = await expectConforms(
+      await api("/notifications/mutes", cookie),
+      200,
+      BroadcasterMutesResponse,
+    )
     expect(empty.data).toHaveLength(0)
 
     const revived = await api("/notifications/mutes", cookie, "POST", body)
     expect(revived.status).toBe(200)
-    const list = (await (await api("/notifications/mutes", cookie)).json()) as {
-      data: { id: string; broadcaster_user_id: string }[]
-    }
+    const list = await expectConforms(
+      await api("/notifications/mutes", cookie),
+      200,
+      BroadcasterMutesResponse,
+    )
     expect(list.data).toEqual([
       expect.objectContaining({
         id: data.id,
@@ -205,7 +209,7 @@ describe("broadcaster mutes API", () => {
     const created = await api("/notifications/mutes", other.cookie, "POST", {
       broadcaster_user_id: BROADCASTER_ID,
     })
-    const { data } = (await created.json()) as { data: { id: string } }
+    const { data } = await expectConforms(created, 201, BroadcasterMuteResponse)
 
     const res = await api(`/notifications/mutes/${data.id}`, cookie, "DELETE")
     expect(res.status).toBe(404)

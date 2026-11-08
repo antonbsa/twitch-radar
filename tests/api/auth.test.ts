@@ -1,7 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest"
 import { orchestrator } from "./setup/orchestrator"
-import { expectApiError, expectConforms } from "./setup/contract"
 import { MeResponse } from "../../apps/api/src/contracts/me"
+import { expectApiError, expectConforms } from "./setup/contract"
 
 const TWITCH_TOKEN_RESPONSE = {
   access_token: "twitch-access-token",

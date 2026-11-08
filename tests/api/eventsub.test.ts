@@ -1,6 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest"
 import { orchestrator } from "./setup/orchestrator"
 import { sendEventsubWebhook } from "./setup/eventsub-webhook"
+import { expectApiError } from "./setup/contract"
 
 const BROADCASTER_ID = "100"
 
@@ -92,10 +93,7 @@ describe("POST /api/webhooks/twitch/eventsub verification", () => {
       event: streamOnlineEvent(),
       signatureOverride: `sha256=${"0".repeat(64)}`,
     })
-    expect(res.status).toBe(403)
-    await expect(res.json()).resolves.toMatchObject({
-      error: { code: "invalid_signature" },
-    })
+    await expectApiError(res, 403, "invalid_signature")
   })
 
   it("should reject a signature computed with the wrong secret", async () => {

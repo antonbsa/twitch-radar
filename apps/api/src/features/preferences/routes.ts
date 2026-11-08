@@ -1,6 +1,12 @@
 import { z } from "zod"
 import type { Context } from "hono"
 import type { HonoEnv } from "../../env"
+import type {
+  ChannelPreferenceResponse,
+  GlobalPreferenceExclusionResponse,
+  GlobalPreferenceResponse,
+  PreferencesResponse,
+} from "../../contracts/preferences"
 import type { ChannelPreferenceRecord } from "../../db/repositories/channel-category-preferences"
 import type { GlobalPreferenceRecord } from "../../db/repositories/global-category-preferences"
 import type { GlobalPreferenceExclusionRecord } from "../../db/repositories/global-category-preference-exclusions"
@@ -114,7 +120,7 @@ export async function handleGetPreferences(
         ),
       ),
     },
-  })
+  } satisfies PreferencesResponse)
 }
 
 export async function handleCreateChannelPreference(
@@ -145,7 +151,9 @@ export async function handleCreateChannelPreference(
     [result.record.category_id],
   )
   return jsonResponse(
-    { data: toChannelPreferenceItem(result.record, boxArt) },
+    {
+      data: toChannelPreferenceItem(result.record, boxArt),
+    } satisfies ChannelPreferenceResponse,
     { status: result.created ? 201 : 200 },
   )
 }
@@ -183,7 +191,9 @@ export async function handleCreateGlobalPreference(
     [record.category_id],
   )
   return jsonResponse(
-    { data: toGlobalPreferenceItem(record, boxArt, exclusions) },
+    {
+      data: toGlobalPreferenceItem(record, boxArt, exclusions),
+    } satisfies GlobalPreferenceResponse,
     { status: created ? 201 : 200 },
   )
 }
@@ -241,7 +251,9 @@ export async function handleCreateGlobalPreferenceExclusion(
     if (existing.disabled_at) {
       await c.var.db.globalCategoryPreferenceExclusions.reactivate(existing.id)
     }
-    return jsonResponse({ data: toExclusionItem(existing) })
+    return jsonResponse({
+      data: toExclusionItem(existing),
+    } satisfies GlobalPreferenceExclusionResponse)
   }
 
   const record = await c.var.db.globalCategoryPreferenceExclusions.create({
@@ -249,7 +261,12 @@ export async function handleCreateGlobalPreferenceExclusion(
     broadcasterUserId,
     now: new Date().toISOString(),
   })
-  return jsonResponse({ data: toExclusionItem(record) }, { status: 201 })
+  return jsonResponse(
+    {
+      data: toExclusionItem(record),
+    } satisfies GlobalPreferenceExclusionResponse,
+    { status: 201 },
+  )
 }
 
 export async function handleDeleteGlobalPreferenceExclusion(

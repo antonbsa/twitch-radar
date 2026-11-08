@@ -1,6 +1,12 @@
 import { z } from "zod"
 import type { Context } from "hono"
 import type { HonoEnv } from "../../env"
+import type {
+  BroadcasterMuteResponse,
+  BroadcasterMutesResponse,
+  NotificationSnoozeResponse,
+  NotificationSnoozesResponse,
+} from "../../contracts/notifications"
 import { findOwnedRecord, parseBody } from "../../http/handlers"
 import type { BroadcasterMuteRecord } from "../../db/repositories/broadcaster-mutes"
 import { jsonResponse } from "../../http/response"
@@ -30,7 +36,7 @@ export async function handleCreateNotificationSnooze(
       categoryId,
     )
   if (existing) {
-    return jsonResponse({ data: existing })
+    return jsonResponse({ data: existing } satisfies NotificationSnoozeResponse)
   }
 
   const now = new Date()
@@ -41,7 +47,9 @@ export async function handleCreateNotificationSnooze(
     fireAt: new Date(now.getTime() + SNOOZE_DURATION_MS).toISOString(),
     now: now.toISOString(),
   })
-  return jsonResponse({ data: record }, { status: 201 })
+  return jsonResponse({ data: record } satisfies NotificationSnoozeResponse, {
+    status: 201,
+  })
 }
 
 /**
@@ -54,7 +62,7 @@ export async function handleListNotificationSnoozes(
   const records = await c.var.db.notificationSnoozes.findPendingByUserId(
     c.var.userId,
   )
-  return jsonResponse({ data: records })
+  return jsonResponse({ data: records } satisfies NotificationSnoozesResponse)
 }
 
 const CreateMuteSchema = z.object({ broadcaster_user_id: z.string().min(1) })
@@ -75,7 +83,9 @@ export async function handleListBroadcasterMutes(
   const records = await c.var.db.broadcasterMutes.listActiveByUserId(
     c.var.userId,
   )
-  return jsonResponse({ data: records.map(toMuteItem) })
+  return jsonResponse({
+    data: records.map(toMuteItem),
+  } satisfies BroadcasterMutesResponse)
 }
 
 /**
@@ -99,7 +109,9 @@ export async function handleCreateBroadcasterMute(
     if (existing.disabled_at) {
       await c.var.db.broadcasterMutes.reactivate(existing.id)
     }
-    return jsonResponse({ data: toMuteItem(existing) })
+    return jsonResponse({
+      data: toMuteItem(existing),
+    } satisfies BroadcasterMuteResponse)
   }
 
   const record = await c.var.db.broadcasterMutes.create({
@@ -107,7 +119,10 @@ export async function handleCreateBroadcasterMute(
     broadcasterUserId,
     now: new Date().toISOString(),
   })
-  return jsonResponse({ data: toMuteItem(record) }, { status: 201 })
+  return jsonResponse(
+    { data: toMuteItem(record) } satisfies BroadcasterMuteResponse,
+    { status: 201 },
+  )
 }
 
 export async function handleDeleteBroadcasterMute(

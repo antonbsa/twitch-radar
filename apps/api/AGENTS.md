@@ -43,7 +43,7 @@ for (let i = 0; i < ids.length; i += BATCH_SIZE) {
 - Anything two or more features use goes in `src/lib/` (`crypto`, `base64url`, `logger`) or `src/http/` (`handlers.ts`, `errors.ts`, `response.ts`). The Twitch API client and its sync/token jobs stay in `services/twitch/`, one file per resource (`oauth`, `eventsub`, `users`, `streams`, `categories`, shared `errors`).
 - Types live with their owner: a row shape in its `db/repositories/<entity>.ts`, a queue message in its feature's `types.ts`. There is no shared `types.ts`; repeating a repository record type elsewhere lets the two drift without a compile error.
 - `db/repositories` stays flat, not grouped by feature: repositories are shared across features (`notifications/match.ts` reads preferences, snoozes, mutes, deliveries and channel state), so grouping them would make features depend on each other's folders.
-- Response contracts (zod schemas for JSON bodies) live in `src/contracts/`, one file per feature; handlers build the body with `satisfies <Contract>` (ADR 0067). Only `/me` and the error envelope have one so far.
+- Response contracts (zod schemas for JSON bodies) live in `src/contracts/`, one file per feature; handlers build the body with `satisfies <Contract>` (ADR 0067). Every JSON route has one except the `/__test__/*` and `/__sandbox__/*` routes; `auth` has none because its routes return redirects, HTML or `204`.
 - `index.ts` only composes `app.ts`, `queues/*` and `scheduled.ts`; route, consumer and cron logic goes in those modules, and it stays the wrangler `main`.
 
 ## Route handlers

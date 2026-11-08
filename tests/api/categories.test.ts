@@ -1,5 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest"
 import { orchestrator } from "./setup/orchestrator"
+import { CategorySearchResponse } from "../../apps/api/src/contracts/categories"
+import { expectApiError, expectConforms } from "./setup/contract"
 
 beforeEach(async () => {
   await orchestrator.clearDatabase()
@@ -23,8 +25,9 @@ describe("GET /api/categories/search", () => {
       { headers: { Cookie: cookie } },
     )
 
-    expect(res.status).toBe(200)
-    await expect(res.json()).resolves.toEqual({
+    await expect(
+      expectConforms(res, 200, CategorySearchResponse),
+    ).resolves.toEqual({
       data: [
         { id: "27471", name: "Minecraft", box_art_url: "https://img/mc.jpg" },
         { id: "509658", name: "Just Chatting", box_art_url: null },
@@ -41,8 +44,9 @@ describe("GET /api/categories/search", () => {
       { headers: { Cookie: cookie } },
     )
 
-    expect(res.status).toBe(200)
-    await expect(res.json()).resolves.toEqual({ data: [] })
+    await expect(
+      expectConforms(res, 200, CategorySearchResponse),
+    ).resolves.toEqual({ data: [] })
   })
 
   it("should return 400 when the query is missing or blank", async () => {
@@ -53,10 +57,7 @@ describe("GET /api/categories/search", () => {
         `${orchestrator.baseUrl}/api/categories/search${suffix}`,
         { headers: { Cookie: cookie } },
       )
-      expect(res.status).toBe(400)
-      await expect(res.json()).resolves.toMatchObject({
-        error: { code: "invalid_request" },
-      })
+      await expectApiError(res, 400, "invalid_request")
     }
   })
 

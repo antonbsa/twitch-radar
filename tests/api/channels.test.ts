@@ -1,5 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest"
 import { orchestrator } from "./setup/orchestrator"
+import { expectConforms } from "./setup/contract"
+import { FollowedChannelsResponse } from "../../apps/api/src/contracts/channels"
 
 beforeEach(async () => {
   await orchestrator.clearDatabase()
@@ -49,8 +51,8 @@ describe("GET /api/channels/followed", () => {
     const res = await fetch(`${orchestrator.baseUrl}/api/channels/followed`, {
       headers: { Cookie: cookie },
     })
-    expect(res.status).toBe(200)
-    await expect(res.json()).resolves.toMatchObject({ data: [] })
+    const body = await expectConforms(res, 200, FollowedChannelsResponse)
+    expect(body.data).toEqual([])
   })
 
   it("should return live channels before offline channels", async () => {

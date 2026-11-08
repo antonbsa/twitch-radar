@@ -1,5 +1,6 @@
 import type { Context } from "hono"
 import type { HonoEnv } from "../../env"
+import type { FollowedChannelsResponse } from "../../contracts/channels"
 import { ApiError } from "../../http/errors"
 import { jsonResponse } from "../../http/response"
 import { withUserAccessToken } from "../../services/twitch/token-refresh"
@@ -33,5 +34,7 @@ export async function handleSyncFollows(
     ),
   )
 
-  return jsonResponse({ data: fetched.payload })
+  return jsonResponse({
+    data: fetched.payload,
+  } satisfies FollowedChannelsResponse)
 }

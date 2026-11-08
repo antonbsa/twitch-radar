@@ -1,7 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest"
 import { orchestrator } from "./setup/orchestrator"
-import { expectConforms } from "./setup/contract"
 import { MeResponse } from "../../apps/api/src/contracts/me"
+import { expectApiError, expectConforms } from "./setup/contract"
 
 const NEW_TOKENS = {
   access_token: "new-access-token",
@@ -82,10 +82,7 @@ describe("Upstream 401 on a request-time Helix call (issue #94)", () => {
 
     const res = await postSync(cookie)
 
-    expect(res.status).toBe(401)
-    await expect(res.json()).resolves.toMatchObject({
-      error: { code: "reconnect_required" },
-    })
+    await expectApiError(res, 401, "reconnect_required")
     expect(await reconnectRequired(cookie)).toBe(true)
   })
 
@@ -96,10 +93,7 @@ describe("Upstream 401 on a request-time Helix call (issue #94)", () => {
 
     const res = await postSync(cookie)
 
-    expect(res.status).toBe(401)
-    await expect(res.json()).resolves.toMatchObject({
-      error: { code: "reconnect_required" },
-    })
+    await expectApiError(res, 401, "reconnect_required")
     expect(await reconnectRequired(cookie)).toBe(true)
   })
 })

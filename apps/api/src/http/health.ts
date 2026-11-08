@@ -1,4 +1,5 @@
 import type { Context } from "hono"
+import type { HealthResponse } from "../contracts/health"
 import type { HonoEnv } from "../env"
 import { ApiError } from "./errors"
 import { jsonResponse } from "./response"
@@ -23,5 +24,5 @@ export async function handleHealth(c: Context<HonoEnv>): Promise<Response> {
     checks: {
       d1: "ok",
     },
-  })
+  } satisfies HealthResponse)
 }

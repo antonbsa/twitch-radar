@@ -1,8 +1,11 @@
 export interface Category {
   id: string
   name: string
-  box_art_url?: string | null
+  box_art_url: string | null
 }
+
+// What a mutation needs to identify a category; the box art is resolved server-side.
+export type CategoryRef = Pick<Category, "id" | "name">
 
 export interface ChannelPreference {
   id: string

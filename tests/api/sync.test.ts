@@ -1,5 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest"
 import { orchestrator } from "./setup/orchestrator"
+import { expectApiError, expectConforms } from "./setup/contract"
+import { FollowedChannelsResponse } from "../../apps/api/src/contracts/channels"
 
 const CHANNEL_A = {
   broadcaster_id: "100",
@@ -43,14 +45,7 @@ describe("POST /api/sync/follows", () => {
       headers: { Cookie: cookie },
     })
 
-    expect(res.status).toBe(200)
-    const { data } = (await res.json()) as {
-      data: Array<{
-        broadcaster_user_id: string
-        is_live: boolean
-        viewer_count: number | null
-      }>
-    }
+    const { data } = await expectConforms(res, 200, FollowedChannelsResponse)
 
     // The response is the synced channel list itself (issue #83) — no
     // second round trip to GET /channels/followed needed to see it.
@@ -84,8 +79,7 @@ describe("POST /api/sync/follows", () => {
       headers: { Cookie: cookie },
     })
 
-    expect(res.status).toBe(200)
-    const { data } = (await res.json()) as { data: unknown[] }
+    const { data } = await expectConforms(res, 200, FollowedChannelsResponse)
     expect(data).toHaveLength(2)
   })
 
@@ -131,10 +125,7 @@ describe("POST /api/sync/follows", () => {
       headers: { Cookie: cookie },
     })
 
-    expect(res.status).toBe(401)
-    await expect(res.json()).resolves.toMatchObject({
-      error: { code: "reconnect_required" },
-    })
+    await expectApiError(res, 401, "reconnect_required")
 
     // Retrying with valid credentials right after a failed refresh should
     // succeed.
@@ -193,15 +184,7 @@ describe("POST /api/sync/follows", () => {
       method: "POST",
       headers: { Cookie: cookie },
     })
-    expect(res.status).toBe(200)
-    const { data } = (await res.json()) as {
-      data: Array<{
-        broadcaster_user_id: string
-        broadcaster_display_name: string
-        is_live: boolean
-        viewer_count: number | null
-      }>
-    }
+    const { data } = await expectConforms(res, 200, FollowedChannelsResponse)
     expect(data).toHaveLength(BROADCASTER_COUNT)
     const live = data.filter((c) => c.is_live)
     expect(live).toHaveLength(1)
@@ -233,14 +216,11 @@ describe("POST /api/sync/follows", () => {
       method: "POST",
       headers: { Cookie: cookie },
     })
-    expect(res2.status).toBe(200)
-    const { data: data2 } = (await res2.json()) as {
-      data: Array<{
-        broadcaster_user_id: string
-        broadcaster_display_name: string
-        is_live: boolean
-      }>
-    }
+    const { data: data2 } = await expectConforms(
+      res2,
+      200,
+      FollowedChannelsResponse,
+    )
     expect(data2).toHaveLength(BROADCASTER_COUNT)
     expect(data2.every((c) => !c.is_live)).toBe(true)
     const first = data2.find(
@@ -318,13 +298,7 @@ describe("POST /api/sync/follows broadcaster avatars", () => {
       method: "POST",
       headers: { Cookie: cookie },
     })
-    expect(res.status).toBe(200)
-    const { data } = (await res.json()) as {
-      data: Array<{
-        broadcaster_user_id: string
-        broadcaster_profile_image_url: string | null
-      }>
-    }
+    const { data } = await expectConforms(res, 200, FollowedChannelsResponse)
     return new Map(
       data.map((c) => [c.broadcaster_user_id, c.broadcaster_profile_image_url]),
     )
@@ -427,11 +401,6 @@ describe("POST /api/sync/follows broadcaster avatars", () => {
 describe("POST /api/sync/follows category_started_at (issue #120)", () => {
   const CATEGORY_SINCE = "2024-06-01T13:00:00Z"
 
-  type Item = {
-    broadcaster_user_id: string
-    category_started_at: string | null
-  }
-
   /** Syncs once to create the follow rows, seeds channel_state, then syncs `stream` and returns the response and the persisted value. */
   async function resyncAgainst(stream: typeof STREAM_A) {
     const { cookie } = await orchestrator.createAuthenticatedSession()
@@ -461,7 +430,7 @@ describe("POST /api/sync/follows category_started_at (issue #120)", () => {
       method: "POST",
       headers: { Cookie: cookie },
     })
-    const { data } = (await res.json()) as { data: Item[] }
+    const { data } = await expectConforms(res, 200, FollowedChannelsResponse)
     const persisted = await orchestrator.waitForFollowedChannels(
       cookie,
       (items) =>

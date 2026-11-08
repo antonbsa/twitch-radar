@@ -1,7 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest"
 import { orchestrator } from "./setup/orchestrator"
-import { expectConforms } from "./setup/contract"
 import { MeResponse } from "../../apps/api/src/contracts/me"
+import { expectApiError, expectConforms } from "./setup/contract"
 
 beforeEach(async () => {
   await orchestrator.clearDatabase()
@@ -51,11 +51,8 @@ describe("Twitch failure classification (issue #102)", () => {
 
     const res = await postSync(cookie)
 
-    expect(res.status).toBe(503)
     expect(res.headers.get("retry-after")).toBe("30")
-    await expect(res.json()).resolves.toMatchObject({
-      error: { code: "twitch_unavailable" },
-    })
+    await expectApiError(res, 503, "twitch_unavailable")
   })
 
   it("should return 502 twitch_unavailable on a Helix 5xx", async () => {
@@ -64,11 +61,8 @@ describe("Twitch failure classification (issue #102)", () => {
 
     const res = await postSync(cookie)
 
-    expect(res.status).toBe(502)
     expect(res.headers.get("retry-after")).toBeNull()
-    await expect(res.json()).resolves.toMatchObject({
-      error: { code: "twitch_unavailable" },
-    })
+    await expectApiError(res, 502, "twitch_unavailable")
   })
 
   it("should return 502 twitch_unavailable on a Helix 5xx in category search", async () => {
@@ -84,10 +78,7 @@ describe("Twitch failure classification (issue #102)", () => {
       { headers: { Cookie: cookie } },
     )
 
-    expect(res.status).toBe(502)
-    await expect(res.json()).resolves.toMatchObject({
-      error: { code: "twitch_unavailable" },
-    })
+    await expectApiError(res, 502, "twitch_unavailable")
   })
 
   it("should return 502 twitch_unavailable, not reconnect_required, when the token refresh hits a 5xx", async () => {
@@ -98,10 +89,7 @@ describe("Twitch failure classification (issue #102)", () => {
 
     const res = await postSync(cookie)
 
-    expect(res.status).toBe(502)
-    await expect(res.json()).resolves.toMatchObject({
-      error: { code: "twitch_unavailable" },
-    })
+    await expectApiError(res, 502, "twitch_unavailable")
     expect(await reconnectRequired(cookie)).toBe(false)
   })
 
@@ -113,10 +101,7 @@ describe("Twitch failure classification (issue #102)", () => {
 
     const res = await postSync(cookie)
 
-    expect(res.status).toBe(503)
-    await expect(res.json()).resolves.toMatchObject({
-      error: { code: "twitch_unavailable" },
-    })
+    await expectApiError(res, 503, "twitch_unavailable")
     expect(await reconnectRequired(cookie)).toBe(false)
   })
 
@@ -128,10 +113,7 @@ describe("Twitch failure classification (issue #102)", () => {
 
     const res = await postSync(cookie)
 
-    expect(res.status).toBe(401)
-    await expect(res.json()).resolves.toMatchObject({
-      error: { code: "reconnect_required" },
-    })
+    await expectApiError(res, 401, "reconnect_required")
     expect(await reconnectRequired(cookie)).toBe(true)
   })
 })

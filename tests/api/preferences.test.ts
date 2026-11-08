@@ -1,5 +1,11 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest"
 import { orchestrator } from "./setup/orchestrator"
+import { expectApiError, expectConforms } from "./setup/contract"
+import {
+  ChannelPreferenceResponse,
+  GlobalPreferenceResponse,
+  PreferencesResponse,
+} from "../../apps/api/src/contracts/preferences"
 
 const BROADCASTER_A = {
   broadcasterUserId: "100",
@@ -63,13 +69,7 @@ async function getPreferences(cookie: string) {
   const res = await fetch(`${orchestrator.baseUrl}/api/preferences`, {
     headers: { Cookie: cookie },
   })
-  expect(res.status).toBe(200)
-  const { data } = (await res.json()) as {
-    data: {
-      channel: Array<{ id: string; broadcaster_user_id: string }>
-      global: Array<{ id: string; category_id: string }>
-    }
-  }
+  const { data } = await expectConforms(res, 200, PreferencesResponse)
   return data
 }
 
@@ -107,8 +107,7 @@ describe("POST /api/preferences/channel", () => {
     await orchestrator.mockTwitch.onStreams([STREAM_A])
 
     const res = await postChannelPref(cookie, "100")
-    expect(res.status).toBe(201)
-    const { data } = (await res.json()) as { data: Record<string, unknown> }
+    const { data } = await expectConforms(res, 201, ChannelPreferenceResponse)
     expect(data).toMatchObject({
       broadcaster_user_id: "100",
       category_id: CATEGORY.id,
@@ -197,12 +196,18 @@ describe("POST /api/preferences/channel", () => {
     await orchestrator.mockTwitch.onStreams([])
 
     const first = await postChannelPref(cookie, "100")
-    expect(first.status).toBe(201)
-    const firstBody = (await first.json()) as { data: { id: string } }
+    const firstBody = await expectConforms(
+      first,
+      201,
+      ChannelPreferenceResponse,
+    )
 
     const second = await postChannelPref(cookie, "100")
-    expect(second.status).toBe(200)
-    const secondBody = (await second.json()) as { data: { id: string } }
+    const secondBody = await expectConforms(
+      second,
+      200,
+      ChannelPreferenceResponse,
+    )
     expect(secondBody.data.id).toBe(firstBody.data.id)
 
     const prefs = await getPreferences(cookie)
@@ -213,10 +218,7 @@ describe("POST /api/preferences/channel", () => {
     const { cookie } = await orchestrator.createAuthenticatedSession()
 
     const res = await postChannelPref(cookie, "999")
-    expect(res.status).toBe(400)
-    await expect(res.json()).resolves.toMatchObject({
-      error: { code: "invalid_request" },
-    })
+    await expectApiError(res, 400, "invalid_request")
 
     const state = await orchestrator.inspect(["999"])
     expect(state.monitoredChannels).toHaveLength(0)
@@ -272,12 +274,14 @@ describe("POST /api/preferences/global", () => {
     await orchestrator.mockTwitch.onStreams([])
 
     const first = await postGlobalPref(cookie)
-    expect(first.status).toBe(201)
-    const firstBody = (await first.json()) as { data: { id: string } }
+    const firstBody = await expectConforms(first, 201, GlobalPreferenceResponse)
 
     const second = await postGlobalPref(cookie)
-    expect(second.status).toBe(200)
-    const secondBody = (await second.json()) as { data: { id: string } }
+    const secondBody = await expectConforms(
+      second,
+      200,
+      GlobalPreferenceResponse,
+    )
     expect(secondBody.data.id).toBe(firstBody.data.id)
 
     const prefs = await getPreferences(cookie)
@@ -337,7 +341,11 @@ describe("DELETE /api/preferences/channel/:id", () => {
     await orchestrator.mockTwitch.onStreams([])
 
     const created = await postChannelPref(cookie, "100")
-    const { data } = (await created.json()) as { data: { id: string } }
+    const { data } = await expectConforms(
+      created,
+      201,
+      ChannelPreferenceResponse,
+    )
 
     const res = await fetch(
       `${orchestrator.baseUrl}/api/preferences/channel/${data.id}`,
@@ -365,9 +373,11 @@ describe("DELETE /api/preferences/channel/:id", () => {
     await orchestrator.seedFollowedChannels(userA.userId, [BROADCASTER_A])
     await orchestrator.mockTwitch.onStreams([])
     const createdA = await postChannelPref(userA.cookie, "100")
-    const { data: prefA } = (await createdA.json()) as {
-      data: { id: string }
-    }
+    const { data: prefA } = await expectConforms(
+      createdA,
+      201,
+      ChannelPreferenceResponse,
+    )
 
     const userB = await orchestrator.createAuthenticatedSession({
       id: "usr_other",
@@ -395,7 +405,11 @@ describe("DELETE /api/preferences/channel/:id", () => {
     await orchestrator.mockTwitch.onStreams([])
 
     const created = await postChannelPref(cookie, "100")
-    const { data } = (await created.json()) as { data: { id: string } }
+    const { data } = await expectConforms(
+      created,
+      201,
+      ChannelPreferenceResponse,
+    )
 
     await fetch(`${orchestrator.baseUrl}/api/preferences/channel/${data.id}`, {
       method: "DELETE",
@@ -403,10 +417,11 @@ describe("DELETE /api/preferences/channel/:id", () => {
     })
 
     const recreated = await postChannelPref(cookie, "100")
-    expect(recreated.status).toBe(200)
-    const { data: revived } = (await recreated.json()) as {
-      data: { id: string }
-    }
+    const { data: revived } = await expectConforms(
+      recreated,
+      200,
+      ChannelPreferenceResponse,
+    )
     expect(revived.id).toBe(data.id)
 
     const state = await orchestrator.inspect(["100"])
@@ -418,7 +433,11 @@ describe("DELETE /api/preferences/channel/:id", () => {
     await orchestrator.seedFollowedChannels(userA.userId, [BROADCASTER_A])
     await orchestrator.mockTwitch.onStreams([])
     const created = await postChannelPref(userA.cookie, "100")
-    const { data } = (await created.json()) as { data: { id: string } }
+    const { data } = await expectConforms(
+      created,
+      201,
+      ChannelPreferenceResponse,
+    )
 
     const userB = await orchestrator.createAuthenticatedSession({
       id: "usr_other",
@@ -459,9 +478,11 @@ describe("DELETE /api/preferences/global/:id", () => {
       id: "509658",
       name: "Just Chatting",
     })
-    const { data: globalPref } = (await globalCreated.json()) as {
-      data: { id: string }
-    }
+    const { data: globalPref } = await expectConforms(
+      globalCreated,
+      201,
+      GlobalPreferenceResponse,
+    )
 
     const res = await fetch(
       `${orchestrator.baseUrl}/api/preferences/global/${globalPref.id}`,

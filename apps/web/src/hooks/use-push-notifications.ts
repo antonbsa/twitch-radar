@@ -12,20 +12,7 @@ import {
   subscribeToPush,
 } from "@/lib/push"
 import { useSessionAwareMutation } from "@/hooks/use-session-aware-mutation"
-
-// Mirrors apps/api's PushSubscriptionRecord snake_case fields exactly (not
-// shared/imported across the workspace boundary — see ADR 0028).
-interface PushSubscriptionRecord {
-  id: string
-  user_id: string
-  endpoint: string
-  p256dh: string
-  auth: string
-  user_agent: string | null
-  created_at: string
-  updated_at: string
-  revoked_at: string | null
-}
+import type { PushSubscriptionRecord } from "@/types/push"
 
 // Status states and transitions follow ADR 0027:
 // "enabled" means permission is granted AND this device holds an active
