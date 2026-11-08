@@ -1,13 +1,14 @@
 ---
 status: Accepted
 area: platform
+amended-by: ["0067"]
 ---
 
 # 0028 - Mirror Wire-Shape Types Across Workspaces Instead Of A Shared Package
 
 ## Status
 
-Accepted
+Accepted. The "revisit" trigger below is partly addressed by [ADR 0067](0067-validate-api-responses-against-zod-contracts.md): mirrors stay hand-written but a type-level test now verifies them.
 
 ## Context
 

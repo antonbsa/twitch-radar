@@ -35,7 +35,7 @@ amends: ["0062"] # relations are optional: supersedes, superseded-by, amends, am
 - [0014 — Use Hono For Worker API Routing](0014-use-hono-for-worker-api-routing.md) · Accepted
 - [0015 — Generate D1 Migrations With Drizzle Kit](0015-generate-d1-migrations-with-drizzle-kit.md) · Accepted
 - [0019 — Followed Channels API Response Shape](0019-followed-channels-response-shape.md) · Accepted
-- [0028 — Mirror Wire-Shape Types Across Workspaces Instead Of A Shared Package](0028-mirror-wire-shape-types-across-workspaces.md) · Accepted
+- [0028 — Mirror Wire-Shape Types Across Workspaces Instead Of A Shared Package](0028-mirror-wire-shape-types-across-workspaces.md) · Accepted · amended by 0067
 - [0058 — Cache Category Box Art In D1 And Attach It To API Responses](0058-cache-category-box-art-in-d1.md) · Accepted
 - [0059 — Timestamp-Prefixed D1 Migrations](0059-timestamp-prefixed-d1-migrations.md) · Accepted
 
@@ -97,6 +97,7 @@ amends: ["0062"] # relations are optional: supersedes, superseded-by, amends, am
 - [0045 — Build-Time Exclusion Of Non-Production Test/Dev Code](0045-build-time-exclusion-of-non-production-test-code.md) · Accepted
 - [0046 — Sandbox Personas For Twitch-Free Dev And Preview Access](0046-sandbox-personas-for-dev-and-preview.md) · Accepted
 - [0064 — Web Unit Tests As Their Own Tier](0064-web-unit-tests-as-their-own-tier.md) · Accepted · amends 0025
+- [0067 — Validate API Responses Against Zod Contracts](0067-validate-api-responses-against-zod-contracts.md) · Accepted · amends 0028
 
 ### Delivery
 

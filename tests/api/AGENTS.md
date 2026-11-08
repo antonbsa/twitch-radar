@@ -5,6 +5,7 @@ Conventions for the API test tier. The tier boots a `wrangler dev` worker plus a
 ## Where things live
 
 - Mock Twitch handlers (`onStreams`, `onFollowedStreams`, `onPush`, ...) are methods on the orchestrator in `setup/orchestrator.ts`; `setup/mock-twitch-server.ts` is the in-process HTTP server they program. A new Twitch endpoint needs a handler in the orchestrator, not a new server.
+- `setup/contract.ts` has `expectConforms` / `expectApiError`: they check status, content type and the whole body against a response contract from `apps/api/src/contracts/` (ADR 0067). Read a response body through them, not with an `as { ... }` cast, wherever the route has a contract.
 - Test data goes in through the test seam: `tests/shared/seam-client.ts` calls `apps/api/src/http/test-seam/{seed,reset,inspect}.ts`, which are compiled out of production builds (ADR 0045).
 
 ## Seeding a new field or record kind

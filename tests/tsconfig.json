@@ -1,7 +1,16 @@
 {
   "extends": "../apps/api/tsconfig.json",
   "compilerOptions": {
-    "noEmit": true
+    "noEmit": true,
+    "types": [
+      "node",
+      "vitest/globals",
+      "vite/client",
+      "../apps/api/node_modules/@cloudflare/workers-types"
+    ],
+    "paths": {
+      "@/*": ["../apps/web/src/*"]
+    }
   },
-  "include": ["**/*.ts"]
+  "include": ["api/**/*.ts", "shared/**/*.ts", "contracts/**/*.ts"]
 }

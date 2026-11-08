@@ -1,13 +1,8 @@
+import type { ErrorEnvelope } from "../contracts/errors"
 import { logger, serializeError } from "../lib/logger"
 import { jsonResponse } from "./response"
 
-export interface ErrorBody {
-  error: {
-    code: string
-    message: string
-    requestId: string
-  }
-}
+export type ErrorBody = ErrorEnvelope
 
 export class ApiError extends Error {
   readonly status: number

@@ -1,5 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest"
 import { orchestrator } from "./setup/orchestrator"
+import { expectConforms } from "./setup/contract"
+import { MeResponse } from "../../apps/api/src/contracts/me"
 import {
   getPersonaFixture,
   PERSONAS,
@@ -23,12 +25,11 @@ async function loginAs(persona: unknown, overrides?: unknown) {
   })
 }
 
-interface Me {
-  data: {
-    language: string
-    notifications_paused_at: string | null
-    twitch_reconnect_required: boolean
-  }
+async function getMe(cookie: string) {
+  const res = await fetch(`${orchestrator.baseUrl}/api/me`, {
+    headers: { Cookie: cookie },
+  })
+  return expectConforms(res, 200, MeResponse)
 }
 
 async function getJson<T>(path: string, cookie: string): Promise<T> {
@@ -61,9 +62,7 @@ describe("POST /api/__sandbox__/login", () => {
       const res = await loginAs(persona)
       expect(res.status).toBe(200)
 
-      const me = await getJson<{
-        data: { id: string; twitch_reconnect_required: boolean }
-      }>("/api/me", sessionCookie(res))
+      const me = await getMe(sessionCookie(res))
       expect(me.data.id).toBe(`usr_sandbox_${persona}`)
       expect(me.data.twitch_reconnect_required).toBe(persona === "reconnect")
     },
@@ -146,7 +145,7 @@ describe("POST /api/__sandbox__/login", () => {
   it("should seed the muted_paused persona's pause, mute and exclusion", async () => {
     const cookie = sessionCookie(await loginAs("muted_paused"))
 
-    const me = await getJson<Me>("/api/me", cookie)
+    const me = await getMe(cookie)
     expect(me.data.notifications_paused_at).not.toBeNull()
     const mutes = await getJson<{ data: { broadcaster_user_id: string }[] }>(
       "/api/notifications/mutes",
@@ -189,7 +188,7 @@ describe("POST /api/__sandbox__/login overrides", () => {
       }),
     )
 
-    const me = await getJson<Me>("/api/me", cookie)
+    const me = await getMe(cookie)
     expect(me.data).toMatchObject({
       language: "pt-BR",
       twitch_reconnect_required: true,
@@ -205,10 +204,7 @@ describe("POST /api/__sandbox__/login overrides", () => {
     expect(prefs.data.global).toMatchObject([{ category_name: "Elden Ring" }])
     expect(prefs.data.global[0].exclusions).toHaveLength(1)
 
-    const restored = await getJson<Me>(
-      "/api/me",
-      sessionCookie(await loginAs("full")),
-    )
+    const restored = await getMe(sessionCookie(await loginAs("full")))
     expect(restored.data).toMatchObject({
       language: "en",
       notifications_paused_at: null,
