@@ -9,7 +9,7 @@ The canonical PR structure lives in [.github/PULL_REQUEST_TEMPLATE.md](../../../
 
 ## What to do
 
-1. **Map the branch to concerns first.** Run `git log --oneline origin/main..HEAD` and assign each commit to a concern per AGENTS.md "One Concern Per PR". If the commits cover independent concerns, stop before `gh pr create` and propose a split: list each concern with its commits and a suggested branch name, then wait for the user's answer. It's a question, not a block: the user may choose to open as-is.
+1. **Map the branch to concerns first.** Run `git log --oneline origin/main..HEAD` and assign each commit to a concern per AGENTS.md "One Concern Per PR". If the commits cover independent concerns, stop before `gh pr create` and propose a split: list each concern with its commits and a suggested branch name, then wait for the user's answer. It's a question, not a block: the user may choose to open as-is. On an accepted split, record it in git: one branch and worktree per concern (AGENTS.md "Worktrees and `.agents/`"), each created off `origin/main` and holding its commits via `git cherry-pick`. A concern the original issue doesn't cover also gets an issue (milestone per AGENTS.md "Workflow" step 1). Push and open the PRs only when the user asks.
 2. Read `.github/PULL_REQUEST_TEMPLATE.md`. Its HTML comments are the instructions - resolve every comment into real content, don't leave placeholders or delete sections that apply.
 3. Title: use the Conventional Commits prefix from the root `AGENTS.md` "Commits" section (`feat:`, `fix:`, `docs:`, `test:`, `chore:`, `refactor:`).
 4. **Source the description from the diff against `main` (`git diff main...HEAD`), not from memory of how the work went.**
@@ -31,6 +31,7 @@ If the branch shows no sign of `feature`'s isolated review (no `.agents/handoff-
 
 ## Common mistakes
 
+- Leaving an accepted split only in chat: a later session can't see it. Each concern gets its own branch (and issue) before this session ends.
 - Checking "added tests" without having run them.
 - Restating the diff instead of the _why_ in the Summary.
 - Mentioning a migration/config change only in the checklist box: the Summary must say what changed.
