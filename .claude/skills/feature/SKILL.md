@@ -20,7 +20,13 @@ Then call `EnterWorktree` with `path: .agents/worktrees/<branch-name>`, which mo
    - GitHub issue: `gh issue view <number>`.
    - Local issue file (`.agents/issues/*.md`): read it directly.
 
-2. **Check it's spec-shaped.** A spec-shaped input has, at minimum: a goal/problem statement, a resolved solution/scope (not just a raw idea), and acceptance criteria — per ADR 0043. If the input is underspecified — a bug title with no proposed fix, a feature idea with no scope boundary — say so explicitly and propose resolving the open scope with the user (in chat, or by putting shared milestone context in the GitHub milestone description) before continuing. Do not start implementation on an unscoped issue. Also check the issue is one slice (AGENTS.md "One Concern Per PR"): if its acceptance criteria are independently shippable, propose splitting it into separate issues/branches and wait for the user's answer before coding.
+2. **Check it's spec-shaped.** A spec-shaped input has, at minimum: a goal/problem statement, a resolved solution/scope (not just a raw idea), and acceptance criteria — per ADR 0043. If the input is underspecified — a bug title with no proposed fix, a feature idea with no scope boundary — say so explicitly and propose resolving the open scope with the user (in chat, or by putting shared milestone context in the GitHub milestone description) before continuing. Do not start implementation on an unscoped issue. Also check the issue is one slice (AGENTS.md "One Concern Per PR"): if its acceptance criteria are independently shippable, propose splitting it into separate issues and wait for the user's answer before coding. On acceptance, record the split as project state and stop; this session implements nothing:
+   - One spec-shaped issue per slice (problem, resolved solution, acceptance criteria) with the original's milestone: `gh issue create --milestone <name> --title ... --body-file ...`.
+   - Link each as a native sub-issue of the original, which becomes the parent: `gh api repos/{owner}/{repo}/issues/<parent>/sub_issues -F sub_issue_id=$(gh api repos/{owner}/{repo}/issues/<slice> --jq .id)`. The API wants the numeric `id`, not the issue number or `gh issue view --json id`'s node id; `-F` keeps it an integer.
+   - A slice that needs another slice's work first says `Depends on #N` in its body (the sequential dependency of [feature-round](../feature-round/SKILL.md)).
+   - Context shared by all slices goes in the parent's body (or the milestone description), not repeated per slice.
+   - Each slice later runs as `feature #N` in a fresh session, or through `feature-round` when the slices are independent.
+   - With a local issue file, write one local file per slice under `.agents/issues/` instead.
 
 3. **Resolve every open question before coding.** Scan for unresolved items: explicit "TBD"/"open question"/"unresolved" markers, unchecked design choices, ambiguous acceptance criteria, or anything phrased as a question. For each one:
    - Propose a concrete resolution with reasoning.
@@ -47,6 +53,7 @@ Then call `EnterWorktree` with `path: .agents/worktrees/<branch-name>`, which mo
 
 ## Common mistakes
 
+- Leaving an accepted split only in chat: a later session can't see it. Each slice becomes an issue (or local file) before this session ends.
 - Resolving a TBD silently and only mentioning it in the handoff doc afterward: confirmation happens before code.
 - Fixing a bug from its proposed solution without confirming the repro first: the proposed solution may itself be a guess.
 - Appending to an existing handoff instead of rewriting it in full: the PR-writing skill reads it expecting the branch's current state, not its history.
