@@ -1,0 +1,3 @@
+# Machine-generated: GitHub collapses these in PR diffs and skips them in language stats.
+package-lock.json linguist-generated=true
+infra/migrations/meta/*.json linguist-generated=true
