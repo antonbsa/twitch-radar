@@ -1,5 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest"
 import { orchestrator } from "./setup/orchestrator"
+import { expectApiError, expectConforms } from "./setup/contract"
+import { MeResponse } from "../../apps/api/src/contracts/me"
 
 const TWITCH_TOKEN_RESPONSE = {
   access_token: "twitch-access-token",
@@ -123,8 +125,8 @@ describe("GET /api/auth/twitch/callback", () => {
       headers: { Cookie: cookie2 },
     })
 
-    const body1 = (await me1.json()) as { data: { id: string } }
-    const body2 = (await me2.json()) as { data: { id: string } }
+    const body1 = await expectConforms(me1, 200, MeResponse)
+    const body2 = await expectConforms(me2, 200, MeResponse)
     expect(body1.data.id).toBe(body2.data.id)
   })
 
@@ -211,7 +213,7 @@ describe("POST /api/auth/logout", () => {
     const meRes = await fetch(`${orchestrator.baseUrl}/api/me`, {
       headers: { Cookie: cookie },
     })
-    expect(meRes.status).toBe(401)
+    await expectApiError(meRes, 401, "session_expired")
   })
 
   it("should return 401 without a session cookie", async () => {
@@ -233,18 +235,16 @@ describe("GET /api/me", () => {
       headers: { Cookie: cookie },
     })
 
-    expect(res.status).toBe(200)
-    await expect(res.json()).resolves.toMatchObject({
-      data: {
-        twitch_login: "testuser",
-        twitch_display_name: "TestUser",
-      },
+    const body = await expectConforms(res, 200, MeResponse)
+    expect(body.data).toMatchObject({
+      twitch_login: "testuser",
+      twitch_display_name: "TestUser",
     })
   })
 
   it("should return 401 without a session", async () => {
     const res = await fetch(`${orchestrator.baseUrl}/api/me`)
-    expect(res.status).toBe(401)
+    await expectApiError(res, 401, "auth_required")
   })
 })
 

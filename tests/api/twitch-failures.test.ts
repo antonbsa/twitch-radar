@@ -1,5 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest"
 import { orchestrator } from "./setup/orchestrator"
+import { expectConforms } from "./setup/contract"
+import { MeResponse } from "../../apps/api/src/contracts/me"
 
 beforeEach(async () => {
   await orchestrator.clearDatabase()
@@ -21,9 +23,7 @@ async function reconnectRequired(cookie: string) {
   const me = await fetch(`${orchestrator.baseUrl}/api/me`, {
     headers: { Cookie: cookie },
   })
-  const body = (await me.json()) as {
-    data: { twitch_reconnect_required: boolean }
-  }
+  const body = await expectConforms(me, 200, MeResponse)
   return body.data.twitch_reconnect_required
 }
 

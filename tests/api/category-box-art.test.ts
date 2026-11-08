@@ -1,5 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest"
 import { orchestrator } from "./setup/orchestrator"
+import { expectConforms } from "./setup/contract"
+import { MeResponse } from "../../apps/api/src/contracts/me"
 
 const MINECRAFT_ART =
   "https://static-cdn.jtvnw.net/ttv-boxart/27471_IGDB-{width}x{height}.jpg"
@@ -135,9 +137,8 @@ describe("category box art (ADR 0058)", () => {
     const me = await fetch(`${orchestrator.baseUrl}/api/me`, {
       headers: { Cookie: cookie },
     })
-    await expect(me.json()).resolves.toMatchObject({
-      data: { twitch_reconnect_required: false },
-    })
+    const body = await expectConforms(me, 200, MeResponse)
+    expect(body.data.twitch_reconnect_required).toBe(false)
   })
 
   describe("expiry", () => {

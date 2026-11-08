@@ -1,6 +1,8 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest"
 import { E2E_USER_ID } from "../shared/seam-client"
 import { orchestrator } from "./setup/orchestrator"
+import { expectApiError, expectConforms } from "./setup/contract"
+import { MeResponse } from "../../apps/api/src/contracts/me"
 import { sendEventsubWebhook } from "./setup/eventsub-webhook"
 
 const BROADCASTER_ID = "200"
@@ -104,26 +106,56 @@ describe("PATCH /api/me/notifications-paused", () => {
   it("should pause and resume, exposing the state on GET /me", async () => {
     const { cookie } = await orchestrator.createAuthenticatedSession()
 
-    const paused = await api("/me/notifications-paused", cookie, "PATCH", {
-      paused: true,
-    })
-    expect(paused.status).toBe(200)
-    const me = (await (await api("/me", cookie)).json()) as {
-      data: { notifications_paused_at: string | null }
-    }
-    expect(me.data.notifications_paused_at).toEqual(expect.any(String))
+    const paused = await expectConforms(
+      await api("/me/notifications-paused", cookie, "PATCH", { paused: true }),
+      200,
+      MeResponse,
+    )
+    expect(paused.data.notifications_paused_at).toEqual(expect.any(String))
+    const me = await expectConforms(await api("/me", cookie), 200, MeResponse)
+    expect(me.data.notifications_paused_at).toBe(
+      paused.data.notifications_paused_at,
+    )
 
-    await api("/me/notifications-paused", cookie, "PATCH", { paused: false })
-    const resumed = (await (await api("/me", cookie)).json()) as {
-      data: { notifications_paused_at: string | null }
-    }
+    const resumed = await expectConforms(
+      await api("/me/notifications-paused", cookie, "PATCH", { paused: false }),
+      200,
+      MeResponse,
+    )
     expect(resumed.data.notifications_paused_at).toBeNull()
+    const meAfter = await expectConforms(
+      await api("/me", cookie),
+      200,
+      MeResponse,
+    )
+    expect(meAfter.data).toEqual(resumed.data)
   })
 
   it("should reject a payload without a boolean paused", async () => {
     const { cookie } = await orchestrator.createAuthenticatedSession()
     const res = await api("/me/notifications-paused", cookie, "PATCH", {})
-    expect(res.status).toBe(400)
+    await expectApiError(res, 400, "invalid_request")
+  })
+})
+
+describe("PATCH /api/me/language", () => {
+  it("should return the full user matching GET /me", async () => {
+    const { cookie } = await orchestrator.createAuthenticatedSession()
+
+    const updated = await expectConforms(
+      await api("/me/language", cookie, "PATCH", { language: "pt-BR" }),
+      200,
+      MeResponse,
+    )
+    expect(updated.data.language).toBe("pt-BR")
+    const me = await expectConforms(await api("/me", cookie), 200, MeResponse)
+    expect(me.data).toEqual(updated.data)
+  })
+
+  it("should reject an unsupported language", async () => {
+    const { cookie } = await orchestrator.createAuthenticatedSession()
+    const res = await api("/me/language", cookie, "PATCH", { language: "xx" })
+    await expectApiError(res, 400, "invalid_request")
   })
 })
 

@@ -1,5 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest"
 import { orchestrator } from "./setup/orchestrator"
+import { expectConforms } from "./setup/contract"
+import { MeResponse } from "../../apps/api/src/contracts/me"
 
 const BROADCASTER_ID = "300"
 
@@ -298,10 +300,7 @@ describe("Twitch token refresh", () => {
     const me = await fetch(`${orchestrator.baseUrl}/api/me`, {
       headers: { Cookie: cookie },
     })
-    expect(me.status).toBe(200)
-    const body = (await me.json()) as {
-      data: { twitch_reconnect_required: boolean }
-    }
+    const body = await expectConforms(me, 200, MeResponse)
     expect(body.data.twitch_reconnect_required).toBe(false)
 
     // The refreshed token must be stored: a sync now succeeds without any
@@ -330,9 +329,7 @@ describe("Twitch token refresh", () => {
     const me = await fetch(`${orchestrator.baseUrl}/api/me`, {
       headers: { Cookie: cookie },
     })
-    const body = (await me.json()) as {
-      data: { twitch_reconnect_required: boolean }
-    }
+    const body = await expectConforms(me, 200, MeResponse)
     expect(body.data.twitch_reconnect_required).toBe(true)
   })
 
@@ -357,9 +354,7 @@ describe("Twitch token refresh", () => {
     const me = await fetch(`${orchestrator.baseUrl}/api/me`, {
       headers: { Cookie: cookie },
     })
-    const body = (await me.json()) as {
-      data: { twitch_reconnect_required: boolean }
-    }
+    const body = await expectConforms(me, 200, MeResponse)
     expect(body.data.twitch_reconnect_required).toBe(true)
   })
 })
@@ -420,9 +415,7 @@ describe("scheduled follow sync", () => {
     const me = await fetch(`${orchestrator.baseUrl}/api/me`, {
       headers: { Cookie: cookie },
     })
-    const body = (await me.json()) as {
-      data: { last_follow_sync_at: string | null }
-    }
+    const body = await expectConforms(me, 200, MeResponse)
     expect(body.data.last_follow_sync_at).not.toBeNull()
     const state = await orchestrator.inspect([BROADCASTER_ID])
     expect(state.channelState).toHaveLength(1)
