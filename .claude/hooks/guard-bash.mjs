@@ -52,6 +52,19 @@ for (const raw of segments(command)) {
   if (writes) decide("deny", ENV_DENY)
 }
 
+// Worktree paths stay fixed for life: Orca tracks each worktree and its chat session by path (AGENTS.md "Worktrees and `.agents/`").
+const WORKTREE_DENY = "Keep the worktree at its path: Orca tracks worktrees (and their chat sessions) by path, so moving one breaks the session (AGENTS.md \"Worktrees and `.agents/`\"). Renaming the branch with `git branch -m` is fine. Ask the user if a move is really needed."
+for (const raw of segments(command)) {
+  const [bin, ...args] = program(raw)
+  const name = bin?.split("/").pop()
+  // Skips `-C <dir>`/`-c <key=value>` so `git -C <dir> worktree move` matches too.
+  const sub = args.filter((arg, i) => !arg.startsWith("-") && !["-C", "-c"].includes(args[i - 1]))
+  const movesWorktree =
+    (name === "git" && sub[0] === "worktree" && sub[1] === "move") ||
+    (name === "mv" && args.some((arg) => /\.agents\/worktrees\/[^/\s]/.test(arg)))
+  if (movesWorktree) decide("deny", WORKTREE_DENY)
+}
+
 // Local D1: anything beyond a single read needs the user's yes every time (apps/api/AGENTS.md "D1 debug queries").
 if (/\bd1\s+execute\b/.test(command)) {
   const sql = command.match(/--command(?:=|\s+)(?:"((?:[^"\\]|\\.)*)"|'([^']*)'|(\S+))/)
