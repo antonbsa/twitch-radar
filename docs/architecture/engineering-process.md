@@ -21,14 +21,14 @@ The project is developed with coding agents, so how they are guided is part of t
 
 - **Conventions have one home.** A root `AGENTS.md` holds the repo-wide rules, and nested `AGENTS.md` files hold package-specific ones, loaded only when an agent works there ([ADR 0052](../decisions/0052-nested-agents-md-and-slim-subagents.md)). There is deliberately no static codemap for agents: it drifts, so they explore the tree.
 - **Role-scoped subagents** for the API, the web client and infrastructure carry a persona, boundaries and a definition of done, not conventions ([ADR 0038](../decisions/0038-adopt-role-scoped-subagents-reject-template.md)).
-- **Skills** package procedures that recur: implementing a feature from an issue, running a batch of features in parallel worktrees, opening a pull request, preparing a release, using the sandbox, capturing screenshots.
+- **Skills** package procedures that recur: implementing an issue (splitting it into slices and running the independent ones in parallel worktrees), opening a pull request, preparing a release, using the sandbox, capturing screenshots.
 - **Follow-up fixes are classified.** A one-off correction is just applied, while a convention that should hold from now on is proposed for the instruction files and waits for confirmation.
 
 This architecture documentation has a different audience, people reading the repository, so it is a separate thing from agent context and covers concepts, not files ([ADR 0062](../decisions/0062-human-facing-architecture-docs.md)).
 
 ## Changes Flow Through Pull Requests
 
-Work happens on a branch in its own worktree, never on `main`. Before the pull request, fresh subagents that see only the diff, the issue and the `AGENTS.md` files review it, never the implementer's handoff, and the implementer records any finding it rejects ([ADR 0066](../decisions/0066-isolated-pre-pr-review-by-fresh-subagents.md)). The change then arrives as a pull request whose description follows a template (summary, impact, references) and carries labels that drive release notes. Tests, migrations and config changes, and any ADR or spec updates are reviewed together with the code. A pre-commit hook formats and lints staged files, CI runs the same checks plus the test tiers ([deploy and release](deploy-and-release.md)), and a failing run links its published report.
+Work happens on a branch in its own worktree, never on `main`. Before the pull request, fresh subagents that see only the diff, the issue and the `AGENTS.md` files review it, never the implementer's handoff, and the implementing session records any finding it rejects ([ADR 0066](../decisions/0066-isolated-pre-pr-review-by-fresh-subagents.md)). The change then arrives as a pull request whose description follows a template (summary, impact, references) and carries labels that drive release notes. Tests, migrations and config changes, and any ADR or spec updates are reviewed together with the code. A pre-commit hook formats and lints staged files, CI runs the same checks plus the test tiers ([deploy and release](deploy-and-release.md)), and a failing run links its published report.
 
 Commits follow Conventional Commits, and the project has no backward-compatibility code before launch: when a schema changes, the migration backfills existing rows so every environment converges on the one new state.
 

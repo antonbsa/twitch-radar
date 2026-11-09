@@ -1,7 +1,8 @@
 // PreToolUse guard for Bash: turns AGENTS.md rules that prose alone can't enforce into hard checks. They must hold in bypassPermissions mode too, where `ask` rules in settings.json never prompt.
 import { decide, readHookInput } from "./hook-io.mjs"
 
-const command = readHookInput().tool_input?.command ?? ""
+const input = readHookInput()
+const command = input.tool_input?.command ?? ""
 
 /** Splits a shell command into simple commands. Naive about quoting, which only makes the checks stricter. */
 function segments(cmd) {
@@ -79,4 +80,14 @@ if (segments(command).some((raw) => {
   return bin === "rm" && args.some((arg) => /(^|\/)\.wrangler(\/state(\/|$)|\/?$)/.test(arg))
 })) {
   decide("ask", "Deleting .wrangler state wipes the local D1/KV (sessions, synced channels). Confirm before running.")
+}
+
+// implementer subagents leave their work uncommitted: staging and history stay with the user (implement skill).
+const HISTORY = new Set(["add", "commit", "push", "reset", "restore", "stash", "rebase", "merge", "cherry-pick", "revert", "tag", "am"])
+if (input.agent_type === "implementer" && segments(command).some((raw) => {
+  const [bin, ...args] = program(raw)
+  const sub = args.filter((arg, i) => !arg.startsWith("-") && !["-C", "-c"].includes(args[i - 1]))
+  return bin?.split("/").pop() === "git" && HISTORY.has(sub[0])
+})) {
+  decide("deny", "An implementer leaves its work uncommitted: staging and history belong to the user (implement skill). Report your changes instead.")
 }

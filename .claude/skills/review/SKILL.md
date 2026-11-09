@@ -1,6 +1,6 @@
 ---
 name: review
-description: Use when reviewing a branch's change before its PR (feature's review step, or ad hoc work), in fresh subagents that see only the diff, the spec and the repo's rules.
+description: Use when reviewing a branch's change before its PR (implement's review step, or ad hoc work), in fresh subagents that see only the diff, the spec and the repo's rules.
 ---
 
 # Isolated Review
@@ -11,7 +11,7 @@ Three-axis review of the branch's change, each axis in a fresh subagent so the i
 - **Spec**: does the code faithfully implement the originating issue / spec?
 - **Correctness**: does the change introduce bugs?
 
-This skill only collects findings; triage belongs to the caller (`feature` step 6, or the user).
+This skill only collects findings; triage belongs to the caller (`implement` step 6, or the user).
 
 Adapted from `mattpocock-skills:code-review` 1.3.1, so this repo doesn't depend on a user-level plugin. Changes from upstream: the change includes uncommitted and new files, the spec comes from GitHub issues, the standards are the `AGENTS.md` files, and a Correctness axis and the isolation rules are added. When syncing with a newer upstream, keep those.
 
@@ -19,7 +19,7 @@ Adapted from `mattpocock-skills:code-review` 1.3.1, so this repo doesn't depend 
 
 ### 1. Pin the change
 
-From the worktree root, `git fetch origin main`, then `BASE=$(git merge-base origin/main HEAD)` and confirm it resolves. The change is `git diff $BASE` (committed and uncommitted tracked work, since `feature` leaves its work uncommitted) plus the new files listed by `git ls-files --others --exclude-standard`. Also note the commits via `git log $BASE..HEAD --oneline`. An empty change stops here with "nothing to review", not inside three parallel subagents.
+From the worktree root (the path the caller passed, else the current checkout's), `git fetch origin main`, then `BASE=$(git merge-base origin/main HEAD)` and confirm it resolves. The change is `git diff $BASE` (committed and uncommitted tracked work, since `implement` leaves its work uncommitted) plus the new files listed by `git ls-files --others --exclude-standard`. Also note the commits via `git log $BASE..HEAD --oneline`. An empty change stops here with "nothing to review", not inside three parallel subagents.
 
 ### 2. Identify the spec source
 
@@ -93,6 +93,6 @@ Reporting them separately stops one axis from masking another.
 
 ## Common mistakes
 
-- Reviewing `main...HEAD` only: inside `feature` the work is still uncommitted, so that diff is empty or stale.
+- Reviewing `main...HEAD` only: inside `implement` the work is still uncommitted, so that diff is empty or stale.
 - Passing the handoff, a summary or "context that helps" into a subagent prompt: that is the bias the isolation removes.
 - Fixing findings inside this skill: the caller triages them.

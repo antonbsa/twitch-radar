@@ -1,0 +1,5 @@
+# Commits carry the user's authorship only (AGENTS.md "Commits").
+if grep -qi '^co-authored-by:' "$1"; then
+  echo "commit-msg: remove the Co-Authored-By trailer; commits carry the user's authorship only (AGENTS.md \"Commits\")." >&2
+  exit 1
+fi
