@@ -2,6 +2,29 @@
 
 O que mudou para quem usa o Twitch Radar, uma seção por versão lançada. Escrito em linguagem simples para o painel "Novidades" do app — sem números de PR, prefixos de commit ou mudanças internas; a lista técnica completa fica em cada GitHub Release, gerada a partir das labels dos PRs (ver [ADR 0050](docs/decisions/0050-changelog-as-source-of-truth-for-release-notes.md)). Uma seção `## Unreleased`, quando presente, é ignorada pelo painel e pelo parser de build.
 
+## v0.4.1 — 2026-11-08
+
+Um novo ícone de radar, confirmação antes de ações difíceis de desfazer e notificações mais confiáveis.
+
+### New
+
+- O Twitch Radar tem um novo ícone de radar na tela de início, nas notificações e no topo de cada aba.
+- O app agora pede confirmação antes de você sair ou desativar as notificações neste dispositivo.
+
+### Improved
+
+- Botões e chips estão maiores e mais fáceis de tocar no celular.
+- No Android e no computador, se o seu dispositivo ficou offline enquanto um canal mudou várias vezes, agora você recebe só a notificação mais recente em vez de uma enxurrada.
+- Se o login com a Twitch for cancelado ou interrompido, você volta para a tela de login com uma mensagem em vez de uma página de erro.
+
+### Fixed
+
+- Notificações não se perdem nem chegam duplicadas quando o servidor tem um problema passageiro.
+- Canais que você excluiu de um alerta de "Todos os canais" não ficam mais destacados nem aparecem em "Com alertas".
+- Canais que você deixou de seguir na Twitch agora saem da sua lista na próxima sincronização, e uma sincronização não remove mais um canal que você acabou de seguir.
+- Tocar em "Lembrar em 15m" mais de uma vez na mesma transmissão agora envia todos os lembretes.
+- Reprises continuam sem notificar, e canais offline mantêm a última categoria e o último título depois que sua lista de canais é atualizada pela Twitch.
+
 ## v0.4.0 — 2026-10-11
 
 Mais controle sobre seus alertas: pause tudo, silencie canais e veja mais sobre o que um canal está jogando.
