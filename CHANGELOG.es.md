@@ -2,6 +2,29 @@
 
 Qué cambió para quienes usan Twitch Radar, una sección por versión publicada. Escrito en lenguaje simple para el panel "Novedades" de la app — sin números de PR, prefijos de commit ni cambios internos; la lista técnica completa vive en cada GitHub Release, generada a partir de las labels de los PRs (ver [ADR 0050](docs/decisions/0050-changelog-as-source-of-truth-for-release-notes.md)). Una sección `## Unreleased`, cuando existe, es ignorada por el panel y por el parser de build.
 
+## v0.4.1 — 2026-11-08
+
+Un nuevo ícono de radar, confirmación antes de acciones difíciles de deshacer y notificaciones más confiables.
+
+### New
+
+- Twitch Radar tiene un nuevo ícono de radar en la pantalla de inicio, en las notificaciones y en la parte superior de cada pestaña.
+- La app ahora te pide confirmación antes de cerrar sesión o desactivar las notificaciones en este dispositivo.
+
+### Improved
+
+- Los botones y chips son más grandes y fáciles de tocar en el móvil.
+- En Android y en computadoras, si tu dispositivo estuvo sin conexión mientras un canal cambió varias veces, ahora recibes solo la notificación más reciente en lugar de una ráfaga.
+- Si el inicio de sesión con Twitch se cancela o se interrumpe, vuelves a la pantalla de inicio de sesión con un mensaje en lugar de una página de error.
+
+### Fixed
+
+- Las notificaciones ya no se pierden ni llegan duplicadas cuando el servidor tiene un problema pasajero.
+- Los canales que excluiste de una alerta de "Todos los canales" ya no se destacan ni aparecen en "Con alertas".
+- Los canales que dejas de seguir en Twitch ahora salen de tu lista en la siguiente sincronización, y una sincronización ya no elimina un canal que acabas de seguir.
+- Tocar "Recordarme en 15m" más de una vez en la misma transmisión ahora envía todos los recordatorios.
+- Las retransmisiones siguen sin notificar, y los canales sin conexión conservan su última categoría y título después de que tu lista de canales se actualiza desde Twitch.
+
 ## v0.4.0 — 2026-10-11
 
 Más control sobre tus alertas: pausa todo, silencia canales y mira más sobre lo que un canal está jugando.

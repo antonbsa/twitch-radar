@@ -2,6 +2,29 @@
 
 What changed for people using Twitch Radar, one section per released version. Written in plain language for the in-app "What's New" sheet — no PR numbers, commit prefixes, or internal-only changes; the full engineering list lives in each GitHub Release, generated from PR labels below this entry (see [ADR 0050](docs/decisions/0050-changelog-as-source-of-truth-for-release-notes.md)). An `## Unreleased` section, when present, is ignored by the widget and its build-time parser.
 
+## v0.4.1 — 2026-11-08
+
+A new radar icon, confirmations before actions that are hard to undo, and more dependable notifications.
+
+### New
+
+- Twitch Radar has a new radar icon on your home screen, in notifications and at the top of every tab.
+- The app now asks you to confirm before you log out or disable notifications on this device.
+
+### Improved
+
+- Buttons and chips are bigger and easier to tap on your phone.
+- On Android and desktop, if your device was offline while a channel changed several times, you now get only its latest notification instead of a burst.
+- If sign in with Twitch is cancelled or interrupted, you're brought back to the sign-in page with a message instead of an error page.
+
+### Fixed
+
+- Notifications no longer go missing or arrive twice when the server has a brief problem.
+- Channels you excluded from an "All channels" alert are no longer highlighted or listed under "With alerts".
+- Channels you unfollow on Twitch now leave your channel list on the next sync, and a sync no longer removes a channel you just followed.
+- Tapping "Remind me in 15m" more than once in the same stream now sends every reminder.
+- Reruns stay silent, and offline channels keep their last category and title, after your channel list refreshes from Twitch.
+
 ## v0.4.0 — 2026-10-11
 
 More control over your alerts: pause everything, mute single channels, and see more about what a channel is playing.
