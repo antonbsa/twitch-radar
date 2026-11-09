@@ -10,19 +10,31 @@ test("every route has a response contract entry and every entry has a route", as
   const { ROUTE_CONTRACTS } =
     await import("../../apps/api/src/contracts/registry")
 
+  const registered = new Set(Object.keys(ROUTE_CONTRACTS))
+  const registeredPaths = [...registered].map((k) => k.split(" ")[1])
+
+  // Only the global middleware, the CORS preflight and the per-router auth
+  // guard (`ALL /api/<prefix>/*`, for a prefix with registered routes) may use
+  // ALL/OPTIONS; any other one would be a real route the guard can't key.
+  const isInfra = (r: { method: string; path: string }) =>
+    (r.method === "ALL" && r.path === "/*") ||
+    (r.method === "OPTIONS" && r.path === "/*") ||
+    (r.method === "ALL" &&
+      /^\/api\/[^/*:]+\/\*$/.test(r.path) &&
+      registeredPaths.some((p) => p.startsWith(r.path.slice(0, -1))))
   const all = buildApp().routes
-  // Middleware mounts as `ALL` on a `/*` path and is skipped below; an `ALL`
-  // route on any other path would be a real route the guard can't key.
   expect(
-    all.filter((r) => r.method === "ALL" && !r.path.endsWith("/*")),
+    all
+      .filter(
+        (r) => (r.method === "ALL" || r.method === "OPTIONS") && !isInfra(r),
+      )
+      .map((r) => `${r.method} ${r.path}`),
   ).toEqual([])
-  // Skip middleware and the CORS preflight catch-all.
   const routes = new Set(
     all
       .filter((r) => r.method !== "ALL" && r.method !== "OPTIONS")
       .map((r) => `${r.method} ${r.path}`),
   )
-  const registered = new Set(Object.keys(ROUTE_CONTRACTS))
 
   const withoutContract = [...routes].filter((r) => !registered.has(r))
   const withoutRoute = [...registered].filter((r) => !routes.has(r))

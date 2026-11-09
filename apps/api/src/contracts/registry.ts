@@ -19,10 +19,10 @@ import { PushSubscriptionResponse, VapidPublicKeyResponse } from "./push"
 
 /**
  * Success-status -> JSON body contract per route, keyed `METHOD /full/path`
- * (ADR 0067). `{}` means the route never answers with a JSON body (`204`,
- * redirect, plain text). Error bodies are `ErrorEnvelope` everywhere, so they
+ * (ADR 0067). `{}` is an unchecked declaration that the route has no JSON body (`204`,
+ * redirect, plain text); nothing verifies it. Error bodies are `ErrorEnvelope` everywhere, so they
  * are not repeated per route. `/__test__/*` and `/__sandbox__/*` are exempt.
- * `tests/api/contract-coverage.test.ts` fails when its keys and `buildApp()`'s routes disagree; statuses and schemas are documentation for readers, enforced by `satisfies` and `expectConforms`.
+ * `tests/api/contract-coverage.test.ts` fails when its keys and `buildApp()`'s routes disagree (every route must be listed); statuses and schemas are documentation for readers, enforced by `satisfies` and `expectConforms`.
  */
 export const ROUTE_CONTRACTS: Record<string, Record<number, ZodType>> = {
   "GET /": { 200: RootResponse },
