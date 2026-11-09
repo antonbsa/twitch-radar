@@ -8,6 +8,7 @@
   ],
   "scripts": {
     "doctor": "node infra/scripts/dev/doctor.mjs",
+    "worktree:create": "node infra/scripts/dev/create-worktree.mjs",
     "dev": "concurrently --kill-others -n api,web -c blue,green \"npm run dev:api\" \"npm run dev:web\"",
     "dev:sandbox": "SANDBOX_HELIX=1 npm run dev",
     "dev:api": "npm run dev -w @twitch-radar/api",
@@ -24,6 +25,7 @@
     "mock-eventsub": "node infra/scripts/dev/mock-eventsub.mjs",
     "pr:screenshot": "node infra/scripts/dev/pr-screenshot.mjs",
     "pr:image": "node infra/scripts/github/upload-pr-image.mjs",
+    "issues:slices": "node infra/scripts/github/issue-slices.mjs",
     "build": "npm run build --workspaces --if-present",
     "deploy": "npm run build -w @twitch-radar/web && npm run deploy -w @twitch-radar/api",
     "deploy:preview": "npm run build -w @twitch-radar/web -- --mode preview && npm run deploy:preview -w @twitch-radar/api",

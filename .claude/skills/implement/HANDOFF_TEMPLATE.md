@@ -4,7 +4,7 @@
      reflects the branch's current, final state, as if it had been written this way from the
      start. Do not append change-by-change narration, and do not describe earlier iterations or
      abandoned approaches that no longer apply to the branch as it stands. See
-     feature's handoff step for when this is written, and open-pr for
+     implement's handoff step for when this is written, and open-pr for
      how it feeds the PR description.
 
      Required sections: Objective/Problem, Scope, How to Validate - every handoff needs these.
@@ -29,7 +29,7 @@
      one place that context survives once the PR ships (a PR description only carries the final
      state, not the road not taken). If a resolution is itself an accepted decision the code must
      keep following, it should also have its own ADR (per AGENTS.md "Development Workflow") -
-     link it here rather than duplicating its content. Also list each review finding you rejected (feature's review step) with a one-line reason, so the human sees what was dismissed. -->
+     link it here rather than duplicating its content. Also list each review finding you rejected (implement's review step) with a one-line reason, so the human sees what was dismissed. -->
 
 ## Trade-offs & Known Follow-ups
 

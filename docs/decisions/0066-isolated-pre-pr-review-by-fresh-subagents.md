@@ -15,9 +15,9 @@ The workflow goes issue, implementation, handoff, PR, with no review between imp
 
 ## Decision
 
-- **Review runs before the PR, in fresh subagents.** The implementing agent runs the project's `review` skill, which spawns three reviewers in parallel: Standards (against the `AGENTS.md` files and cited ADRs), Spec (against the originating issue) and Correctness (bugs the change introduces). `feature` owns the step.
+- **Review runs before the PR, in fresh subagents.** The implementing agent runs the project's `review` skill, which spawns three reviewers in parallel: Standards (against the `AGENTS.md` files and cited ADRs), Spec (against the originating issue) and Correctness (bugs the change introduces). `implement` owns the step.
 - **The reviewer gets only the change against the merge-base with `origin/main` (committed, uncommitted and new files), the originating spec (issue number or local issue file), and the repo's `AGENTS.md` files.** It never gets the handoff doc or any summary or rationale from the implementer, and review never uses a forked subagent, because a fork inherits the whole conversation.
-- **The implementer triages every finding** with the Follow-up Changes classification, fixes what it accepts and re-runs the affected tests. Findings it rejects are recorded with a one-line reason in the handoff's Design Decisions, so the human sees what was dismissed.
+- **The implementing session triages every finding** with the Follow-up Changes classification, fixes what it accepts and re-runs the affected tests. Findings it rejects are recorded with a one-line reason in the handoff's Design Decisions, so the human sees what was dismissed.
 - **Subagents implement only.** `api-engineer` and `web-engineer` drop "and review" from their self-description.
 
 ## Alternatives considered
@@ -30,5 +30,5 @@ The workflow goes issue, implementation, handoff, PR, with no review between imp
 ## Consequences
 
 - Triage by the implementer still reintroduces some bias; the recorded rejections are the counterweight.
-- `feature-round` group subagents run the review themselves. When a subagent can't spawn subagents, the skill reports `REVIEW_UNAVAILABLE` instead of reviewing in its own context, and the `feature-round` session runs the review for that group.
-- Review is a nudge, not a gate, for work done outside `feature`: `open-pr` suggests it when the branch shows no sign of it.
+- The `implement` coordinator runs the review and triages it, and its `implementer` subagents apply the accepted fixes. The agent that wrote the code never judges it. When a session can't spawn subagents, the skill reports `REVIEW_UNAVAILABLE` instead of reviewing in its own context.
+- Review is a nudge, not a gate, for work done outside `implement`: `open-pr` suggests it when the branch shows no sign of it.
