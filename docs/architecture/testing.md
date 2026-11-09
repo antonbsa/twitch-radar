@@ -36,6 +36,8 @@ The API and web e2e tiers are plain `vitest` runs whose global setup boots every
 
 The API tier is where the system's behavior is covered: webhook verification, event processing, matching, delivery, scheduled jobs and every route. Because the Worker is the real thing, so are the queues and the cron: queue consumers run for real, and a scheduled job is triggered by simulating its minute through the local runtime ([ADR 0057](../decisions/0057-single-minutely-cron-trigger.md)). Twitch and the push services are the only fakes, as an HTTP server the Worker is pointed at.
 
+Response shapes have a single source of truth: strict schemas on the API side, one per JSON response ([ADR 0067](../decisions/0067-validate-api-responses-against-zod-contracts.md)). Handlers must build their body to fit the schema at compile time, API tests check the whole body the Worker actually sent (so an extra or missing field fails), and a type-level check keeps the web's hand-written mirrors equal to them. A registry lists every route with its schemas, and one test compares its routes with the ones the app registers, so a route missing from the registry, or an entry for a removed route, fails CI without needing another job. An empty entry is an unchecked declaration that a route has no JSON body.
+
 The web tier covers what a browser does: rendering, navigation, forms. It is serial, since the specs share one running app instance, and retried once on CI only, to absorb browser timing flakes; a test that needs its retry repeatedly is treated as a bug.
 
 ## Seams

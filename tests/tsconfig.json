@@ -12,5 +12,10 @@
       "@/*": ["../apps/web/src/*"]
     }
   },
-  "include": ["api/**/*.ts", "shared/**/*.ts", "contracts/**/*.ts"]
+  "include": [
+    "../apps/api/src/globals.d.ts",
+    "api/**/*.ts",
+    "shared/**/*.ts",
+    "contracts/**/*.ts"
+  ]
 }
