@@ -1,6 +1,14 @@
 # Documentation
 
-Start with the [product overview](product.md) for what Twitch Radar does, then pick the page that matches what you're doing.
+The [case study](case-study.md) covers Twitch Radar on one page; every page below goes deeper on one part of it. Pick the one that matches what you're doing.
+
+## Understand
+
+| Doc | Read it when |
+| --- | --- |
+| [case-study.md](case-study.md) | You want the whole project on one page, in about ten minutes: the problem, the constraints, how it works and the key trade-offs. |
+| [product.md](product.md) | You want to know what the app is for, how a notification is decided, and what it deliberately doesn't do. |
+| [architecture/](architecture/overview.md) | You want to understand how the system works end to end and why: start with the overview, then the subsystem pages (auth, follow sync, monitoring, matching, delivery, jobs, web client, observability, testing, deploy, engineering process). |
 
 ## Operate
 
@@ -11,13 +19,6 @@ Start with the [product overview](product.md) for what Twitch Radar does, then p
 | [operations/secrets.md](operations/secrets.md) | You're setting, rotating or storing a secret, or wiring error alerting. |
 | [operations/deploying.md](operations/deploying.md) | You're deploying manually, applying a migration, or cutting a release. |
 | [operations/backup-and-restore.md](operations/backup-and-restore.md) | You need to restore the database, check the off-site backup, or rehearse a restore. |
-
-## Understand
-
-| Doc | Read it when |
-| --- | --- |
-| [product.md](product.md) | You want to know what the app is for, how a notification is decided, and what it deliberately doesn't do. |
-| [architecture/](architecture/overview.md) | You want to understand how the system works end to end and why: start with the overview, then the subsystem pages (auth, follow sync, monitoring, matching, delivery, jobs, web client, observability, testing, deploy, engineering process). |
 
 ## Do
 
