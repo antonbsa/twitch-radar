@@ -2,13 +2,14 @@
 status: Accepted
 area: process
 amends: ["0043", "0062"]
+amended-by: ["0068"]
 ---
 
 # 0065 - Organize Human Docs By Reader Moment, With Generated Indexes
 
 ## Status
 
-Accepted. Amends [ADR 0062](0062-human-facing-architecture-docs.md) (the docs layout, beyond `docs/architecture/`) and [ADR 0043](0043-github-issues-as-spec-drop-mandatory-spec-docs.md) (the opt-in milestone overview under `specs/`).
+Accepted. Amends [ADR 0062](0062-human-facing-architecture-docs.md) (the docs layout, beyond `docs/architecture/`) and [ADR 0043](0043-github-issues-as-spec-drop-mandatory-spec-docs.md) (the opt-in milestone overview under `specs/`). Amended by [ADR 0068](0068-one-page-case-study-as-the-short-path-through-the-docs.md): a one-page case study is the summary layer of the "understand" moment.
 
 ## Context
 
