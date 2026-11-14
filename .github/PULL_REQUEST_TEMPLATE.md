@@ -18,6 +18,15 @@ Title: follow the Conventional Commits prefixes from the root AGENTS.md "Commits
      that specific claim - not as a standalone test/lint recap.
      Skip/mark N/A for changes with no external effect (e.g. pure refactor, docs). -->
 
+## Merge risk
+
+<!-- One line: reversibility and blast radius, e.g. "Two-way door · Blast radius: web".
+     Two-way door: reverting the PR restores the prior state. One-way door: a revert alone doesn't
+     (a D1 migration applied in production, a changed API contract an installed PWA already calls,
+     a renamed KV key) - for those, add how to recover.
+     Blast radius: one word for what breaks if this is wrong (none, docs, tooling, web, api, data, notifications).
+     Optionally, a bullet per likely ramification (e.g. iOS PWA behavior, a manual step before deploy). -->
+
 ## References
 
 <!-- Issue: Closes #123 / Refs #123
