@@ -55,6 +55,7 @@ Judge each hit: `console.log` in `infra/scripts` is often intended output. Repor
 9. How to test section: reproduction steps for a reviewer, if applicable - instructions, not proof; the proof itself goes in Impact. Condense the handoff's How to Validate section into this when one exists; otherwise derive repro steps directly from the diff and the conversation.
 10. **For any change with a visible UI effect, generate a screenshot and attach it to the PR (Impact, or Summary if it frames the problem better).** Follow [screenshot](../screenshot/SKILL.md); capture with `npm run pr:screenshot` and upload with `npm run pr:image` (it prints the Markdown to paste), laid out as a table per its "Layout in the PR description" section. Skip this for changes with no visible UI effect (backend-only, refactors, docs).
 11. If there's no tracked issue and no spec/ADR link, delete the "References" section rather than leaving it empty.
+12. Open as a draft (`gh pr create --draft`) when a checklist box is unchecked because the work isn't done yet (as opposed to not applying), or when the user says it's still in progress. Say so in the reply, and mark it ready with `gh pr ready` once the gap is closed.
 
 ## Review check
 
