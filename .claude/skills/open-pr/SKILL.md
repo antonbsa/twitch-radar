@@ -7,6 +7,16 @@ description: Use when opening a pull request in this repo (gh pr create or the G
 
 The canonical PR structure lives in [.github/PULL_REQUEST_TEMPLATE.md](../../../.github/PULL_REQUEST_TEMPLATE.md); GitHub auto-fills it for humans and `gh pr create`. Read it and fill it in. Use this before `gh pr create` or before a human opens a PR in the UI.
 
+## Before you start
+
+Check the branch's state before writing anything; each check either passes silently or gets reported to the user.
+
+- **Not on `main`.** If `git branch --show-current` prints `main`, stop: PRs come from a feature branch in a worktree (AGENTS.md "Worktrees and `.agents/`").
+- **Uncommitted changes.** If `git status --porcelain` lists tracked changes, ask whether they belong in this PR. Never commit them silently, and never stash or discard them.
+- **Behind `main`.** Run `git fetch origin main`. If `git rev-list --count HEAD..origin/main` is non-zero, check `git merge-tree --write-tree origin/main HEAD`: a non-zero exit means conflicts, so tell the user and resolve them (with their go-ahead) before opening. Being behind without conflicts is fine; just mention it.
+- **Pushed.** Once the concern check (rule 1) is settled, and right before `gh pr create`: if the branch has no upstream or is ahead of it, push with `git push -u origin HEAD`.
+- **Existing PR.** Run `gh pr view --json url,state,isDraft`. If an open PR already exists for the branch, update it (`gh pr edit` for title, body and labels) instead of creating a second one, and apply the rules below to the updated body.
+
 ## What to do
 
 1. **Map the branch to concerns first.** Run `git log --oneline origin/main..HEAD` and assign each commit to a concern per AGENTS.md "One Concern Per PR". If the commits cover independent concerns, stop before `gh pr create` and propose a split: list each concern with its commits and a suggested branch name, then wait for the user's answer. It's a question, not a block: the user may choose to open as-is. On an accepted split, record it in git: one branch and worktree per concern, each created with `npm run worktree:create -- <branch>` and holding its commits via `git cherry-pick`. A concern the original issue doesn't cover also gets an issue (milestone per AGENTS.md "Workflow" step 1). Push and open the PRs only when the user asks.
@@ -31,6 +41,7 @@ If the branch shows no sign of `implement`'s isolated review (no `.agents/handof
 
 ## Common mistakes
 
+- Running `gh pr create` on a branch that already has an open PR, or from an unpushed branch.
 - Leaving an accepted split only in chat: a later session can't see it. Each concern gets its own branch (and issue) before this session ends.
 - Checking "added tests" without having run them.
 - Restating the diff instead of the _why_ in the Summary.
