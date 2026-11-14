@@ -17,6 +17,22 @@ Check the branch's state before writing anything; each check either passes silen
 - **Pushed.** Once the concern check (rule 1) is settled, and right before `gh pr create`: if the branch has no upstream or is ahead of it, push with `git push -u origin HEAD`.
 - **Existing PR.** Run `gh pr view --json url,state,isDraft`. If an open PR already exists for the branch, update it (`gh pr edit` for title, body and labels) instead of creating a second one, and apply the rules below to the updated body.
 
+## Scan the diff for leftovers
+
+Before describing the diff, scan what it adds for things that shouldn't ship:
+
+```bash
+git diff origin/main...HEAD -U0 | grep -nE '^\+.*(console\.log|debugger|\.only\(|TODO|FIXME)'
+git diff --name-only --diff-filter=A origin/main...HEAD
+```
+
+- Debug output (`console.log`, `debugger`) and focused tests (`.only(`, which makes CI skip the rest of the file).
+- A new `TODO`/`FIXME` with no issue reference: open the issue and reference it, or drop the comment.
+- Added files that look accidental: screenshots, scratch scripts, anything that should be under the gitignored `.agents/`.
+- Secrets or real values copied from `.env.local` into a committed file.
+
+Judge each hit: `console.log` in `infra/scripts` is often intended output. Report what you found and ask before removing anything; don't edit silently.
+
 ## What to do
 
 1. **Map the branch to concerns first.** Run `git log --oneline origin/main..HEAD` and assign each commit to a concern per AGENTS.md "One Concern Per PR". If the commits cover independent concerns, stop before `gh pr create` and propose a split: list each concern with its commits and a suggested branch name, then wait for the user's answer. It's a question, not a block: the user may choose to open as-is. On an accepted split, record it in git: one branch and worktree per concern, each created with `npm run worktree:create -- <branch>` and holding its commits via `git cherry-pick`. A concern the original issue doesn't cover also gets an issue (milestone per AGENTS.md "Workflow" step 1). Push and open the PRs only when the user asks.
@@ -42,6 +58,7 @@ If the branch shows no sign of `implement`'s isolated review (no `.agents/handof
 ## Common mistakes
 
 - Running `gh pr create` on a branch that already has an open PR, or from an unpushed branch.
+- Opening with a leftover `.only(`, `debugger` or stray file in the diff.
 - Leaving an accepted split only in chat: a later session can't see it. Each concern gets its own branch (and issue) before this session ends.
 - Checking "added tests" without having run them.
 - Restating the diff instead of the _why_ in the Summary.
