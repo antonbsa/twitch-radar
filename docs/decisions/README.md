@@ -116,7 +116,8 @@ amends: ["0062"] # relations are optional: supersedes, superseded-by, amends, am
 - [0043 — GitHub Issues As Spec; Drop The Mandatory Per-Feature Spec Document](0043-github-issues-as-spec-drop-mandatory-spec-docs.md) · Accepted · amended by 0065
 - [0052 — Agent Instructions: Nested AGENTS.md For Conventions, Subagents For Persona And Boundaries](0052-nested-agents-md-and-slim-subagents.md) · Accepted · amends 0038
 - [0062 — Human-Facing Architecture Documentation](0062-human-facing-architecture-docs.md) · Accepted · amends 0038 · amended by 0065
-- [0065 — Organize Human Docs By Reader Moment, With Generated Indexes](0065-organize-human-docs-by-reader-moment.md) · Accepted · amends 0043, 0062
+- [0065 — Organize Human Docs By Reader Moment, With Generated Indexes](0065-organize-human-docs-by-reader-moment.md) · Accepted · amends 0043, 0062 · amended by 0068
 - [0066 — Isolated Pre-PR Review By Fresh Subagents](0066-isolated-pre-pr-review-by-fresh-subagents.md) · Accepted
+- [0068 — A One-Page Case Study As The Short Path Through The Docs](0068-one-page-case-study-as-the-short-path-through-the-docs.md) · Accepted · amends 0065
 
 <!-- docs-index:end -->
