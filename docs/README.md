@@ -25,6 +25,7 @@ The [case study](case-study.md) covers Twitch Radar on one page; every page belo
 ## Look Up
 
 - **[API contract](reference/api-contract.md)**: the HTTP surface: routes, shapes and errors.
+- **[Database](reference/database.md)**: the D1 tables, how they relate, the unique keys idempotency relies on, and each status column's values.
 - **[Glossary](../GLOSSARY.md)**: the domain terms: Channel State, Snapshot, Event, Stale Event, State Change.
 - **[Project history](history.md)**: what the proof of concept, the MVP and milestone 0 set out to do and delivered.
 

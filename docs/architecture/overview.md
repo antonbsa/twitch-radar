@@ -126,7 +126,7 @@ The model separates three kinds of data:
 - **Per broadcaster, shared by everyone:** which broadcasters are monitored, their EventSub subscriptions, their current state and the history of relevant transitions ([ADR 0006](../decisions/0006-store-current-channel-state-separately-from-history.md), [ADR 0007](../decisions/0007-monitor-broadcasters-globally-across-users.md)). Twitch is asked once per broadcaster, not once per follower.
 - **Audit:** one delivery row per notification decision, with a terminal status, so "did the push go out" is a single query.
 
-A small cache table holds category artwork ([ADR 0058](../decisions/0058-cache-category-box-art-in-d1.md)). Everything the API exposes to the web client is documented in [api-contract.md](../reference/api-contract.md); the two sides mirror their wire types by hand instead of sharing a package ([ADR 0028](../decisions/0028-mirror-wire-shape-types-across-workspaces.md)).
+A small cache table holds category artwork ([ADR 0058](../decisions/0058-cache-category-box-art-in-d1.md)). Each table's keys, unique constraints and status values are in the [database reference](../reference/database.md). Everything the API exposes to the web client is documented in [api-contract.md](../reference/api-contract.md); the two sides mirror their wire types by hand instead of sharing a package ([ADR 0028](../decisions/0028-mirror-wire-shape-types-across-workspaces.md)).
 
 ## Defining Trade-offs
 
