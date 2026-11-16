@@ -51,7 +51,7 @@ for (let i = 0; i < ids.length; i += BATCH_SIZE) {
 ## Route handlers
 
 - Validate input with a local `zod` schema and `.safeParse`, throw `ApiError(status, code, message)` on failure, respond with `jsonResponse(...)`. See `features/preferences/routes.ts`. Shared helpers (`parseBody`, `findOwnedRecord`, `authedRouter`) live in `http/handlers.ts`; mount each authenticated route group on an `authedRouter()` instead of repeating `requireAuth`.
-- Preference- and subscription-like rows (`channel_category_preferences`, `global_category_preferences`, `eventsub_subscriptions`, `monitored_channels`) are idempotent lifecycle resources: create is an upsert that revives a disabled row, delete is a soft-disable via `disabled_at`, never a hard delete (ADRs 0029, 0030). A new resource of that shape matches this lifecycle.
+- Preference- and subscription-like rows (`channel_category_preferences`, `global_category_preferences`, `monitored_channels`) are idempotent lifecycle resources: create is an upsert that revives a disabled row, delete is a soft-disable via `disabled_at`, never a hard delete (ADRs 0029, 0030). A new resource of that shape matches this lifecycle.
 - `TwitchEventQueueMessage` and `NotificationJobMessage` (in `features/eventsub/types.ts` and `features/notifications/types.ts`) are discriminated unions (ADRs 0032, 0034): extend the union for a new event/job shape instead of adding a parallel message type.
 - Read validated config through `AppConfig` (derived in `env.ts`), never `process.env`.
 

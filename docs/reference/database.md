@@ -6,9 +6,9 @@ The D1 (SQLite) schema: what each table holds, how the tables relate, which uniq
 
 - **Ids** are text: a type prefix plus a nanoid (`usr_`, `psub_`, `cpref_`, `gpref_`, `gprex_`, `bmute_`, `nsnz_`, `ndel_`, `esub_`, `csc_`). Per-broadcaster tables are keyed by the Twitch broadcaster id instead, and `category_box_art` by the Twitch category id.
 - **Timestamps** are ISO-8601 UTC strings in `*_at` text columns. Booleans are integers (`0`/`1`).
-- **No hard deletes for lifecycle rows.** Preferences, exclusions, mutes and monitored channels are soft-disabled with `disabled_at`, and creating one again revives the disabled row ([ADR 0029](../decisions/0029-category-preference-api-contract-and-lifecycle.md), [ADR 0030](../decisions/0030-monitored-broadcaster-lifecycle-and-state-seeding.md)). Push subscriptions and EventSub subscriptions carry `revoked_at` instead.
-- **Foreign keys only point at our own rows.** A column that holds a Twitch broadcaster id (`broadcaster_user_id`) has no foreign key: per-user tables reference a broadcaster that may not be monitored yet, or no longer is. The dotted lines in the diagram are these id-only links.
-- **Enumerations are checked in TypeScript, not by the database.** Status, reason and type columns are plain text with no `CHECK` constraint; their values are the union types next to each repository (`apps/api/src/db/repositories/<table>.ts`) and are listed under [Lifecycles](#lifecycles).
+- **No hard deletes for lifecycle rows.** Preferences, exclusions, mutes and monitored channels are soft-disabled with `disabled_at`, and creating one again revives the disabled row ([ADR 0029](../decisions/0029-category-preference-api-contract-and-lifecycle.md), [ADR 0030](../decisions/0030-monitored-broadcaster-lifecycle-and-state-seeding.md)). Push subscriptions are revoked with `revoked_at`, while EventSub subscription rows are deleted by reconciliation once their broadcaster is no longer monitored.
+- **Foreign keys only point at our own rows.** A column that holds a Twitch broadcaster id (`broadcaster_user_id`) has no foreign key: per-user tables reference a broadcaster that may not be monitored yet, or no longer is. The diagram draws only the main id-only links, as dotted lines.
+- **Enumerations are checked in TypeScript, not by the database.** Status, reason and type columns are plain text with no `CHECK` constraint; their values are the union types in the table's repository under `apps/api/src/db/repositories/` (`eventsub_subscriptions.status` has none: it is a plain string that partly mirrors Twitch). The status and type columns are listed under [Lifecycles](#lifecycles).
 
 ## Diagram
 
@@ -136,7 +136,7 @@ erDiagram
 | --- | --- | --- |
 | `users` | Twitch account that logged in | Twitch identity, language ([ADR 0044](../decisions/0044-i18n-key-based-catalog-and-language-preference.md)), last follow sync, and the account-wide pause ([ADR 0054](../decisions/0054-user-controlled-notification-suppression.md)). |
 | `twitch_tokens` | user | The user's Twitch access and refresh tokens, AES-GCM encrypted ([ADR 0018](../decisions/0018-aes-gcm-token-encryption.md)), plus the refresh claim, the last validation and a flag for a dead refresh token ([auth](../architecture/auth.md)). |
-| `push_subscriptions` | device that enabled push | The Web Push endpoint and its keys. Revoked when the push service reports it gone. |
+| `push_subscriptions` | device that enabled push | The Web Push endpoint and its keys. Revoked when the push service reports it gone or the user turns push off on that device. |
 | `followed_channels` | user and followed broadcaster | The follow list as of the last sync, with the broadcaster's names and avatar ([follow sync](../architecture/follow-sync.md)). |
 | `channel_category_preferences` | user, broadcaster and category | "Notify me when this channel streams this category." |
 | `global_category_preferences` | user and category | "Notify me when any channel I follow streams this category." |
@@ -164,7 +164,7 @@ Sessions, OAuth state and the Twitch app token live in KV, not D1 ([architecture
 
 ## Unique Keys
 
-The idempotency rules lean on these keys: a write that would duplicate one is an upsert or an on-conflict-do-nothing, so a retried request, a replayed EventSub message or a duplicate queue job changes nothing.
+The idempotency rules lean on these keys: a write that would duplicate one reuses or ignores the existing row, so a retried request, a replayed EventSub message or a duplicate queue job changes nothing.
 
 | Table | Unique key | Guarantees |
 | --- | --- | --- |
@@ -186,12 +186,12 @@ The idempotency rules lean on these keys: a write that would duplicate one is an
 | --- | --- | --- |
 | `notification_deliveries.status` | `pending`, `sent`, `failed`, `skipped` | The matcher writes `pending`; the sender resolves it to one terminal status and never retries a decided row ([ADR 0034](../decisions/0034-notification-matching-and-delivery-pipeline.md)). `skipped` means the user had no active device. Mutes, the pause and the send-side cooldown act before staging, so they leave no row ([ADR 0056](../decisions/0056-send-side-notification-cooldown.md)). |
 | `notification_deliveries.trigger_type` | `stream_started_in_category`, `switched_into_category`, `snooze_reminder` | Set once, from the State Change or reminder that caused the notification. |
-| `notification_snoozes.status` | `pending`, `fired`, `expired` | `pending` until the minutely job reaches `fire_at`; then `fired` if the channel is still live in that category, else `expired` ([ADR 0048](../decisions/0048-notification-snooze-reminders.md)). |
-| `eventsub_subscriptions.status` | `pending`, `failed`, then Twitch's own statuses (`webhook_callback_verification_pending`, `enabled`, revocation reasons) | Monitoring writes `pending`; the minutely job creates it on Twitch with backoff and gives up as `failed`; after that the column mirrors Twitch, and a revocation also sets `revoked_at` ([ADR 0049](../decisions/0049-eventsub-subscription-failure-backoff-and-callback-validation.md), [monitoring](../architecture/monitoring.md)). |
+| `notification_snoozes.status` | `pending`, `fired`, `expired` | `pending` until the minutely job reaches `fire_at`; then `fired` if the channel is still live in that category, else `expired`. It also expires when the user has paused notifications or muted the broadcaster ([ADR 0048](../decisions/0048-notification-snooze-reminders.md), [ADR 0054](../decisions/0054-user-controlled-notification-suppression.md)). |
+| `eventsub_subscriptions.status` | `pending`, `failed`, then Twitch's own statuses (`webhook_callback_verification_pending`, `enabled`, revocation reasons) | Monitoring writes `pending`; the minutely job creates it on Twitch with backoff and marks it `failed` when it runs out of attempts; after that the column mirrors Twitch, and a revocation also sets `revoked_at`. Reconciliation resets a `failed` row to `pending` once a 24h cooldown has passed, and any row whose Twitch subscription is missing or unhealthy, clearing `revoked_at`, `twitch_subscription_id`, `failure_count` and `next_retry_at` ([ADR 0049](../decisions/0049-eventsub-subscription-failure-backoff-and-callback-validation.md), [monitoring](../architecture/monitoring.md)). |
 | `channel_state_changes.change_type` | `stream_started`, `stream_ended`, `category_changed` | Append-only; rows are never updated. |
 | `monitored_channels.monitor_reason` | `channel_preference`, `global_preference` | Last writer wins; informational only. |
-| `disabled_at` (preferences, exclusions, mutes, monitored channels) | null or a timestamp | Null is active. Delete sets it; create clears it on the existing row. A disabled monitored channel is the signal for reconciliation to drop its Twitch subscriptions. |
-| `revoked_at` (push and EventSub subscriptions) | null or a timestamp | Set once the other side reports the subscription gone; a revoked push subscription is no longer a send target. |
+| `disabled_at` (preferences, exclusions, mutes, monitored channels) | null or a timestamp | Null is active. Delete sets it; create clears it on the existing row. For a disabled monitored channel, reconciliation deletes its Twitch subscriptions and their local rows. |
+| `revoked_at` (push and EventSub subscriptions) | null or a timestamp | Push: set when the push service reports the endpoint gone (404/410 or undecodable keys) or the user turns push off on that device; a revoked push subscription is no longer a send target. EventSub: set when Twitch revokes the subscription, and cleared when reconciliation resets the row to `pending`. |
 
 ## Changing the Schema
 
