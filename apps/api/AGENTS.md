@@ -7,6 +7,7 @@ Backend conventions for the Hono + Drizzle + D1/KV/Queues Worker.
 - A fresh `Database` is created per request by middleware in `app.ts` (`c.set("db", new Database(c.env.DB))`); handlers use `c.var.db`, typed via `HonoEnv.Variables`.
 - New repositories go in `db/repositories/<entity>.ts` as a class taking `AppDatabase` in the constructor, then get wired into the `Database` class in `db/index.ts`.
 - Timestamps are ISO-8601 UTC strings (`new Date().toISOString()`), in `*_at` text columns and in repository params like `now`/`cutoff`. Pass that format, not epoch numbers or `Date`s.
+- [docs/reference/database.md](../../docs/reference/database.md) maps the schema: tables, relations, unique keys and status values; columns stay in `db/schema.ts`. Symptom: the page lists a table, key or status value the schema no longer has. Why it slips: `db:check` and the tests read `schema.ts`, never the page. Verify: when a change adds or removes a table, relation, unique key or status/type union value, `grep -n "<table or value>" docs/reference/database.md` and update the page in the same change.
 
 ## D1 query limits
 
@@ -50,7 +51,7 @@ for (let i = 0; i < ids.length; i += BATCH_SIZE) {
 ## Route handlers
 
 - Validate input with a local `zod` schema and `.safeParse`, throw `ApiError(status, code, message)` on failure, respond with `jsonResponse(...)`. See `features/preferences/routes.ts`. Shared helpers (`parseBody`, `findOwnedRecord`, `authedRouter`) live in `http/handlers.ts`; mount each authenticated route group on an `authedRouter()` instead of repeating `requireAuth`.
-- Preference- and subscription-like rows (`channel_category_preferences`, `global_category_preferences`, `eventsub_subscriptions`, `monitored_channels`) are idempotent lifecycle resources: create is an upsert that revives a disabled row, delete is a soft-disable via `disabled_at`, never a hard delete (ADRs 0029, 0030). A new resource of that shape matches this lifecycle.
+- Preference- and subscription-like rows (`channel_category_preferences`, `global_category_preferences`, `monitored_channels`) are idempotent lifecycle resources: create is an upsert that revives a disabled row, delete is a soft-disable via `disabled_at`, never a hard delete (ADRs 0029, 0030). A new resource of that shape matches this lifecycle.
 - `TwitchEventQueueMessage` and `NotificationJobMessage` (in `features/eventsub/types.ts` and `features/notifications/types.ts`) are discriminated unions (ADRs 0032, 0034): extend the union for a new event/job shape instead of adding a parallel message type.
 - Read validated config through `AppConfig` (derived in `env.ts`), never `process.env`.
 
